@@ -678,10 +678,10 @@ function f() {
       return 1
     fi
     local current_dir="$(realpath "${1:-.}")"
-    local fzf_out key selected exit_status
+    local fzf_out key selected exit_status query_cmd
 
     while true; do
-      local query_cmd="
+      query_cmd="
         q={q}
         if [[ -z \"\$q\" ]]; then
           command $fd_cmd -t d -H -E .git -E node_modules -E .cache -E target -E .venv \"\" \"$current_dir\" 2>/dev/null | sed 's|^| |'
@@ -909,30 +909,30 @@ function f() {
         return 1
       fi
       
+      local fzf_menu_out menu_exit_status menu_key choice ret
       while true; do
-        local fzf_menu_out
         fzf_menu_out=$(echo -e "󰍉  1. Explorer         · Directories, Files & Text Search\n  2. Command History  · Fuzzy search & insert past commands\n  3. Process Manager  · System process monitor & kill manager" | \
                  fzf "${fzf_style[@]}" \
                      --expect=left,right \
-                     --prompt="󰍉  Select Mode > " \
+                     --prompt="󰍉  Search☆Hub > " \
                      --header="[↑/↓] Navigate · [Enter/→] Choose Mode · [ESC/←] Exit" \
-                     --border-label=" 󰍉 Virtual☆Paradise Search Hub 󰍉 " \
+                     --border-label=" 󰍉 Search☆Hub 󰍉 " \
                      --height=14)
 
-        local menu_exit_status=$?
+        menu_exit_status=$?
         if [[ $menu_exit_status -eq 130 || -z "$fzf_menu_out" ]]; then
           return 0
         fi
 
-        local menu_key=$(echo "$fzf_menu_out" | head -n 1)
-        local choice=$(echo "$fzf_menu_out" | tail -n +2)
+        menu_key=$(echo "$fzf_menu_out" | head -n 1)
+        choice=$(echo "$fzf_menu_out" | tail -n +2)
 
         # Left arrow (←) acts as Exit / Cancel from Hub
         if [[ "$menu_key" == "left" || -z "$choice" ]]; then
           return 0
         fi
 
-        local ret=0
+        ret=0
         case "$choice" in
           *1.*) _f_mode_omnisearch "$mode"; ret=$? ;; # Activate Explorer
           *2.*) _f_mode_history; ret=$? ;;            # Activate history mode
