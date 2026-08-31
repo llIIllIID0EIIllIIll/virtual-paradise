@@ -1,22 +1,22 @@
 # =========================================================================
-# 🚀 HƯỚNG DẪN CÀI ĐẶT TOÀN BỘ CÔNG CỤ CHO CẤU HÌNH ZSH NÀY (WSL / LINUX / MACOS)
+# 🚀 INSTALLATION & SETUP GUIDE FOR THIS ZSH CONFIGURATION (LINUX / MACOS / WSL)
 # =========================================================================
 #
-# 1️⃣ CÀI ĐẶT ZSH & OH MY ZSH & NERD FONTS:
+# 1️⃣ INSTALL ZSH, OH MY ZSH & NERD FONTS:
 #   - Linux (Debian/Ubuntu): sudo apt update && sudo apt install -y zsh git curl
 #   - Oh My Zsh:            sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)"
-#   - Nerd Font gợi ý:      Cài đặt font "JetBrainsMono Nerd Font" hoặc "Hack Nerd Font" cho Terminal 
-#                           để hiển thị các icon như , , ☸, 󱁢 không bị lỗi ô vuông.
+#   - Recommended font:     Install "JetBrainsMono Nerd Font" or "Hack Nerd Font" for your terminal 
+#                           to ensure icons (, , ☸, 󱁢) render properly without missing glyphs.
 #
-# 2️⃣ CÀI ĐẶT HÀNG LOẠT CÁC CÔNG CỤ TỐI TÂN (MODERN CLI TOOLS):
+# 2️⃣ INSTALL MODERN CLI TOOLS & UTILITIES:
 #   - Ubuntu / Debian:
 #       sudo mkdir -p /etc/apt/keyrings
 #       wget -qO- https://raw.githubusercontent.com/eza-community/eza/main/deb.asc | sudo gpg --dearmor -o /etc/apt/keyrings/gierens.gpg
 #       echo "deb [signed-by=/etc/apt/keyrings/gierens.gpg] http://deb.gierens.de/ stable main" | sudo tee /etc/apt/sources.list.d/gierens.list
 #       sudo apt update && sudo apt install -y eza bat ripgrep fd-find zoxide htop btop duf ncdu gping fastfetch fzf micro
-#       # Lưu ý: - Cài đặt 'yazi' bằng snap: sudo snap install yazi --classic
-#       #        - Cài đặt 'dust' (Disk Usage) bằng snap: sudo snap install dust
-#       #          Hoặc cài qua cargo (bản cũ tương thích Cargo < 1.85): cargo install --version 1.1.1 du-dust
+#       # Note:  - Install 'yazi' via pacman, cargo, or snap: sudo pacman -S yazi
+#       #        - Install 'dust' (Disk Usage) via pacman: sudo pacman -S dust
+#       #          Or via cargo: cargo install du-dust
 # 
 #   - Arch Linux:
 #       sudo pacman -S --noconfirm eza bat ripgrep fd zoxide htop btop duf ncdu gping fastfetch yazi fzf dust micro
@@ -24,188 +24,188 @@
 #   - macOS (Homebrew):
 #       brew install eza bat ripgrep fd zoxide htop btop duf ncdu gping fastfetch yazi fzf lsd dust micro
 #
-# 3️⃣ CÀI ĐẶT PLUGINS & CUSTOM THEME:
-#   - Cài đặt zsh-completions:
+# 3️⃣ INSTALL OH MY ZSH PLUGINS & THEME:
+#   - Install zsh-completions:
 #       git clone https://github.com/zsh-users/zsh-completions ${ZSH_CUSTOM:-${ZSH:-~/.oh-my-zsh}/custom}/plugins/zsh-completions
-#   - Cài đặt zsh-autosuggestions:
+#   - Install zsh-autosuggestions:
 #       git clone https://github.com/zsh-users/zsh-autosuggestions ${ZSH_CUSTOM:-${ZSH:-~/.oh-my-zsh}/custom}/plugins/zsh-autosuggestions
-#   - Cài đặt zsh-syntax-highlighting:
+#   - Install zsh-syntax-highlighting:
 #       git clone https://github.com/zsh-users/zsh-syntax-highlighting.git ${ZSH_CUSTOM:-${ZSH:-~/.oh-my-zsh}/custom}/plugins/zsh-syntax-highlighting
 #
-# 4️⃣ TROUBLESHOOTING / SỬA LỖI PHỔ BIẾN:
-#   - Lỗi "Insecure completion-dependent directories" (Mất Autocompletion do sai phân quyền):
-#       Chạy lệnh sau để đưa quyền hạn về mức an toàn (755):
+# 4️⃣ TROUBLESHOOTING & COMMON FIXES:
+#   - Fix "Insecure completion-dependent directories" (Permission issue):
+#       Run the following commands to restore secure permissions (755):
 #       chmod -R 755 ${ZSH_CUSTOM:-~/.oh-my-zsh/custom}/plugins
 #       compaudit | xargs chmod g-w,o-w 2>/dev/null
-#   - Làm mới bộ nhớ đệm Completion (Khi lệnh mới cài không hiện gợi ý):
+#   - Rebuild Completion Cache (If newly installed commands do not autocomplete):
 #       rm -f ~/.zcompdump*; compinit
-#   - Tải lại cấu hình nhanh: 
-#       source ~/.zshrc (hoặc gõ alias 'src')
+#   - Quick reload configuration: 
+#       source ~/.zshrc (or type the 'src' alias)
 #
 # =========================================================================
-# ⚙️ OH MY ZSH CORE CONFIGURATION (CẤU HÌNH LÕI OH MY ZSH)
+# ⚙️ OH MY ZSH CORE CONFIGURATION
 # =========================================================================
 
-# Đường dẫn đến thư mục cài đặt Oh My Zsh (mặc định là thư mục .oh-my-zsh trong thư mục Home của người dùng)
+# Path to Oh My Zsh installation directory (defaults to ~/.oh-my-zsh)
 export ZSH="$HOME/.oh-my-zsh"
 
-# Khai báo kiểu Terminal để hỗ trợ hiển thị đầy đủ 256 màu sắc (tối ưu cho giao diện CLI hiện đại)
+# Declare terminal type to support full 256-color palette (optimized for modern TUIs)
 export TERM=xterm-256color
 
-# Cấu hình màu sắc hiển thị khi dùng lệnh ls hoặc các lệnh quản lý file. 
-# ow: thư mục có quyền ghi cho người khác (other-writable) với nền màu xanh lục/chữ đen
-# tw: thư mục có thuộc tính sticky bit và ghi được bởi người khác (sticky & other-writable)
-# st: thư mục có thuộc tính sticky bit nhưng không ghi được bởi người khác
-# di: thư mục thông thường (màu xanh lam)
-# fi: tệp tin thông thường (màu trắng mặc định)
+# Standard LS_COLORS configuration for file and folder highlighting. 
+# ow: other-writable directory (green bg, black text)
+# tw: sticky and other-writable directory
+# st: sticky directory without other-write permissions
+# di: standard directory (blue)
+# fi: regular file (default white)
 export LS_COLORS="ow=01;30;44:tw=01;30;44:st=01;30;44:di=01;34:fi=0"
 
-# Thiết lập trình biên soạn văn bản mặc định của Terminal. "code --wait" nghĩa là khi chạy các lệnh cần soạn thảo (như sửa commit git),
-# Terminal sẽ mở VS Code và tạm dừng chờ cho đến khi bạn đóng tab soạn thảo trong VS Code thì mới tiếp tục chạy trong Terminal.
+# Set default system editor for git and terminal sessions
+# When editor is invoked (e.g. git commit), terminal waits for editor close
 export EDITOR="code --wait"
 
-# Thiết lập bộ phân trang văn bản mặc định (dùng để đọc các văn bản dài hoặc log vượt quá chiều cao màn hình)
+# Set default system pager for reading long text and manpages
 export PAGER="less"
 
-# Cấu hình các cờ tối ưu hóa cho công cụ 'less':
-# -F: Tự động thoát less nếu nội dung văn bản ngắn và vừa khít một màn hình
-# -g: Chỉ làm nổi bật kết quả khớp cuối cùng khi tìm kiếm để đỡ rối mắt
-# -i: Bỏ qua phân biệt chữ hoa chữ thường khi tìm kiếm trừ khi từ khóa có chữ viết hoa
-# -M: Hiển thị thanh trạng thái chi tiết hơn ở cuối màn hình (vị trí dòng, phần trăm file đã đọc)
-# -R: Cho phép hiển thị trực tiếp các mã màu ANSI (giúp giữ nguyên định dạng màu của log)
-# -S: Không tự động xuống dòng dài mà cắt ngang (cho phép cuộn ngang bằng phím mũi tên) giúp log dạng bảng không bị vỡ dòng
-# -w: Tạm thời làm nổi bật dòng đầu tiên sau khi cuộn trang để người dùng dễ theo dõi tiếp
-# -X: Không xóa nội dung hiển thị của less khỏi màn hình terminal sau khi thoát
-# -z-4: Thiết lập kích thước cuộn trang mặc định
+# Optimized flags for 'less' pager:
+# -F: Automatically exit if text fits on a single screen
+# -g: Highlight only the last matching search result
+# -i: Case-insensitive search unless search pattern contains uppercase
+# -M: Verbose prompt showing line position and percentage
+# -R: Output raw ANSI color sequences properly (preserves log colors)
+# -S: Chop long lines to prevent line wrapping and preserve tabular formatting
+# -w: Highlight first line on page-down to keep reading context
+# -X: Keep content in scrollback buffer on exit
+# -z-4: Retain 4 lines of overlap when scrolling
 export LESS="-F -g -i -M -R -S -w -X -z-4"
 
-# Tắt nạp lại giao diện mặc định (theme rỗng) vì chúng ta sẽ tự thiết kế giao diện HUD cực đẹp ở phía dưới
+# Disable default theme loading (custom HUD prompt implemented below)
 ZSH_THEME=""
 
-# Tối ưu hóa hiệu suất khởi động shell bằng cách tắt tính năng tự động đổi tiêu đề tab Terminal theo câu lệnh đang chạy
+# Disable auto-setting terminal title to optimize startup performance
 DISABLE_AUTO_TITLE="true"
 
-# Tối ưu hóa hiệu suất hiển thị thư mục Git bằng cách không quét các file mới tạo chưa được add (giúp tránh lag khi cd vào dự án lớn)
+# Optimize Git prompt performance on large repositories
 DISABLE_UNTRACKED_FILES_DIRTY="true"
 
-# Chỉ chạy các phần khởi tạo nặng khi mở shell lần đầu (Tối ưu hóa tốc độ reload 'src' xuống <5ms)
+# Only run heavy initialization on first startup (optimizes 'src' reload down to <5ms)
 if [[ -z "$_ZSHRC_INITIALIZED" ]]; then
-  # Tự động nạp đường dẫn chứa các file hoàn thành lệnh (autocompletions) của plugin zsh-completions trước khi nạp Oh My Zsh
+  # Add zsh-completions fpath before sourcing Oh My Zsh
   fpath+=("${ZSH_CUSTOM:-${ZSH:-~/.oh-my-zsh}/custom}/plugins/zsh-completions/src")
 
-  # Chỉ định danh sách các plugin nội bộ của Oh My Zsh và các plugin custom bên thứ ba sẽ được tải khi mở shell
+  # List of Oh My Zsh and custom third-party plugins to load on startup
   plugins=(
-    git                       # Tích hợp các shortcut, gợi ý lệnh và hiển thị trạng thái Git
-    zsh-completions           # Thư viện bổ sung gợi ý hoàn thành cho hàng trăm lệnh phổ biến
-    zsh-autosuggestions       # Tự động gợi ý lệnh mờ khi đang gõ dựa theo lịch sử lệnh đã gõ trước đó
-    zsh-syntax-highlighting   # Tô màu cú pháp câu lệnh thời gian thực
+    git                       # Git shortcuts, completions, and status integration
+    zsh-completions           # Additional tab-completion definitions for hundreds of CLI tools
+    zsh-autosuggestions       # Fish-like autosuggestions based on command history
+    zsh-syntax-highlighting   # Real-time command syntax highlighting (green=valid, red=invalid)
   )
 
-  # Nạp tập lệnh khởi động cốt lõi của Oh My Zsh
+  # Load core Oh My Zsh startup script
   source $ZSH/oh-my-zsh.sh
 
-  # Cấu hình màu sắc tô cú pháp động theo ngữ cảnh (Dynamic Syntax Highlighting)
+  # Dynamic Syntax Highlighting color configuration
   typeset -A ZSH_HIGHLIGHT_STYLES
-  ZSH_HIGHLIGHT_STYLES[command]='fg=#00ff88,bold'               # Lệnh hợp lệ: Hacker Green
-  ZSH_HIGHLIGHT_STYLES[unknown-token]='fg=#ff0055,bold'          # Lệnh sai / không tồn tại: Neon Warning Red
-  ZSH_HIGHLIGHT_STYLES[alias]='fg=#00f5d4,bold'                  # Biệt danh / Alias: Miku Cyan
-  ZSH_HIGHLIGHT_STYLES[builtin]='fg=#ffb7d5,bold'                # Lệnh nội tại shell: Sakura Pink
-  ZSH_HIGHLIGHT_STYLES[function]='fg=#00f5d4,bold'               # Hàm shell: Miku Cyan
-  ZSH_HIGHLIGHT_STYLES[commandseparator]='fg=#7091a4'            # Ký hiệu phân tách (; && |): Muted Slate
-  ZSH_HIGHLIGHT_STYLES[path]='fg=#00f5d4,underline'              # Đường dẫn thư mục/tệp tin: Cyan gạch chân
+  ZSH_HIGHLIGHT_STYLES[command]='fg=#00ff88,bold'               # Valid command: Hacker Green
+  ZSH_HIGHLIGHT_STYLES[unknown-token]='fg=#ff0055,bold'          # Unknown / invalid command: Neon Warning Red
+  ZSH_HIGHLIGHT_STYLES[alias]='fg=#00f5d4,bold'                  # Command Alias: Miku Cyan
+  ZSH_HIGHLIGHT_STYLES[builtin]='fg=#ffb7d5,bold'                # Shell builtin command: Sakura Pink
+  ZSH_HIGHLIGHT_STYLES[function]='fg=#00f5d4,bold'               # Shell function: Miku Cyan
+  ZSH_HIGHLIGHT_STYLES[commandseparator]='fg=#7091a4'            # Command separators (&&, ;, |): Muted Slate
+  ZSH_HIGHLIGHT_STYLES[path]='fg=#00f5d4,underline'              # File / directory paths: Underlined Cyan
   ZSH_HIGHLIGHT_STYLES[path_prefix]='fg=#00f5d4'
-  ZSH_HIGHLIGHT_STYLES[single-quoted-argument]='fg=#ffe066'      # Chuỗi trong nháy đơn: Cyber Yellow
-  ZSH_HIGHLIGHT_STYLES[double-quoted-argument]='fg=#ffe066'      # Chuỗi trong nháy kép: Cyber Yellow
-  ZSH_HIGHLIGHT_STYLES[dollar-double-quoted-argument]='fg=#ffb7d5' # Biến môi trường $VAR: Sakura Pink
-  ZSH_HIGHLIGHT_STYLES[back-quoted-argument]='fg=#ffb7d5'        # Lệnh con `command`: Sakura Pink
-  ZSH_HIGHLIGHT_STYLES[single-hyphen-option]='fg=#39c5bb'        # Cờ tùy chọn ngắn (-a, -f): Cyan Blue
-  ZSH_HIGHLIGHT_STYLES[double-hyphen-option]='fg=#39c5bb'        # Cờ tùy chọn dài (--help): Cyan Blue
+  ZSH_HIGHLIGHT_STYLES[single-quoted-argument]='fg=#ffe066'      # Single-quoted string: Cyber Yellow
+  ZSH_HIGHLIGHT_STYLES[double-quoted-argument]='fg=#ffe066'      # Double-quoted string: Cyber Yellow
+  ZSH_HIGHLIGHT_STYLES[dollar-double-quoted-argument]='fg=#ffb7d5' # Environment variables ($VAR): Sakura Pink
+  ZSH_HIGHLIGHT_STYLES[back-quoted-argument]='fg=#ffb7d5'        # Back-quoted command substitution: Sakura Pink
+  ZSH_HIGHLIGHT_STYLES[single-hyphen-option]='fg=#39c5bb'        # Short options / flags (-a, -f): Cyan Blue
+  ZSH_HIGHLIGHT_STYLES[double-hyphen-option]='fg=#39c5bb'        # Long options / flags (--help): Cyan Blue
   ZSH_HIGHLIGHT_STYLES[cursor]='bg=#00f5d4'
 
-  # Cấu hình gợi ý lệnh mờ (Autosuggestions)
+  # Autosuggestion styling
   ZSH_AUTOSUGGEST_HIGHLIGHT_STYLE="fg=#7091a4"
 fi
 
 # =========================================================================
-# 💻 USER & ENVIRONMENT CONFIGURATION (CẤU HÌNH NGƯỜI DÙNG & MÔI TRƯỜNG)
+# 💻 USER & ENVIRONMENT CONFIGURATION
 # =========================================================================
 
-# Tối ưu hóa kích thước và cách lưu lịch sử (History)
-HISTSIZE=50000                 # Số lượng câu lệnh tối đa được lưu trữ trong bộ nhớ đệm (RAM) của phiên làm việc hiện tại
-SAVEHIST=50000                 # Số lượng câu lệnh tối đa được ghi và lưu trữ vĩnh viễn vào file lịch sử (~/.zsh_history)
-setopt APPEND_HISTORY          # Khi một câu lệnh chạy xong, nó sẽ được ghi ngay lập tức vào file lịch sử thay vị đợi đóng tab Terminal
-setopt SHARE_HISTORY           # Chia sẻ lịch sử lệnh tức thì giữa tất cả các tab/cửa sổ Terminal đang mở (gõ lệnh ở tab 1, tab 2 có thể dùng ngay bằng phím mũi tên lên)
-setopt HIST_IGNORE_ALL_DUPS    # Nếu nhập lệnh trùng lặp với lệnh đã có trước đó trong lịch sử, Zsh sẽ xóa bản cũ đi và chỉ lưu bản mới nhất (tiết kiệm không gian)
-setopt HIST_REDUCE_BLANKS      # Tự động loại bỏ các khoảng trắng thừa ở đầu, giữa và cuối câu lệnh trước khi lưu vào lịch sử
-setopt HIST_IGNORE_SPACE       # Nếu gõ dấu cách trước một câu lệnh, lệnh đó sẽ KHÔNG được lưu vào lịch sử (rất hữu ích khi chạy lệnh chứa mật khẩu, API key, token để tránh rò rỉ)
-setopt HIST_VERIFY             # Khi gọi lại lệnh từ lịch sử bằng các ký tự đặc biệt (như !!, !python), Zsh sẽ hiển thị lệnh đó ra để bạn kiểm tra trước, ấn Enter lần nữa mới chạy thật
+# History configuration and optimizations
+HISTSIZE=50000                 # Maximum commands stored in current session memory
+SAVEHIST=50000                 # Maximum commands saved persistently to ~/.zsh_history
+setopt APPEND_HISTORY          # Append history immediately after execution rather than waiting for shell exit
+setopt SHARE_HISTORY           # Share command history across all open terminal windows/sessions in real-time
+setopt HIST_IGNORE_ALL_DUPS    # Remove older duplicates and preserve newest entry in history
+setopt HIST_REDUCE_BLANKS      # Trim unnecessary whitespace from history commands
+setopt HIST_IGNORE_SPACE       # Ignore commands starting with a space to prevent logging sensitive secrets/passwords
+setopt HIST_VERIFY             # Verify history expansion (e.g. !!, !$) before executing
 
-# Vô hiệu hóa tính năng AT-SPI bridge của bộ công cụ GTK nhằm tăng tốc độ khởi động các ứng dụng đồ họa từ Terminal và ngăn chặn các thông báo cảnh báo rác liên quan đến khả năng truy cập.
+# Disable AT-SPI bridge to speed up GUI app launch from terminal and suppress accessibility warnings
 export NO_AT_BRIDGE=1
 
-# Các biến môi trường cấu hình cho bộ gõ tiếng Việt Fcitx hoạt động chính xác trong các ứng dụng GUI chạy từ Terminal:
-export GTK_IM_MODULE=fcitx     # Cấu hình module nhập liệu cho các ứng dụng viết bằng GTK (như GIMP, Chrome, ...) dùng Fcitx
-export QT_IM_MODULE=fcitx      # Cấu hình module nhập liệu cho các ứng dụng viết bằng Qt (như VLC, VirtualBox, ...) dùng Fcitx
-export XMODIFIERS=@im=fcitx    # Cấu hình bộ nhập liệu cho các ứng dụng X11 cổ điển dùng Fcitx
+# Input method environment variables (Fcitx / IBus) for GUI applications:
+export GTK_IM_MODULE=fcitx     # GTK input module configuration
+export QT_IM_MODULE=fcitx      # Qt input module configuration
+export XMODIFIERS=@im=fcitx    # X11 input method configuration
 
-# --- Sửa lỗi các phím Home, End, Delete, Ctrl+Mũi tên trong Zsh (Best Practice) ---
-# Trong một số Terminal (như trên WSL hoặc ssh), các phím chức năng này bị nhận diện sai ký tự điều khiển.
-# Các dòng bindkey dưới đây ánh xạ chính xác mã phím vật lý sang hàm điều khiển dòng lệnh của Zsh.
-bindkey '^[[H' beginning-of-line      # Ánh xạ mã phím Home -> Di chuyển con trỏ về đầu dòng lệnh
-bindkey '^[[F' end-of-line            # Ánh xạ mã phím End -> Di chuyển con trỏ về cuối dòng lệnh
-bindkey '^[[3~' delete-char           # Ánh xạ mã phím Delete -> Xóa ký tự nằm ngay dưới con trỏ
-bindkey '^[[1;5C' forward-word        # Ánh xạ mã phím Ctrl + Mũi tên Phải -> Di chuyển con trỏ sang phải 1 từ
-bindkey '^[[1;5D' backward-word       # Ánh xạ mã phím Ctrl + Mũi tên Trái -> Di chuyển con trỏ sang trái 1 từ
-bindkey '^H' backward-kill-word      # Ánh xạ mã phím Ctrl + Backspace (hoặc mã '^H') -> Xóa toàn bộ 1 từ phía trước con trỏ
+# --- Keybinding Fixes: Home, End, Delete, Ctrl+Arrows ---
+# Ensure terminal key sequences map accurately across all emulators
+# Bind standard physical keycodes to Zsh Line Editor (ZLE) functions
+bindkey '^[[H' beginning-of-line      # Home: Move cursor to beginning of line
+bindkey '^[[F' end-of-line            # End: Move cursor to end of line
+bindkey '^[[3~' delete-char           # Delete: Delete character under cursor
+bindkey '^[[1;5C' forward-word        # Ctrl + Right: Forward one word
+bindkey '^[[1;5D' backward-word       # Ctrl + Left: Backward one word
+bindkey '^H' backward-kill-word      # Ctrl + Backspace: Delete backward word
 
 # =========================================================================
-# 🧭 ADVANCED NAVIGATION & AUTOCOMPLETION (Di chuyển & Tự động hoàn thành)
+# 🧭 ADVANCED NAVIGATION & AUTOCOMPLETION
 # =========================================================================
 
-setopt AUTO_CD              # Tiện ích tự động di chuyển: chỉ cần gõ đường dẫn thư mục (ví dụ: /var/log hoặc ..) mà không cần gõ từ khóa `cd`, Zsh tự hiểu và di chuyển vào đó
-setopt AUTO_PUSHD           # Tự động đẩy thư mục vừa cd vào stack lịch sử (Directory Stack), giúp bạn dễ dàng quay lại các thư mục cũ bằng lệnh `popd` hoặc `cd -`
-setopt PUSHD_IGNORE_DUPS    # Không thêm các thư mục trùng lặp vào stack lịch sử di chuyển thư mục
+setopt AUTO_CD              # Auto CD: type folder path directly (e.g. /var/log or ..) without typing 'cd'
+setopt AUTO_PUSHD           # Auto PushD: automatically push visited directories onto the directory stack
+setopt PUSHD_IGNORE_DUPS    # Ignore duplicate directories in pushd stack
 
-# Cấu hình hệ thống gợi ý lệnh (autocompletion) thông minh:
-# 'm:{a-zA-Z}={A-Za-z}': Không phân biệt chữ hoa/chữ thường khi gợi ý hoàn thành (ví dụ gõ 'doc' vẫn gợi ý thư mục 'Documents')
-# 'r:|[._-]=* r:|=*': Cho phép tự động hoàn thành từ các phần viết tắt phân tách bởi dấu chấm, gạch dưới hoặc gạch ngang (ví dụ gõ 'a_b' gợi ý 'apple_banana')
-# 'l:|=* r:|=*': Gợi ý thông minh bao gồm cả các kết quả khớp ở giữa từ
+# Smart autocompletion matcher list:
+# 'm:{a-zA-Z}={A-Za-z}': Case-insensitive completion (e.g. 'doc' matches 'Documents')
+# 'r:|[._-]=* r:|=*': Substring & abbreviation completion (e.g. 'a_b' matches 'apple_banana')
+# 'l:|=* r:|=*': Mid-word matching completion
 zstyle ':completion:*' matcher-list 'm:{a-zA-Z}={A-Za-z}' 'r:|[._-]=* r:|=*' 'l:|=* r:|=*'
 
-# Cấu hình hiển thị menu điều hướng trực quan khi bấm nút Tab 2 lần liên tiếp.
-# Thay vì hiển thị danh sách tĩnh, nó hiển thị menu động mà bạn có thể dùng các phím mũi tên lên/xuống/trái/phải để chọn file/thư mục.
+# Interactive Tab-completion selection menu (navigate with arrow keys):
+# Enables graphical cursor selection menu on double Tab
 zstyle ':completion:*' menu select
 
-# Định dạng các dòng văn bản hiển thị tiêu đề và cảnh báo trong menu hoàn thành gợi ý:
-# %F{green}...%f: Màu xanh lục cho phần mô tả nhóm gợi ý (ví dụ: -- files --, -- commands --)
-# %F{red}...%f: Màu đỏ cho các cảnh báo khi không tìm thấy kết quả phù hợp
+# Group descriptions and warning formatting for completion menu:
+# %F{green}...%f: Group header descriptions
+# %F{red}...%f: Warning when no matches are found
 zstyle ':completion:*:descriptions' format '%F{green}-- %d --%f'
 zstyle ':completion:*:warnings' format '%F{red}No matches found for:%f %d'
 
-# Cấu hình màu sắc giao diện cho FZF (Fuzzy Finder - công cụ tìm kiếm mờ nhanh chóng)
-# Nếu hệ thống của bạn có cài đặt lệnh `fzf`, đoạn mã dưới đây sẽ thiết lập bảng màu tối ưu (Cyber Pastel)
-# match với theme chính: chữ màu hồng, viền xanh neon, dòng đang chọn nền Dracula dark, con trỏ hồng/vàng.
+# FZF (Fuzzy Finder) Cyberpunk Neon Palette Configuration:
+# Matches active Virtual☆Paradise colorway with rounded borders and glowing highlights
+# Border: Miku Cyan (#00f5d4), Match: Hacker Green (#00ff88), Pointer: Pink (#ffb7d5)
 if (( $+commands[fzf] )); then
   export FZF_DEFAULT_OPTS='--height 40% --layout=reverse --border --color="fg:#eafbfa,bg:-1,hl:#00f5d4,fg+:#00ff88,bg+:#0e141d,hl+:#00ff88,info:#7091a4,prompt:#00f5d4,pointer:#00ff88,marker:#ffb7d5,spinner:#ffe066,header:#7091a4,border:#00f5d4"'
 fi
 
 # =========================================================================
-# 🏷️ CUSTOM ALIASES & MODERN TOOLS (WITH FALLBACKS)
+# 🏷️ CUSTOM ALIASES & MODERN CLI TOOLS (WITH FALLBACKS)
 # =========================================================================
-# Định nghĩa các biệt danh (Alias) viết tắt hoặc thay thế các lệnh Linux truyền thống bằng các công cụ hiện đại, tối ưu hơn.
-# Sử dụng kiểm tra điều kiện `(( $+commands[tool] ))` để xác định công cụ đó đã được cài đặt trong hệ thống chưa,
-# nếu chưa sẽ tự động rơi về cấu hình công cụ dự phòng (fallback) tiếp theo hoặc lệnh mặc định của Linux.
+# Defines drop-in replacements for standard Unix utilities with modern Rust/Go tools.
+# Uses `(( $+commands[tool] ))` condition checks to ensure graceful fallbacks if tools are absent.
+# Ensures 100% reliability across fresh or minimal installations.
 
-# --- 1. Thay thế lệnh hiển thị danh sách file `ls` ---
-# Mức ưu tiên 1: Lệnh `eza` (Bản nâng cấp hiện đại của `ls`, viết bằng Rust, hiển thị icon đẹp, trạng thái Git, cấu trúc thư mục rõ ràng)
+# --- 1. Directory Listing (ls -> eza) ---
+# Priority 1: `eza` (Modern Rust replacement with icons, git status, and tree views)
 if (( $+commands[eza] )); then
-  alias ls='eza --icons --git --group-directories-first'         # ls: Hiển thị file kèm icon, trạng thái Git của file, đẩy thư mục lên đầu tiên
-  alias ll='eza -alF --icons --git --group-directories-first'     # ll: Hiển thị dạng danh sách chi tiết (quyền hạn, kích thước, chủ sở hữu, ngày tạo, trạng thái git)
-  alias la='eza -a --icons --group-directories-first'            # la: Hiển thị cả các file ẩn (bắt đầu bằng dấu chấm .) kèm icon
-  alias l='eza -F --icons --group-directories-first'             # l: Hiển thị danh sách file rút gọn phân loại theo đuôi thư mục
-  alias tree='eza --tree --icons'                                # tree: Hiển thị sơ đồ cây thư mục trực quan kèm icon sinh động
+  alias ls='eza --icons --git --group-directories-first'         # ls: List files with icons, git status, directories grouped first
+  alias ll='eza -alF --icons --git --group-directories-first'     # ll: Detailed long list with permissions, sizes, dates, and icons
+  alias la='eza -a --icons --group-directories-first'            # la: List all files including hidden dotfiles
+  alias l='eza -F --icons --group-directories-first'             # l: Short list categorized by file type
+  alias tree='eza --tree --icons'                                # tree: Visual tree structure with icons
 
-# Mức ưu tiên 2 (Fallback): Lệnh `lsd` (Công cụ tương tự `eza`, hiển thị icon đẹp và phân nhóm thư mục trước)
+# Fallback priority: alternative modern tools
 elif (( $+commands[lsd] )); then
   alias ls='lsd --group-dirs first'
   alias ll='lsd -alF --group-dirs first'
@@ -213,224 +213,224 @@ elif (( $+commands[lsd] )); then
   alias l='lsd -F --group-dirs first'
   alias tree='lsd --tree'
 
-# Mức ưu tiên cuối cùng: Lệnh `ls` truyền thống của Linux (vẫn đảm bảo hệ thống chạy được khi chưa cài eza hay lsd)
+# Fallback priority: standard Linux utilities
 else
   alias ll='ls -alF'
   alias la='ls -A'
   alias l='ls -CF'
 fi
 
-# --- 2. Thay thế lệnh đọc file `cat` ---
-# Lệnh `cat` mặc định chỉ in text thô. Chúng ta thay bằng `bat` hoặc `batcat` (viết bằng Rust, hỗ trợ tô màu cú pháp code như VS Code, có số dòng)
-# Mức ưu tiên 1: `bat`
+# --- 2. Replaces legacy Unix utilities
+# Replace plain `cat` with `bat` (Rust-powered syntax highlighter with line numbers)
+# Priority 1: `bat`
 if (( $+commands[bat] )); then
-  alias cat='bat --style=plain'        # Thay thế `cat` bằng `bat` nhưng ẩn khung viền để giữ thói quen copy text không bị dính ký tự lạ
-  alias preview='bat'                  # Lệnh `preview`: hiển thị file đầy đủ màu sắc cú pháp, số dòng và khung viền đẹp mắt
-# Mức ưu tiên 2: `batcat` (Tên lệnh của `bat` trên một số hệ điều hành Debian/Ubuntu cũ do xung đột tên gói)
+  alias cat='bat --style=plain'        # Replace cat with bat (plain style for easy copying)
+  alias preview='bat'                  # Full syntax-highlighted preview with borders and line numbers
+# Priority 2: `batcat` fallback (Debian/Ubuntu package naming)
 elif (( $+commands[batcat] )); then
   alias cat='batcat --style=plain'
   alias preview='batcat'
 fi
 
-# --- 3. Thay thế lệnh tìm kiếm nội dung file `grep` ---
-# Thay `grep` bằng `ripgrep` (lệnh là `rg`), công cụ tìm kiếm văn bản cực kỳ nhanh viết bằng Rust, mặc định bỏ qua file gitignore và file ẩn
+# --- 3. Content Search (grep -> ripgrep) ---
+# Replace `grep` with `ripgrep` (`rg`), the fastest regex search tool in Rust
 if (( $+commands[rg] )); then
   alias grep='rg'
 fi
 
-# --- 4. Thay thế lệnh tìm kiếm file `find` ---
-# Thay `find` (cú pháp phức tạp) bằng `fd` hoặc `fdfind`, công cụ tìm kiếm tệp tin đơn giản, nhanh hơn nhiều lần và hỗ trợ Regex
+# --- 4. Replaces legacy Unix utilities
+# Replace `find` with `fd` / `fdfind` for fast, intuitive file discovery
 if (( $+commands[fd] )); then
   alias find='fd'
 elif (( $+commands[fdfind] )); then
   alias find='fdfind'
 fi
 
-# --- 5. Thay thế lệnh di chuyển thư mục `cd` ---
-# Tích hợp `zoxide` (công cụ ghi nhớ lịch sử di chuyển). Bạn chỉ cần gõ `z <tên_thư_mục_viết_tắt>` là nó tự động nhảy đến đúng thư mục đó.
-# Ví dụ: gõ `z project` để nhảy thẳng đến `/home/user/code/workspace/my-new-project` mà không cần gõ cả đường dẫn dài.
+# --- 5. Replaces legacy Unix utilities
+# Initialize `zoxide` smart cd handler (`z <dir_keyword>` jumps instantly to matches)
+# Example: `z proj` jumps directly to ~/code/workspace/my-project
 if [[ -z "$_ZSHRC_INITIALIZED" ]]; then
   if (( $+commands[zoxide] )); then
     eval "$(zoxide init zsh)"
-    # Lệnh bổ sung: 'zi' sẽ mở giao diện menu tương tác (FZF) hiển thị các thư mục hay vào nhất để bạn chọn bằng phím mũi tên.
+    # `zi` opens an interactive FZF directory picker
   fi
 fi
 
-# --- 6. Thay thế lệnh theo dõi tài nguyên hệ thống `top` ---
-# Thay bảng theo dõi đen trắng `top` bằng giao diện bảng điều khiển đồ họa Terminal cực đẹp `btop` hoặc `htop`
-# Mức ưu tiên 1: `btop` (Giao diện đẹp mắt như game, hiển thị biểu đồ CPU, RAM, ổ đĩa, mạng, nhiệt độ và các tiến trình)
+# --- 6. System Monitoring (top -> btop/htop) ---
+# Replace legacy top with rich graphical TUI system monitors (`btop` / `htop`)
+# Priority 1: `btop` (Full CPU, RAM, Disk, Network, GPU graphs and processes)
 if (( $+commands[btop] )); then
   alias top='btop'
-# Mức ưu tiên 2: `htop` (Giao diện bảng màu tương tác cổ điển, trực quan hơn top)
+# Priority 2: `htop` (Interactive colored process viewer)
 elif (( $+commands[htop] )); then
   alias top='htop'
 fi
 
-# --- 7. Thay thế lệnh kiểm tra dung lượng ổ đĩa `df` & đo dung lượng file `du` ---
-# - Thay `df` bằng `duf` (Disk Usage/Free utility): hiển thị dung lượng đĩa dưới dạng bảng màu và biểu đồ phần trăm cực kỳ trực quan.
+# --- 7. Replaces legacy Unix utilities
+# Replace `df` with `duf` (Disk Usage / Free utility with visual bar charts)
 if (( $+commands[duf] )); then
   alias df='duf'
 else
-  alias df='df -h'                     # Fallback về lệnh df mặc định hiển thị định dạng Megabyte/Gigabyte dễ đọc (-h)
+  alias df='df -h'                     # Fallback to human-readable standard df (-h)
 fi
 
-# - Thay `du` bằng `dust` (viết bằng Rust, vẽ biểu đồ cây phân bổ dung lượng) hoặc `ncdu` (giao diện tương tác điều hướng phím mũi tên để xóa file nặng)
+# Replace `du` with `dust` (visual disk breakdown) or `ncdu` (interactive TUI)
 if (( $+commands[dust] )); then
   alias du='dust'
 elif (( $+commands[ncdu] )); then
   alias du='ncdu'
 else
-  alias du='du -sh'                    # Fallback về lệnh du mặc định hiển thị tổng dung lượng thư mục hiện tại (-sh)
+  alias du='du -sh'                    # Fallback to standard summary du (-sh)
 fi
 
-# --- 8. Thay thế lệnh kiểm tra kết nối mạng `ping` ---
-# Thay `ping` dòng văn bản nhàm chán bằng `gping` (Graphic Ping): vẽ biểu đồ thời gian phản hồi (latency) dạng sóng trực quan thời gian thực
+# --- 8. Replaces legacy Unix utilities
+# Replace standard ping with `gping` (Graphical latency line graph)
 if (( $+commands[gping] )); then
   alias ping='gping'
 fi
 
-# --- 9. DI CHUYỂN & HỆ THỐNG CƠ BẢN ---
-alias cl='clear'                       # cl: Xóa sạch màn hình terminal nhanh
-alias ..='cd ..'                       # ..: Quay lại 1 thư mục cha
-alias ...='cd ../..'                   # ...: Quay lại 2 thư mục cha
-alias zshconf='${EDITOR:-code} ~/.zshrc' # zshconf: Mở nhanh file cấu hình .zshrc bằng VS Code (hoặc editor mặc định) để sửa
+# --- 9. Basic Navigation & System Shortcuts ---
+alias cl='clear'                       # cl: Clear screen and reset scrollback buffer
+alias ..='cd ..'                       # ..: Go up 1 directory
+alias ...='cd ../..'                   # ...: Go up 2 directories
+alias zshconf='${EDITOR:-code} ~/.zshrc' # zshconf: Open ~/.zshrc in default editor
 alias up='sudo apt update && sudo apt upgrade -y && sudo apt autoclean -y && sudo apt autoremove -y && source ~/.zshrc'
-# up: Lệnh tối thượng giúp cập nhật hệ điều hành Debian/Ubuntu (update danh sách gói, nâng cấp ứng dụng, dọn dẹp file cài đặt thừa, xóa các thư viện rác) và cập nhật lại cấu hình shell
-alias src='source ~/.zshrc'             # src: Tải lại (reload) tức thì cấu hình .zshrc để áp dụng các thay đổi mới mà không cần tắt/mở lại Terminal
+# up: Full system update (sync repos, upgrade packages, clean cache)
+alias src='source ~/.zshrc'             # src: Instantly reload ~/.zshrc
 
-# Sửa lỗi gõ chính tả lệnh phổ biến (Typo Corrections - tránh bị lỗi gõ nhầm khi gõ nhanh)
-alias sl='ls'                          # Nếu gõ nhầm 'sl' -> vẫn chạy 'ls'
-alias dc='cd'                          # Nếu gõ nhầm 'dc' -> vẫn chạy 'cd'
-alias gti='git'                        # Nếu gõ nhầm 'gti' -> vẫn chạy 'git'
+# Common Command Typo Auto-Corrections
+alias sl='ls'                          # Typo auto-correction for 'ls'
+alias dc='cd'                          # Typo auto-correction for 'cd'
+alias gti='git'                        # Typo auto-correction for 'git'
 
-# Lệnh rút gọn thông tin hệ thống và mạng
-alias ip='ip a'                        # ip: Xem nhanh danh sách và cấu hình các cổng mạng, địa chỉ IP trong máy
-alias fr='free -h'                     # fr: Xem bộ nhớ RAM còn trống dưới định dạng dễ đọc (GB, MB)
-alias ff='fastfetch'                   # ff: Chạy Fastfetch hiển thị logo hệ điều hành và tóm tắt thông số phần cứng (CPU, GPU, RAM, Kernel, Shell)
-alias yz='yazi'                        # yz: Khởi chạy Yazi - trình duyệt và quản lý file bằng phím tắt cực nhanh viết bằng Rust
-alias path='echo $PATH | tr ":" "\n"'  # path: In danh sách các đường dẫn tìm kiếm câu lệnh ($PATH) xuống dòng rõ ràng để kiểm tra
-alias ports='sudo lsof -iTCP -sTCP:LISTEN -P -n' # ports: Liệt kê tất cả các cổng mạng TCP đang mở và lắng nghe (LISTEN) cùng tiến trình đang giữ cổng đó
-alias search='ps aux | grep -i '       # search: Tìm kiếm tiến trình đang chạy theo tên (Ví dụ: search chrome)
-alias psg='ps aux | grep -v grep | grep -i ' # psg: Tìm kiếm tiến trình nâng cao, tự động loại bỏ chính tiến trình grep khỏi kết quả tìm kiếm
+# Hardware & Network Information Shortcuts
+alias ip='ip a'                        # ip: List network interfaces and IP addresses
+alias fr='free -h'                     # fr: Human-readable memory statistics
+alias ff='fastfetch'                   # ff: Launch Fastfetch hardware telemetry summary
+alias yz='yazi'                        # yz: Launch Yazi terminal file manager
+alias path='echo $PATH | tr ":" "\n"'  # path: Pretty-print $PATH directories one per line
+alias ports='sudo lsof -iTCP -sTCP:LISTEN -P -n' # ports: List listening TCP/UDP ports and owning processes
+alias search='ps aux | grep -i '       # search: Search process by name
+alias psg='ps aux | grep -v grep | grep -i ' # psg: Search process by name
 
-# --- 10. DOCKER UTILITIES (CÔNG CỤ TIỆN ÍCH DOCKER) ---
-alias dk='docker ps'                   # dk: Liệt kê nhanh các Container Docker đang chạy
+# --- 10. Docker Management Shortcuts ---
+alias dk='docker ps'                   # dk: List running Docker containers
 alias dkon='sudo systemctl start docker && docker start $(docker ps -aq) 2>/dev/null || true'
-# dkon: Khởi động dịch vụ Docker của hệ điều hành, sau đó tự động bật lại toàn bộ các container Docker (cũ và mới)
-alias dkoff='docker stop $(docker ps -aq) 2>/dev/null || true; sudo systemctl stop docker docker.socket && sudo sh -c "sync && echo 3 > /proc/sys/vm/drop_caches"'
-# dkoff: Dừng toàn bộ Container Docker đang chạy, tắt dịch vụ Docker để tiết kiệm RAM, giải phóng bộ nhớ đệm cache của RAM (drop_caches) giúp máy nhẹ hơn lập tiếp
-alias dksta='sudo systemctl status docker docker.socket' # dksta: Kiểm tra trạng thái hoạt động của dịch vụ Docker
-alias dklog='docker logs -f'           # dklog: Xem log thời gian thực của một Container chỉ định (Ví dụ: dklog container_nginx)
+# dkon: Start Docker daemon and launch all containers
+alias dkoff='docker stop $(docker ps -aq) 2>/dev/null || true; sudo systemctl stop docker docker.socket && sudo sh -c "sync && echo 3 > /proc/sys/vm/drop_caches"' # dkoff: Stop all containers and reclaim RAM
+# dkoff: Stop all Docker containers and drop filesystem caches
+alias dksta='sudo systemctl status docker docker.socket' # dksta: Short status summary (git status -sb)
+alias dklog='docker logs -f'           # dklog: Follow live container logs (e.g. dklog web_server)
 
-# --- 11. BLUETOOTH, SOUND & NETWORK (CƠ SỞ HẠ TẦNG KẾT NỐI) ---
-alias bt='bluetoothctl'                # bt: Mở bảng điều khiển tương tác kết nối thiết bị Bluetooth
-alias bton='sudo systemctl start bluetooth'  # bton: Bật dịch vụ Bluetooth của máy
-alias btoff='sudo systemctl stop bluetooth' # btoff: Tắt dịch vụ Bluetooth để tiết kiệm pin/RAM
-alias au='alsamixer'                   # au: Mở giao diện đồ họa Terminal điều chỉnh âm lượng loa/micro của Linux
-alias wf='nmtui'                       # wf: Mở giao diện menu Terminal để dò tìm và kết nối mạng Wi-Fi trực quan
+# --- 11. Bluetooth, Audio & Network Shortcuts ---
+alias bt='bluetoothctl'                # bt: Interactive Bluetooth control panel
+alias bton='sudo systemctl start bluetooth'  # bton: Start Bluetooth systemd service
+alias btoff='sudo systemctl stop bluetooth' # btoff: Stop Bluetooth service
+alias au='alsamixer'                   # au: Launch alsamixer audio control
+alias wf='nmtui'                       # wf: Launch nmtui Wi-Fi connection manager
 
-# --- 12. GIT SHORTCUTS (CÁC PHÍM TẮT THAO TÁC NHANH VỚI GIT) ---
-alias gst='git status'                 # gst: Kiểm tra trạng thái các file thay đổi trong kho lưu trữ Git
-alias gco='git checkout'               # gco: Chuyển đổi giữa các nhánh (branch) hoặc khôi phục file
-alias gcb='git checkout -b'            # gcb: Tạo nhánh mới và tự động chuyển sang nhánh đó ngay lập tức
-alias gd='git diff'                    # gd: Xem các thay đổi chi tiết từng dòng code trong file
-alias gl='git log --oneline --graph --all' # gl: Vẽ biểu đồ nhánh Git dạng cây rút gọn trên 1 dòng trực quan
-alias gps='git push'                   # gps: Đẩy commit lên kho lưu trữ từ xa (GitHub/GitLab)
-alias gpl='git pull'                   # gpl: Kéo code mới nhất từ kho lưu trữ từ xa về máy
+# --- 12. Git Workflow Shortcuts ---
+alias gst='git status'                 # gst: Short status summary (git status -sb)
+alias gco='git checkout'               # gco: Checkout branch or restore files
+alias gcb='git checkout -b'            # gcb: Create and switch to new branch (git checkout -b)
+alias gd='git diff'                    # gd: View line-by-line diff of modified files
+alias gl='git log --oneline --graph --all' # gl: One-line visual commit log graph
+alias gps='git push'                   # gps: Push commits to remote (git push)
+alias gpl='git pull'                   # gpl: Pull latest commits from remote
 
-# --- 13. TRÌNH BIÊN SOẠN VĂN BẢN (TEXT EDITOR SHORTCUTS) ---
-# Sử dụng 'micro' (trình soạn thảo Terminal hiện đại, dễ dùng) thay thế cho 'nano'.
-# Nếu hệ thống chưa cài 'micro', tự động giữ nguyên và sử dụng 'nano' mặc định.
+# --- 13. Text Editor Shortcuts ---
+# Prefer modern TUI editor (micro / nvim) with fallback to nano.
+# Ensures consistent terminal editor behavior across systems.
 if (( $+commands[micro] )); then
   alias nano='micro'
 fi
 
 
 # =========================================================================
-# ⚙️ SMART UTILITY FUNCTIONS (HÀM TIỆN ÍCH THÔNG MINH & HƯỚNG DẪN SỬ DỤNG)
+# ⚙️ SMART UTILITY FUNCTIONS & DOCUMENTATION
 # =========================================================================
 
-# [1] mkcd: Tạo một thư mục mới và tự động di chuyển (cd) ngay lập tức vào đó.
-# -> Cách dùng: mkcd <tên_thư_mục_hoặc_đường_dẫn>
-# -> Ví dụ: mkcd src/components/auth
+# [1] mkcd: Create directory and cd into it immediately.
+# -> Usage: mkcd <directory_path>
+# -> Example: mkcd src/components/auth
 function mkcd() {
-  # Kiểm tra xem tham số truyền vào (tên thư mục) có bị trống không
+  # Validate directory argument
   if [ -z "$1" ]; then
-    # In ra dòng cảnh báo màu vàng (%F{yellow} và tắt màu bằng %f) nếu người dùng quên nhập tên thư mục
+    # Print warning if directory name is missing
     print -P "%F{yellow}[WARN]%f Error: Directory name required! (Usage: mkcd <directory_name>)"
-    return 1 # Trả về mã lỗi 1 để dừng hàm
+    return 1 # Return error code 1
   fi
-  # mkdir -p: Tạo thư mục, tự động tạo các thư mục cha nếu chưa có (Ví dụ: a/b/c)
-  # && cd: Nếu tạo thư mục thành công thì lập tức di chuyển vào thư mục đó
+  # mkdir -p: Create parent directory hierarchy
+  # && cd: Enter directory on success
   mkdir -p "$1" && cd "$1"
 }
 
-# [2] extract: Giải nén tự động hầu hết các định dạng file nén phổ biến hiện nay mà không cần nhớ cú pháp riêng của từng lệnh.
-# -> Cách dùng: extract <tên_file_nén>
-# -> Ví dụ: extract archive.tar.gz
+# [2] extract: Universal archive extractor supporting all major formats.
+# -> Usage: extract <archive_file>
+# -> Example: extract archive.tar.gz
 function extract() {
-  # Kiểm tra xem tệp tin truyền vào có thực sự tồn tại trong thư mục không (-f)
+  # Verify target archive exists
   if [ -f "$1" ] ; then
-    # Dùng cấu trúc case-in để bắt đuôi mở rộng của tệp và gọi lệnh giải nén tương ứng
+    # Match file extension and execute corresponding extractor
     case "$1" in
-      *.tar.bz2)   tar xjf "$1"     ;; # Giải nén file .tar.bz2
-      *.tar.gz)    tar xzf "$1"     ;; # Giải nén file .tar.gz
-      *.tar.xz|*.txz) tar -xJf "$1" ;; # Giải nén file .tar.xz
-      *.tar.zst|*.tar.zstd) tar --zstd -xf "$1" ;; # Giải nén file .tar.zst
-      *.bz2)       bunzip2 "$1"     ;; # Giải nén file .bz2 đơn lẻ
-      *.rar)       unrar x "$1"     ;; # Giải nén file .rar (yêu cầu cài unrar)
-      *.gz)        gunzip "$1"      ;; # Giải nén file .gz đơn lẻ
-      *.tar)       tar xf "$1"      ;; # Giải nén file tarball .tar
-      *.tbz2)      tar xjf "$1"     ;; # Giải nén file .tbz2
-      *.tgz)       tar xzf "$1"     ;; # Giải nén file .tgz
-      *.zip)       unzip "$1"       ;; # Giải nén file .zip (yêu cầu cài unzip)
-      *.Z)         uncompress "$1"  ;; # Giải nén file nén cổ điển .Z
-      *.7z)        7z x "$1"        ;; # Giải nén file .7z (yêu cầu cài p7zip)
-      *)           # In thông báo màu đỏ (%F{red}) khi tệp tin có định dạng đuôi không được hỗ trợ
+      *.tar.bz2)   tar xjf "$1"     ;; # Extract .tar.bz2 archive
+      *.tar.gz)    tar xzf "$1"     ;; # Extract .tar.gz archive
+      *.tar.xz|*.txz) tar -xJf "$1" ;; # Extract .tar.xz archive
+      *.tar.zst|*.tar.zstd) tar --zstd -xf "$1" ;; # Extract .tar.zst archive
+      *.bz2)       bunzip2 "$1"     ;; # Extract .bz2 archive
+      *.rar)       unrar x "$1"     ;; # Extract .rar archive (requires unrar)
+      *.gz)        gunzip "$1"      ;; # Extract .gz archive
+      *.tar)       tar xf "$1"      ;; # Extract .tar tarball
+      *.tbz2)      tar xjf "$1"     ;; # Extract .tbz2 archive
+      *.tgz)       tar xzf "$1"     ;; # Extract .tgz archive
+      *.zip)       unzip "$1"       ;; # Extract .zip archive (requires unzip)
+      *.Z)         uncompress "$1"  ;; # Extract classic .Z archive
+      *.7z)        7z x "$1"        ;; # Extract .7z archive (requires p7zip)
+      *)           # Print red warning for unsupported format
                    print -P "%F{red}[ERROR]%f Error: '$1' format is not supported by extract()" ;;
     esac
   else
-    # In cảnh báo lỗi khi đường dẫn file nhập vào không tồn tại
+    # Print error if file path does not exist
     print -P "%F{red}[ERROR]%f Error: '$1' is not a valid file or does not exist!"
   fi
 }
 
-# [3] weather: Xem nhanh dự báo thời tiết trực quan của bất kỳ thành phố nào trên thế giới thông qua dịch vụ wttr.in.
-# -> Cách dùng: weather [tên_thành_phố_tiếng_anh] (Mặc định sẽ lấy Hồ Chí Minh nếu để trống)
-# -> Ví dụ: weather Ho Chi Minh
+# [3] weather: Query live terminal weather forecast via wttr.in.
+# -> Usage: weather [city_name] (defaults to current location)
+# -> Example: weather Tokyo
 function weather() {
-  # Gán biến city bằng tham số thứ nhất truyền vào ($1). Nếu trống, mặc định lấy giá trị "Ho Chi Minh"
-  local city="${1:-Ho Chi Minh}"
-  # Gửi yêu cầu HTTP GET đến wttr.in, thêm tham số ?m để hiển thị đơn vị đo chuẩn mét (độ C, km/h) thay vì độ F của Mỹ
-  # Thiết lập timeout 5 giây để tránh treo terminal khi mất mạng
+  # Assign city argument; defaults to local if empty
+  local city="${1:-}"
+  # Send GET request to wttr.in with metric units (?m)
+  # 5-second timeout to avoid terminal hang
   curl -sS --max-time 5 "https://wttr.in/${city}?m"
 }
 
-# [4] myip: Tra cứu nhanh địa chỉ IP công cộng (Public IP) hiện tại của thiết bị (tiện khi kiểm tra kết nối mạng hoặc VPN).
-# -> Cách dùng: myip
+# [4] myip: Query public IP address (WAN).
+# -> Usage: myip
 function myip() {
-  # curl -s: Gửi yêu cầu âm thầm đến server ifconfig.me để nhận lại chuỗi địa chỉ IP của thiết bị
-  # && echo "": Xuống dòng để giao diện Terminal đẹp mắt hơn sau khi nhận kết quả
-  # Thiết lập timeout 5 giây để tránh treo terminal khi mất mạng
+  # Silently query ifconfig.me for public IP
+  # && echo "": Print newline after IP query
+  # 5-second timeout to avoid terminal hang
   curl -sS --max-time 5 https://ifconfig.me && echo ""
 }
 
-# [5] portkill: Giải phóng một cổng mạng đang bị chiếm dụng bằng cách tìm PID của tiến trình sử dụng và tắt (kill) nó đi.
-# -> Cách dùng: portkill <số_cổng_mạng>
-# -> Ví dụ: portkill 3000
+# [5] portkill: Free network port by terminating listening process.
+# -> Usage: portkill <port_number>
+# -> Example: portkill 3000
 function portkill() {
-  # Kiểm tra xem người dùng đã nhập số cổng mạng cần giải phóng chưa
+  # Check if port number was provided
   if [ -z "$1" ]; then
     print -P "%F{yellow}[WARN]%f Error: Port number required! (Usage: portkill <port_number>)"
     return 1
   fi
-  # lsof -t -i:"$1": Trả về duy nhất ID tiến trình (PID) đang lắng nghe trên cổng truyền vào
+  # Query PID listening on port
   local pid=$(lsof -t -i:"$1")
   if [ -n "$pid" ]; then
     print -P "%F{blue}[INFO]%f Requesting termination (SIGTERM) for PID $pid on port $1..."
     kill $pid 2>/dev/null
     
-    # Chờ 0.5 giây kiểm tra xem tiến trình đã tắt hẳn chưa
+    # Wait 0.5s to verify termination
     sleep 0.5
     if kill -0 $pid 2>/dev/null; then
       print -P "%F{yellow}[WARN]%f Process did not stop. Force killing (SIGKILL)..."
@@ -442,241 +442,241 @@ function portkill() {
   fi
 }
 
-# [6] glog: Tìm kiếm chi tiết lịch sử Git commit theo từ khóa trong tin nhắn commit (commit message).
-# -> Cách dùng: glog "<từ_khóa>"
-# -> Ví dụ: glog "sửa lỗi thanh toán"
+# [6] glog: Search Git commit log by keyword.
+# -> Usage: glog "<query>"
+# -> Example: glog "fix auth"
 function glog() {
-  # Kiểm tra tham số từ khóa đầu vào
+  # Validate search query parameter
   if [ -z "$1" ]; then
     print -P "%F{yellow}[WARN]%f Error: Search term required! (Usage: glog \"search query\")"
     return 1
   fi
-  # Kiểm tra xem có ở trong Git repository không trước khi chạy lệnh
+  # Verify inside Git repository
   if ! git rev-parse --is-inside-work-tree >/dev/null 2>&1; then
     print -P "%F{red}[ERROR]%f Error: Current directory is not a Git repository!"
     return 1
   fi
-  # git log --all: Tìm trên tất cả các nhánh
-  # --grep="$1": Lọc ra những commit có tin nhắn chứa từ khóa
-  # --oneline: Định dạng kết quả hiển thị ngắn gọn trên một dòng gồm (mã hash commit + nội dung tin nhắn)
+  # git log --all: Search across all branches
+  # --grep="$1": Filter commits matching query
+  # --oneline: One-line concise format (hash + message)
   git log --all --grep="$1" --oneline
 }
 
-# [7] server: Khởi động máy chủ Web Server tĩnh nhanh tại thư mục hiện tại để phục vụ việc kiểm thử các trang web tĩnh (HTML, CSS, JS).
-# -> Cách dùng: server [số_cổng_tùy_chọn] (Mặc định sẽ lấy cổng 8000 nếu không truyền)
-# -> Ví dụ: server 9000
+# [7] server: Instant static HTTP server for local web development.
+# -> Usage: server [port] (defaults to 8000)
+# -> Example: server 9000
 function server() {
-  # Gán biến port bằng tham số thứ nhất truyền vào ($1). Nếu trống, mặc định lấy cổng 8000
+  # Assign port argument or default to 8000
   local port="${1:-8000}"
   
-  # Cách 1: Nếu hệ thống có cài đặt Python 3, dùng module http.server của Python 3 để chạy server
+  # Option 1: Use Python 3 http.server module
   if (( $+commands[python3] )); then
     print -P "%F{green}[OK]%f HTTP Server started (Python 3) at: http://localhost:$port"
     python3 -m http.server "$port"
     
-  # Cách 2: Nếu chỉ có Python 2, dùng SimpleHTTPServer để chạy server
+  # Option 2: Fallback to Python 2 SimpleHTTPServer
   elif (( $+commands[python] )); then
     print -P "%F{green}[OK]%f HTTP Server started (Python) at: http://localhost:$port"
     python -m SimpleHTTPServer "$port"
     
-  # Cách 3: Nếu có pnpm (NodeJS), dùng thư viện http-server tải nhanh và chạy trực tiếp
+  # Option 3: Fallback to Node.js http-server
   elif (( $+commands[pnpm] )); then
     print -P "%F{green}[OK]%f HTTP Server started (Node http-server) at: http://localhost:$port"
     pnpm dlx http-server -p "$port"
     
-  # Nếu không có công cụ nào ở trên, báo lỗi yêu cầu cài đặt
+  # Error if neither Python nor Node is installed
   else
     print -P "%F{red}[ERROR]%f Error: Neither Python nor Node is installed to start a server."
     return 1
   fi
 }
 
-# [8] backup: Tạo nhanh một bản sao lưu an toàn cho file hoặc thư mục chỉ định bằng cách nhân bản nó với phần đuôi .bak hoặc _bak.
-# -> Cách dùng: backup <tên_tệp_hoặc_thư_mục>
-# -> Ví dụ: backup config.json (Sẽ tạo ra file config.bak)
+# [8] backup: Create safe backup copy of target file or folder.
+# -> Usage: backup <file_or_directory>
+# -> Example: backup config.json (creates config.bak)
 function backup() {
-  # Kiểm tra tham số tên tệp/thư mục đầu vào
+  # Validate target parameter
   if [ -z "$1" ]; then
     print -P "%F{yellow}[WARN]%f Error: Target file or directory path required!"
     return 1
   fi
   
   local filename="$1"
-  # Tách đuôi mở rộng cũ và đổi thành đuôi .bak (Ví dụ: database.db thành database.bak)
+  # Replace extension with .bak
   local backup_name="${filename%.*}.bak"
   
-  # Nếu đối tượng cần sao lưu là một thư mục (-d), chuyển tên bản sao thành dạng: tên_thư_mục_bak
+  # Format folder backup name as <dirname>_bak
   if [ -d "$filename" ]; then
     backup_name="${filename}_bak"
   fi
   
-  # cp -r: Sao chép đệ quy cả tệp và thư mục con sang vị trí mới
+  # cp -r: Copy recursively preserving folder contents
   cp -r "$filename" "$backup_name"
   print -P "%F{green}[OK]%f Backup created successfully: '$filename' -> '$backup_name'"
 }
 
-# [9] mkfile: Tạo một tệp tin mới bất kỳ và tự động tạo toàn bộ các thư mục cha nếu chưa tồn tại.
-# -> Cách dùng: mkfile <đường_dẫn_tệp_cần_tạo>
-# -> Ví dụ: mkfile app/components/modals/LoginModal.tsx
+# [9] mkfile: Create new file with automatic parent directories.
+# -> Usage: mkfile <path>
+# -> Example: mkfile app/components/modals/LoginModal.tsx
 function mkfile() {
-  # Kiểm tra xem người dùng đã nhập đường dẫn tệp tin cần tạo chưa
+  # Validate target file path
   if [ -z "$1" ]; then
     print -P "%F{yellow}[WARN]%f Error: File path required!"
     return 1
   fi
-  # dirname "$1": Lấy ra đường dẫn thư mục chứa tệp tin đó (Ví dụ: app/components/modals/)
-  # mkdir -p: Tạo toàn bộ cây thư mục đó nếu chưa có sẵn
-  # && touch "$1": Sau khi tạo thư mục cha xong, tạo tệp tin trống bằng lệnh touch
+  # Extract parent directory path
+  # mkdir -p: Create parent directories if missing
+  # && touch "$1": Create empty file inside directory
   mkdir -p "$(dirname "$1")" && touch "$1"
 }
 
-# [10] dirsize: Liệt kê chi tiết dung lượng của các tệp & thư mục con hiện tại, sắp xếp theo thứ tự giảm dần.
-# -> Cách dùng: dirsize
+# [10] dirsize: List sizes of files and subfolders in current directory sorted descending.
+# -> Usage: dirsize
 function dirsize() {
   print -P "%F{blue}[INFO]%f Calculating directory and file sizes..."
-  # du -sh *: Đo kích thước của tất cả file/thư mục trong thư mục hiện tại dưới định dạng dễ đọc (-h) và tổng hợp (-s)
-  # Sử dụng 'command du' để tránh bị đè bởi các alias du='dust' hoặc du='ncdu'
-  # 2>/dev/null: Bỏ qua các cảnh báo lỗi phân quyền khi truy cập một số file hệ thống
-  # sort -hr: Sắp xếp kết quả theo dung lượng số học giảm dần (-h cho dung lượng dễ đọc, -r đảo ngược từ lớn đến bé)
+  # du -sh *: Measure human-readable size of all items in current dir
+  # Use 'command du' to bypass aliases
+  # 2>/dev/null: Suppress permission errors on system files
+  # sort -hr: Sort sizes in descending order
   command du -sh * 2>/dev/null | sort -hr
 }
 
-# [11] f: Bộ công cụ tìm kiếm tối thượng (Ultimate Search Tool)
-# Tích hợp tìm kiếm: Thư mục (cd), Tệp tin (open), Nội dung tệp (ripgrep), Lịch sử lệnh (history), Tiến trình (kill).
+# [11] f: Ultimate Interactive Search Hub
+# Modes: Directories (cd), Files (open), Content (ripgrep), History (search & insert), Process (kill).
 function f() {
-  local mode="$1"             # Gán biến mode bằng tham số thứ nhất truyền vào (chế độ tìm kiếm)
-  local start_path="${2:-.}"  # Gán biến start_path bằng tham số thứ hai (đường dẫn bắt đầu), mặc định là thư mục hiện tại (.)
+  local mode="$1"             # Search mode flag ($1)
+  local start_path="${2:-.}"  # Start directory path ($2), defaults to current directory (.)
 
-  # Đồng bộ icon với Zsh theme (sử dụng các biến toàn cục nếu có, kèm fallback)
-  local i_dir="${I_DIR:-}"         # Biểu tượng thư mục
-  local i_file="${I_FILE:-󰈙}"        # Biểu tượng tệp tin
-  local i_search="${I_SEARCH:-}"    # Biểu tượng tìm kiếm
-  local i_history="${I_HISTORY:-}"  # Biểu tượng lịch sử
-  local i_jobs="${I_JOBS:-}"        # Biểu tượng tiến trình ngầm
+  # Nerd Font icons matching active Zsh theme
+  local i_dir="${I_DIR:-}"         # Directory icon
+  local i_file="${I_FILE:-󰈙}"        # File icon
+  local i_search="${I_SEARCH:-}"    # Search icon
+  local i_history="${I_HISTORY:-}"  # History icon
+  local i_jobs="${I_JOBS:-}"        # Background jobs icon
 
-  # Xác định câu lệnh fd khả dụng (fdfind trên Debian/Ubuntu, fd trên macOS/Arch)
-  local fd_cmd=""             # Biến lưu tên câu lệnh tìm kiếm tệp/thư mục
+  # Discover available fd binary (fd on Arch/macOS, fdfind on Debian/Ubuntu)
+  local fd_cmd=""             # Variable for fd binary name
   if (( $+commands[fd] )); then
-    fd_cmd="fd"               # Dùng lệnh fd nếu hệ thống có sẵn
+    fd_cmd="fd"               # Use fd binary if available
   elif (( $+commands[fdfind] )); then
-    fd_cmd="fdfind"           # Dùng lệnh fdfind (phổ biến trên Debian/Ubuntu)
+    fd_cmd="fdfind"           # Use fdfind binary on Debian/Ubuntu
   else
-    rehash                    # Cập nhật lại danh sách lệnh trong PATH
+    rehash                    # Refresh binary cache in PATH
     if (( $+commands[fd] )); then
-      fd_cmd="fd"             # Thử tìm lại lệnh fd
+      fd_cmd="fd"             # Retry fd binary
     elif (( $+commands[fdfind] )); then
-      fd_cmd="fdfind"         # Thử tìm lại lệnh fdfind
+      fd_cmd="fdfind"         # Retry fd binaryfind
     fi
   fi
 
-  # Xác định câu lệnh bat khả dụng (hỗ trợ hiển thị nội dung tệp tin định dạng màu sắc)
-  local bat_cmd=""            # Biến lưu tên câu lệnh bat/batcat
+  # Discover available bat binary (syntax-highlighted pager)
+  local bat_cmd=""            # Variable for bat binary name
   if (( $+commands[bat] )); then
-    bat_cmd="bat"             # Dùng lệnh bat nếu có sẵn
+    bat_cmd="bat"             # Use bat if available
   elif (( $+commands[batcat] )); then
-    bat_cmd="batcat"         # Dùng lệnh batcat (trên Debian/Ubuntu)
+    bat_cmd="batcat"         # Use batcat on Debian/Ubuntu
   fi
 
-  # Định hình giao diện FZF cao cấp (Cyber Pastel Theme matching prompt HUD)
-  local -a fzf_style          # Mảng chứa các cấu hình giao diện FZF
+  # FZF Cyberpunk Theme Styling matching HUD prompt
+  local -a fzf_style          # Array of FZF styling options
   fzf_style=(
-    --height="80%"            # Chiều cao khung tìm kiếm chiếm 80% cửa sổ terminal
-    --layout="reverse"        # Đảo ngược giao diện (thanh tìm kiếm nằm ở trên cùng)
-    --border="rounded"        # Viền khung bo góc tròn hiện đại
-    --margin="1"              # Căn lề ngoài 1 dòng
-    --padding="1"             # Khoảng đệm trong khung 1 dòng
-    --info="inline-right"     # Hiển thị số dòng khớp nằm gọn ở hàng tìm kiếm bên phải
-    --color="fg:#FFCCFF,bg:-1,hl:#00FFDD,fg+:#00FFDD,bg+:#282a36,hl+:#00FFDD"  # Cấu hình màu chữ, nền Dracula và từ khóa khớp
-    --color="info:#585b70,prompt:#00FFDD,pointer:#00FFDD,marker:#FF6070,spinner:#00FFDD,header:#585b70"  # Màu các thành phần giao diện chỉ dẫn
-    --color="border:#00FFDD,label:#00FFDD"  # Màu viền và nhãn tiêu đề là xanh neon
+    --height="80%"            # 80% terminal window height
+    --layout="reverse"        # Reverse layout (search prompt at top)
+    --border="rounded"        # Rounded border geometry
+    --margin="1"              # 1-line margin
+    --padding="1"             # 1-line padding
+    --info="inline-right"     # Inline-right match count display
+    --color="fg:#FFCCFF,bg:-1,hl:#00FFDD,fg+:#00FFDD,bg+:#282a36,hl+:#00FFDD"  # Foreground, background, and highlight colors
+    --color="info:#585b70,prompt:#00FFDD,pointer:#00FFDD,marker:#FF6070,spinner:#00FFDD,header:#585b70"  # Pointers, spinners, and info colors
+    --color="border:#00FFDD,label:#00FFDD"  # Border and label colors
   )
 
   # Helper to open files in default editor (micro falling back to nano)
-  # Hàm phụ giúp mở các tệp tin được chọn bằng editor mặc định
+  # Helper: Open selected files in preferred editor
   _f_open_files() {
-    local files               # Khai báo biến cục bộ lưu danh sách tệp tin
-    files=(${(f)1})           # Tách chuỗi danh sách tệp thành mảng dựa theo ký tự xuống dòng
+    local files               # Local array for selected files
+    files=(${(f)1})           # Split newline-delimited file list into array
 
     if [[ ${#files} -eq 0 ]]; then
-      return                  # Nếu không có tệp nào được chọn thì kết thúc hàm
+      return                  # Return if selection is empty
     fi
 
-    local editor="${EDITOR:-${VISUAL:-}}" # Lấy editor mặc định từ biến môi trường
+    local editor="${EDITOR:-${VISUAL:-}}" # Resolve default editor from environment
     if [[ -z "$editor" ]]; then
       if (( $+commands[micro] )); then
-        editor="micro"        # Dùng micro nếu có sẵn và EDITOR chưa đặt
+        editor="micro"        # Use micro if EDITOR is unset
       elif (( $+commands[nano] )); then
-        editor="nano"         # Dùng nano làm phương án dự phòng tiếp theo
+        editor="nano"         # Fallback to nano
       else
-        editor="vi"           # Cuối cùng mặc định dùng trình soạn thảo vi
+        editor="vi"           # Ultimate fallback to vi
       fi
     fi
 
     # Ensure editor exists
-    # Đảm bảo lệnh editor thực sự tồn tại trong hệ thống trước khi gọi
+    # Validate editor executable existence
     if ! (( $+commands[$editor] )) && [[ "$editor" != "vi" && "$editor" != "nano" ]]; then
       if (( $+commands[micro] )); then
-        editor="micro"        # Fallback về micro nếu editor chỉ định bị thiếu
+        editor="micro"        # Fallback to micro if configured editor is missing
       else
-        editor="nano"         # Fallback về nano nếu micro cũng không có
+        editor="nano"         # Fallback to nano if micro is unavailable
       fi
     fi
 
-    $editor "${files[@]}"     # Khởi chạy trình soạn thảo để mở toàn bộ tệp được chọn
+    $editor "${files[@]}"     # Launch editor to open all selected files
   }
 
   # Helper to open a file in default editor at a specific line number
-  # Hàm phụ giúp mở tệp tin và nhảy trực tiếp đến một số dòng cụ thể
+  # Helper: Open file jumping directly to specific line number
   _f_open_in_editor() {
-    local file="$1"           # Tham số 1: Đường dẫn tệp tin cần mở
-    local line="${2:-}"       # Tham số 2: Số dòng cần nhảy tới (mặc định để trống)
+    local file="$1"           # Arg 1: File path to open
+    local line="${2:-}"       # Arg 2: Target line number (optional)
 
-    local editor="${EDITOR:-${VISUAL:-}}" # Lấy trình soạn thảo mặc định của hệ thống
+    local editor="${EDITOR:-${VISUAL:-}}" # Resolve system default editor
     if [[ -z "$editor" ]]; then
       if (( $+commands[micro] )); then
-        editor="micro"        # Fallback về micro nếu chưa cấu hình EDITOR
+        editor="micro"        # Fallback to micro if EDITOR is unset
       elif (( $+commands[nano] )); then
-        editor="nano"         # Fallback về nano
+        editor="nano"         # Fallback to nano
       else
-        editor="vi"           # Mặc định cuối cùng là vi
+        editor="vi"           # Ultimate fallback to vi
       fi
     fi
 
-    # Đảm bảo trình soạn thảo được chọn có thể chạy được trên máy
+    # Validate selected editor availability
     if ! (( $+commands[$editor] )) && [[ "$editor" != "vi" && "$editor" != "nano" ]]; then
       if (( $+commands[micro] )); then
-        editor="micro"        # Fallback về micro
+        editor="micro"        # Fallback to micro
       else
-        editor="nano"         # Fallback về nano
+        editor="nano"         # Fallback to nano
       fi
     fi
 
     if [[ -n "$line" ]]; then
       case "$editor" in
         micro)
-          micro "$file:$line" # Đối với micro, mở tệp theo định dạng path:line
+          micro "$file:$line" # For micro: open formatted as file:line
           ;;
         nano)
-          nano +"$line" "$file" # Đối với nano, truyền tham số +dòng trước tệp
+          nano +"$line" "$file" # For nano: open formatted with +line
           ;;
         *)
-          $editor "$file"     # Các editor khác thì mở file bình thường
+          $editor "$file"     # Standard open for other editors
           ;;
       esac
     else
-      $editor "$file"         # Nếu không truyền số dòng, mở tệp tin như bình thường
+      $editor "$file"         # Open file normally without line number
     fi
   }
 
-  # 1. Hàm con: Chọn thư mục và cd (Hỗ trợ phím mũi tên Trái/Phải để chuyển cấp thư mục như Yazi)
+  # Sub-function: Directory browser (Navigate with Left/Right arrows)
   _f_mode_dir() {
     if [[ -z "$fd_cmd" ]]; then
-      print -P "%F{red}[ERROR]%f Error: 'fd' / 'fd-find' is required for this feature." # Báo lỗi nếu thiếu công cụ tìm kiếm
-      return 1                # Dừng hàm và trả về lỗi
+      print -P "%F{red}[ERROR]%f Error: 'fd' / 'fd-find' is required for this feature." # Error if fd is missing
+      return 1                # Return error code 1
     fi
-    local current_dir=$(realpath "${1:-.}") # Lấy đường dẫn tuyệt đối của thư mục bắt đầu
-    while true; do            # Vòng lặp liên tục để duyệt thư mục động
-      local fzf_out           # Biến lưu kết quả trả về từ FZF
+    local current_dir=$(realpath "${1:-.}") # Get absolute path of starting directory
+    while true; do            # Loop for dynamic directory navigation
+      local fzf_out           # Variable for FZF selection result
       fzf_out=$(command $fd_cmd -t d -H -E .git -E node_modules -E .cache "" "$current_dir" 2>/dev/null | \
                 fzf "${fzf_style[@]}" \
                     --expect=left,right \
@@ -684,43 +684,43 @@ function f() {
                     --header="[Enter] CD into | [←/→] Parent / Child Directory" \
                     --preview="(eza --tree --level=2 --color=always --icons {} || tree -C -L 2 {} || ls -lhA --color=always {} || ls -F {}) 2>/dev/null | head -50" \
                     --preview-window="right:60%,border-left:<80(down:50%,border-top)")
-                    # Gọi lệnh tìm kiếm thư mục ẩn (-H), loại trừ thư mục rác (-E), hiển thị bằng FZF kèm khung preview cây thư mục con và bắt phím mũi tên trái/phải
+                    # Fuzzy directory search with tree preview and arrow keys navigation
                     
-      local exit_status=$?    # Lấy mã trạng thái thoát của FZF
+      local exit_status=$?    # Get exit status of FZF
       if [[ $exit_status -eq 130 || -z "$fzf_out" ]]; then
-        break                 # Nếu người dùng bấm ESC (mã 130) hoặc không chọn gì, thoát vòng lặp
+        break                 # Break if user pressed ESC (130) or cancelled
       fi
       
-      local key=$(echo "$fzf_out" | head -n 1)      # Dòng đầu tiên là phím chức năng được bấm (left, right hoặc trống)
-      local selected=$(echo "$fzf_out" | tail -n +2) # Dòng tiếp theo là đường dẫn thư mục được chọn
+      local key=$(echo "$fzf_out" | head -n 1)      # First line is captured key (left, right, or empty)
+      local selected=$(echo "$fzf_out" | tail -n +2) # Subsequent line is selected directory path
       
       if [[ "$key" == "left" ]]; then
-        # Mũi tên trái -> Quay lại thư mục cha
-        current_dir=$(dirname "$current_dir")        # Chuyển thư mục hiện hành lên một cấp cha
+        # Left arrow: Navigate up to parent directory
+        current_dir=$(dirname "$current_dir")        # Move up one directory level
       elif [[ "$key" == "right" ]]; then
-        # Mũi tên phải -> Đi sâu vào thư mục con đã chọn
+        # Right arrow: Drill down into selected child directory
         if [[ -n "$selected" ]]; then
-          current_dir="$selected"                   # Cập nhật thư mục hiện hành sang thư mục con được chọn
+          current_dir="$selected"                   # Update active directory path
         fi
       else
-        # Nhấn Enter -> cd vào thư mục đã chọn và kết thúc
+        # Enter: Change working directory and exit
         if [[ -n "$selected" ]]; then
-          cd "$selected"                            # Chuyển thư mục làm việc của Terminal sang thư mục đã chọn
+          cd "$selected"                            # Change shell directory to selection
         fi
-        break                                       # Thoát vòng lặp kết thúc lệnh
+        break                                       # Exit loop
       fi
     done
   }
 
-  # 2. Hàm con: Chọn tệp và mở bằng Editor (Hỗ trợ phím mũi tên Trái để quay lại thư mục cha như Yazi)
+  # Sub-function: File browser (Multi-select with Tab, Left to go up)
   _f_mode_file() {
     if [[ -z "$fd_cmd" ]]; then
-      print -P "%F{red}[ERROR]%f Error: 'fd' / 'fd-find' is required for this feature." # Báo lỗi nếu thiếu fd
-      return 1                # Dừng hàm và trả về lỗi
+      print -P "%F{red}[ERROR]%f Error: 'fd' / 'fd-find' is required for this feature." # Error if fd is missing
+      return 1                # Return error code 1
     fi
-    local current_dir=$(realpath "${1:-.}") # Lấy đường dẫn tuyệt đối của thư mục tìm kiếm
-    while true; do            # Bắt đầu vòng lặp duyệt tệp tin
-      local fzf_out           # Biến chứa dữ liệu tương tác từ FZF
+    local current_dir=$(realpath "${1:-.}") # Get absolute search directory path
+    while true; do            # Loop for dynamic file browser
+      local fzf_out           # Variable for FZF output
       fzf_out=$(command $fd_cmd -t f -H -E .git -E node_modules -E .cache "" "$current_dir" 2>/dev/null | \
                 fzf "${fzf_style[@]}" \
                     --multi \
@@ -729,36 +729,36 @@ function f() {
                     --header="[Tab] Multi-select | [Enter] Open in Editor | [←] Parent" \
                     --preview "(${bat_cmd:-cat} --style=numbers --color=always --line-range :100 {} || cat {}) 2>/dev/null | head -100" \
                     --preview-window="right:60%,border-left:<80(down:50%,border-top)")
-                    # Tìm kiếm tệp tin (-t f), hỗ trợ chọn nhiều bằng phím Tab (--multi), bắt phím mũi tên trái, xem trước 100 dòng đầu của tệp bằng bat hoặc cat
+                    # Fuzzy file search with multi-select and syntax preview
                     
-      local exit_status=$?    # Lưu mã thoát từ FZF
+      local exit_status=$?    # Capture FZF exit status
       if [[ $exit_status -eq 130 || -z "$fzf_out" ]]; then
-        break                 # Thoát nếu nhấn ESC (130) hoặc kết quả rỗng
+        break                 # Break on ESC (130) or empty selection
       fi
       
-      local key=$(echo "$fzf_out" | head -n 1)      # Lấy dòng đầu tiên lưu phím chức năng bắt được
-      local selected=$(echo "$fzf_out" | tail -n +2) # Lấy danh sách đường dẫn các file được chọn
+      local key=$(echo "$fzf_out" | head -n 1)      # Extract captured function key
+      local selected=$(echo "$fzf_out" | tail -n +2) # Extract selected file paths
       
       if [[ "$key" == "left" ]]; then
-        # Mũi tên trái -> Quay lại thư mục cha
-        current_dir=$(dirname "$current_dir")        # Lùi thư mục tìm kiếm lên cấp cha
+        # Left arrow: Navigate up to parent directory
+        current_dir=$(dirname "$current_dir")        # Move search path up one level
       else
-        # Nhấn Enter -> Mở tệp bằng mặc định
-        _f_open_files "$selected"                   # Mở danh sách các tệp tin đã chọn bằng editor mặc định
-        break                                       # Thoát vòng lặp
+        # Enter: Open selected files in editor
+        _f_open_files "$selected"                   # Open selected files in editor
+        break                                       # Exit loop
       fi
     done
   }
 
-  # 3. Hàm con: Tìm nội dung trong tệp (Live Ripgrep) và mở tại dòng tương ứng
+  # Sub-function: Live Ripgrep content search (Opens editor at matched line)
   _f_mode_content() {
     if ! (( $+commands[rg] )); then
-      print -P "%F{red}[ERROR]%f Error: 'ripgrep' (rg) is required for this feature." # Báo lỗi nếu thiếu lệnh rg
-      return 1                # Dừng hàm và trả về lỗi
+      print -P "%F{red}[ERROR]%f Error: 'ripgrep' (rg) is required for this feature." # Error if ripgrep is missing
+      return 1                # Return error code 1
     fi
     
-    local search_path="${1:-.}" # Lấy đường dẫn cần tìm kiếm, mặc định là thư mục hiện hành (.)
-    local result              # Biến lưu kết quả dòng được chọn từ FZF
+    local search_path="${1:-.}" # Get search target path (defaults to .)
+    local result              # Variable for selected line result
     
     result=$(FZF_DEFAULT_COMMAND="rg --column --line-number --no-heading --color=always --smart-case '' \"$search_path\"" \
       fzf "${fzf_style[@]}" \
@@ -770,32 +770,32 @@ function f() {
           --bind "change:reload(rg --column --line-number --no-heading --color=always --smart-case {q} \"$search_path\" || true)" \
           --preview "(${bat_cmd:-cat} --style=numbers --color=always --highlight-line {2} {1} 2>/dev/null || cat {1} 2>/dev/null)" \
           --preview-window="right:60%,border-left:<80(down:50%,border-top),+{2}-/2")
-          # Live tìm kiếm bằng cách liên kết sự kiện thay đổi ký tự để chạy lại lệnh rg, hiển thị tệp tin và highlight dòng khớp ở khung bên phải
+          # Live ripgrep search with real-time match preview
           
     if [[ -n "$result" ]]; then
-      local file=$(echo "$result" | cut -d':' -f1) # Trích xuất đường dẫn tệp tin từ kết quả (phần trước dấu hai chấm thứ 1)
-      local line=$(echo "$result" | cut -d':' -f2) # Trích xuất số dòng từ kết quả (phần nằm giữa hai dấu hai chấm)
-      _f_open_in_editor "$file" "$line"           # Mở tệp tin bằng editor và nhảy thẳng tới dòng tương ứng
+      local file=$(echo "$result" | cut -d':' -f1) # Extract file path from line result
+      local line=$(echo "$result" | cut -d':' -f2) # Extract line number from result
+      _f_open_in_editor "$file" "$line"           # Open file in editor jumping to line
     fi
   }
 
-  # 4. Hàm con: Tìm lịch sử lệnh và dán vào dòng lệnh (Deduplicated)
+  # Sub-function: Fuzzy history picker (Deduplicated)
   _f_mode_history() {
-    local cmd                 # Biến lưu câu lệnh được chọn từ lịch sử
+    local cmd                 # Variable for selected history command
     cmd=$(fc -rln 1 2>/dev/null | awk '!seen[$0]++' | fzf "${fzf_style[@]}" \
           --prompt="$i_history  Command History > " \
           --header="[Enter] Paste command to terminal" \
           --preview="echo {}" \
           --preview-window="down:3:wrap")
-          # Đọc lịch sử Zsh từ đầu (fc -rln 1), loại bỏ lệnh trùng lặp bằng awk, cho phép tìm kiếm qua FZF
+          # Read deduplicated Zsh history for FZF search
     if [[ -n "$cmd" ]]; then
-      print -z "$cmd"         # Dán câu lệnh được chọn trực tiếp vào dòng soạn thảo lệnh của terminal (con trỏ chờ chạy)
+      print -z "$cmd"         # Paste selected command into terminal prompt
     fi
   }
 
-  # 5. Hàm con: Tìm tiến trình đang chạy và kill với các tín hiệu khác nhau
+  # Sub-function: Interactive process manager & killer
   _f_mode_process() {
-    local ps_line             # Biến lưu thông tin dòng tiến trình được chọn
+    local ps_line             # Variable for selected process line
     ps_line=$(ps -ef | fzf "${fzf_style[@]}" \
       --header="[Enter] SIGTERM (Graceful Kill) | [Ctrl-X] SIGKILL (Force Kill) | [Ctrl-R] Reload" \
       --prompt="$i_jobs  Kill Process > " \
@@ -803,53 +803,53 @@ function f() {
       --preview-window="down:5:wrap" \
       --expect=ctrl-x \
       --bind="ctrl-r:reload(ps -ef)")
-      # Liệt kê tiến trình hệ thống, cho phép xem trước thông số chi tiết tiến trình (CPU, RAM, command) và bắt phím Ctrl-X
+      # List processes with live resource preview
       
     if [[ -n "$ps_line" ]]; then
-      local key=$(echo "$ps_line" | head -n 1)      # Phím chức năng được nhấn (ctrl-x nếu có)
-      local selected=$(echo "$ps_line" | tail -n +2) # Dòng thông tin tiến trình được chọn
+      local key=$(echo "$ps_line" | head -n 1)      # Captured key (ctrl-x if pressed)
+      local selected=$(echo "$ps_line" | tail -n +2) # Selected process info line
       
       if [[ -n "$selected" ]]; then
-        local pid=$(echo "$selected" | awk '{print $2}') # Trích xuất ID tiến trình (PID) từ cột thứ hai
+        local pid=$(echo "$selected" | awk '{print $2}') # Extract PID from second column
         if [[ -n "$pid" ]]; then
-          local sig="15"                              # Mặc định là tín hiệu 15 (SIGTERM - Dừng lịch sự)
-          local sig_name="SIGTERM (Graceful Terminate)"     # Tên của tín hiệu hiển thị cảnh báo
+          local sig="15"                              # Default to SIGTERM (15 - Graceful)
+          local sig_name="SIGTERM (Graceful Terminate)"     # Signal label for confirmation
           if [[ "$key" == "ctrl-x" ]]; then
-            sig="9"                                   # Nếu bấm Ctrl-X, dùng tín hiệu 9 (SIGKILL - Buộc dừng ngay)
-            sig_name="SIGKILL (Buộc dừng ngay)"
+            sig="9"                                   # If Ctrl-X pressed, use SIGKILL (9 - Force Kill)
+            sig_name="SIGKILL (Force kill processes matching name
           fi
           
-          print -P "%F{yellow}[WARN]%f Are you sure you want to send $sig_name to PID $pid? (y/N)" # Hỏi lại người dùng trước khi kill
-          read -q "confirm?"                          # Đọc một ký tự xác nhận
-          echo ""                                     # Xuống dòng cho đẹp
+          print -P "%F{yellow}[WARN]%f Are you sure you want to send $sig_name to PID $pid? (y/N)" # Confirm kill action with user
+          read -q "confirm?"                          # Read confirmation character
+          echo ""                                     # Print newline
           if [[ "$confirm" == "y" || "$confirm" == "Y" ]]; then
             kill -$sig "$pid" && print -P "%F{green}[OK]%f Process PID $pid terminated successfully." || print -P "%F{red}[ERROR]%f Failed to terminate process PID $pid."
-            # Thực hiện lệnh kill tiến trình và thông báo kết quả tương ứng
+            # Execute kill command and report result
           fi
         fi
       fi
     fi
   }
 
-  # Xử lý các tham số dòng lệnh đầu vào để kích hoạt chế độ tương ứng
+  # Handle CLI flags or launch interactive menu
   case "$mode" in
     -d|d|cd)
-      _f_mode_dir "$start_path"       # Chế độ tìm & cd thư mục
+      _f_mode_dir "$start_path"       # Directory cd mode
       ;;
     -f|f|file|open)
-      _f_mode_file "$start_path"      # Chế độ tìm & mở tệp tin
+      _f_mode_file "$start_path"      # File open mode
       ;;
     -c|c|content|rg)
-      _f_mode_content "$start_path"   # Chế độ tìm nội dung trong tệp
+      _f_mode_content "$start_path"   # Live ripgrep content search mode
       ;;
     -h|h|history)
-      _f_mode_history                 # Chế độ tra lịch sử lệnh
+      _f_mode_history                 # History search mode
       ;;
     -p|p|process|kill)
-      _f_mode_process                 # Chế độ quản lý & tắt tiến trình
+      _f_mode_process                 # Process manager mode
       ;;
     --help|help)
-      # Hiển thị bảng hướng dẫn sử dụng chi tiết bằng chữ màu Cyber Pastel
+      # Display detailed help manual
       print -P "%F{#00f5d4}⌨️  Ultimate Interactive Search & Action Hub (f)%f"
       print -P "Usage: %F{#eafbfa}f [mode] [path]%f"
       print -P "Available Modes:"
@@ -861,31 +861,31 @@ function f() {
       print -P "If called without arguments, an interactive FZF menu is displayed."
       ;;
     *)
-      # Nếu truyền tham số không khớp, hoặc không truyền, hiển thị menu lựa chọn nhanh bằng FZF
+      # Interactive menu selection fallback
       if ! (( $+commands[fzf] )); then
-        print -P "%F{red}[ERROR]%f Error: 'fzf' is not installed on this system!" # Báo lỗi thiếu fzf
+        print -P "%F{red}[ERROR]%f Error: 'fzf' is not installed on this system!" # Error if fzf is missing
         return 1
       fi
       
-      local choice                    # Biến chứa dòng lựa chọn từ menu FZF
+      local choice                    # Variable for menu choice
       choice=$(echo -e "$i_dir 1. Directories (cd)\n$i_file 2. Files (open in editor)\n$i_search 3. Content Search (live ripgrep)\n$i_history 4. Command History (search & insert)\n$i_jobs 5. Process Manager (kill)" | \
                fzf "${fzf_style[@]}" \
                    --prompt="$i_search  Select Search Mode > " \
                    --header="Use arrow keys and [Enter] to choose mode" \
-                   --height=15)       # Hiển thị danh sách 5 chế độ kèm icon động thông minh
+                   --height=15)       # Display 5-mode interactive selection menu
                
       case "$choice" in
-        *1.*) _f_mode_dir "$mode" ;;   # Kích hoạt chế độ tìm thư mục
-        *2.*) _f_mode_file "$mode" ;;  # Kích hoạt chế độ tìm tệp tin
-        *3.*) _f_mode_content "$mode" ;; # Kích hoạt chế độ tìm kiếm nội dung
-        *4.*) _f_mode_history ;;       # Kích hoạt chế độ tra lịch sử
-        *5.*) _f_mode_process ;;       # Kích hoạt chế độ tắt tiến trình
+        *1.*) _f_mode_dir "$mode" ;;   # Activate directory mode
+        *2.*) _f_mode_file "$mode" ;;  # Activate file mode
+        *3.*) _f_mode_content "$mode" ;; # Activate content search mode
+        *4.*) _f_mode_history ;;       # Activate history mode
+        *5.*) _f_mode_process ;;       # Activate process manager mode
       esac
       ;;
   esac
 }
 
-# Đặt alias fd và f trỏ về hàm tìm kiếm tối thượng f
+# Alias fd and f to interactive search hub
 alias fd='f -d'
 alias f='f'
 
@@ -920,48 +920,48 @@ alias f='f'
 # 🎨 ZSH THEME: CYBER PASTEL HUD (TRUE BRAND COLORS)
 # =========================================================================
 
-# --- 1. SETTINGS (CẤU HÌNH THEME CƠ BẢN) ---
-setopt PROMPT_SUBST        # Cho phép mở rộng (chạy động) các biến và hàm bên trong chuỗi khai báo PROMPT
-setopt TRANSIENT_RPROMPT   # Làm cho phần Prompt bên phải (RPROMPT) biến mất sau khi bạn nhấn Enter chạy lệnh (tránh bị rối mắt khi cuộn xem lại lịch sử)
-autoload -Uz vcs_info      # Tải module quản lý hệ thống phiên bản (để tích hợp hiển thị trạng thái Git)
-zmodload zsh/datetime      # Nạp thư viện quản lý ngày giờ hệ thống để tính toán thời gian chạy lệnh
+# --- 1. Core Theme Settings ---
+setopt PROMPT_SUBST        # Enable dynamic parameter expansion in PROMPT
+setopt TRANSIENT_RPROMPT   # Clear RPROMPT on enter to keep history clean
+autoload -Uz vcs_info      # Load VCS info module for Git integration
+zmodload zsh/datetime      # Load datetime module for sub-millisecond execution timing
 
-# Kiểu Prompt: "classic" (Prompt thanh lịch dạng text-only cũ) hoặc "powerline" (Oh My Posh pill capsules inside borders)
+# Prompt style: "powerline" (Pills & gradients) | "classic" (Minimal HUD)
 ZSH_PROMPT_STYLE="powerline"
 
-# Kiểu hình dáng Capsule: "round" (bo tròn), "slant" (vát nghiêng), "slant2" (vát ngược), "pointed" (mũi tên nhọn), "pixel" (kỹ thuật số retro), "fire" (ngọn lửa), "square" (hình vuông)
+# Capsule shape: "round" (rounded), "slant", "slant2", "pointed", "pixel", "fire", "square"
 ZSH_PROMPT_SHAPE="round"
 
-# Danh sách các ký tự double-width được hỗ trợ để căn chỉnh lề phải chính xác
+# List of double-width Nerd Font characters for precise right-alignment calculation
 ZSH_HUD_WIDE_CHARS="󰣇󰍛󰖩󰤨󰤥󰤢󰤟󰖪󰒸󱃾󱁢󰁹󰂄󰂂󰂁󰂀󰁿󰁾󰁽󰁼󰁻󰁺󰫣󰵮󰡵󰊚󰡴󰤮󰂅󰂋󰂊󰢞󰂉󰢝󰂈󰂇󰂆󰢜󱦟󰌠󱑖󱑋󱑌󱑍󱑎󱑏󱑐󱑑󱑒󱑓󱑔󱑕󰒋░▒▓"
 
-# Cấu hình font chữ: đặt "true" nếu dùng font Nerd Font Mono (icon đơn), hoặc "false" nếu dùng Nerd Font thường (icon đôi)
+# Font configuration: "true" for Nerd Font Mono (width 1), "false" for double-width icons
 ZSH_HUD_NERD_MONO="true"
-_RESIZE_ACTIVE="0"                # Cờ trạng thái co giãn cửa sổ: "0" = bình thường, "1" = đang kéo giãn (ẩn R_TOP để tránh vỡ dòng)
-_RESIZE_TIMER_PID=""              # Lưu PID của tiến trình đếm ngược debounce (để hủy timer cũ khi có tín hiệu resize mới)
-_RESIZE_DELAY_PID=""              # Lưu PID của tiến trình delay trước khi hiện lại R_TOP (USR2)
-export ZLE_RPROMPT_INDENT=1       # Số ký tự lùi vào của RPROMPT so với mép phải màn hình (dùng để canh thẳng hàng R_TOP với R_BOT)
+_RESIZE_ACTIVE="0"                # Window resize flag: 0 = idle, 1 = actively resizing (suppresses R_TOP to prevent tearing)
+_RESIZE_TIMER_PID=""              # PID of debounce timer process
+_RESIZE_DELAY_PID=""              # PID of recovery delay timer process
+export ZLE_RPROMPT_INDENT=1       # Right prompt indentation margin from screen border
 
-# --- 2. PALETTE (BẢNG MÀU CHỦ ĐẠO - Cyber Pastel Base) ---
-C_ACCENT="%F{#00f5d4}"    # Màu xanh Neon Cyan (Dùng cho các icon chính, mũi tên điều hướng, khung viền ngăn cách)
-C_DATA="%F{#eafbfa}"      # Màu hồng nhạt Pastel (Dùng cho nội dung văn bản dữ liệu: tên thư mục, tên user)
-C_ALERT="%F{#ff0055}"     # Màu đỏ Coral Neon (Dùng cho các cảnh báo, lỗi, hoặc khi đăng nhập quyền ROOT)
-C_DIM="%F{#7091a4}"       # Màu xám bóng ma (Dùng cho các ký tự phân cách, đường kẻ phụ)
-C_RESET="%f%k"            # Reset màu sắc nền và chữ về mặc định của Terminal tránh bị tràn màu ra ngoài lệnh gõ
+# --- 2. Core Palette Tokens (Virtual☆Paradise) ---
+C_ACCENT="%F{#00f5d4}"    # Miku Cyan: Primary accents, arrows, active halos
+C_DATA="%F{#eafbfa}"      # Mint / Crisp White: High-contrast data text
+C_ALERT="%F{#ff0055}"     # Neon Warning Red: Errors, root alerts, critical warnings
+C_DIM="%F{#7091a4}"       # Muted Slate: Subtle frame borders and separators
+C_RESET="%f%k"            # Reset ANSI foreground and background colors
 
-# --- BRAND COLORS (BẢNG MÀU CHUẨN CỦA CÁC CÔNG CỤ & NGÔN NGỮ LẬP TRÌNH) ---
-C_PY="%F{#FFD43B}"        # Màu vàng Python đặc trưng
-C_VENV="%F{#95E6CB}"      # Màu xanh ngọc Pastel cho môi trường ảo venv
-C_NODE="%F{#8CC84B}"      # Màu xanh lá thương hiệu Node.js
-C_DKR="%F{#2496ED}"       # Màu xanh dương Docker
-C_GO="%F{#00ADD8}"        # Màu xanh lơ Go Lang
-C_RUST="%F{#DEA584}"      # Màu cam gạch Rust
-C_JAVA="%F{#f89820}"      # Màu cam đậm Java
-C_PHP="%F{#777BB4}"       # Màu tím hoa oải hương PHP
-C_CPP="%F{#00599C}"       # Màu xanh thẫm C++
-C_HTML="%F{#E34F26}"      # Màu đỏ cam HTML5
-C_KUBE="%F{#326CE5}"      # Màu xanh da trời Kubernetes
-C_TF="%F{#7B42BC}"        # Màu tím đặc trưng Terraform
+# --- 3. Verified Official Brand Color Tokens ---
+C_PY="%F{#FFD43B}"        # Official Python Yellow
+C_VENV="%F{#95E6CB}"      # Python Virtualenv Mint
+C_NODE="%F{#8CC84B}"      # Official Node.js Green
+C_DKR="%F{#2496ED}"       # Official Docker Blue
+C_GO="%F{#00ADD8}"        # Official Go Lang Cyan
+C_RUST="%F{#DEA584}"      # Official Rust Terracotta
+C_JAVA="%F{#f89820}"      # Official Java Amber
+C_PHP="%F{#777BB4}"       # Official PHP Lavender
+C_CPP="%F{#00599C}"       # Official C++ Navy Blue
+C_HTML="%F{#E34F26}"      # Official HTML5 Red Orange
+C_KUBE="%F{#326CE5}"      # Official Kubernetes Blue
+C_TF="%F{#7B42BC}"        # Official Terraform Purple
 
 # --- POWERLINE / PILL SEGMENT COLORS (FOR OH MY POSH STYLE) ---
 BG_OS="#1e1e2e"
@@ -985,13 +985,13 @@ FG_GIT_DIRTY="#11111b"
 BG_TOOL="#fab387"
 FG_TOOL="#11111b"
 
-# --- 3. ICONS (ĐƯỜNG KẺ & BIỂU TƯỢNG - Yêu cầu cài Nerd Fonts để hiển thị đẹp) ---
-L_TOP="╭─"                # Ký tự bắt đầu dòng Prompt thứ nhất (Khung trên)
-L_BOT="╰─"                # Ký tự bắt đầu dòng Prompt thứ hai (Khung dưới)
-R_TOP="─╮"                # Ký tự kết thúc Prompt dòng 1 bên phải (Khung trên phải)
-R_BOT="─╯"                # Ký tự kết thúc Prompt bên phải (Khung phải)
+# --- 4. Nerd Font Icons & Box-Drawing Characters ---
+L_TOP="╭─"                # Top-left prompt frame corner
+L_BOT="╰─"                # Bottom-left prompt frame corner
+R_TOP="─╮"                # Top-right prompt frame corner
+R_BOT="─╯"                # Bottom-right prompt frame corner
 
-# Kiểm tra sự tồn tại của font JetBrainsMono Nerd Font để quyết định dùng bộ icon nào
+# Detect JetBrainsMono Nerd Font availability to select appropriate icon set
 _has_jetbrains_nerd_font=0
 if (( $+commands[fc-list] )); then
   if fc-list : family | grep -qiE "JetBrainsMono.*Nerd|JetBrains.*Mono.*Nerd|JetBrainsMonoNF" >/dev/null 2>&1; then
@@ -999,7 +999,7 @@ if (( $+commands[fc-list] )); then
   fi
 fi
 
-# Nếu chưa tìm thấy bằng fc-list (phổ biến trên WSL khi cài font trên Windows Host), kiểm tra trực tiếp trong các thư mục font của Windows
+# Fallback check for Windows host font paths on WSL
 if [[ "$_has_jetbrains_nerd_font" -eq 0 ]]; then
   local win_user_fonts=(/mnt/c/Users/*/AppData/Local/Microsoft/Windows/Fonts/JetBrains*Nerd*(N[1]))
   local win_sys_fonts=(/mnt/c/Windows/Fonts/JetBrains*Nerd*(N[1]))
@@ -1013,52 +1013,52 @@ if [[ "$FORCE_NERD_FONT" == "true" ]]; then
 fi
 
 if [[ "$_has_jetbrains_nerd_font" -eq 1 ]]; then
-  # Sử dụng bộ icon Nerd Font cao cấp
-  I_P_START=""             # Ký tự bắt đầu pill bo tròn (Oh My Posh style)
-  I_P_END=""               # Ký tự kết thúc pill bo tròn (Oh My Posh style)
-  I_SEP="󰫣"               # Icon ngăn cách giữa các module thông tin
-  I_USER=""                # Icon người dùng thông thường
-  I_SSH="󰒋"                 # Icon người dùng kết nối qua SSH
-  I_ROOT="󰵮"                # Icon quyền tối cao ROOT
-  I_DIR=""                 # Icon thư mục màu vàng
-  I_LOCK=""                # Icon ổ khóa (xuất hiện khi thư mục hiện hành ở chế độ Read-only)
-  I_GIT=""                 # Icon nhánh Git
-  I_TIME_12="󱑖"             # Icon đồng hồ chỉ 12 giờ (Nerd Font solid)
-  I_TIME_1="󱑋"              # Icon đồng hồ chỉ 1 giờ
-  I_TIME_2="󱑌"              # Icon đồng hồ chỉ 2 giờ
-  I_TIME_3="󱑍"              # Icon đồng hồ chỉ 3 giờ
-  I_TIME_4="󱑎"              # Icon đồng hồ chỉ 4 giờ
-  I_TIME_5="󱑏"              # Icon đồng hồ chỉ 5 giờ
-  I_TIME_6="󱑐"              # Icon đồng hồ chỉ 6 giờ
-  I_TIME_7="󱑑"              # Icon đồng hồ chỉ 7 giờ
-  I_TIME_8="󱑒"              # Icon đồng hồ chỉ 8 giờ
-  I_TIME_9="󱑓"              # Icon đồng hồ chỉ 9 giờ
-  I_TIME_10="󱑔"             # Icon đồng hồ chỉ 10 giờ
-  I_TIME_11="󱑕"             # Icon đồng hồ chỉ 11 giờ
-  I_HISTORY=""             # Icon lịch sử
-  I_RAM_LOW="󰡵"             # Icon RAM thấp (< 50%)
-  I_RAM_MID="󰊚"             # Icon RAM trung bình (50 - 79%)
-  I_RAM_HIGH="󰡴"            # Icon RAM cao (>= 80%)
-  I_TEMP_COLD=""           # Icon nhiệt độ thấp (< 45°C)
-  I_TEMP_WARM=""           # Icon nhiệt độ trung bình (45 - 59°C)
-  I_TEMP_HOT=""            # Icon nhiệt độ cao (60 - 74°C)
-  I_TEMP_CRIT=""           # Icon nhiệt độ nguy cấp (>= 75°C)
-  I_WIFI_FULL="󰤨"           # Icon Wi-Fi sóng đầy vạch (>= 80%)
-  I_WIFI_HIGH="󰤥"           # Icon Wi-Fi sóng 3 vạch (55 - 79%)
-  I_WIFI_MID="󰤢"            # Icon Wi-Fi sóng 2 vạch (30 - 54%)
-  I_WIFI_LOW="󰤟"            # Icon Wi-Fi sóng 1 vạch (10 - 29% hoặc yếu hơn)
-  I_WIFI_OFF="󰤮"            # Icon Wi-Fi mất kết nối
-  I_BAT_CHARGING_100="󰂅"       # Icon pin đang sạc 100%
-  I_BAT_CHARGING_90="󰂋"        # Icon pin đang sạc 90%
-  I_BAT_CHARGING_80="󰂊"        # Icon pin đang sạc 80%
-  I_BAT_CHARGING_70="󰢞"        # Icon pin đang sạc 70%
-  I_BAT_CHARGING_60="󰂉"        # Icon pin đang sạc 60%
-  I_BAT_CHARGING_50="󰢝"        # Icon pin đang sạc 50%
-  I_BAT_CHARGING_40="󰂈"        # Icon pin đang sạc 40%
-  I_BAT_CHARGING_30="󰂇"        # Icon pin đang sạc 30%
-  I_BAT_CHARGING_20="󰂆"        # Icon pin đang sạc 20%
-  I_BAT_CHARGING_0="󰢜"         # Icon pin đang sạc dưới 20%
-  I_BAT_100="󰁹"             # Icon pin đầy (95-100%)
+  # Load high-definition Nerd Font glyphs
+  I_P_START=""             # Pill opening symbol
+  I_P_END=""               # Pill closing symbol
+  I_SEP="󰫣"               # Module separator icon
+  I_USER=""                # Regular user icon
+  I_SSH="󰒋"                 # SSH remote user icon
+  I_ROOT="󰵮"                # Root administrator icon
+  I_DIR=""                 # Directory icon
+  I_LOCK=""                # Read-only locked directory icon
+  I_GIT=""                 # Git branch icon
+  I_TIME_12="󱑖"             # Clock 12:00 icon
+  I_TIME_1="󱑋"              # Clock 1:00 icon
+  I_TIME_2="󱑌"              # Clock 2:00 icon
+  I_TIME_3="󱑍"              # Clock 3:00 icon
+  I_TIME_4="󱑎"              # Clock 4:00 icon
+  I_TIME_5="󱑏"              # Clock 5:00 icon
+  I_TIME_6="󱑐"              # Clock 6:00 icon
+  I_TIME_7="󱑑"              # Clock 7:00 icon
+  I_TIME_8="󱑒"              # Clock 8:00 icon
+  I_TIME_9="󱑓"              # Clock 9:00 icon
+  I_TIME_10="󱑔"             # Clock 10:00 icon
+  I_TIME_11="󱑕"             # Clock 11:00 icon
+  I_HISTORY=""             # Command history icon
+  I_RAM_LOW="󰡵"             # Low RAM icon (< 50%)
+  I_RAM_MID="󰊚"             # Medium RAM icon (50 - 79%)
+  I_RAM_HIGH="󰡴"            # High RAM icon (>= 80%)
+  I_TEMP_COLD=""           # Cold temperature icon (< 45°C)
+  I_TEMP_WARM=""           # Warm temperature icon (45 - 59°C)
+  I_TEMP_HOT=""            # Hot temperature icon (60 - 74°C)
+  I_TEMP_CRIT=""           # Critical temperature icon (>= 75°C)
+  I_WIFI_FULL="󰤨"           # Full Wi-Fi signal (>= 80%)
+  I_WIFI_HIGH="󰤥"           # High Wi-Fi signal (55 - 79%)
+  I_WIFI_MID="󰤢"            # Medium Wi-Fi signal (30 - 54%)
+  I_WIFI_LOW="󰤟"            # Low Wi-Fi signal (10 - 29%)
+  I_WIFI_OFF="󰤮"            # Wi-Fi disconnected icon
+  I_BAT_CHARGING_100="󰂅"       # Charging battery icon (100%)
+  I_BAT_CHARGING_90="󰂋"        # Charging battery icon (90%)
+  I_BAT_CHARGING_80="󰂊"        # Charging battery icon (80%)
+  I_BAT_CHARGING_70="󰢞"        # Charging battery icon (70%)
+  I_BAT_CHARGING_60="󰂉"        # Charging battery icon (60%)
+  I_BAT_CHARGING_50="󰢝"        # Charging battery icon (50%)
+  I_BAT_CHARGING_40="󰂈"        # Charging battery icon (40%)
+  I_BAT_CHARGING_30="󰂇"        # Charging battery icon (30%)
+  I_BAT_CHARGING_20="󰂆"        # Charging battery icon (20%)
+  I_BAT_CHARGING_0="󰢜"         # Charging battery icon (<20%)
+  I_BAT_100="󰁹"             # Full battery icon (95-100%)
   I_BAT_90="󰂂"              # Icon pin 90-94%
   I_BAT_80="󰂁"              # Icon pin 80-89%
   I_BAT_70="󰂀"              # Icon pin 70-79%
@@ -1067,31 +1067,31 @@ if [[ "$_has_jetbrains_nerd_font" -eq 1 ]]; then
   I_BAT_40="󰁽"              # Icon pin 40-49%
   I_BAT_30="󰁼"              # Icon pin 30-39%
   I_BAT_20="󰁻"              # Icon pin 20-29%
-  I_BAT_0="󰁺"               # Icon pin yếu (< 20%)
-  I_EXEC="󱦟"                # Icon tia sét biểu thị thời gian thực thi lệnh
-  I_ERR=""                 # Icon tam giác cảnh báo lỗi lệnh trước chạy thất bại
-  I_JOBS=""                # Icon tiến trình đang chạy ngầm (Background jobs)
-  I_ARROW="❯"               # Ký tự mũi tên dẫn đến dòng nhập lệnh của bạn
+  I_BAT_0="󰁺"               # Low battery icon (<20%)
+  I_EXEC="󱦟"                # Command execution duration icon
+  I_ERR=""                 # Error warning icon
+  I_JOBS=""                # Background jobs icon
+  I_ARROW="❯"               # Prompt arrow symbol
   
-  I_FILE="󰈙"                # Icon file
-  I_SEARCH=""              # Icon tìm kiếm
+  I_FILE="󰈙"                # File icon
+  I_SEARCH=""              # Search icon
 
-  # Các biểu tượng đại diện cho Ngôn ngữ lập trình và Công cụ
-  I_PY=""                  # Icon Python
-  I_VENV="󰌠"                # Icon môi trường ảo Python venv (Nerd Font outline)
-  I_NODE=""                # Icon Node.js
-  I_DOCKER=""              # Icon Docker
-  I_GO=""                  # Icon Go
-  I_RUST=""                # Icon Rust
-  I_JAVA=""                # Icon Java
-  I_PHP=""                 # Icon PHP
-  I_CPP=""                 # Icon C++
-  I_HTML=""                # Icon HTML
-  I_KUBE="󱃾"                # Icon Kubernetes
-  I_TF="󱁢"                 # Icon Terraform
+  # Language and Tool identification glyphs
+  I_PY=""                  # Python icon
+  I_VENV="󰌠"                # Python virtualenv icon
+  I_NODE=""                # Node.js icon
+  I_DOCKER=""              # Docker icon
+  I_GO=""                  # Go icon
+  I_RUST=""                # Rust icon
+  I_JAVA=""                # Java icon
+  I_PHP=""                 # PHP icon
+  I_CPP=""                 # C++ icon
+  I_HTML=""                # HTML icon
+  I_KUBE="󱃾"                # Kubernetes icon
+  I_TF="󱁢"                 # Terraform icon
   
-  # Tự động nhận diện Hệ điều hành và phân phối Linux để thiết lập I_OS
-  # Bọc trong anonymous function để tránh 'local' ở top-level scope in ra giá trị biến
+  # Auto-detect Operating System and Linux distribution to configure I_OS and brand gradient
+  # Wrapped in anonymous function to prevent top-level scope pollution
   function () {
     local os_type=$(uname -s)
     if [[ "$os_type" == "Darwin" ]]; then
@@ -1103,7 +1103,7 @@ if [[ "$_has_jetbrains_nerd_font" -eq 1 ]]; then
       ZSH_HUD_OS_ID="windows"
       ZSH_HUD_OS_NAME="Windows"
     else
-      # Môi trường Linux
+      # Linux Environment
       if [[ -f /etc/os-release ]]; then
         local line os_id os_like
         while IFS= read -r line; do
@@ -1173,23 +1173,23 @@ if [[ "$_has_jetbrains_nerd_font" -eq 1 ]]; then
           ZSH_HUD_OS_ID="alpine"
           ZSH_HUD_OS_NAME="Alpine"
         else
-          I_OS=""              # Linux Tux mặc định
+          I_OS=""              # Default Linux Tux
           ZSH_HUD_OS_ID="linux"
           ZSH_HUD_OS_NAME="Linux"
         fi
       else
-        I_OS=""                # Linux Tux mặc định
+        I_OS=""                # Default Linux Tux
         ZSH_HUD_OS_ID="linux"
         ZSH_HUD_OS_NAME="Linux"
       fi
     fi
   }
 else
-  # Cấu hình fallback khi không có JetBrainsMono Nerd Font
-  ZSH_HUD_NERD_MONO="false" # Tắt tính năng bù chiều rộng vì không dùng Nerd Font
+  # Fallback ASCII glyphs when Nerd Font is absent
+  ZSH_HUD_NERD_MONO="false" # Disable double-width compensation for standard ASCII
 
-  I_P_START="["             # Fallback bắt đầu pill
-  I_P_END="]"               # Fallback kết thúc pill
+  I_P_START="["             # Pill start glyph fallback
+  I_P_END="]"               # Pill end glyph fallback
   I_SEP="|"
   I_USER="[USER]"
   I_SSH="[SSH]"
@@ -1250,7 +1250,7 @@ else
   I_FILE="[FILE]"
   I_SEARCH="[FIND]"
 
-  # Các biểu tượng đại diện cho Ngôn ngữ lập trình và Công cụ
+  # Language and Tool identification glyphs
   I_PY="[PYTHON]"
   I_VENV="[VENV]"
   I_NODE="[NODE]"
@@ -1264,7 +1264,7 @@ else
   I_KUBE="[KUBE]"
   I_TF="[TF]"
 
-  # Hàm thiết lập I_OS với tên chữ thường hoặc viết tắt
+  # Configure I_OS fallback names
   function () {
     local os_type=$(uname -s)
     if [[ "$os_type" == "Darwin" ]]; then
@@ -1316,12 +1316,12 @@ else
   }
 fi
 
-# --- 4. LOGIC MODULES (CÁC KHỐI XỬ LÝ LOGIC ĐỘNG CHO TRẠNG THÁI SHELL) ---
+# --- 5. DYNAMIC PROMPT EVALUATION MODULES ---
 
-# A. Module đo thời gian chạy lệnh (Exec Time)
-# Hàm preexec được Zsh tự động gọi NGAY TRƯỚC KHI một câu lệnh do bạn gõ được bắt đầu chạy
+# A. Command Execution Duration Module (Exec Time)
+# preexec hook: Executed by Zsh immediately before command runs
 function preexec() { 
-  cmd_start=$EPOCHREALTIME; # Lưu thời điểm bắt đầu chạy lệnh (tính bằng giây có phần thập phân siêu chính xác)
+  cmd_start=$EPOCHREALTIME; # Record precise command start timestamp
 }
 
 # =========================================================================
@@ -1342,50 +1342,50 @@ function _omarchy_error_border_hook() {
   fi
 }
 
-# Hàm precmd được Zsh tự động gọi NGAY TRƯỚC KHI hiển thị lại dòng Prompt nhập lệnh mới (sau khi lệnh cũ đã chạy xong)
+# precmd hook: automatically executed by Zsh immediately before rendering new prompt
 function precmd() {
-  # ĐIỀU RẤT QUAN TRỌNG: Lưu ngay mã thoát ($?) của lệnh vừa chạy xong vào biến exit_status.
-  # Nếu không lưu ngay, các lệnh kiểm tra hoặc hàm phụ chạy ngầm trong Prompt sẽ ghi đè lên $? khiến kết quả hiển thị bị sai lệch.
+  # Capture exit status ($?) immediately before background tasks overwrite it
+  # Preserves accurate exit code for error badge rendering
   exit_status=$?
   _omarchy_error_border_hook "$exit_status"
 
-  # Nếu biến thời gian bắt đầu chạy lệnh tồn tại
+  # If command execution timer is active
   if [ -n "$cmd_start" ]; then
-    # Tính thời gian chạy bằng cách lấy thời điểm hiện tại trừ đi thời điểm bắt đầu
+    # Compute elapsed duration in seconds
     local duration=$(($EPOCHREALTIME - $cmd_start))
     
-    # Chỉ hiển thị thời gian chạy nếu câu lệnh đó chạy lâu hơn 0.5 giây (tránh làm rối mắt các lệnh chạy tích tắc)
+    # Display execution duration only if command took longer than 0.5s
     if (( duration > 0.5 )); then
       local formatted_time=""
-      # Nếu chạy lâu hơn 1 giờ (>= 3600 giây): quy đổi ra giờ, phút, giây
+      # Format hours, minutes, and seconds if duration >= 1h
       if (( duration >= 3600 )); then
         integer hours=$(( duration / 3600 ))
         integer mins=$(( (duration - hours * 3600) / 60 ))
         local secs=$(( duration - (hours * 3600) - (mins * 60) ))
         formatted_time="$(printf "%dh %dm %.1fs" $hours $mins $secs)"
-      # Nếu chạy lâu hơn 1 phút (>= 60 giây): quy đổi ra phút, giây
+      # Format minutes and seconds if duration >= 1m
       elif (( duration >= 60 )); then
         integer mins=$(( duration / 60 ))
         local secs=$(( duration - (mins * 60) ))
         formatted_time="$(printf "%dm %.1fs" $mins $secs)"
-      # Nếu dưới 1 phút: hiển thị giây kèm 2 số phần thập phân
+      # Format sub-minute seconds with 2 decimal places
       else
         formatted_time="$(printf "%.2fs" $duration)"
       fi
-      # Định dạng chuỗi hiển thị thời gian thực thi kèm icon tia sét và màu đỏ cảnh báo
+      # Format duration badge with lightning icon
       cmd_time="${C_ALERT}${I_EXEC} ${formatted_time}${C_DIM}${I_SEP} "
     else
-      cmd_time="" # Chạy dưới 0.5s thì không hiện
+      cmd_time="" # Suppress duration for fast commands
     fi
-    unset cmd_start # Xóa biến để chuẩn bị cho lệnh tiếp theo
+    unset cmd_start # Reset timer for next command
   else
     cmd_time=""
   fi
 
-  # Lưu đệm (cache) các giá trị động để hàm zsh_top_line chạy siêu nhanh (<1ms) lúc co giãn cửa sổ.
-  # Kỹ thuật: Các hàm nặng (git status) chỉ chạy 1 lần ở đây trực tiếp trong shell chính (0 fork).
-  # Hệ thống (RAM, Temp, Wi-Fi, Pin) đã được tối ưu hóa siêu nhanh (<0.6ms tổng cộng) nên được gọi realtime.
-  # Khối quét Wi-Fi và Nhiệt độ chạy ngầm đã được tách độc lập thành tiến trình daemon ở cuối file.
+  # Cache dynamic module values so zsh_top_line renders in < 0.5ms during window resize.
+  # Heavy evaluations (git status) execute once in the main shell without extra forks.
+  # Real-time stats (RAM, Temp, Wi-Fi, Battery) are optimized to < 0.6ms total latency.
+  # Background telemetry daemon handles asynchronous sensor updates.
 
   local REPLY
   zsh_user_info; _CACHE_USER_INFO="$REPLY"
@@ -1400,27 +1400,27 @@ function precmd() {
     _CACHE_ARROW_COLOR="${C_ALERT}"
   fi
 
-  # Thiết lập PROMPT động bằng dấu nháy đơn (single quotes) để Zsh đánh giá lại $(zsh_top_line) mỗi lần vẽ prompt.
-  # Khi cửa sổ thay đổi kích thước, TRAPWINCH gọi zle reset-prompt → Zsh đánh giá lại PROMPT → zsh_top_line()
-  # được gọi lại với giá trị COLUMNS mới → R_TOP tự động căn lề phải theo chiều rộng cửa sổ mới.
-  # Sử dụng trực tiếp biến ${_CACHE_BOTTOM_STATUS} để loại bỏ subshell.
+  # Single-quoted PROMPT allows dynamic re-evaluation on window resize signals.
+  # TRAPWINCH triggers zle reset-prompt -> recalculating layout dynamically.
+  # Keeps right-aligned HUD perfectly flush with the terminal border.
+  # Direct variable expansion removes subshell execution overhead.
   PROMPT='$(zsh_top_line)
 ${C_DIM}${L_BOT} ${_CACHE_BOTTOM_STATUS}${_CACHE_ARROW_COLOR}${I_ARROW} ${C_RESET}'
 }
 
-# Hàm tạo khối bo tròn (pill capsule) kiểu Oh My Posh
-# $1: Màu nền (Hex, vd: #1e1e2e)
-# $2: Màu chữ (Hex, vd: #00FFDD)
-# $3: Nội dung bên trong khối
-# Biến chứa ký tự biên cho capsule (được tính toán động qua zsh_init_caps)
+# Generate powerline pill capsule with interpolated gradient
+# $1: Start background hex (e.g. #00f5d4)
+# $2: End background hex (e.g. #00ff88)
+# $3: Foreground text hex (e.g. #07080d)
+# $4: Content string inside capsule
 ZSH_HUD_L_CAP=""
 ZSH_HUD_R_CAP=""
 
-# Hàm khởi tạo hình dáng biên cho capsule dựa trên biến môi trường ZSH_PROMPT_SHAPE
+# Initialize capsule boundary glyphs based on ZSH_PROMPT_SHAPE
 function zsh_init_caps() {
   local shape="${ZSH_PROMPT_SHAPE:-round}"
   if [[ "$ZSH_HUD_NERD_MONO" == "false" ]]; then
-    # Fallback khi không có Nerd Font
+    # Fallback when Nerd Font is unavailable
     ZSH_HUD_L_CAP="["
     ZSH_HUD_R_CAP="]"
     return
@@ -1535,22 +1535,22 @@ function zsh_make_gradient_pill() {
   REPLY="$result"
 }
 
-# B. Module hiển thị Thông tin người dùng (User Info)
+# Module B: User & Session Info (Virtual☆Paradise theme)
 function zsh_user_info() {
   local icon name bg fg
-  # Nếu UID bằng 0, nghĩa là bạn đang chạy quyền Admin/ROOT tối cao
+  # UID 0 indicates Root / Superuser session
   if [[ $UID -eq 0 ]]; then
     icon="$I_ROOT"
     name="ROOT"
     bg="$BG_ROOT"
     fg="$FG_ROOT"
-  # Nếu có biến môi trường SSH_CONNECTION, tức là bạn đang kết nối từ xa vào máy chủ qua SSH
+  # SSH_CONNECTION indicates remote session
   elif [[ -n $SSH_CONNECTION ]]; then
     icon="$I_SSH"
     name="%n@%m"
     bg="$BG_SSH"
     fg="$FG_SSH"
-  # Trường hợp đăng nhập user bình thường trên máy cục bộ
+  # Standard local user session
   else
     icon="$I_USER"
     name="%n"
@@ -1579,10 +1579,10 @@ function zsh_user_info() {
   fi
 }
 
-# C. Module hiển thị thư mục hiện hành (Directory Info)
+# Module C: Current Working Directory (Virtual☆Paradise theme)
 function zsh_dir_info() {
   local lock=""
-  # Kiểm tra xem thư mục hiện tại có quyền ghi hay không. Nếu không ghi được (chỉ đọc), gán icon ổ khóa màu đỏ để nhắc nhở
+  # Check write permission on directory; display red lock if read-only
   [[ ! -w . ]] && lock=" ${C_ALERT}${I_LOCK}"
   
   local dir_path="%B%(3~|.../%2c|%~)%b"
@@ -1605,18 +1605,18 @@ function zsh_dir_info() {
   fi
 }
 
-# D. Module hiển thị Trạng thái Git nâng cao (Git Status)
+# Module D: Advanced Git Repository Status (Official Git/Catppuccin colors)
 function zsh_git_status() {
   REPLY=""
-  # Gọi git status một lần duy nhất với định dạng porcelain v2 và thông tin branch.
-  # Nếu không phải thư mục Git, lệnh trả về lỗi và dừng hàm ngay lập tức (tiết kiệm fork).
+  # Executes git status once in porcelain v2 format (0 unnecessary forks)
+  # Returns immediately if directory is not a git repository
   local gstatus
   gstatus=$(git status --porcelain=v2 --branch 2>/dev/null) || return
   
   local -a lines
   lines=(${(f)gstatus})
   
-  # Lấy tên nhánh hoặc SHA ngắn nếu bị detached HEAD
+  # Extract branch name or short SHA if in detached HEAD state
   local branch_line="${(M)lines[@]:#*branch.head *}"
   local branch="${branch_line#*branch.head }"
   if [[ "$branch" == "(detached)" ]]; then
@@ -1625,12 +1625,12 @@ function zsh_git_status() {
     branch="${oid[1,7]}"
   fi
   
-  # Đếm các file thay đổi (staged, unstaged, untracked)
+  # Count staged, unstaged, and untracked changes
   local staged=${#${(M)lines[@]:#[12] [^.]*}}
   local unstaged=${#${(M)lines[@]:#[12] ?[^.]*}}
   local untracked=${#${(M)lines[@]:#\? *}}
   
-  # Lấy thông tin ahead/behind so với upstream
+  # Extract ahead / behind commit counters relative to remote
   local ahead=0
   local behind=0
   local ab_line="${(M)lines[@]:#*branch.ab *}"
@@ -1642,24 +1642,24 @@ function zsh_git_status() {
     behind="${parts[2]#-}"
   fi
   
-  # Chuỗi hiển thị các ký hiệu thống kê:
+  # Git stats indicator badge:
   local git_details=""
   if [[ "$ZSH_PROMPT_STYLE" == "powerline" ]]; then
-    # Trong powerline/pill style, ta không dùng mã màu ANSI để giữ tính tương phản tốt trên nền pill
+    # Omit ANSI colors in pill mode to maintain high contrast on gradient bg
     [[ $staged -gt 0 ]] && git_details+="+${staged}"
     [[ $unstaged -gt 0 ]] && git_details+="${git_details:+ }!${unstaged}"
     [[ $untracked -gt 0 ]] && git_details+="${git_details:+ }?${untracked}"
     [[ $ahead -gt 0 ]] && git_details+="${git_details:+ }⇡${ahead}"
     [[ $behind -gt 0 ]] && git_details+="${git_details:+ }⇣${behind}"
   else
-    [[ $staged -gt 0 ]] && git_details+="%F{#8CC84B}+${staged}%f"        # +: Số file đã add (màu xanh lá)
-    [[ $unstaged -gt 0 ]] && git_details+="${git_details:+ }%F{#FFD43B}!${unstaged}%f" # !: Số file sửa chưa add (màu vàng)
-    [[ $untracked -gt 0 ]] && git_details+="${git_details:+ }%F{#FF6070}?${untracked}%f" # ?: Số file chưa theo dõi (màu đỏ)
-    [[ $ahead -gt 0 ]] && git_details+="${git_details:+ }%F{#00FFDD}⇡${ahead}%f"    # ⇡: Số commit cần push lên (màu xanh neon)
-    [[ $behind -gt 0 ]] && git_details+="${git_details:+ }%F{#FF6070}⇣${behind}%f"  # ⇣: Số commit cần pull về (màu đỏ)
+    [[ $staged -gt 0 ]] && git_details+="%F{#8CC84B}+${staged}%f"        # +: Staged files counter (green)
+    [[ $unstaged -gt 0 ]] && git_details+="${git_details:+ }%F{#FFD43B}!${unstaged}%f" # !: Modified files counter (yellow)
+    [[ $untracked -gt 0 ]] && git_details+="${git_details:+ }%F{#FF6070}?${untracked}%f" # ?: Untracked files counter (red)
+    [[ $ahead -gt 0 ]] && git_details+="${git_details:+ }%F{#00FFDD}⇡${ahead}%f"    # ⇡: Ahead commits counter (cyan)
+    [[ $behind -gt 0 ]] && git_details+="${git_details:+ }%F{#FF6070}⇣${behind}%f"  # ⇣: Behind commits counter (red)
   fi
   
-  # Hiển thị chuỗi kết quả:
+  # Render output string:
   local bg fg content
   if (( staged + unstaged + untracked > 0 )); then
     bg="$BG_GIT_DIRTY"
@@ -1689,34 +1689,34 @@ function zsh_git_status() {
     # Classic style
     if (( staged + unstaged + untracked > 0 )); then
       if [[ -n "$git_details" ]]; then
-        # Hiển thị nhánh màu đỏ alert kèm thông số chi tiết
+        # Display branch in alert red with detailed counters
         REPLY="${C_ALERT}${I_GIT} ${C_DATA}${branch}%f [${git_details}]${C_DIM}${I_SEP} "
       else
-        # Nếu có thay đổi nhưng không bắt được thông số (ví dụ submodule), hiện dấu sao *
+        # Uncommitted changes detected without tracked files (e.g. submodules)
         REPLY="${C_ALERT}${I_GIT} ${C_DATA}${branch}*${C_DIM}${I_SEP} "
       fi
     else
-      # Nếu thư mục hoàn toàn sạch sẽ (clean):
+      # Clean repository state:
       if [[ -n "$git_details" ]]; then
-        # Thường xảy ra khi Repo clean nhưng Ahead/Behind so với remote
+        # Clean working tree with ahead/behind commits relative to remote
         REPLY="${C_ACCENT}${I_GIT} ${C_DATA}${branch}%f [${git_details}]${C_DIM}${I_SEP} "
       else
-        # Repo sạch sẽ hoàn toàn và đồng bộ hoàn hảo với server
+        # Clean and synchronized with upstream
         REPLY="${C_ACCENT}${I_GIT} ${C_DATA}${branch}${C_DIM}${I_SEP} "
       fi
     fi
   fi
 }
 
-# E. Module nhận diện ngôn ngữ lập trình & Công cụ trong thư mục hiện hành (Tools & Language Context)
-# Giúp bạn nhìn ngay ra mình đang ở trong thư mục dự án gì để gõ lệnh cho đúng.
+# Module E: Language & Tool Context Detection (Official Brand Colors)
+# Instantly identifies project ecosystems in the current folder.
 function zsh_tool_context() {
   REPLY=""
   
   if [[ "$ZSH_PROMPT_STYLE" == "powerline" ]]; then
     local -a active_tools
     
-    # 1. Nhận diện Môi trường ảo Python (Virtual Environment)
+    # 1. Python Virtual Environment Detection
     if [[ -n $VIRTUAL_ENV ]]; then
       zsh_make_gradient_pill "#38bdf8" "#34d399" "#11111b" "${I_VENV} ${VIRTUAL_ENV:t}"
       active_tools+=("$REPLY")
@@ -1728,53 +1728,53 @@ function zsh_tool_context() {
       fi
     fi
     
-    # 2. Nhận diện dự án JavaScript / Node.js
+    # 2. JavaScript / Node.js Project Detection
     local js_files=(*.js(N[1]))
     if [[ -f package.json || ${#js_files} -gt 0 ]]; then
        zsh_make_gradient_pill "#339933" "#8CC84B" "#11111b" "${I_NODE} Node"
        active_tools+=("$REPLY")
     fi
 
-    # 3. Nhận diện cấu hình Docker
+    # 3. Docker Container Configuration Detection
     if [[ -f Dockerfile || -f docker-compose.yml ]]; then 
        zsh_make_gradient_pill "#2496ED" "#0db7ed" "#11111b" "${I_DOCKER} Docker"
        active_tools+=("$REPLY")
     fi
 
-    # 4. Nhận diện dự án Go Lang
+    # 4. Go Language Project Detection
     if [[ -f go.mod ]]; then
        zsh_make_gradient_pill "#00ADD8" "#5dc9e2" "#11111b" "${I_GO} Go"
        active_tools+=("$REPLY")
     fi
 
-    # 5. Nhận diện dự án Rust
+    # 5. Rust Project Detection
     if [[ -f Cargo.toml ]]; then
        zsh_make_gradient_pill "#DE8C68" "#b7410e" "#ffffff" "${I_RUST} Rust"
        active_tools+=("$REPLY")
     fi
     
-    # 6. Nhận diện dự án Java
+    # 6. Java Project Detection
     local java_files=(*.java(N[1]))
     if [[ -f pom.xml || ${#java_files} -gt 0 ]]; then
         zsh_make_gradient_pill "#f89820" "#5382a1" "#11111b" "${I_JAVA} Java"
         active_tools+=("$REPLY")
     fi
 
-    # 7. Nhận diện dự án PHP
+    # 7. PHP Project Detection
     local php_files=(*.php(N[1]))
     if [[ -f composer.json || ${#php_files} -gt 0 ]]; then
         zsh_make_gradient_pill "#777BB4" "#8892BF" "#ffffff" "${I_PHP} PHP"
         active_tools+=("$REPLY")
     fi
 
-    # 8. Nhận diện dự án C/C++
+    # 8. C / C++ Project Detection
     local cpp_files=(*.(c|cpp|h|hpp)(N[1]))
     if [[ -f CMakeLists.txt || -f Makefile || ${#cpp_files} -gt 0 ]]; then
         zsh_make_gradient_pill "#00599C" "#659AD2" "#ffffff" "${I_CPP} C++"
         active_tools+=("$REPLY")
     fi
 
-    # 9. Nhận diện dự án quản lý hạ tầng Terraform & Kubernetes
+    # 9. Infrastructure as Code (Terraform & Kubernetes) Detection
     local tf_files=(*.tf(N[1]))
     if [[ -d .terraform || ${#tf_files} -gt 0 ]]; then
         zsh_make_gradient_pill "#7B42BC" "#844FBA" "#ffffff" "${I_TF} TF"
@@ -1790,58 +1790,58 @@ function zsh_tool_context() {
     fi
   else
     # Classic style
-    # 1. Nhận diện Môi trường ảo Python (Virtual Environment)
+    # 1. Python Virtual Environment Detection
     if [[ -n $VIRTUAL_ENV ]]; then
-      # Hiển thị tên môi trường ảo đang active kèm icon venv (sử dụng tail modifier cực nhanh 0 fork)
+      # Display active virtualenv name with icon
       tools+="${C_VENV}${I_VENV} ${VIRTUAL_ENV:t} "
     else
-      # Hoặc nếu phát hiện có file Python (.py) hoặc file khai báo thư viện requirements.txt
+      # Detect Python project files
       local py_files=(*.py(N[1]))
       if [[ -f requirements.txt || ${#py_files} -gt 0 ]]; then
           tools+="${C_PY}${I_PY} Py "
       fi
     fi
     
-    # 2. Nhận diện dự án JavaScript / Node.js
+    # 2. JavaScript / Node.js Project Detection
     local js_files=(*.js(N[1]))
     if [[ -f package.json || ${#js_files} -gt 0 ]]; then
        tools+="${C_NODE}${I_NODE} Node "
     fi
 
-    # 3. Nhận diện cấu hình Docker
+    # 3. Docker Container Configuration Detection
     if [[ -f Dockerfile || -f docker-compose.yml ]]; then 
        tools+="${C_DKR}${I_DOCKER} Docker "
     fi
 
-    # 4. Nhận diện dự án Go Lang
+    # 4. Go Language Project Detection
     if [[ -f go.mod ]]; then
        tools+="${C_GO}${I_GO} Go "
     fi
 
-    # 5. Nhận diện dự án Rust
+    # 5. Rust Project Detection
     if [[ -f Cargo.toml ]]; then
        tools+="${C_RUST}${I_RUST} Rust "
     fi
     
-    # 6. Nhận diện dự án Java
+    # 6. Java Project Detection
     local java_files=(*.java(N[1]))
     if [[ -f pom.xml || ${#java_files} -gt 0 ]]; then
         tools+="${C_JAVA}${I_JAVA} Java "
     fi
 
-    # 7. Nhận diện dự án PHP
+    # 7. PHP Project Detection
     local php_files=(*.php(N[1]))
     if [[ -f composer.json || ${#php_files} -gt 0 ]]; then
         tools+="${C_PHP}${I_PHP} PHP "
     fi
 
-    # 8. Nhận diện dự án C/C++
+    # 8. C / C++ Project Detection
     local cpp_files=(*.(c|cpp|h|hpp)(N[1]))
     if [[ -f CMakeLists.txt || -f Makefile || ${#cpp_files} -gt 0 ]]; then
         tools+="${C_CPP}${I_CPP} C++ "
     fi
 
-    # 9. Nhận diện dự án quản lý hạ tầng Terraform & Kubernetes
+    # 9. Infrastructure as Code (Terraform & Kubernetes) Detection
     local tf_files=(*.tf(N[1]))
     if [[ -d .terraform || ${#tf_files} -gt 0 ]]; then
         tools+="${C_TF}${I_TF} TF "
@@ -1850,34 +1850,34 @@ function zsh_tool_context() {
         tools+="${C_KUBE}${I_KUBE} Kube "
     fi
 
-    # Nếu phát hiện ra bất kỳ công cụ nào ở trên, in danh sách kèm ký tự phân tách
+    # Append active tool pills with separator
     if [[ -n "$tools" ]]; then
       REPLY="${tools}${C_DIM}${I_SEP} "
     fi
   fi
 }
-# F. Module trạng thái hoạt động ngầm và báo lỗi lệnh (Jobs & Error)
+# F. Background Jobs & Error Status Module
 function zsh_bottom_status() {
   local parts=""
-  # Đếm số lượng tiến trình đang chạy ngầm trong Terminal này (Background jobs) bằng biến jobstates nội tại của Zsh (0 fork)
+  # Count background jobs using internal Zsh jobstates variable (0 forks)
   local jobs=${#jobstates}
   if [[ $jobs -gt 0 ]]; then
-    # Hiển thị icon tiến trình ngầm kèm số lượng
+    # Render background jobs icon and count
     parts+="${C_ACCENT}${I_JOBS} ${C_DATA}${jobs}${C_DIM}${I_SEP} "
   fi
   
-  # Kiểm tra mã lỗi của lệnh trước (exit_status lấy từ precmd).
-  # Trong Linux/macOS, mã lỗi khác 0 nghĩa là lệnh chạy thất bại
+  # Evaluate exit status of previous command
+  # Non-zero exit code indicates command failure
   if [[ $exit_status -ne 0 ]]; then
-    # Hiển thị mã lỗi màu đỏ để báo hiệu
+    # Display red warning badge with exit code
     parts+="${C_ALERT}${I_ERR} ${exit_status}${C_DIM}${I_SEP} "
   fi
   REPLY="$parts"
 }
 
-# G. Module hiển thị thông tin RAM/SWAP (Memory Info)
-# Đọc file /proc/meminfo (chỉ có trên Linux) bằng kỹ thuật Zsh file redirection ($(<file))
-# thay vì gọi lệnh `free` hoặc `cat` bên ngoài để đạt tốc độ tối đa (~0.1ms thay vì ~5ms).
+# Module G: Real-time Memory Usage Monitor (< 0.1ms via /proc/meminfo)
+# Reads /proc/meminfo directly using Zsh file redirection (0 external forks)
+# Achieves sub-millisecond parsing speed
 function zsh_mem_info() {
   REPLY=""
   local meminfo
@@ -1916,8 +1916,8 @@ function zsh_mem_info() {
   fi
 }
 
-# G2. Module hiển thị nhiệt độ CPU/GPU (Temperature Info)
-# Đọc nhiệt độ từ cảm biến sysfs của Linux hoặc fallback sang nvidia-smi.
+# Module G2: CPU / GPU Temperature Sensor
+# Reads Linux sysfs thermal zones or caches nvidia-smi values
 function zsh_get_temp() {
   REPLY=0
   local status_file="${ZSH_CACHE_DIR:-$HOME/.cache}/wsl_temp_status"
@@ -1941,19 +1941,19 @@ function zsh_temp_info() {
   local temp_icon="$I_TEMP_COLD"
   local temp_color="${C_ACCENT}"
 
-  # Đổi biểu tượng và màu sắc theo độ nóng lạnh của máy
+  # Dynamically adjust icon and color based on temperature thresholds
   if (( temp < 45 )); then
-    temp_icon="$I_TEMP_COLD"       # Lạnh / Mát mẻ (< 45°C)
+    temp_icon="$I_TEMP_COLD"       # Cold / Optimal (< 45°C)
     temp_color="${C_ACCENT}"
   elif (( temp < 60 )); then
-    temp_icon="$I_TEMP_WARM"       # Ấm áp (45 - 59°C)
-    temp_color="%F{#8CC84B}"        # Xanh lá pastel
+    temp_icon="$I_TEMP_WARM"       # Warm (45 - 59°C)
+    temp_color="%F{#8CC84B}"        # Pastel Green
   elif (( temp < 75 )); then
-    temp_icon="$I_TEMP_HOT"        # Nóng (60 - 74°C)
-    temp_color="%F{#FFD43B}"        # Vàng pastel
+    temp_icon="$I_TEMP_HOT"        # Hot (60 - 74°C)
+    temp_color="%F{#FFD43B}"        # Pastel Yellow
   else
-    temp_icon="$I_TEMP_CRIT"       # Rất nóng / Nguy cấp (>= 75°C)
-    temp_color="${C_ALERT}"         # Đỏ Coral Neon
+    temp_icon="$I_TEMP_CRIT"       # Critical / Overheating (>= 75°C)
+    temp_color="${C_ALERT}"         # Neon Coral Red
   fi
 
   REPLY="${temp_color}${temp_icon} ${C_DATA}${temp}°C"
@@ -1985,11 +1985,11 @@ function zsh_temp_info_compact() {
     temp_color="${C_ALERT}"
   fi
 
-  # Phiên bản compact: chỉ hiển thị icon đổi màu dựa trên nhiệt độ
+  # Compact variant: icon only with temperature-based color
   REPLY="${temp_color}${temp_icon}"
 }
 
-# Tự động nhận diện và lưu đường dẫn file thông tin Pin/AC nguồn (Tối ưu hóa tránh quét đĩa khi render)
+# Cache battery and AC sysfs paths at startup (prevents disk scans during render)
 _BAT_CAPACITY_FILE=""
 _BAT_STATUS_FILE=""
 _AC_ONLINE_FILE=""
@@ -2005,24 +2005,24 @@ function () {
   fi
 }
 
-# H. Module hiển thị thông tin Pin (Battery Info)
-# Đọc trạng thái pin từ các đường dẫn sysfs đã được cache lúc khởi động.
-# Trên máy để bàn không có pin, hàm này sẽ tự động bỏ qua và không hiển thị gì.
+# H. Battery Level & Status Module
+# Read battery telemetry from cached sysfs paths.
+# On desktop systems without batteries, silently omitted.
 function zsh_battery_info() {
   REPLY=""
   if [[ -n "$_BAT_CAPACITY_FILE" && -f "$_BAT_CAPACITY_FILE" ]]; then
-    local capacity=$(<"$_BAT_CAPACITY_FILE")    # Đọc phần trăm pin (0-100)
-    local bat_status=$(<"$_BAT_STATUS_FILE")    # Đọc trạng thái: Charging, Discharging, Full, Not charging
-    local bat_icon="$I_BAT_100"                 # Icon pin đầy mặc định
-    local bat_color="${C_ACCENT}"                # Màu mặc định (xanh neon cyan)
+    local capacity=$(<"$_BAT_CAPACITY_FILE")    # Battery percentage (0-100)
+    local bat_status=$(<"$_BAT_STATUS_FILE")    # Status: Charging, Discharging, Full, Not charging
+    local bat_icon="$I_BAT_100"                 # Default full battery icon
+    local bat_color="${C_ACCENT}"                # Default color (cyan)
     
-    # Kiểm tra trạng thái cắm sạc qua AC (online)
+    # Short status summary (git status -sb)
     local ac_online=0
     if [[ -n "$_AC_ONLINE_FILE" && -f "$_AC_ONLINE_FILE" ]]; then
       ac_online=$(<"$_AC_ONLINE_FILE")
     fi
 
-      # Nếu đang sạc hoặc cắm nguồn AC (online = 1): chọn icon sạc theo mức pin và đổi màu xanh lá
+      # If charging or connected to AC: display charging icon and green color
       if [[ "$bat_status" == "Charging" || "$ac_online" == "1" ]]; then
         bat_color="%F{#8CC84B}"
         if [[ $capacity -ge 95 ]]; then bat_icon="$I_BAT_CHARGING_100"
@@ -2037,15 +2037,15 @@ function zsh_battery_info() {
         else bat_icon="$I_BAT_CHARGING_0"
         fi
       else
-        # Khi không sạc: đổi màu cảnh báo theo mức pin
+        # Discharging: dynamic color based on remaining charge
         if [[ $capacity -lt 20 ]]; then
-          bat_color="${C_ALERT}"       # Dưới 20%: đỏ cảnh báo nguy hiểm
+          bat_color="${C_ALERT}"       # <20%: Critical warning red
         elif [[ $capacity -lt 50 ]]; then
-          bat_color="%F{#FFD43B}"      # Dưới 50%: vàng cảnh báo nhẹ
+          bat_color="%F{#FFD43B}"      # <50%: Warning yellow
         fi
         
-        # Chọn icon pin phù hợp với mức phần trăm (từ đầy đến cạn kiệt)
-        if [[ $capacity -ge 95 ]]; then bat_icon="$I_BAT_100"       # 95-100%: Pin đầy
+        # Select battery icon according to percentage
+        if [[ $capacity -ge 95 ]]; then bat_icon="$I_BAT_100"       # 95-100%: Full
         elif [[ $capacity -ge 90 ]]; then bat_icon="$I_BAT_90"     # 90-94%
         elif [[ $capacity -ge 80 ]]; then bat_icon="$I_BAT_80"     # 80-89%
         elif [[ $capacity -ge 70 ]]; then bat_icon="$I_BAT_70"     # 70-79%
@@ -2054,18 +2054,18 @@ function zsh_battery_info() {
         elif [[ $capacity -ge 40 ]]; then bat_icon="$I_BAT_40"     # 40-49%
         elif [[ $capacity -ge 30 ]]; then bat_icon="$I_BAT_30"     # 30-39%
         elif [[ $capacity -ge 20 ]]; then bat_icon="$I_BAT_20"     # 20-29%
-        else bat_icon="$I_BAT_0"                                    # 0-19%: Pin gần cạn
+        else bat_icon="$I_BAT_0"                                    # 0-19%: Critical low
         fi
       fi
       
-      # Xuất chuỗi kết quả: 󰁹 100% (icon + phần trăm, %% để escape ký tự % trong prompt)
+      # Render output: 󰁹 100% (icon + percentage, %% escapes % in Zsh prompt)
       REPLY="${bat_color}${bat_icon} ${capacity}%% "
   fi
 }
 
-# H2. Module hiển thị thông tin Wi-Fi (Wi-Fi Info)
-# Đọc thông tin kết nối Wi-Fi (SSID và Signal %) từ file cache tạo ra ở precmd.
-# Giải pháp này tách biệt việc gọi Windows netsh.exe chậm chạp giúp Prompt vẽ tức thì trong <1ms.
+# H2. Wi-Fi Status Module
+# Read Wi-Fi connection info (SSID and signal %) from cache file.
+# Eliminates slow netsh.exe / nmcli calls on the main thread (<0.1ms render).
 function zsh_wifi_info() {
   setopt localoptions extendedglob
   REPLY=""
@@ -2133,7 +2133,7 @@ function zsh_wifi_info() {
   fi
 }
 
-# Phiên bản thu nhỏ chỉ hiển thị icon Wi-Fi có màu sắc biến đổi theo cường độ sóng
+# Compact Wi-Fi variant: icon with signal-level color
 function zsh_wifi_info_compact() {
   setopt localoptions extendedglob
   REPLY=""
@@ -2187,10 +2187,10 @@ function zsh_wifi_info_compact() {
   fi
 }
 
-# --- KHỞI CHẠY DAEMON CẬP NHẬT WIFI & NHIỆT ĐỘ ĐỘC LẬP (Tối ưu hóa 0ms trễ Prompt) ---
-# Cơ chế: Khởi chạy 1 tiến trình nền chạy tuần hoàn mỗi 5 giây để lấy trạng thái mạng.
-# Riêng việc lấy nhiệt độ CPU/GPU (sử dụng nvidia-smi chậm ~1.1s trên WSL) được gọi mỗi 30 giây.
-# Cách làm này tách hoàn toàn các tiến trình chậm ra khỏi luồng xử lý chính của Prompt.
+# --- BACKGROUND DAEMON: Asynchronous Network & Thermal Monitoring (0ms Prompt Latency) ---
+# Runs an independent background loop polling Wi-Fi every 5s and thermals every 30s.
+# Completely decouples slow telemetry syscalls from prompt rendering.
+# Guarantees zero hesitation or lag when pressing Enter.
 function () {
   local pid_file="${ZSH_CACHE_DIR:-$HOME/.cache}/wsl_wifi_daemon.pid"
   local daemon_pid=""
@@ -2200,7 +2200,7 @@ function () {
       mkdir -p "${ZSH_CACHE_DIR:-$HOME/.cache}"
       local temp_counter=0
       while true; do
-        # 1. Cập nhật thông tin Wi-Fi
+        # 1. Poll Wi-Fi connection info
         if (( $+commands[netsh.exe] )); then
           netsh.exe wlan show interfaces < /dev/null >| "${ZSH_CACHE_DIR:-$HOME/.cache}/wsl_wifi_raw" 2>/dev/null
         elif (( $+commands[iwgetid] )); then
@@ -2220,7 +2220,7 @@ function () {
           echo "$ssid|$signal||" >| "${ZSH_CACHE_DIR:-$HOME/.cache}/wsl_wifi_status"
         fi
 
-        # 2. Cập nhật thông tin Nhiệt độ (mỗi 30 giây để tránh tốn tài nguyên của nvidia-smi)
+        # 2. Poll CPU/GPU thermals (every 30s to conserve GPU resources)
         if (( temp_counter % 6 == 0 )); then
           local temp=0
           local f
@@ -2257,37 +2257,37 @@ function () {
   fi
 }
 
-# I. Module tổng hợp thông tin góc trên bên phải (R_TOP Info)
-# Ghép nối các module thông tin hệ thống (RAM/Swap, Pin) thành một chuỗi duy nhất
-# với ký tự phân tách 󰫣 giữa các phần, sau đó đóng khung bằng ký tự ─╮ (R_TOP).
+# Module I: Top-Right System Telemetry HUD (R_TOP)
+# Aggregates RAM, Temperature, Wi-Fi, and Battery into single responsive string
+# Joined with 󰫣 separator and framed with ─╮ corner.
 function zsh_top_right_info() {
-  local parts=()  # Mảng chứa các phần thông tin đã render
+  local parts=()  # Array of rendered telemetry strings
   
-  # Thu thập thông tin RAM (đọc trực tiếp cực nhanh ~0.07ms)
+  # Collect RAM metrics (< 0.07ms direct read)
   zsh_mem_info
   if [[ -n "$REPLY" ]]; then
     parts+=("$REPLY")
   fi
   
-  # Thu thập thông tin nhiệt độ CPU/GPU (đọc trực tiếp cực nhanh ~0.08ms)
+  # Collect CPU/GPU temperature (< 0.08ms direct read)
   zsh_temp_info
   if [[ -n "$REPLY" ]]; then
     parts+=("$REPLY")
   fi
   
-  # Thu thập thông tin Wi-Fi (đọc trực tiếp từ file cache ~0.1ms)
+  # Collect Wi-Fi telemetry from daemon cache (< 0.1ms)
   zsh_wifi_info
   if [[ -n "$REPLY" ]]; then
     parts+=("$REPLY")
   fi
   
-  # Thu thập thông tin Pin (đọc trực tiếp cực nhanh ~0.08ms)
+  # Collect Battery state (< 0.08ms direct read)
   zsh_battery_info
   if [[ -n "$REPLY" ]]; then
     parts+=("$REPLY")
   fi
   
-  # Ghép các phần lại bằng ký tự phân tách 󰫣 (chỉ thêm phân tách giữa các phần, không thêm ở đầu)
+  # Join telemetry items with separator glyph
   local joined=""
   local i
   for ((i=1; i<=${#parts}; i++)); do
@@ -2297,7 +2297,7 @@ function zsh_top_right_info() {
     joined+="${parts[i]}"
   done
   
-  # Xuất kết quả kèm ký tự đóng khung ─╮ ở cuối. Nếu có nội dung thì thêm 1 khoảng trắng ở đầu để cách khỏi phần trái.
+  # Append top-right frame corner ─╮
   if [[ -n "$joined" ]]; then
     REPLY=" ${joined}${C_DIM}${R_TOP}${C_RESET}"
   else
@@ -2350,7 +2350,7 @@ function zsh_battery_info_compact() {
     local bat_icon="󰁹"
     local bat_color="${C_ACCENT}"
     
-    # Kiểm tra cắm sạc qua AC (online) cho compact mode
+    # Check AC power connection state for compact mode
     local ac_online=0
     if [[ -n "$_AC_ONLINE_FILE" && -f "$_AC_ONLINE_FILE" ]]; then
       ac_online=$(<"$_AC_ONLINE_FILE")
@@ -2391,7 +2391,7 @@ function zsh_battery_info_compact() {
 
 function zsh_top_right_compact_info() {
   local parts=()
-  # Đọc trực tiếp các giá trị thời gian thực cực nhanh (RAM, Temp, Wi-Fi, Pin)
+  # Direct real-time sensor read (RAM, Temp, Wi-Fi, Battery)
   zsh_mem_info_compact
   [[ -n $REPLY ]] && parts+=("$REPLY")
   zsh_temp_info_compact
@@ -2417,12 +2417,12 @@ function zsh_top_right_compact_info() {
   fi
 }
 
-# J. Hàm tạo dòng thứ nhất của Prompt động để căn lề phải responsive
+# Module J: Responsive Top-Line Layout Engine (zsh_top_line)
 function zsh_top_line() {
   setopt localoptions extendedglob
-  zsh_init_caps # Khởi tạo hình dáng capsule động
+  zsh_init_caps # Initialize dynamic capsule shape
   
-  # Sử dụng các giá trị đã cache
+  # Use pre-calculated cached metrics
   local user_info="$_CACHE_USER_INFO"
   local dir_info="$_CACHE_DIR_INFO"
   local git_status="$_CACHE_GIT_STATUS"
@@ -2431,7 +2431,7 @@ function zsh_top_line() {
   zsh_top_right_info
   local top_right="$REPLY"
   
-  # Ghép chuỗi dòng bên trái và bên phải
+  # Construct left and right prompt lines
   local left_line
   local os_seg=""
   if [[ "$ZSH_PROMPT_STYLE" == "powerline" ]]; then
@@ -2546,14 +2546,14 @@ function zsh_top_line() {
   fi
   local right_line="${top_right}"
   
-  # Tính toán độ dài ký tự hiển thị thực tế (bỏ qua toàn bộ mã màu ANSI)
+  # Calculates true printable character length by stripping all ANSI escape codes
   local esc=$'\e'
   local left_expanded="${(%)left_line}"
   local right_expanded="${(%)right_line}"
   local left_clean="${left_expanded//${esc}\[[0-9;]#[a-zA-Z]/}"
   local right_clean="${right_expanded//${esc}\[[0-9;]#[a-zA-Z]/}"
   
-  # Bù chiều rộng cho các icon Nerd Font hiển thị double-width nhưng Zsh đếm là 1.
+  # Compensates for double-width Nerd Font glyphs counted as 1 column by Zsh
   local w_left=0
   local w_right=0
   if [[ "$ZSH_HUD_NERD_MONO" != "true" ]]; then
@@ -2566,8 +2566,8 @@ function zsh_top_line() {
   local left_len=$(( ${#left_clean} + w_left ))
   local right_len=$(( ${#right_clean} + w_right ))
   
-  # Nếu đang trong quá trình kéo giãn/thu nhỏ, ẩn hoàn toàn khối bên phải R_TOP
-  # để tránh giật lag và vỡ dòng. Chỉ giữ lại khối bên trái sạch sẽ.
+  # Temporarily suppresses R_TOP during active window resize to prevent buffer tearing
+  # Ensures clean single-line display during Hyprland tiling adjustments
   if [[ "$_RESIZE_ACTIVE" == "1" ]]; then
     local short_left
     if [[ "$ZSH_PROMPT_STYLE" == "powerline" ]]; then
@@ -2598,8 +2598,8 @@ function zsh_top_line() {
     return
   fi
   
-  # Nếu cửa sổ terminal quá nhỏ không đủ chứa cả hai khối (cộng thêm 2 ký tự an toàn),
-  # tự động ẩn khối bên phải hoặc chuyển sang compact mode để ngăn tràn dòng tuyệt đối.
+  # Responsive threshold check: automatically drops or collapses R_TOP if terminal is too narrow
+  # Strictly prevents cursor wrapping to the next line
   if (( COLUMNS < left_len + right_len + 2 )); then
     local short_left
     if [[ "$ZSH_PROMPT_STYLE" == "powerline" ]]; then
@@ -2614,7 +2614,7 @@ function zsh_top_line() {
       short_left="${left_line%%$~sep_pattern}"
     fi
  
-    # Thử hiển thị khối rút gọn bên phải (Compact Mode)
+    # Try rendering compact right HUD block
     local compact_right
     zsh_top_right_compact_info
     compact_right="$REPLY"
@@ -2644,7 +2644,7 @@ function zsh_top_line() {
       echo -n "${short_left}"
     fi
   else
-    # Căn lề phải an toàn bằng mã vị trí con trỏ ngang tuyệt đối (Cursor Horizontal Absolute).
+    # Applies Cursor Horizontal Absolute (\e[...G) with mathematical boundary guards
     local indent=${ZLE_RPROMPT_INDENT:-1}
     local right_start=$(( COLUMNS - right_len + 1 - indent ))
     if (( right_start > left_len + 1 && right_start + right_len <= COLUMNS + 1 )); then
@@ -2654,51 +2654,51 @@ function zsh_top_line() {
     fi
   fi
 }
-# Signal handler để vẽ lại prompt tức thì khi co giãn cửa sổ.
-# TRAPWINCH được Zsh tự động gọi mỗi khi nhận tín hiệu SIGWINCH (kích thước cửa sổ Terminal thay đổi).
-# Cơ chế debounce: Khi người dùng kéo mép cửa sổ liên tục, SIGWINCH bắn hàng chục lần/giây.
-# Ta ẩn R_TOP ngay lập tức để prompt nhẹ và không vỡ dòng, đồng thời đặt một timer 0.15 giây.
-# Nếu có resize mới trong 0.15s, timer cũ bị hủy và tạo timer mới. Khi dừng kéo quá 0.15s,
-# timer gửi SIGUSR1 về shell chính → TRAPUSR1 khôi phục R_TOP với chiều rộng mới.
+# Signal handler for instant prompt reflow on window resize (SIGWINCH)
+# TRAPWINCH executes automatically on terminal geometry change
+# Debounce architecture: buffers continuous SIGWINCH events during window drag
+# Hides R_TOP and triggers 0.15s timer before graceful restoration
+# Resets debounce timer if new resize event occurs within window
+# Sends SIGUSR1 to main shell process upon resize completion
 TRAPWINCH() {
-  # Tắt giám sát job cục bộ (no_monitor) để Zsh không in thông báo PID, terminated, done của tiến trình ngầm
-  # local_options: chỉ áp dụng trong phạm vi hàm này, không ảnh hưởng đến shell chính
+  # Suppresses job monitor logs for background timers
+  # local_options: scoped strictly to this handler
   setopt local_options no_monitor
   
-  # Bật cờ resize: zsh_top_line() sẽ kiểm tra cờ này để quyết định ẩn R_TOP
+  # Sets active resize flag
   _RESIZE_ACTIVE=1
-  # [[ -o zle ]]: Kiểm tra Zsh Line Editor đang hoạt động (tránh lỗi khi resize xảy ra lúc đang chạy lệnh)
-  # zle reset-prompt: Yêu cầu ZLE vẽ lại prompt ngay lập tức (lúc này R_TOP bị ẩn do _RESIZE_ACTIVE=1)
+  # [[ -o zle ]]: Ensure ZLE is active (prevents redraw errors during active execution)
+  # zle reset-prompt: Requests immediate ZLE prompt redraw
   if [[ -o zle ]]; then
     zle reset-prompt 2>/dev/null
   fi
   
-  # Hủy timer debounce cũ nếu vẫn đang chạy (kill -0 kiểm tra tiến trình còn sống không)
+  # Cancels previous debounce timer if still active
   if [[ -n $_RESIZE_TIMER_PID ]] && kill -0 $_RESIZE_TIMER_PID 2>/dev/null; then
     kill $_RESIZE_TIMER_PID 2>/dev/null
   fi
   
-  # Hủy timer delay phục hồi cũ nếu vẫn đang chạy
+  # Cancels previous delay timer if still active
   if [[ -n $_RESIZE_DELAY_PID ]] && kill -0 $_RESIZE_DELAY_PID 2>/dev/null; then
     kill $_RESIZE_DELAY_PID 2>/dev/null
   fi
   
-  # Tạo timer debounce mới: chạy ngầm 0.15 giây rồi gửi tín hiệu SIGUSR1 về shell chính ($$).
-  # &! (disown): Giải phóng tiến trình khỏi bảng quản lý job của Zsh ngay khi sinh ra,
-  # ngăn chặn hoàn toàn việc Zsh in thông báo "[1] PID" khi bắt đầu và "terminated/done" khi kết thúc.
+  # Spawns 0.15s background timer to signal SIGUSR1
+  # &! (disown): Disown background timer immediately from job table
+  # Suppresses job start and completion logs from polluting terminal
   (
     sleep 0.15
     kill -USR1 $$ 2>/dev/null
   ) &!
-  _RESIZE_TIMER_PID=$!  # Lưu PID của timer mới để có thể hủy nếu nhận SIGWINCH tiếp theo
+  _RESIZE_TIMER_PID=$!  # Store timer PID to cancel on subsequent SIGWINCH
 }
 
-# Signal handler xử lý khi người dùng đã dừng kéo cửa sổ (nhận tín hiệu SIGUSR1 từ timer debounce).
-# TRAPUSR1 được Zsh tự động gọi khi shell nhận tín hiệu SIGUSR1 (tín hiệu người dùng tùy chỉnh số 1).
-# Tại đây, ta bắt đầu bộ đếm thời gian delay trước khi chính thức hiển thị lại R_TOP.
+# Signal handler triggered when window drag stops (SIGUSR1)
+# TRAPUSR1: Triggered when shell receives SIGUSR1 from debounce timer.
+# Initiates recovery delay timer before restoring R_TOP.
 TRAPUSR1() {
   setopt local_options no_monitor
-  # Đợi thêm 0.15 giây sau khi kéo xong để giao diện terminal ổn định hoàn toàn trước khi vẽ lại
+  # 0.15s stabilization delay after window resize finishes
   (
     sleep 0.15
     kill -USR2 $$ 2>/dev/null
@@ -2706,18 +2706,18 @@ TRAPUSR1() {
   _RESIZE_DELAY_PID=$!
 }
 
-# Signal handler xử lý khi hết thời gian trì hoãn vẽ lại (nhận tín hiệu SIGUSR2 từ delay timer).
-# TRAPUSR2 được Zsh tự động gọi khi shell nhận tín hiệu SIGUSR2 (tín hiệu người dùng tùy chỉnh số 2).
-# Tại đây ta chính thức tắt cờ resize và vẽ lại prompt đầy đủ với R_TOP hiện ra ở vị trí mới.
+# Signal handler triggered when delay expires (SIGUSR2)
+# TRAPUSR2: Triggered when shell receives SIGUSR2 from recovery delay timer.
+# Disables resize flag and redraws complete prompt at new column width
 TRAPUSR2() {
-  _RESIZE_ACTIVE=0  # Tắt cờ resize: zsh_top_line() sẽ hiển thị lại R_TOP đầy đủ
+  _RESIZE_ACTIVE=0  # Reset resize flag: restores full R_TOP HUD
   if [[ -o zle ]]; then
-    zle reset-prompt 2>/dev/null  # Vẽ lại prompt hoàn chỉnh với R_TOP căn lề phải theo COLUMNS mới
+    zle reset-prompt 2>/dev/null  # Redraw prompt with R_TOP aligned to new COLUMNS
   fi
 }
 
-# H3. Module hiển thị icon thời gian động (Time Icon)
-# Lấy biểu tượng đồng hồ tương ứng với giờ hiện tại (12 mức tương ứng từ 1h - 12h)
+# Module H3: Analog Clock Icon Selector
+# Selects corresponding analog clock icon based on current 12-hour cycle
 function zsh_time_icon() {
   local hour=$(strftime "%I" $EPOCHSECONDS)
   hour=$(( 10#$hour ))
@@ -2730,33 +2730,33 @@ function zsh_time_icon() {
   echo -n "${clocks[idx + 1]}"
 }
 
-# --- 5. ASSEMBLE PROMPT (LẮP GHÉP CẤU TRÚC PROMPT) ---
+# --- --- 6. Final Prompt Assembly --- ---
 
-# Dòng Prompt bên phải màn hình (RPROMPT):
-# Hiển thị: [Thời gian chạy lệnh trước] -> [Icon Đồng hồ] -> [Giờ:Phút:Giây Ngày/Tháng/Năm] -> [Khung đóng]
+# Right-aligned prompt (RPROMPT):
+# Displays: [Command Duration] -> [Clock Icon] -> [Time & Date] -> [Corner Frame]
 RPROMPT='${cmd_time}${C_ACCENT}$(zsh_time_icon) ${C_DATA}%D{%H:%M:%S %d/%m/%Y} ${C_DIM}${R_BOT}${C_RESET}'
 
 
 
 
 # =========================================================================
-# ⚙️ CẤU HÌNH CHO PNPM (PACKAGE MANAGER CHO NODE.JS)
+# ⚙️ PNPM PACKAGE MANAGER CONFIGURATION
 # =========================================================================
-# Định nghĩa đường dẫn lưu trữ các package cài đặt toàn cục của pnpm
+# Define global pnpm binaries path
 export PNPM_HOME="$HOME/.local/share/pnpm"
 case ":$PATH:" in
-  *":$PNPM_HOME:"*) ;; # Nếu biến PNPM_HOME đã nằm trong danh sách tìm kiếm PATH rồi thì bỏ qua
-  *) export PATH="$PNPM_HOME:$PATH" ;; # Nếu chưa có, đẩy đường dẫn PNPM_HOME lên đầu tiên của PATH
+  *":$PNPM_HOME:"*) ;; # Skip if PNPM_HOME is already in PATH
+  *) export PATH="$PNPM_HOME:$PATH" ;; # Prepend PNPM_HOME to PATH
 esac
 
-# Tạo biệt danh để gọi nhanh các công cụ AI coding assistant đã cài đặt trong hệ thống
-alias gemini='$HOME/.local/share/pnpm/gemini' # gemini: Khởi chạy Gemini CLI (trợ lý AI của Google) từ thư mục pnpm global
-alias agy='$HOME/.local/bin/agy'              # agy: Khởi chạy Antigravity IDE Agent (trợ lý AI coding) từ thư mục cài đặt local
+# AI Coding Assistant Shortcuts
+alias gemini='$HOME/.local/share/pnpm/gemini' # gemini: Launch Google Gemini CLI
+alias agy='$HOME/.local/bin/agy'              # agy: Launch Antigravity CLI
 
 # =========================================================================
-# ⚙️ CẤU HÌNH ĐƯỜNG DẪN SNAP (CHO CÁC GÓI CÀI ĐẶT QUA SNAP NHƯ YAZI)
+# ⚙️ SNAP BINARY PATH INTEGRATION
 # =========================================================================
-# Thêm /snap/bin vào PATH nếu thư mục tồn tại và chưa được khai báo (quan trọng trên Ubuntu/Debian)
+# Add /snap/bin to PATH if present on Ubuntu/Debian
 if [[ -d /snap/bin ]]; then
   case ":$PATH:" in
     *":/snap/bin:"*) ;;
@@ -2765,33 +2765,33 @@ if [[ -d /snap/bin ]]; then
 fi
 
 # =========================================================================
-# ⚙️ CẤU HÌNH CHO FNM (FAST NODE MANAGER - TRÌNH QUẢN LÝ PHIÊN BẢN NODEJS CỰC NHANH)
+# ⚙️ FNM (FAST NODE MANAGER) INTEGRATION
 # =========================================================================
 FNM_PATH="$HOME/.local/share/fnm"
-# Nếu thư mục cài đặt FNM thực sự tồn tại
+# Check if FNM installation directory exists
 if [ -d "$FNM_PATH" ]; then
   if [[ -z "$_ZSHRC_INITIALIZED" ]]; then
-    # Thêm đường dẫn FNM vào biến PATH để có thể chạy lệnh fnm ngoài terminal
+    # Add FNM directory to PATH
     export PATH="$FNM_PATH:$PATH"
     
-    # Khởi tạo FNM tích hợp vào Zsh:
-    # --use-on-cd: Tự động chuyển đổi phiên bản Node.js phù hợp khi bạn di chuyển vào thư mục chứa file .node-version hoặc .nvmrc
-    # --version-file-strategy=recursive: Tìm kiếm file cấu hình Node.js đệ quy ngược lên thư mục cha
-    # --corepack-enabled: Tự động kích hoạt công cụ Corepack của NodeJS
+    # Initialize FNM shell environment:
+    # --use-on-cd: Auto-switch Node.js version when entering project folders with .nvmrc or .node-version
+    # --version-file-strategy=recursive: Recursive version file discovery
+    # --corepack-enabled: Enable Corepack integration
     eval "$(fnm env --use-on-cd --version-file-strategy=recursive --corepack-enabled --resolve-engines --shell zsh)"
     
-    # Kỹ thuật Tối ưu hóa hiệu suất (Performance Best Practice):
-    # Việc sinh mã tự động gợi ý lệnh (completions) của FNM mỗi lần mở terminal rất mất thời gian.
-    # Giải pháp: Lưu đệm (cache) kết quả gợi ý lệnh vào file fnm_completions.zsh.
+    # Performance Optimization:
+    # Generating shell completions dynamically on every startup causes noticeable lag.
+    # Solution: Cache generated completions to disk in ~/.cache/.
     local FNM_COMP_FILE="${ZSH_CACHE_DIR:-$HOME/.cache}/fnm_completions.zsh"
     local FNM_BIN=$(whence -p fnm)
-    # Tự động tạo lại cache nếu chưa có hoặc nếu file chạy fnm mới hơn file cache
+    # Rebuild cache only if binary is newer than cache file
     if [[ ! -f "$FNM_COMP_FILE" || ( -n "$FNM_BIN" && "$FNM_BIN" -nt "$FNM_COMP_FILE" ) ]]; then
       mkdir -p "$(dirname "$FNM_COMP_FILE")"
-      # Gọi lệnh sinh gợi ý của FNM và lưu đè vào file cache
+      # Generate and save completions to cache
       fnm completions --shell zsh >| "$FNM_COMP_FILE" 2>/dev/null
     fi
-    # Nạp nội dung gợi ý lệnh từ file cache (tốc độ đọc cực nhanh)
+    # Source cached completions with zero subprocess overhead
     [[ -f "$FNM_COMP_FILE" ]] && source "$FNM_COMP_FILE"
   fi
 fi
@@ -2799,34 +2799,34 @@ fi
 
 
 # =========================================================================
-# 🚀 AUTOMATIC COMPILATION FOR STARTUP SPEEDUP (TỰ ĐỘNG BIÊN DỊCH TĂNG TỐC LOAD SHELL)
+# 🚀 AUTOMATIC BINARY COMPILATION (ZSH WORD CODE - .ZWC)
 # =========================================================================
-# Kỹ thuật nâng cao: Mỗi khi bạn mở một tab Terminal mới, Zsh phải đọc và phân tích toàn bộ file văn bản .zshrc này.
-# Bằng cách biên dịch nó thành mã nhị phân .zwc (Zsh Word Code), Zsh có thể nạp trực tiếp file nhị phân này với tốc độ nhanh gấp 2-3 lần.
+# Zsh parses plaintext script files sequentially on every startup.
+# By compiling .zshrc into bytecode (.zshrc.zwc), startup latency is cut by 60-70%.
 
 function _zsh_recompile() {
   local zconf="$HOME/.zshrc"
-  # Nếu tệp tin cấu hình .zshrc mới hơn (-nt - newer than) tệp tin nhị phân đã biên dịch .zshrc.zwc
-  # (Tức là bạn vừa mới chỉnh sửa nội dung file .zshrc)
+  # Check if .zshrc has been modified since last bytecode compilation
+  # (e.g. recent edits detected)
   if [[ "$zconf" -nt "${zconf}.zwc" ]]; then
-    # Tiến hành biên dịch lại file cấu hình sang định dạng nhị phân .zwc
+    # Recompile configuration file to .zwc binary bytecode
     zcompile "$zconf" 2>/dev/null
   fi
 }
-# Chạy ngầm hàm tự động biên dịch
+# Execute bytecode compilation
 _zsh_recompile
 
 if [[ -z "$_ZSHRC_INITIALIZED" ]]; then
-  # Nạp biến môi trường từ script env do uv tự động tạo (nếu có)
+  # Source uv Python environment if present
   [[ -f "$HOME/.local/bin/env" ]] && . "$HOME/.local/bin/env"
 
-  # Kỹ thuật Tối ưu hóa hiệu suất (Performance Best Practice):
-  # Việc sinh mã tự động gợi ý lệnh (completions) của uv và uvx mỗi lần mở terminal rất mất thời gian.
-  # Giải pháp: Lưu đệm (cache) kết quả gợi ý lệnh vào file uv_completions.zsh và uvx_completions.zsh.
+  # Performance Optimization:
+  # Cache completions for uv and uvx to eliminate startup overhead
+  # Persist generated completions to ~/.cache/
   if (( $+commands[uv] )); then
     local UV_COMP_FILE="${ZSH_CACHE_DIR:-$HOME/.cache}/uv_completions.zsh"
     local UV_BIN=$(whence -p uv)
-    # Tự động tạo lại cache nếu chưa có hoặc nếu file chạy uv mới hơn file cache
+    # Auto-rebuild cache when uv binary updates
     if [[ ! -f "$UV_COMP_FILE" || ( -n "$UV_BIN" && "$UV_BIN" -nt "$UV_COMP_FILE" ) ]]; then
       mkdir -p "$(dirname "$UV_COMP_FILE")"
       uv generate-shell-completion zsh >| "$UV_COMP_FILE" 2>/dev/null
@@ -2837,7 +2837,7 @@ if [[ -z "$_ZSHRC_INITIALIZED" ]]; then
   if (( $+commands[uvx] )); then
     local UVX_COMP_FILE="${ZSH_CACHE_DIR:-$HOME/.cache}/uvx_completions.zsh"
     local UVX_BIN=$(whence -p uvx)
-    # Tự động tạo lại cache nếu chưa có hoặc nếu file chạy uvx mới hơn file cache
+    # Auto-rebuild uvx cache if binary is newer than cache file
     if [[ ! -f "$UVX_COMP_FILE" || ( -n "$UVX_BIN" && "$UVX_BIN" -nt "$UVX_COMP_FILE" ) ]]; then
       mkdir -p "$(dirname "$UVX_COMP_FILE")"
       uvx --generate-shell-completion zsh >| "$UVX_COMP_FILE" 2>/dev/null
@@ -2846,7 +2846,7 @@ if [[ -z "$_ZSHRC_INITIALIZED" ]]; then
   fi
 fi
 
-# Đánh dấu shell đã được khởi tạo hoàn tất để tối ưu hóa tốc độ tải lại (source)
+# Mark initialization complete to optimize recursive sourcing
 _ZSHRC_INITIALIZED=1
 
 # =========================================================================

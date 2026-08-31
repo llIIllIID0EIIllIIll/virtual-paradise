@@ -187,7 +187,7 @@ BarWidget {
           font.pixelSize: Style.font.body
         }
 
-        // Giờ : Phút : Giây (Khít liền nhau)
+        // Hours : Minutes : Seconds (Compact layout)
         Row {
           anchors.verticalCenter: parent.verticalCenter
           spacing: 0
@@ -219,7 +219,7 @@ BarWidget {
           font.pixelSize: Style.font.body
         }
 
-        // Thứ (Weekday)
+        // Weekday
         Text {
           anchors.verticalCenter: parent.verticalCenter
           text: Qt.formatDateTime(root.displayDate, "ddd")
@@ -229,7 +229,7 @@ BarWidget {
           font.weight: Font.Medium
         }
 
-        // Ngày Tháng Năm (Day Month Year)
+        // Day Month Year (Compact date)
         Text {
           anchors.verticalCenter: parent.verticalCenter
           text: Qt.formatDateTime(root.displayDate, "d MMM yyyy")
