@@ -182,11 +182,12 @@ hl.animation({ leaf = "workspaces", enabled = true, speed = 5.0, bezier = "works
 hl.animation({ leaf = "specialWorkspace", enabled = true, speed = 4.2, bezier = "workspaceGlide", style = "slidefadevert 35%" })
 
 -- ==============================================================================
---  9. POPUPS & PANELS LAYER ANIMATIONS (Smooth Slidefade without Background Dim/Blur)
+--  9. POPUPS & PANELS LAYER RULES (Frosted Glass Acrylic Blur & Animations)
 -- ==============================================================================
-hl.layer_rule({ match = { namespace = "^(omarchy-menu|omarchy-keyboard-panel|omarchy-clipboard|omarchy-emojis|omarchy-bar-panel|omarchy-image-selector)$" }, animation = "slidefade 25%" })
-hl.layer_rule({ match = { namespace = "omarchy-notifications" }, animation = "slidefade 25%" })
-hl.layer_rule({ match = { namespace = "omarchy-osd" }, animation = "slidefadevert 30%" })
+hl.layer_rule({ match = { namespace = "^(omarchy-menu|omarchy-keyboard-panel|omarchy-clipboard|omarchy-emojis|omarchy-bar-panel|omarchy-image-selector)$" }, animation = "slidefade 25%", blur = true, ignore_alpha = 0.5 })
+hl.layer_rule({ match = { namespace = "omarchy-notifications" }, animation = "slidefade 25%", blur = true, ignore_alpha = 0.5 })
+hl.layer_rule({ match = { namespace = "omarchy-osd" }, animation = "slidefadevert 30%", blur = true, ignore_alpha = 0.5 })
+hl.layer_rule({ match = { namespace = "^(omarchy-.*|quickshell.*)$" }, blur = true, ignore_alpha = 0.5 })
 
 -- ==============================================================================
 --  10. URGENT & ERROR WINDOWS (Blazing Neon Red Warning Border & Glow on Error)
