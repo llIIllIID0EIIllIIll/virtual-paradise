@@ -77,15 +77,15 @@ background       = "#07080d"
 background-alpha = 0.92
 text             = "#eafbfa"
 border           = "hyprland.active-border"
-border-alpha     = 0.88
+border-alpha     = 0.90
 border-width     = 2
 
 [tooltip]
 background       = "#07080d"
 background-alpha = 0.96
 text             = "#ffffff"
-border           = "#00f5d4"
-border-alpha     = 0.80
+border           = "hyprland.active-border"
+border-alpha     = 0.90
 
 [notifications]
 background       = "#07080d"
@@ -101,15 +101,15 @@ countdown-error  = "#ff0055"
 
 [launcher]
 background                = "#07080d"
-background-alpha          = 0.93
-text                      = "#7091a4"
+background-alpha          = 0.94
+text                      = "#eafbfa"
 border                    = "hyprland.active-border"
 border-alpha              = 0.90
 border-width              = 2
 scrim                     = "#030406"
 scrim-alpha               = 0.0
 selected-background       = "#00f5d4"
-selected-background-alpha = 0.18
+selected-background-alpha = 0.20
 selected-text             = "#ffffff"
 selected-border           = "hyprland.active-border-foreground"
 selected-border-alpha     = 0.90
@@ -118,17 +118,17 @@ selected-border-width     = 1
 [menu]
 background                = "#07080d"
 background-alpha          = 0.94
-text                      = "#7091a4"
+text                      = "#eafbfa"
 border                    = "hyprland.active-border"
-border-alpha              = 0.88
+border-alpha              = 0.90
 border-width              = 2
 scrim                     = "#030406"
 scrim-alpha               = 0.0
 selected-background       = "#00f5d4"
-selected-background-alpha = 0.16
+selected-background-alpha = 0.20
 selected-text             = "#ffffff"
 selected-border           = "hyprland.active-border-foreground"
-selected-border-alpha     = 0.88
+selected-border-alpha     = 0.90
 selected-border-width     = 1
 
 [polkit]
@@ -149,7 +149,7 @@ background-alpha = 0.85
 text             = "#ffffff"
 placeholder      = "#526e7f"
 text-error       = "#ff0055"
-border           = "#00f5d4"
+border           = "hyprland.active-border"
 border-active    = "hyprland.active-border"
 border-error     = "#ff0055"
 border-alpha     = 0.95
