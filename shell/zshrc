@@ -1245,11 +1245,30 @@ function preexec() {
   cmd_start=$EPOCHREALTIME; # Lưu thời điểm bắt đầu chạy lệnh (tính bằng giây có phần thập phân siêu chính xác)
 }
 
+# =========================================================================
+# 🚨 CYBERPUNK WINDOW ERROR BORDER & GLOW HOOK (HYPRLAND)
+# =========================================================================
+typeset -g _omarchy_last_err_state=0
+
+function _omarchy_error_border_hook() {
+  local exit_code="$1"
+  if [[ -n "$HYPRLAND_INSTANCE_SIGNATURE" ]]; then
+    if [[ $exit_code -ne 0 && $_omarchy_last_err_state -eq 0 ]]; then
+      _omarchy_last_err_state=1
+      (~/.local/bin/hypr_window_error_shake.sh &>/dev/null &!)
+    elif [[ $exit_code -eq 0 && $_omarchy_last_err_state -ne 0 ]]; then
+      _omarchy_last_err_state=0
+      (~/.local/bin/hypr_window_error_restore.sh &>/dev/null &!)
+    fi
+  fi
+}
+
 # Hàm precmd được Zsh tự động gọi NGAY TRƯỚC KHI hiển thị lại dòng Prompt nhập lệnh mới (sau khi lệnh cũ đã chạy xong)
 function precmd() {
   # ĐIỀU RẤT QUAN TRỌNG: Lưu ngay mã thoát ($?) của lệnh vừa chạy xong vào biến exit_status.
   # Nếu không lưu ngay, các lệnh kiểm tra hoặc hàm phụ chạy ngầm trong Prompt sẽ ghi đè lên $? khiến kết quả hiển thị bị sai lệch.
   exit_status=$?
+  _omarchy_error_border_hook "$exit_status"
 
   # Nếu biến thời gian bắt đầu chạy lệnh tồn tại
   if [ -n "$cmd_start" ]; then

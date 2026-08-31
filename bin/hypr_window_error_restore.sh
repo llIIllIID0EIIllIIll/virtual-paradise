@@ -3,10 +3,17 @@
 #  GRADUAL CYBERPUNK COLOR FADE: RED -> MAGENTA -> PURPLE -> BLUE -> MIKU CYAN
 # ==============================================================================
 
-addr=$(hyprctl activewindow -j 2>/dev/null | jq -r '.address // empty')
-if [[ -z "$addr" ]]; then
-  exit 0
+addr=""
+if command -v hyprctl >/dev/null 2>&1; then
+  if command -v jq >/dev/null 2>&1; then
+    addr=$(hyprctl activewindow -j 2>/dev/null | jq -r '.address // empty')
+  fi
+  if [[ -z "$addr" ]]; then
+    addr=$(hyprctl activewindow 2>/dev/null | awk '/Window / { print $2 }' | tr -d ':')
+  fi
 fi
+
+[[ -z "$addr" ]] && exit 0
 
 # Step 1: Red -> Magenta Fade
 hyprctl eval "
@@ -14,7 +21,7 @@ hyprctl eval "
   local d2 = hl.dsp.window.set_prop({ window = 'address:$addr', prop = 'inactive_border_color', value = 'rgba(ff0077aa) rgba(ec4899aa) 45deg' })
   hl.dispatch(d1)
   hl.dispatch(d2)
-" &>/dev/null
+" &>/dev/null 2>&1
 sleep 0.055
 
 # Step 2: Magenta -> Cyber Purple Fade
@@ -23,7 +30,7 @@ hyprctl eval "
   local d2 = hl.dsp.window.set_prop({ window = 'address:$addr', prop = 'inactive_border_color', value = 'rgba(d946efaa) rgba(8b5cf6aa) 45deg' })
   hl.dispatch(d1)
   hl.dispatch(d2)
-" &>/dev/null
+" &>/dev/null 2>&1
 sleep 0.055
 
 # Step 3: Purple -> Neon Azure Blue Fade
@@ -32,7 +39,7 @@ hyprctl eval "
   local d2 = hl.dsp.window.set_prop({ window = 'address:$addr', prop = 'inactive_border_color', value = 'rgba(6366f1aa) rgba(06b6d4aa) 45deg' })
   hl.dispatch(d1)
   hl.dispatch(d2)
-" &>/dev/null
+" &>/dev/null 2>&1
 sleep 0.055
 
 # Step 4: Full Miku Cyan / Hacker Green / Sakura Pink Theme Gradient & Restore Shadow
@@ -43,4 +50,4 @@ hyprctl eval "
   hl.dispatch(d1)
   hl.dispatch(d2)
   hl.dispatch(d3)
-" &>/dev/null
+" &>/dev/null 2>&1
