@@ -6,7 +6,7 @@
 -- ==============================================================================
 
 local activeBorderGradient = {
-  colors = { "rgba(00f5d4ee)", "rgba(00ff88dd)", "rgba(ffb7d5ee)" },
+  colors = { "rgba(00f5d4ee)", "rgba(00f5d4ee)", "rgba(00ff88dd)", "rgba(ffb7d5ee)", "rgba(ffb7d5ee)" },
   angle = 45,
 }
 local inactiveBorderColor = "rgba(182833aa)"

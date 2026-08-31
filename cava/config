@@ -258,13 +258,13 @@
 # You can define as many as 8 different colors. They range from bottom to top of screen
 gradient = 1
 gradient_color_1 = '#00f5d4'
-gradient_color_2 = '#39c5bb'
-gradient_color_3 = '#00ff88'
-gradient_color_4 = '#39ff14'
-gradient_color_5 = '#ffe066'
-gradient_color_6 = '#ff79a8'
+gradient_color_2 = '#00f5d4'
+gradient_color_3 = '#00f5d4'
+gradient_color_4 = '#00ff88'
+gradient_color_5 = '#00ff88'
+gradient_color_6 = '#ffb7d5'
 gradient_color_7 = '#ffb7d5'
-gradient_color_8 = '#ffffff'
+gradient_color_8 = '#ffb7d5'
 
 
 # Horizontal is only supported on noncurses output.
