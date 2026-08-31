@@ -914,10 +914,11 @@ function f() {
         fzf_menu_out=$(echo -e "󰍉  1. Explorer         · Directories, Files & Text Search\n  2. Command History  · Fuzzy search & insert past commands\n  3. Process Manager  · System process monitor & kill manager" | \
                  fzf "${fzf_style[@]}" \
                      --no-input \
+                     --padding="0,1" \
                      --expect=left,right \
                      --header="[↑/↓] Navigate · [Enter/→] Choose Mode · [ESC/←] Exit" \
                      --border-label=" 󰍉 Search☆Hub 󰍉 " \
-                     --height=7)
+                     --height=11)
 
         menu_exit_status=$?
         if [[ $menu_exit_status -eq 130 || -z "$fzf_menu_out" ]]; then
