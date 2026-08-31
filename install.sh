@@ -105,6 +105,12 @@ if [ -f "$REPO_DIR/cava/config" ]; then
   cp "$REPO_DIR/cava/config" "$CONFIG_DIR/cava/config"
 fi
 
+# Install Fastfetch profile & custom anime logo
+mkdir -p "$CONFIG_DIR/fastfetch"
+if [ -d "$REPO_DIR/fastfetch" ]; then
+  cp -r "$REPO_DIR/fastfetch"/* "$CONFIG_DIR/fastfetch/"
+fi
+
 # 6. Install Theme Assets into ~/.config/omarchy/themes/virtual-paradise (if repo is external)
 log "\e[32m[6/7] Installing theme assets & backgrounds...\e[0m"
 if [[ "$REPO_DIR" != "$CONFIG_DIR/omarchy/themes/$THEME_NAME" ]]; then

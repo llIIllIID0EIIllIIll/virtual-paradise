@@ -1,0 +1,204 @@
+{
+  "$schema": "https://github.com/fastfetch-cli/fastfetch/raw/dev/doc/json_schema.json",
+  "logo": {
+    "type": "file",
+    "source": "/home/doe/.config/fastfetch/logo.txt",
+    "padding": {
+      "top": 0,
+      "left": 1,
+      "right": 2
+    },
+    "color": {
+      "1": "#00f5d4",
+      "2": "#ffb7d5"
+    }
+  },
+  "display": {
+    "separator": " \u276f ",
+    "color": {
+      "separator": "#00f5d4"
+    },
+    "showErrors": false,
+    "brightColor": true,
+    "disableLinewrap": true,
+    "stat": false,
+    "size": {
+      "binaryPrefix": "iec",
+      "ndigits": 2
+    },
+    "key": {
+      "width": 11
+    },
+    "percent": {
+      "type": 3,
+      "ndigits": 0
+    },
+    "bar": {
+      "width": 10,
+      "char": {
+        "total": "-",
+        "elapsed": "\u25a0"
+      }
+    }
+  },
+  "modules": [
+    {
+      "type": "title",
+      "color": {
+        "user": "#00f5d4",
+        "at": "#7091a4",
+        "host": "#ffb7d5"
+      }
+    },
+    {
+      "type": "custom",
+      "format": "\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500",
+      "outputColor": "#7091a4"
+    },
+    {
+      "type": "host",
+      "key": "\udb81\udee1 HOST",
+      "keyColor": "#00f5d4",
+      "outputColor": "#eafbfa",
+      "format": "{name}"
+    },
+    {
+      "type": "cpu",
+      "key": "\uf2db CPU",
+      "keyColor": "#00f5d4",
+      "outputColor": "#eafbfa",
+      "format": "{name} ({cores-logical}) @ {freq-max}"
+    },
+    {
+      "type": "gpu",
+      "key": "\udb80\udf79 GPU",
+      "keyColor": "#00f5d4",
+      "outputColor": "#eafbfa",
+      "format": "{name}"
+    },
+    {
+      "type": "disk",
+      "key": "\uf0a0 DISK",
+      "keyColor": "#00f5d4",
+      "outputColor": "#eafbfa",
+      "folders": "/"
+    },
+    "break",
+    {
+      "type": "display",
+      "key": "\udb80\udf79 LCD",
+      "keyColor": "#00ff88",
+      "outputColor": "#eafbfa",
+      "compactType": "original-with-refresh-rate",
+      "preciseRefreshRate": false
+    },
+    {
+      "type": "wm",
+      "key": "\uf488 WM",
+      "keyColor": "#00ff88",
+      "outputColor": "#eafbfa"
+    },
+    {
+      "type": "theme",
+      "key": "\ue22b THEME",
+      "keyColor": "#00ff88",
+      "outputColor": "#eafbfa"
+    },
+    {
+      "type": "terminalfont",
+      "key": "\uf031 FONT",
+      "keyColor": "#00ff88",
+      "outputColor": "#eafbfa"
+    },
+    "break",
+    {
+      "type": "memory",
+      "key": "\uf1c0 RAM",
+      "keyColor": "#ffb7d5",
+      "outputColor": "#eafbfa"
+    },
+    {
+      "type": "swap",
+      "key": "\udb81\udce1 SWAP",
+      "keyColor": "#ffb7d5",
+      "outputColor": "#eafbfa"
+    },
+    {
+      "type": "battery",
+      "key": "\uf240 BAT",
+      "keyColor": "#ffb7d5",
+      "outputColor": "#eafbfa"
+    },
+    "break",
+    {
+      "type": "os",
+      "key": "\uf31a OS",
+      "keyColor": "#ff79a8",
+      "outputColor": "#eafbfa"
+    },
+    {
+      "type": "kernel",
+      "key": "\uf013 KER",
+      "keyColor": "#ff79a8",
+      "outputColor": "#eafbfa"
+    },
+    {
+      "type": "uptime",
+      "key": "\uf272 UP",
+      "keyColor": "#ff79a8",
+      "outputColor": "#eafbfa"
+    },
+    {
+      "type": "packages",
+      "key": "\udb80\udfd6 PKG",
+      "keyColor": "#ff79a8",
+      "outputColor": "#eafbfa"
+    },
+    {
+      "type": "shell",
+      "key": "\uf108 SH",
+      "keyColor": "#ff79a8",
+      "outputColor": "#eafbfa"
+    },
+    {
+      "type": "terminal",
+      "key": "\ue795 TERM",
+      "keyColor": "#ff79a8",
+      "outputColor": "#eafbfa"
+    },
+    "break",
+    {
+      "type": "wifi",
+      "key": "\udb82\udd28 WIFI",
+      "keyColor": "#8b5cf6",
+      "outputColor": "#eafbfa",
+      "format": "{ssid} ({signal-quality})"
+    },
+    {
+      "type": "localip",
+      "key": "\uf1eb LAN",
+      "keyColor": "#8b5cf6",
+      "outputColor": "#eafbfa",
+      "compact": true
+    },
+    {
+      "type": "media",
+      "key": "\udb80\udf86 MEDIA",
+      "keyColor": "#8b5cf6",
+      "outputColor": "#eafbfa"
+    },
+    {
+      "type": "datetime",
+      "key": "\uf017 TIME",
+      "keyColor": "#8b5cf6",
+      "outputColor": "#eafbfa",
+      "format": "{hour-pretty}:{minute-pretty}:{second-pretty}  \u00b7  {day-pretty}/{month-pretty}/{year}"
+    },
+    "break",
+    {
+      "type": "colors",
+      "symbol": "circle",
+      "paddingLeft": 2
+    }
+  ]
+}
