@@ -21,8 +21,8 @@ if ! command -v "$TERM_BIN" &>/dev/null; then
   fi
 fi
 
-# 1. Fastfetch (Main Left Panel - plays smooth neon gradient intro shimmer before settling)
-"$TERM_BIN" -e zsh -c 'sleep 0.35; ~/.local/bin/virtual_fetch --intro 1.5; exec zsh' &
+# 1. Fastfetch (Main Left Panel - waits for split layout to settle before printing to avoid reflow duplication)
+"$TERM_BIN" -e zsh -c 'sleep 0.35; fastfetch; exec zsh' &
 sleep 0.15
 
 # 2. btop (Splits to right half)
