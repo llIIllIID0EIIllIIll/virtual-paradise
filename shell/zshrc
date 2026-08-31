@@ -657,8 +657,8 @@ _f_mode_dir() {
                   --preview="(eza --tree --level=2 --color=always --icons {} || tree -C -L 2 {} || ls -lhA --color=always {}) 2>/dev/null | head -50" \
                   --preview-window="right:60%,border-left:<80(down:50%,border-top)")
 
-    local status=$?
-    [[ $status -eq 130 || -z "$fzf_out" ]] && break
+    local ret=$?
+    [[ $ret -eq 130 || -z "$fzf_out" ]] && break
 
     local key="$(echo "$fzf_out" | head -n 1)"
     local selected="$(echo "$fzf_out" | tail -n +2)"
@@ -698,8 +698,8 @@ _f_mode_file() {
                   --preview="(${bat_bin:-cat} --style=numbers --color=always --line-range :120 {} || cat {}) 2>/dev/null | head -120" \
                   --preview-window="right:60%,border-left:<80(down:50%,border-top)")
 
-    local status=$?
-    [[ $status -eq 130 || -z "$fzf_out" ]] && break
+    local ret=$?
+    [[ $ret -eq 130 || -z "$fzf_out" ]] && break
 
     local key="$(echo "$fzf_out" | head -n 1)"
     local selected="$(echo "$fzf_out" | tail -n +2)"
