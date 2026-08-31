@@ -77,6 +77,9 @@ CHECK_AND_INSTALL_PACKAGES() {
     "cava"
     "btop"
     "fastfetch"
+    "micro"
+    "ripgrep"
+    "fd"
     "mpv"
     "qt6-multimedia"
     "qt6-multimedia-ffmpeg"
@@ -258,9 +261,9 @@ if [[ -d "$REPO_DIR/bin" ]]; then
 fi
 
 # ------------------------------------------------------------------------------
-# 7. Install Component Themes (Btop, Cava, Fastfetch)
+# 7. Install Component Themes (Btop, Cava, Fastfetch, Micro)
 # ------------------------------------------------------------------------------
-log_step "7" "9" "Installing Cava, Btop & Fastfetch theme profiles..."
+log_step "7" "9" "Installing Cava, Btop, Fastfetch & Micro editor theme profiles..."
 
 # Cava
 if [[ -f "$REPO_DIR/cava/config_bar" ]]; then
@@ -281,7 +284,18 @@ fi
 if [[ -d "$REPO_DIR/fastfetch" ]]; then
   cp -r "$REPO_DIR/fastfetch"/* "$CONFIG_DIR/fastfetch/"
 fi
-log_sub "Component themes installed"
+
+# Micro Editor Rice
+if [[ -d "$REPO_DIR/micro" ]]; then
+  mkdir -p "$CONFIG_DIR/micro/colorschemes"
+  if [[ -f "$REPO_DIR/micro/settings.json" ]]; then
+    cp "$REPO_DIR/micro/settings.json" "$CONFIG_DIR/micro/settings.json"
+  fi
+  if [[ -d "$REPO_DIR/micro/colorschemes" ]]; then
+    cp -r "$REPO_DIR/micro/colorschemes"/* "$CONFIG_DIR/micro/colorschemes/"
+  fi
+fi
+log_sub "Component themes installed (Cava, Btop, Fastfetch, Micro)"
 
 # ------------------------------------------------------------------------------
 # 8. Install Theme Assets & Backgrounds
