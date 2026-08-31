@@ -23,7 +23,11 @@ get_live_items() {
   local items=()
   for ext in mp4 gif webm mkv; do
     for f in "$BG_DIR"/*."$ext"; do
-      [[ -f "$f" ]] && items+=("$f")
+      if [[ -f "$f" ]]; then
+        local bname=$(basename "$f")
+        [[ "$bname" =~ ^(Sleeping_miku|lock).* ]] && continue
+        items+=("$f")
+      fi
     done
   done
   echo "${items[@]}"
