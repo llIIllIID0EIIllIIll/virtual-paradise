@@ -671,116 +671,133 @@ function f() {
     fi
   }
 
-  # Sub-function: Directory browser (Navigate with Left/Right arrows)
-  _f_mode_dir() {
+  # Sub-function: Universal Omnisearch & Explorer (Directories, Files & Live Code Search)
+  _f_mode_omnisearch() {
     if [[ -z "$fd_cmd" ]]; then
-      print -P "%F{#ff0055}󰅚 [ERROR]%f 'fd' / 'fd-find' is required for directory navigation."
+      print -P "%F{#ff0055}󰅚 [ERROR]%f 'fd' / 'fd-find' is required for search."
       return 1
     fi
     local current_dir="$(realpath "${1:-.}")"
     local fzf_out key selected exit_status
 
     while true; do
-      fzf_out=$(command $fd_cmd -t d -H -E .git -E node_modules -E .cache "" "$current_dir" 2>/dev/null | \
+      local query_cmd="
+        q={q}
+        if [[ -z \"\$q\" ]]; then
+          command $fd_cmd -t d -H -E .git -E node_modules -E .cache -E target -E .venv \"\" \"$current_dir\" 2>/dev/null | sed 's|^| |'
+          command $fd_cmd -t f -H -E .git -E node_modules -E .cache -E target -E .venv \"\" \"$current_dir\" 2>/dev/null | sed 's|^|󰈙 |'
+        else
+          command $fd_cmd -t d -H -E .git -E node_modules -E .cache -E target -E .venv \"\$q\" \"$current_dir\" 2>/dev/null | sed 's|^| |'
+          command $fd_cmd -t f -H -E .git -E node_modules -E .cache -E target -E .venv \"\$q\" \"$current_dir\" 2>/dev/null | sed 's|^|󰈙 |'
+          if command -v rg &>/dev/null; then
+            command rg --column --line-number --no-heading --color=never --max-count=40 --max-columns=140 -g '!.git' -g '!node_modules' -g '!.cache' -g '!target' -g '!.venv' \"\$q\" \"$current_dir\" 2>/dev/null | sed 's|^| |'
+          fi
+        fi
+      "
+
+      fzf_out=$( ( command $fd_cmd -t d -H -E .git -E node_modules -E .cache -E target -E .venv "" "$current_dir" 2>/dev/null | sed 's|^| |'; command $fd_cmd -t f -H -E .git -E node_modules -E .cache -E target -E .venv "" "$current_dir" 2>/dev/null | sed 's|^|󰈙 |' ) | \
                 fzf "${fzf_style[@]}" \
+                    --multi \
                     --expect=left,right \
-                    --prompt="$i_dir  Directory: $current_dir > " \
-                    --header="[Enter] CD & Exit · [→] Browse Inside · [←] Parent Dir" \
-                    --border-label="  Directory Navigator " \
-                    --preview="(eza --tree --level=2 --color=always --icons {} || tree -C -L 2 {} || ls -lhA --color=always {}) 2>/dev/null | head -50" \
+                    --prompt="󰍉  Omnisearch: $current_dir > " \
+                    --header="[Enter] CD / Open · [Tab] Multi-select · [→] Browse Inside · [←] Parent Dir" \
+                    --border-label=" 🌸 Universal Omnisearch & Explorer 🌸 " \
+                    --bind "change:reload($query_cmd)" \
+                    --preview='
+                      item={}
+                      if [[ "$item" == ""* ]]; then
+                        dir="${item# }"
+                        (eza --tree --level=2 --color=always --icons "$dir" 2>/dev/null || tree -C -L 2 "$dir" 2>/dev/null || ls -lhA --color=always "$dir" 2>/dev/null) | head -100
+                      elif [[ "$item" == "󰈙"* ]]; then
+                        file="${item#󰈙 }"
+                        ('"${bat_cmd:-cat}"' --style=numbers --color=always --line-range :120 "$file" 2>/dev/null || cat "$file" 2>/dev/null) | head -120
+                      elif [[ "$item" == ""* ]]; then
+                        raw="${item# }"
+                        file="${raw%%:*}"
+                        rest="${raw#*:}"
+                        lineno="${rest%%:*}"
+                        ('"${bat_cmd:-cat}"' --style=numbers --color=always --highlight-line "$lineno" "$file" 2>/dev/null || cat "$file" 2>/dev/null) | head -120
+                      fi
+                    ' \
                     --preview-window="right:60%,border-rounded")
 
       exit_status=$?
-      # ESC / Ctrl-C (130) -> Cancel without cd
+      # ESC / Ctrl-C (130) -> Cancel
       if [[ $exit_status -eq 130 ]]; then
         break
       fi
-      
+
       key="$(echo "$fzf_out" | head -n 1)"
       selected="$(echo "$fzf_out" | tail -n +2)"
-      
+
       if [[ "$key" == "left" ]]; then
         current_dir="$(dirname "$current_dir")"
       elif [[ "$key" == "right" ]]; then
-        if [[ -n "$selected" && -d "$selected" ]]; then
-          current_dir="$selected"
+        if [[ -n "$selected" ]]; then
+          local first_line="$(echo "$selected" | head -n 1)"
+          if [[ "$first_line" == ""* ]]; then
+            local target_dir="${first_line# }"
+            if [[ -d "$target_dir" ]]; then
+              current_dir="$target_dir"
+            fi
+          elif [[ "$first_line" == "󰈙"* ]]; then
+            _f_open_files "${first_line#󰈙 }"
+            break
+          elif [[ "$first_line" == ""* ]]; then
+            local raw="${first_line# }"
+            local file="${raw%%:*}"
+            local rest="${raw#*:}"
+            local lineno="${rest%%:*}"
+            _f_open_in_editor "$file" "$lineno"
+            break
+          fi
         fi
       else
-        # Enter pressed: CD to selected sub-directory, or fallback to current_dir
-        if [[ -n "$selected" && -d "$selected" ]]; then
-          cd "$selected"
-        elif [[ -d "$current_dir" ]]; then
-          cd "$current_dir"
+        # Enter pressed
+        if [[ -z "$selected" ]]; then
+          # Nothing selected -> cd current_dir
+          if [[ -d "$current_dir" ]]; then
+            cd "$current_dir"
+          fi
+          break
         fi
-        break
+
+        # Process selected items
+        local first_line="$(echo "$selected" | head -n 1)"
+
+        # If it's a directory
+        if [[ "$first_line" == ""* ]]; then
+          local target_dir="${first_line# }"
+          if [[ -d "$target_dir" ]]; then
+            cd "$target_dir"
+          fi
+          break
+        # If it's content search match (line jump)
+        elif [[ "$first_line" == ""* ]]; then
+          local raw="${first_line# }"
+          local file="${raw%%:*}"
+          local rest="${raw#*:}"
+          local lineno="${rest%%:*}"
+          _f_open_in_editor "$file" "$lineno"
+          break
+        # If it's file(s) (supports multi-select with Tab)
+        else
+          local files_to_open=()
+          while IFS= read -r s_line; do
+            if [[ "$s_line" == "󰈙"* ]]; then
+              files_to_open+=("${s_line#󰈙 }")
+            elif [[ "$s_line" == ""* ]]; then
+              files_to_open+=("${s_line# }")
+            fi
+          done <<< "$selected"
+
+          if [[ ${#files_to_open[@]} -gt 0 ]]; then
+            _f_open_files "${(F)files_to_open}"
+          fi
+          break
+        fi
       fi
     done
-  }
-
-  # Sub-function: File browser (Multi-select with Tab, Left to go up)
-  _f_mode_file() {
-    if [[ -z "$fd_cmd" ]]; then
-      print -P "%F{#ff0055}󰅚 [ERROR]%f 'fd' / 'fd-find' is required for file search."
-      return 1
-    fi
-    local current_dir="$(realpath "${1:-.}")"
-    local fzf_out key selected exit_status
-
-    while true; do
-      fzf_out=$(command $fd_cmd -t f -H -E .git -E node_modules -E .cache "" "$current_dir" 2>/dev/null | \
-                fzf "${fzf_style[@]}" \
-                    --multi \
-                    --expect=left \
-                    --prompt="$i_file  Files: $current_dir > " \
-                    --header="[Tab] Multi-select · [Enter] Open in Editor · [←] Parent Dir" \
-                    --border-label=" 󰈙 File Browser " \
-                    --preview="(${bat_cmd:-cat} --style=numbers --color=always --line-range :100 {} || cat {}) 2>/dev/null | head -100" \
-                    --preview-window="right:60%,border-rounded")
-
-      exit_status=$?
-      if [[ $exit_status -eq 130 || -z "$fzf_out" ]]; then
-        break
-      fi
-      
-      key="$(echo "$fzf_out" | head -n 1)"
-      selected="$(echo "$fzf_out" | tail -n +2)"
-      
-      if [[ "$key" == "left" ]]; then
-        current_dir="$(dirname "$current_dir")"
-      else
-        _f_open_files "$selected"
-        break
-      fi
-    done
-  }
-
-  # Sub-function: Live Ripgrep content search (Opens editor at matched line)
-  _f_mode_content() {
-    if ! (( $+commands[rg] )); then
-      print -P "%F{#ff0055}󰅚 [ERROR]%f 'ripgrep' (rg) is required for content search."
-      return 1
-    fi
-    
-    local search_path="${1:-.}"
-    local result
-    
-    result=$(FZF_DEFAULT_COMMAND="rg --column --line-number --no-heading --color=always --smart-case '' \"$search_path\"" \
-      fzf "${fzf_style[@]}" \
-          --ansi \
-          --disabled \
-          --delimiter=: \
-          --prompt="$i_search  Ripgrep ($search_path) > " \
-          --header="[Enter] Open in Editor at matched line" \
-          --border-label="  Code & Content Search " \
-          --bind "change:reload(rg --column --line-number --no-heading --color=always --smart-case {q} \"$search_path\" || true)" \
-          --preview="(${bat_cmd:-cat} --style=numbers --color=always --highlight-line {2} {1} 2>/dev/null || cat {1} 2>/dev/null)" \
-          --preview-window="right:60%,border-rounded,+{2}-/2")
-
-    if [[ -n "$result" ]]; then
-      local file=$(echo "$result" | cut -d':' -f1)
-      local line=$(echo "$result" | cut -d':' -f2)
-      _f_open_in_editor "$file" "$line"
-    fi
   }
 
   # Sub-function: Fuzzy history picker (Deduplicated)
@@ -837,48 +854,43 @@ function f() {
 
   # Handle CLI flags or launch interactive menu
   case "$mode" in
-    -d|d|cd)
-      _f_mode_dir "$start_path"       # Directory cd mode
-      ;;
-    -f|f|file|open)
-      _f_mode_file "$start_path"      # File open mode
-      ;;
-    -c|c|content|rg)
-      _f_mode_content "$start_path"   # Live ripgrep content search mode
+    -s|s|search|-d|d|cd|-f|f|file|open|-c|c|content|rg)
+      _f_mode_omnisearch "$start_path"
       ;;
     -h|h|history)
-      _f_mode_history                 # History search mode
+      _f_mode_history
       ;;
     -p|p|process|kill)
-      _f_mode_process                 # Process manager mode
+      _f_mode_process
       ;;
     --help|help)
-      # Display detailed help manual
-      print -P "%F{#00f5d4}⌨️  Ultimate Interactive Search & Action Hub (f)%f"
+      print -P "%F{#00f5d4}⌨️  Ultimate Interactive Omnisearch & Action Hub (f)%f"
       print -P "Usage: %F{#eafbfa}f [mode] [path]%f"
       print -P "Available Modes:"
-      print -P "  %F{#00f5d4}-d, d, cd%f        Search directories & cd into (interactive [←/→])"
-      print -P "  %F{#00f5d4}-f, f, file%f      Search files & open in editor (multi-select [Tab])"
-      print -P "  %F{#00f5d4}-c, c, content%f   Search file contents via live ripgrep"
-      print -P "  %F{#00f5d4}-h, h, history%f   Search & insert command from deduplicated history"
-      print -P "  %F{#00f5d4}-p, p, process%f   Manage & terminate active processes ([Enter]/[Ctrl-X])"
+      print -P "  %F{#00f5d4}-s, search, cd, open%f  Universal Omnisearch: Directories (cd), Files & Live Code Search"
+      print -P "  %F{#00f5d4}-h, h, history%f       Search & insert command from deduplicated history"
+      print -P "  %F{#00f5d4}-p, p, process%f       Manage & terminate active processes ([Enter]/[Ctrl-X])"
       print -P "If called without arguments, an interactive FZF menu is displayed."
       ;;
     *)
-      # Interactive menu selection fallback
+      if [[ -d "$mode" ]]; then
+        _f_mode_omnisearch "$mode"
+        return $?
+      fi
+
       if ! (( $+commands[fzf] )); then
-        print -P "%F{red}[ERROR]%f Error: 'fzf' is not installed on this system!" # Error if fzf is missing
+        print -P "%F{#ff0055}󰅚 [ERROR]%f 'fzf' is not installed on this system!"
         return 1
       fi
       
       local fzf_menu_out
-      fzf_menu_out=$(echo -e "  1. Directories        · Browse folders [←/→] & CD\n󰈙  2. Files              · Multi-select files [Tab] & open in editor\n  3. Content Search     · Real-time Ripgrep text search with line jump\n  4. Command History    · Fuzzy search & insert past commands\n  5. Process Manager    · System process monitor & kill manager" | \
+      fzf_menu_out=$(echo -e "󰍉  1. Omnisearch & Explorer · Directories (cd), Files (open) & Code Search\n  2. Command History      · Fuzzy search & insert past commands\n  3. Process Manager      · System process monitor & kill manager" | \
                fzf "${fzf_style[@]}" \
                    --expect=left,right \
                    --prompt="  Select Mode > " \
                    --header="[↑/↓] Navigate · [Enter/→] Choose Mode · [ESC/←] Exit" \
                    --border-label=" 🌸 Virtual☆Paradise Search Hub 🌸 " \
-                   --height=16)
+                   --height=14)
 
       local menu_exit_status=$?
       if [[ $menu_exit_status -eq 130 || -z "$fzf_menu_out" ]]; then
@@ -894,11 +906,9 @@ function f() {
       fi
 
       case "$choice" in
-        *1.*) _f_mode_dir "$mode" ;;   # Activate directory mode
-        *2.*) _f_mode_file "$mode" ;;  # Activate file mode
-        *3.*) _f_mode_content "$mode" ;; # Activate content search mode
-        *4.*) _f_mode_history ;;       # Activate history mode
-        *5.*) _f_mode_process ;;       # Activate process manager mode
+        *1.*) _f_mode_omnisearch "$mode" ;; # Activate Omnisearch
+        *2.*) _f_mode_history ;;            # Activate history mode
+        *3.*) _f_mode_process ;;            # Activate process manager mode
       esac
       ;;
   esac
