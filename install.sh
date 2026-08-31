@@ -244,6 +244,9 @@ if [[ "$THEME_NAME" == "virtual-paradise" ]]; then
   if [[ -f "$HOME/.config/omarchy/themes/virtual-paradise/install.sh" ]]; then
     bash "$HOME/.config/omarchy/themes/virtual-paradise/install.sh" --hook >/dev/null 2>&1 &
   fi
+  if [[ -x "$HOME/.local/bin/toggle_live_wallpaper.sh" ]]; then
+    (sleep 0.3; "$HOME/.local/bin/toggle_live_wallpaper.sh" init >/dev/null 2>&1 &)
+  fi
 fi
 EOF
 chmod +x "$CONFIG_DIR/omarchy/hooks/theme-set.d/virtual-paradise.sh"
@@ -326,9 +329,9 @@ if [[ $IS_HOOK -eq 0 ]]; then
     hyprctl reload 2>/dev/null || true
   fi
 
-  # Initialize live wallpaper
+  # Initialize and launch live video wallpaper immediately
   if [[ -x "$LOCAL_BIN/toggle_live_wallpaper.sh" ]]; then
-    "$LOCAL_BIN/toggle_live_wallpaper.sh" init 2>/dev/null || true
+    (sleep 0.2; "$LOCAL_BIN/toggle_live_wallpaper.sh" init >/dev/null 2>&1 &)
   fi
 
   echo -e "\n${C_BOLD}${C_GREEN}✨ Virtual☆Paradise Theme & Rice successfully installed for '${CURRENT_USER}'!${C_RESET}"
