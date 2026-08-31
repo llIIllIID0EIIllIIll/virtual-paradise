@@ -1,0 +1,177 @@
+#!/usr/bin/env python3
+"""
+==============================================================================
+ Virtual☆Paradise: Animated Fastfetch (virtual_fetch)
+==============================================================================
+ Real-time continuous neon gradient animation for Fastfetch logo & telemetry.
+ Supports:
+   --intro [sec] : Shimmers for N seconds on terminal launch, then exits cleanly.
+   --loop / -l   : Continuous live screensaver / dashboard mode (press 'q' or Enter to exit).
+   --fps [num]   : Frames per second (default: 35 FPS).
+   --speed [num] : Gradient cycling speed (default: 1.2).
+   --logo [path] : Path to custom logo file (defaults to ~/.config/omarchy/branding/about.txt).
+"""
+
+import sys
+import time
+import math
+import os
+import argparse
+import subprocess
+import select
+import termios
+import tty
+import signal
+
+def hex_to_rgb(hex_str):
+    h = hex_str.lstrip("#")
+    return tuple(int(h[i:i+2], 16) for i in (0, 2, 4))
+
+def interpolate_rgb(c1, c2, factor):
+    return (
+        int(c1[0] + (c2[0] - c1[0]) * factor),
+        int(c1[1] + (c2[1] - c1[1]) * factor),
+        int(c1[2] + (c2[2] - c1[2]) * factor)
+    )
+
+def get_multi_color_gradient(factor, colors):
+    factor = factor % 1.0
+    n_segments = len(colors) - 1
+    segment = int(factor * n_segments)
+    segment = min(segment, n_segments - 1)
+    local_factor = (factor * n_segments) - segment
+    return interpolate_rgb(colors[segment], colors[segment + 1], local_factor)
+
+# Cyberpunk Neon Gradient Palette
+PALETTE = [
+    hex_to_rgb("#00f5d4"), # Miku Cyan
+    hex_to_rgb("#00ff88"), # Hacker Green
+    hex_to_rgb("#8b5cf6"), # Cyber Purple
+    hex_to_rgb("#ff007c"), # Neon Rose
+    hex_to_rgb("#ffb7d5"), # Sakura Pink
+    hex_to_rgb("#00f5d4"), # Wrap back to Cyan
+]
+
+class RawTerminal:
+    def __enter__(self):
+        if sys.stdin.isatty():
+            self.fd = sys.stdin.fileno()
+            self.old_settings = termios.tcgetattr(self.fd)
+            tty.setcbreak(self.fd)
+        else:
+            self.fd = None
+        sys.stdout.write("\033[?25l") # Hide cursor
+        sys.stdout.flush()
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        sys.stdout.write("\033[?25h") # Show cursor
+        sys.stdout.flush()
+        if self.fd is not None:
+            try:
+                termios.tcsetattr(self.fd, termios.TCSADRAIN, self.old_settings)
+            except Exception:
+                pass
+
+def get_key():
+    if not sys.stdin.isatty():
+        return None
+    r, _, _ = select.select([sys.stdin], [], [], 0)
+    if r:
+        try:
+            return sys.stdin.read(1)
+        except Exception:
+            return None
+    return None
+
+def main():
+    parser = argparse.ArgumentParser(description="Virtual☆Paradise Animated Fastfetch")
+    parser.add_argument("--intro", type=float, default=0.0, help="Run shimmer intro for N seconds then exit")
+    parser.add_argument("-l", "--loop", action="store_true", help="Loop animation continuously until keypress")
+    parser.add_argument("--fps", type=int, default=35, help="Animation FPS (default: 35)")
+    parser.add_argument("--speed", type=float, default=1.0, help="Gradient speed multiplier (default: 1.0)")
+    parser.add_argument("--logo", type=str, default="", help="Custom logo file path")
+    args = parser.parse_args()
+
+    # Determine logo source
+    logo_file = args.logo
+    if not logo_file or not os.path.exists(logo_file):
+        candidates = [
+            os.path.expanduser("~/.config/omarchy/branding/about.txt"),
+            os.path.expanduser("~/.config/fastfetch/logo.txt"),
+            "/usr/share/omarchy/branding/about.txt",
+        ]
+        for c in candidates:
+            if os.path.exists(c):
+                logo_file = c
+                break
+
+    logo_lines = []
+    if logo_file and os.path.exists(logo_file):
+        with open(logo_file, "r", encoding="utf-8") as f:
+            logo_lines = [l.rstrip("\r\n") for l in f.readlines() if l.strip()]
+
+    # Fetch info lines from fastfetch
+    try:
+        res = subprocess.run(["fastfetch", "--logo", "none"], capture_output=True, text=True, timeout=5)
+        info_lines = res.stdout.splitlines()
+        while info_lines and not info_lines[0].strip():
+            info_lines.pop(0)
+    except Exception:
+        info_lines = []
+
+    total_rows = max(len(logo_lines), len(info_lines))
+    max_cols = max(len(l) for l in logo_lines) if logo_lines else 30
+
+    frame_delay = 1.0 / max(10, min(120, args.fps))
+    start_time = time.time()
+    intro_mode = args.intro > 0.0
+
+    # Catch Ctrl+C gracefully
+    signal.signal(signal.SIGINT, lambda s, f: sys.exit(0))
+
+    with RawTerminal():
+        # Clear screen once
+        sys.stdout.write("\033[2J\033[H")
+        sys.stdout.flush()
+
+        while True:
+            current_time = time.time()
+            elapsed = current_time - start_time
+            phase = (elapsed * args.speed * 0.4) % 1.0
+
+            rendered_lines = []
+            for row_idx in range(total_rows):
+                logo_line = logo_lines[row_idx] if row_idx < len(logo_lines) else " " * max_cols
+                info_line = info_lines[row_idx] if row_idx < len(info_lines) else ""
+
+                colored_logo = []
+                for col_idx, char in enumerate(logo_line):
+                    if char in (" ", "⠀"):
+                        colored_logo.append(" ")
+                    else:
+                        factor = ((row_idx / total_rows * 0.65) + (col_idx / max_cols * 0.35) + phase) % 1.0
+                        r, g, b = get_multi_color_gradient(factor, PALETTE)
+                        colored_logo.append(f"\033[38;2;{r};{g};{b}m{char}\033[0m")
+
+                logo_str = "".join(colored_logo)
+                raw_logo_len = len(logo_line)
+                pad = " " * max(0, max_cols - raw_logo_len)
+                rendered_lines.append(f"  {logo_str}{pad}    {info_line}")
+
+            # Draw frame at top of screen
+            sys.stdout.write("\033[H" + "\n".join(rendered_lines) + "\n")
+            sys.stdout.flush()
+
+            # Check termination conditions
+            if intro_mode and elapsed >= args.intro:
+                break
+
+            key = get_key()
+            if key in ('q', 'Q', '\x1b', '\n', '\r', ' '):
+                break
+
+            time.sleep(frame_delay)
+
+if __name__ == "__main__":
+    main()
