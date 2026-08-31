@@ -587,8 +587,8 @@ function f() {
     --margin="1"              # 1-line margin
     --padding="1"             # 1-line padding
     --info="inline-right"     # Inline-right match count display
-    --pointer="▶"             # Clean directional pointer
-    --marker="✦"              # Sakura pink multi-selection star marker
+    --pointer="󰅂"             # Clean Nerd Font directional pointer (nf-md-chevron_right)
+    --marker="󰄲"              # Nerd Font multi-selection marker (nf-md-checkbox_marked)
     --color="fg:#eafbfa,bg:-1,hl:#00ff88,fg+:#00f5d4,bg+:#131920,hl+:#00ff88"  # High contrast TrueColor palette
     --color="info:#7091a4,prompt:#00f5d4,pointer:#00f5d4,marker:#ffb7d5,spinner:#00ff88,header:#ffb7d5"  # Neon pointers & headers
     --color="border:#00f5d4,label:#00f5d4"  # Miku Cyan border & title labels
@@ -701,7 +701,7 @@ function f() {
                     --expect=left,right \
                     --prompt="󰍉  Omnisearch: $current_dir > " \
                     --header="[Enter] CD / Open · [Tab] Multi-select · [→] Browse Inside · [←] Parent Dir" \
-                    --border-label=" 🌸 Universal Omnisearch & Explorer 🌸 " \
+                    --border-label=" 󰍉 Universal Omnisearch & Explorer 󰍉 " \
                     --bind "change:reload($query_cmd)" \
                     --preview='
                       item={}
@@ -864,7 +864,7 @@ function f() {
       _f_mode_process
       ;;
     --help|help)
-      print -P "%F{#00f5d4}⌨️  Ultimate Interactive Omnisearch & Action Hub (f)%f"
+      print -P "%F{#00f5d4}󰍉  Ultimate Interactive Omnisearch & Action Hub (f)%f"
       print -P "Usage: %F{#eafbfa}f [mode] [path]%f"
       print -P "Available Modes:"
       print -P "  %F{#00f5d4}-s, search, cd, open%f  Universal Omnisearch: Directories (cd), Files & Live Code Search"
@@ -887,9 +887,9 @@ function f() {
       fzf_menu_out=$(echo -e "󰍉  1. Omnisearch & Explorer · Directories (cd), Files (open) & Code Search\n  2. Command History      · Fuzzy search & insert past commands\n  3. Process Manager      · System process monitor & kill manager" | \
                fzf "${fzf_style[@]}" \
                    --expect=left,right \
-                   --prompt="  Select Mode > " \
+                   --prompt="󰍉  Select Mode > " \
                    --header="[↑/↓] Navigate · [Enter/→] Choose Mode · [ESC/←] Exit" \
-                   --border-label=" 🌸 Virtual☆Paradise Search Hub 🌸 " \
+                   --border-label=" 󰍉 Virtual☆Paradise Search Hub 󰍉 " \
                    --height=14)
 
       local menu_exit_status=$?
