@@ -678,34 +678,35 @@ function f() {
       print -P "%F{#ff0055}󰅚 [ERROR]%f 'fd' / 'fd-find' is required for directory navigation."
       return 1
     fi
-    local current_dir=$(realpath "${1:-.}")
+    local current_dir="$(realpath "${1:-.}")"
+    local fzf_out key selected exit_status
+
     while true; do
-      local fzf_out
       fzf_out=$(command $fd_cmd -t d -H -E .git -E node_modules -E .cache "" "$current_dir" 2>/dev/null | \
                 fzf "${fzf_style[@]}" \
                     --expect=left,right \
                     --prompt="$i_dir  Directory: $current_dir > " \
-                    --header="[Enter/→] CD · [←] Parent Dir · [Ctrl-/] Preview" \
+                    --header="[Enter] CD & Exit · [→] Browse Inside · [←] Parent Dir · [Ctrl-/] Preview" \
                     --border-label="  Directory Navigator " \
-                    --preview="(eza --tree --level=2 --color=always --icons {} || tree -C -L 2 {} || ls -lhA --color=always {} || ls -F {}) 2>/dev/null | head -50" \
+                    --preview="(eza --tree --level=2 --color=always --icons {} || tree -C -L 2 {} || ls -lhA --color=always {}) 2>/dev/null | head -50" \
                     --preview-window="right:60%,border-rounded")
 
-      local exit_status=$?
+      exit_status=$?
       if [[ $exit_status -eq 130 || -z "$fzf_out" ]]; then
         break
       fi
       
-      local key=$(echo "$fzf_out" | head -n 1)
-      local selected=$(echo "$fzf_out" | tail -n +2)
+      key="$(echo "$fzf_out" | head -n 1)"
+      selected="$(echo "$fzf_out" | tail -n +2)"
       
       if [[ "$key" == "left" ]]; then
-        current_dir=$(dirname "$current_dir")
+        current_dir="$(dirname "$current_dir")"
       elif [[ "$key" == "right" ]]; then
-        if [[ -n "$selected" ]]; then
+        if [[ -n "$selected" && -d "$selected" ]]; then
           current_dir="$selected"
         fi
       else
-        if [[ -n "$selected" ]]; then
+        if [[ -n "$selected" && -d "$selected" ]]; then
           cd "$selected"
         fi
         break
@@ -719,9 +720,10 @@ function f() {
       print -P "%F{#ff0055}󰅚 [ERROR]%f 'fd' / 'fd-find' is required for file search."
       return 1
     fi
-    local current_dir=$(realpath "${1:-.}")
+    local current_dir="$(realpath "${1:-.}")"
+    local fzf_out key selected exit_status
+
     while true; do
-      local fzf_out
       fzf_out=$(command $fd_cmd -t f -H -E .git -E node_modules -E .cache "" "$current_dir" 2>/dev/null | \
                 fzf "${fzf_style[@]}" \
                     --multi \
@@ -732,16 +734,16 @@ function f() {
                     --preview="(${bat_cmd:-cat} --style=numbers --color=always --line-range :100 {} || cat {}) 2>/dev/null | head -100" \
                     --preview-window="right:60%,border-rounded")
 
-      local exit_status=$?
+      exit_status=$?
       if [[ $exit_status -eq 130 || -z "$fzf_out" ]]; then
         break
       fi
       
-      local key=$(echo "$fzf_out" | head -n 1)
-      local selected=$(echo "$fzf_out" | tail -n +2)
+      key="$(echo "$fzf_out" | head -n 1)"
+      selected="$(echo "$fzf_out" | tail -n +2)"
       
       if [[ "$key" == "left" ]]; then
-        current_dir=$(dirname "$current_dir")
+        current_dir="$(dirname "$current_dir")"
       else
         _f_open_files "$selected"
         break
