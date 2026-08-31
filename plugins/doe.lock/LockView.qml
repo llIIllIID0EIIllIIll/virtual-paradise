@@ -19,9 +19,9 @@ Item {
   property string passwordText: ""
   property bool syncingPasswordText: false
 
-  readonly property string placeholderText: "Enter Password to Unlock 󰍉"
+  readonly property string placeholderText: "Enter Password 󰍉"
   readonly property int fieldWidth: 390
-  readonly property int fieldHeight: 64
+  readonly property int fieldHeight: 58
   readonly property int outlineThickness: 2
   readonly property int fieldFontSize: Math.round(Style.font.heading * 1.05)
   readonly property int passwordDotFontSize: Math.round(Style.font.heading * 1.33)
@@ -36,54 +36,35 @@ Item {
     ? Border.surfaceSpec("lock", "border-error", Color.lock.borderError, root.outlineThickness, "border-alpha")
     : Border.surfaceSpec("lock", "border-active", Color.lock.borderActive, root.outlineThickness, "border-alpha")
 
-  // Linux Fortune command process for infinite random wisdom, jokes & quotes
+  property string currentQuote: "“Loading system wisdom…”"
+
+  // Linux Fortune Process: Fetch short quotes/jokes/sayings directly from Linux fortune
   Process {
     id: fortuneProc
     command: ["fortune", "-s"]
     stdout: StdioCollector {
       waitForEnd: true
       onStreamFinished: {
-        var raw = String(text || "").trim().replace(/\r?\n|\r/g, " ")
-        if (raw.length > 0 && raw.length < 160) {
-          root.currentQuote = "✨ " + raw
+        var raw = String(text || "").trim().replace(/\t+/g, " — ").replace(/\r?\n|\r/g, " ").replace(/\s+/g, " ")
+        if (raw.length > 0) {
+          root.currentQuote = "“" + raw + "”"
         }
       }
     }
   }
 
-  // Curated Anime, Linux, Cyberpunk & Developer Memes
-  readonly property var funQuotes: [
-    "💡 Có 10 loại người: người hiểu hệ nhị phân và người không.",
-    "✨ Miku Fact: Cần 39.390 lít trà sữa để sạc đầy 100% năng lượng!",
-    "☕ Tại sao dev thích bóng tối? Vì ánh sáng thu hút bugs!",
-    "💤 Sleeping Miku: Đang nạp năng lượng... Vui lòng không đánh thức ca sĩ ảo! 🌸",
-    "🐧 sudo !! chạy lại lệnh vừa gõ với quyền root — phép màu lúc bế tắc.",
-    "🌸 Virtual☆Paradise: Nơi duy nhất RAM 16GB không bao giờ là đủ.",
-    "💻 git commit -m 'fixed bug for real this time (final_v3)'",
-    "⚡ 'I use Arch btw' tăng 50% tốc độ gõ phím và 100% độ ngầu.",
-    "🧠 2 thứ khó nhất trần đời: đặt tên biến và dọn dẹp cache.",
-    "🎮 Miku Meme: Leek spin 10 hours mode: ACTIVATED 🥬",
-    "🛡️ Mật khẩu không nên là '123456', trừ khi bạn muốn bị Miku mắng!",
-    "🌌 Neo Tokyo: Bầu trời đêm neon xanh, cà phê đen và dòng lệnh zsh.",
-    "🐱 Mèo ngủ 16 tiếng một ngày, Miku cũng vậy khi bạn lock máy!"
-  ]
-
-  property string currentQuote: funQuotes[Math.floor(Math.random() * funQuotes.length)]
-
-  function pickRandomQuote() {
-    if (Math.random() < 0.6) {
-      fortuneProc.running = true
-    } else {
-      var nextIdx = Math.floor(Math.random() * root.funQuotes.length)
-      root.currentQuote = root.funQuotes[nextIdx]
-    }
+  function fetchFortune() {
+    fortuneProc.running = false
+    fortuneProc.running = true
   }
 
+  // Auto-refresh quote every 10 seconds
   Timer {
-    interval: 8000
+    id: quoteRefreshTimer
+    interval: 10000
     running: root.loadBackground
     repeat: true
-    onTriggered: root.pickRandomQuote()
+    onTriggered: root.fetchFortune()
   }
 
   signal submitPassword(string password)
@@ -119,7 +100,7 @@ Item {
   Component.onCompleted: {
     syncPasswordText()
     if (inputEnabled) Qt.callLater(forcePasswordFocus)
-    root.pickRandomQuote()
+    root.fetchFortune()
   }
 
   TextMetrics {
@@ -149,7 +130,7 @@ Item {
     // High clarity subtle dark tint so Sleeping Miku is crystal clear and vivid
     Rectangle {
       anchors.fill: parent
-      color: "#3307080d"
+      color: "#2b07080d"
     }
 
     MouseArea {
@@ -159,13 +140,15 @@ Item {
       onPositionChanged: root.wakeRequested()
     }
 
-    // Top Header: Live Neon Clock & Date + Random Fortune / Joke / Meme
+    // =========================================================================
+    // TOP SECTION (Above Miku): Neon Clock, Live Date & Fortune Quote
+    // =========================================================================
     Column {
-      id: headerGroup
-      anchors.bottom: inputField.top
-      anchors.bottomMargin: 28
+      id: topHeader
+      anchors.top: parent.top
+      anchors.topMargin: 48
       anchors.horizontalCenter: parent.horizontalCenter
-      spacing: 6
+      spacing: 8
 
       Text {
         id: timeDisplay
@@ -173,7 +156,7 @@ Item {
         text: Qt.formatDateTime(new Date(), "hh:mm")
         color: "#00f5d4"
         font.family: Style.font.family
-        font.pixelSize: Math.round(Style.font.heading * 2.2)
+        font.pixelSize: Math.round(Style.font.heading * 2.4)
         font.bold: true
 
         Timer {
@@ -187,10 +170,10 @@ Item {
       Text {
         id: dateDisplay
         anchors.horizontalCenter: parent.horizontalCenter
-        text: Qt.formatDateTime(new Date(), "dddd, MMMM d")
+        text: Qt.formatDateTime(new Date(), "dddd, MMMM d, yyyy")
         color: "#ffb7d5"
         font.family: Style.font.family
-        font.pixelSize: Math.round(Style.font.base * 1.1)
+        font.pixelSize: Math.round(Style.font.base * 1.15)
         font.bold: true
       }
 
@@ -201,103 +184,148 @@ Item {
         color: "#eafbfa"
         font.family: Style.font.family
         font.pixelSize: Math.round(Style.font.base * 0.95)
+        font.italic: true
         horizontalAlignment: Text.AlignHCenter
         wrapMode: Text.WordWrap
-        maximumLineCount: 2
-        width: Math.min(640, parent.parent.width - 40)
+        maximumLineCount: 3
+        width: Math.min(740, parent.parent.width - 40)
       }
     }
 
-    // Password Input Box
-    BorderSurface {
-      id: inputField
-      width: root.fieldWidth
-      height: root.fieldHeight
-      anchors.centerIn: parent
-      color: "#d9131920"
-      borderSpec: root.inputBorderSpec
-      radius: Style.cornerRadius
-      clip: true
+    // =========================================================================
+    // BOTTOM SECTION: "sleep mode_" Header & Password Input Box Below It
+    // =========================================================================
+    Column {
+      id: bottomAuthGroup
+      anchors.bottom: parent.bottom
+      anchors.bottomMargin: 72
+      anchors.horizontalCenter: parent.horizontalCenter
+      spacing: 12
 
-      TextInput {
-        id: passwordInput
-        anchors.fill: parent
-        anchors.topMargin: inputField.borderTop
-        anchors.rightMargin: inputField.borderRight + 18 + root.fingerprintReserve
-        anchors.bottomMargin: inputField.borderBottom
-        anchors.leftMargin: inputField.borderLeft + 18 + root.fingerprintReserve
-        verticalAlignment: TextInput.AlignVCenter
-        horizontalAlignment: TextInput.AlignHCenter
-        activeFocusOnPress: true
-        clip: true
-        enabled: root.inputEnabled && !root.authenticatingPassword
-        readOnly: root.authenticatingPassword
-        echoMode: TextInput.Password
-        passwordCharacter: "\u25CF"
-        passwordMaskDelay: 0
-        color: "#00ff88"
-        selectionColor: Color.lock.selection
-        selectedTextColor: "#eafbfa"
-        font.family: Style.font.family
-        font.pixelSize: text.length > 0 ? Math.max(1, Math.floor(root.passwordDotFontSize * root.passwordDotScale)) : root.fieldFontSize
-        font.letterSpacing: text.length > 0 ? root.passwordDotLetterSpacing * root.passwordDotScale : 0
-        cursorVisible: activeFocus && root.showPasswordCursor && text.length > 0
-        cursorDelegate: Rectangle {
-          width: 2
+      // "sleep mode_" with Neon Blinking Hacker Cursor
+      Row {
+        id: sleepModeRow
+        anchors.horizontalCenter: parent.horizontalCenter
+        spacing: 2
+
+        Text {
+          text: "sleep mode"
           color: "#00f5d4"
-          visible: passwordInput.cursorVisible
+          font.family: Style.font.family
+          font.pixelSize: Math.round(Style.font.heading * 0.95)
+          font.bold: true
+          font.letterSpacing: 1
         }
 
-        onTextChanged: {
-          if (!root.syncingPasswordText) root.passwordTextEdited(text)
-          if (text.length > 0) {
-            root.wakeRequested()
+        Text {
+          id: blinkCursor
+          text: "_"
+          color: "#00ff88"
+          font.family: Style.font.family
+          font.pixelSize: Math.round(Style.font.heading * 0.95)
+          font.bold: true
+          visible: true
+
+          Timer {
+            interval: 530
+            running: true
+            repeat: true
+            onTriggered: blinkCursor.visible = !blinkCursor.visible
           }
-          if (text.length > 0 && root.failureMessage.length > 0) root.clearFailureRequested()
         }
+      }
 
-        onAccepted: {
-          var submitted = root.passwordText
-          root.passwordTextEdited("")
-          if (submitted.length > 0) root.submitPassword(submitted)
-        }
+      // Password Input Box
+      BorderSurface {
+        id: inputField
+        width: root.fieldWidth
+        height: root.fieldHeight
+        anchors.horizontalCenter: parent.horizontalCenter
+        color: "#d9131920"
+        borderSpec: root.inputBorderSpec
+        radius: Style.cornerRadius
+        clip: true
 
-        Keys.onPressed: function(event) {
-          root.wakeRequested()
-          if (event.key === Qt.Key_Escape || (event.modifiers & Qt.ControlModifier && event.key === Qt.Key_U)) {
+        TextInput {
+          id: passwordInput
+          anchors.fill: parent
+          anchors.topMargin: inputField.borderTop
+          anchors.rightMargin: inputField.borderRight + 18 + root.fingerprintReserve
+          anchors.bottomMargin: inputField.borderBottom
+          anchors.leftMargin: inputField.borderLeft + 18 + root.fingerprintReserve
+          verticalAlignment: TextInput.AlignVCenter
+          horizontalAlignment: TextInput.AlignHCenter
+          activeFocusOnPress: true
+          clip: true
+          enabled: root.inputEnabled && !root.authenticatingPassword
+          readOnly: root.authenticatingPassword
+          echoMode: TextInput.Password
+          passwordCharacter: "\u25CF"
+          passwordMaskDelay: 0
+          color: "#00ff88"
+          selectionColor: Color.lock.selection
+          selectedTextColor: "#eafbfa"
+          font.family: Style.font.family
+          font.pixelSize: text.length > 0 ? Math.max(1, Math.floor(root.passwordDotFontSize * root.passwordDotScale)) : root.fieldFontSize
+          font.letterSpacing: text.length > 0 ? root.passwordDotLetterSpacing * root.passwordDotScale : 0
+          cursorVisible: activeFocus && root.showPasswordCursor && text.length > 0
+          cursorDelegate: Rectangle {
+            width: 2
+            color: "#00f5d4"
+            visible: passwordInput.cursorVisible
+          }
+
+          onTextChanged: {
+            if (!root.syncingPasswordText) root.passwordTextEdited(text)
+            if (text.length > 0) {
+              root.wakeRequested()
+            }
+            if (text.length > 0 && root.failureMessage.length > 0) root.clearFailureRequested()
+          }
+
+          onAccepted: {
+            var submitted = root.passwordText
             root.passwordTextEdited("")
-            event.accepted = true
+            if (submitted.length > 0) root.submitPassword(submitted)
+          }
+
+          Keys.onPressed: function(event) {
+            root.wakeRequested()
+            if (event.key === Qt.Key_Escape || (event.modifiers & Qt.ControlModifier && event.key === Qt.Key_U)) {
+              root.passwordTextEdited("")
+              event.accepted = true
+            }
           }
         }
-      }
 
-      Text {
-        textFormat: Text.PlainText
-        anchors.fill: passwordInput
-        text: root.authenticatingPassword ? "Checking…" : (root.failureMessage.length > 0 ? root.failureMessage : root.placeholderText)
-        visible: passwordInput.text.length === 0
-        color: root.authenticatingPassword ? "#00f5d4" : (root.failureMessage.length > 0 ? Color.lock.textError : "#7091a4")
-        font.family: Style.font.family
-        font.pixelSize: root.fieldFontSize
-        font.italic: !root.authenticatingPassword && root.failureMessage.length > 0
-        horizontalAlignment: Text.AlignHCenter
-        verticalAlignment: Text.AlignVCenter
-        elide: Text.ElideRight
-      }
+        Text {
+          textFormat: Text.PlainText
+          anchors.fill: passwordInput
+          text: root.authenticatingPassword ? "Checking…" : (root.failureMessage.length > 0 ? root.failureMessage : root.placeholderText)
+          visible: passwordInput.text.length === 0
+          color: root.authenticatingPassword ? "#00f5d4" : (root.failureMessage.length > 0 ? Color.lock.textError : "#7091a4")
+          font.family: Style.font.family
+          font.pixelSize: root.fieldFontSize
+          font.italic: !root.authenticatingPassword && root.failureMessage.length > 0
+          horizontalAlignment: Text.AlignHCenter
+          verticalAlignment: Text.AlignVCenter
+          elide: Text.ElideRight
+        }
 
-      Text {
-        id: fingerprintIcon
-        objectName: "fingerprintIndicator"
-        anchors.right: parent.right
-        anchors.rightMargin: inputField.borderRight + 18
-        anchors.verticalCenter: parent.verticalCenter
-        visible: root.fingerprintConfigured
-        text: "󰈷"
-        color: "#00f5d4"
-        font.family: Style.font.family
-        font.pixelSize: Math.round(root.fieldFontSize * 1.1)
-        horizontalAlignment: Text.AlignHCenter
-        verticalAlignment: Text.AlignVCenter
+        Text {
+          id: fingerprintIcon
+          objectName: "fingerprintIndicator"
+          anchors.right: parent.right
+          anchors.rightMargin: inputField.borderRight + 18
+          anchors.verticalCenter: parent.verticalCenter
+          visible: root.fingerprintConfigured
+          text: "󰈷"
+          color: "#00f5d4"
+          font.family: Style.font.family
+          font.pixelSize: Math.round(root.fieldFontSize * 1.1)
+          horizontalAlignment: Text.AlignHCenter
+          verticalAlignment: Text.AlignVCenter
+        }
       }
     }
   }
