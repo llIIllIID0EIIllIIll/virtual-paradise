@@ -731,7 +731,13 @@ function f() {
       selected="$(echo "$fzf_out" | tail -n +2)"
 
       if [[ "$key" == "left" ]]; then
-        current_dir="$(dirname "$current_dir")"
+        local parent_dir="$(dirname "$current_dir")"
+        if [[ "$current_dir" == "/" || "$current_dir" == "$parent_dir" ]]; then
+          # Cannot go up further (at root directory) -> Return to Hub
+          return 10
+        else
+          current_dir="$parent_dir"
+        fi
       elif [[ "$key" == "right" ]]; then
         if [[ -n "$selected" ]]; then
           local first_line="$(echo "$selected" | head -n 1)"
@@ -802,13 +808,26 @@ function f() {
 
   # Sub-function: Fuzzy history picker (Deduplicated)
   _f_mode_history() {
-    local cmd
-    cmd=$(fc -rln 1 2>/dev/null | awk '!seen[$0]++' | fzf "${fzf_style[@]}" \
+    local fzf_out
+    fzf_out=$(fc -rln 1 2>/dev/null | awk '!seen[$0]++' | fzf "${fzf_style[@]}" \
+          --expect=left \
           --prompt="$i_history  History > " \
-          --header="[Enter] Paste command to terminal · [ESC] Cancel" \
+          --header="[Enter] Paste to terminal · [←] Back to Hub · [ESC] Cancel" \
           --border-label="  Command History " \
           --preview="echo {}" \
           --preview-window="down:3:wrap:border-rounded")
+
+    local exit_status=$?
+    if [[ $exit_status -eq 130 || -z "$fzf_out" ]]; then
+      return 0
+    fi
+
+    local key=$(echo "$fzf_out" | head -n 1)
+    local cmd=$(echo "$fzf_out" | tail -n +2)
+
+    if [[ "$key" == "left" ]]; then
+      return 10  # Back to Hub signal
+    fi
 
     if [[ -n "$cmd" ]]; then
       print -z "$cmd"
@@ -819,34 +838,41 @@ function f() {
   _f_mode_process() {
     local ps_line
     ps_line=$(ps -ef | fzf "${fzf_style[@]}" \
-      --header="[Enter] SIGTERM (15) · [Ctrl-X] SIGKILL (9) · [Ctrl-R] Reload" \
+      --header="[Enter] SIGTERM (15) · [Ctrl-X] SIGKILL (9) · [←] Back to Hub · [Ctrl-R] Reload" \
       --prompt="$i_jobs  Kill Process > " \
       --border-label="  Process Manager " \
       --preview="ps -p {2} -o pid,ppid,%cpu,%mem,stat,start,time,command --width 100 2>/dev/null || ps -p {2} -f" \
       --preview-window="down:5:wrap:border-rounded" \
-      --expect=ctrl-x \
+      --expect=left,ctrl-x \
       --bind="ctrl-r:reload(ps -ef)")
 
-    if [[ -n "$ps_line" ]]; then
-      local key=$(echo "$ps_line" | head -n 1)
-      local selected=$(echo "$ps_line" | tail -n +2)
-      
-      if [[ -n "$selected" ]]; then
-        local pid=$(echo "$selected" | awk '{print $2}')
-        if [[ -n "$pid" ]]; then
-          local sig="15"
-          local sig_name="SIGTERM (Graceful Terminate)"
-          if [[ "$key" == "ctrl-x" ]]; then
-            sig="9"
-            sig_name="SIGKILL (Force Kill)"
-          fi
-          
-          print -P "%F{#ffb7d5}󰀪 [WARN]%f Are you sure you want to send %F{#00f5d4}$sig_name%f to PID %F{#00ff88}$pid%f? (y/N)"
-          read -q "confirm?"
-          echo ""
-          if [[ "$confirm" == "y" || "$confirm" == "Y" ]]; then
-            kill -$sig "$pid" && print -P "%F{#00ff88}󰄬 [OK]%f Process PID $pid terminated successfully." || print -P "%F{#ff0055}󰅚 [ERROR]%f Failed to terminate process PID $pid."
-          fi
+    local exit_status=$?
+    if [[ $exit_status -eq 130 || -z "$ps_line" ]]; then
+      return 0
+    fi
+
+    local key=$(echo "$ps_line" | head -n 1)
+    local selected=$(echo "$ps_line" | tail -n +2)
+
+    if [[ "$key" == "left" ]]; then
+      return 10  # Back to Hub signal
+    fi
+
+    if [[ -n "$selected" ]]; then
+      local pid=$(echo "$selected" | awk '{print $2}')
+      if [[ -n "$pid" ]]; then
+        local sig="15"
+        local sig_name="SIGTERM (Graceful Terminate)"
+        if [[ "$key" == "ctrl-x" ]]; then
+          sig="9"
+          sig_name="SIGKILL (Force Kill)"
+        fi
+        
+        print -P "%F{#ffb7d5}󰀪 [WARN]%f Are you sure you want to send %F{#00f5d4}$sig_name%f to PID %F{#00ff88}$pid%f? (y/N)"
+        read -q "confirm?"
+        echo ""
+        if [[ "$confirm" == "y" || "$confirm" == "Y" ]]; then
+          kill -$sig "$pid" && print -P "%F{#00ff88}󰄬 [OK]%f Process PID $pid terminated successfully." || print -P "%F{#ff0055}󰅚 [ERROR]%f Failed to terminate process PID $pid."
         fi
       fi
     fi
@@ -854,7 +880,7 @@ function f() {
 
   # Handle CLI flags or launch interactive menu
   case "$mode" in
-    -s|s|search|-d|d|cd|-f|f|file|open|-c|c|content|rg)
+    -s|s|search|-d|d|cd|-f|f|file|open|-c|c|content|rg|-e|e|explorer)
       _f_mode_omnisearch "$start_path"
       ;;
     -h|h|history)
@@ -883,33 +909,41 @@ function f() {
         return 1
       fi
       
-      local fzf_menu_out
-      fzf_menu_out=$(echo -e "󰍉  1. Explorer         · Directories, Files & Text Search\n  2. Command History  · Fuzzy search & insert past commands\n  3. Process Manager  · System process monitor & kill manager" | \
-               fzf "${fzf_style[@]}" \
-                   --expect=left,right \
-                   --prompt="󰍉  Select Mode > " \
-                   --header="[↑/↓] Navigate · [Enter/→] Choose Mode · [ESC/←] Exit" \
-                   --border-label=" 󰍉 Virtual☆Paradise Search Hub 󰍉 " \
-                   --height=14)
+      while true; do
+        local fzf_menu_out
+        fzf_menu_out=$(echo -e "󰍉  1. Explorer         · Directories, Files & Text Search\n  2. Command History  · Fuzzy search & insert past commands\n  3. Process Manager  · System process monitor & kill manager" | \
+                 fzf "${fzf_style[@]}" \
+                     --expect=left,right \
+                     --prompt="󰍉  Select Mode > " \
+                     --header="[↑/↓] Navigate · [Enter/→] Choose Mode · [ESC/←] Exit" \
+                     --border-label=" 󰍉 Virtual☆Paradise Search Hub 󰍉 " \
+                     --height=14)
 
-      local menu_exit_status=$?
-      if [[ $menu_exit_status -eq 130 || -z "$fzf_menu_out" ]]; then
-        return 0
-      fi
+        local menu_exit_status=$?
+        if [[ $menu_exit_status -eq 130 || -z "$fzf_menu_out" ]]; then
+          return 0
+        fi
 
-      local menu_key=$(echo "$fzf_menu_out" | head -n 1)
-      local choice=$(echo "$fzf_menu_out" | tail -n +2)
+        local menu_key=$(echo "$fzf_menu_out" | head -n 1)
+        local choice=$(echo "$fzf_menu_out" | tail -n +2)
 
-      # Left arrow (←) acts as Exit / Cancel
-      if [[ "$menu_key" == "left" || -z "$choice" ]]; then
-        return 0
-      fi
+        # Left arrow (←) acts as Exit / Cancel from Hub
+        if [[ "$menu_key" == "left" || -z "$choice" ]]; then
+          return 0
+        fi
 
-      case "$choice" in
-        *1.*) _f_mode_omnisearch "$mode" ;; # Activate Omnisearch
-        *2.*) _f_mode_history ;;            # Activate history mode
-        *3.*) _f_mode_process ;;            # Activate process manager mode
-      esac
+        local ret=0
+        case "$choice" in
+          *1.*) _f_mode_omnisearch "$mode"; ret=$? ;; # Activate Explorer
+          *2.*) _f_mode_history; ret=$? ;;            # Activate history mode
+          *3.*) _f_mode_process; ret=$? ;;            # Activate process manager mode
+        esac
+
+        # If sub-mode returned 10 (Back to Hub), loop continues to re-render Hub menu
+        if [[ $ret -ne 10 ]]; then
+          break
+        fi
+      done
       ;;
   esac
 }
