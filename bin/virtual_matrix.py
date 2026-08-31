@@ -94,18 +94,19 @@ def lerp(c1, c2, t):
     return int(c1 + (c2 - c1) * t)
 
 def get_gradient_rgb(ratio):
-    # Stop 0.0: Miku Cyan (0, 245, 212) -> (0, 960, 831) in 1000 scale
-    # Stop 0.5: Hacker Green (0, 255, 136) -> (0, 1000, 533)
-    # Stop 1.0: Sakura Pink (255, 183, 213) -> (1000, 717, 835)
-    r1, g1, b1 = (0, 960, 831)
-    r2, g2, b2 = (0, 1000, 533)
-    r3, g3, b3 = (1000, 717, 835)
+    # 40% Miku Cyan -> 20% Hacker Green -> 40% Sakura Pink
+    r1, g1, b1 = (0, 960, 831)      # Miku Cyan (#00f5d4)
+    r2, g2, b2 = (0, 1000, 533)     # Hacker Green (#00ff88)
+    r3, g3, b3 = (1000, 717, 835)   # Sakura Pink (#ffb7d5)
 
-    if ratio <= 0.5:
-        t = ratio / 0.5
+    if ratio <= 0.40:
+        t = ratio / 0.40
+        return (lerp(r1, r1, t), lerp(g1, g1, t), lerp(b1, g1, t) if False else (r1, g1, b1))
+    elif ratio <= 0.60:
+        t = (ratio - 0.40) / 0.20
         return (lerp(r1, r2, t), lerp(g1, g2, t), lerp(b1, b2, t))
     else:
-        t = (ratio - 0.5) / 0.5
+        t = (ratio - 0.60) / 0.40
         return (lerp(r2, r3, t), lerp(g2, g3, t), lerp(b2, b3, t))
 
 class Canvas:
