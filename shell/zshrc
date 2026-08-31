@@ -816,7 +816,7 @@ function f() {
           local sig_name="SIGTERM (Graceful Terminate)"     # Signal label for confirmation
           if [[ "$key" == "ctrl-x" ]]; then
             sig="9"                                   # If Ctrl-X pressed, use SIGKILL (9 - Force Kill)
-            sig_name="SIGKILL (Force kill processes matching name
+            sig_name="SIGKILL (Force Kill)"
           fi
           
           print -P "%F{yellow}[WARN]%f Are you sure you want to send $sig_name to PID $pid? (y/N)" # Confirm kill action with user
