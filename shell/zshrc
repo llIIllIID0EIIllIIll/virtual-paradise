@@ -744,20 +744,23 @@ _f_mode_git() {
     return 1
   fi
 
+  local bat_bin=""
+  (( $+commands[bat] )) && bat_bin="bat" || { (( $+commands[batcat] )) && bat_bin="batcat"; }
+
   local selected
   selected=$(git status --short | \
     fzf "${_FZF_PARADISE_STYLE[@]}" \
         --multi \
         --prompt="󰊢  Git Changed Files > " \
         --header="[Tab] Multi-select | [Enter] Open in Editor | [Ctrl-/] Preview" \
-        --preview='git diff --color=always -- {2} 2>/dev/null | head -100' \
+        --preview="f={2}; (git diff --color=always -- \"\$f\" 2>/dev/null; if [[ \$(git status --porcelain -- \"\$f\" 2>/dev/null | cut -c1-2) == *\"?\"* ]]; then (${bat_bin:-cat} --style=numbers --color=always \"\$f\" 2>/dev/null || cat \"\$f\" 2>/dev/null); fi) | head -120" \
         --preview-window="right:60%,border-left:<80(down:50%,border-top)")
 
   if [[ -n "$selected" ]]; then
     local files=()
     while IFS= read -r line; do
-      local f="$(echo "$line" | awk '{print $2}')"
-      [[ -n "$f" ]] && files+=("$f")
+      local f="$(echo "$line" | awk '{print $NF}')"
+      [[ -n "$f" && -f "$f" ]] && files+=("$f")
     done <<< "$selected"
     _f_open_files "${(F)files}"
   fi
