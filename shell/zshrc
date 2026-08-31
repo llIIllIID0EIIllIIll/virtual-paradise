@@ -542,353 +542,354 @@ function dirsize() {
   command du -sh * 2>/dev/null | sort -hr
 }
 
-# [11] f: Ultimate Interactive Search Hub
-# Modes: Directories (cd), Files (open), Content (ripgrep), History (search & insert), Process (kill).
-function f() {
-  local mode="$1"             # Search mode flag ($1)
-  local start_path="${2:-.}"  # Start directory path ($2), defaults to current directory (.)
+# ==============================================================================
+# [11] f: Ultimate Interactive Search & Action Hub (Virtual☆Paradise Edition)
+# ==============================================================================
+# Modes:
+#   1. Directories (cd)        ➔ f -d, fd [path]
+#   2. Files (open)            ➔ f -f, f [path]
+#   3. Content (ripgrep)       ➔ f -c, f rg [path]
+#   4. Git Modified Files      ➔ f -g, f git
+#   5. Command History         ➔ f -h, f history
+#   6. Process Manager         ➔ f -p, f kill
+# ==============================================================================
 
-  # Nerd Font icons matching active Zsh theme
-  local i_dir="${I_DIR:-}"         # Directory icon
-  local i_file="${I_FILE:-󰈙}"        # File icon
-  local i_search="${I_SEARCH:-}"    # Search icon
-  local i_history="${I_HISTORY:-}"  # History icon
-  local i_jobs="${I_JOBS:-}"        # Background jobs icon
+# Universal Cyberpunk FZF HUD Styling (40% Cyan / 20% Green / 40% Sakura Pink)
+typeset -ga _FZF_PARADISE_STYLE
+_FZF_PARADISE_STYLE=(
+  --height="80%"
+  --layout="reverse"
+  --border="rounded"
+  --margin="1"
+  --padding="1"
+  --info="inline-right"
+  --color="fg:#eafbfa,bg:-1,hl:#00ff88,fg+:#00f5d4,bg+:#18222d,hl+:#00ff88"
+  --color="info:#7091a4,prompt:#00f5d4,pointer:#00f5d4,marker:#ffb7d5,spinner:#00ff88,header:#ffb7d5"
+  --color="border:#00f5d4,label:#00f5d4"
+  --bind="ctrl-/:toggle-preview,ctrl-a:select-all,ctrl-d:deselect-all"
+)
 
-  # Discover available fd binary (fd on Arch/macOS, fdfind on Debian/Ubuntu)
-  local fd_cmd=""             # Variable for fd binary name
-  if (( $+commands[fd] )); then
-    fd_cmd="fd"               # Use fd binary if available
-  elif (( $+commands[fdfind] )); then
-    fd_cmd="fdfind"           # Use fdfind binary on Debian/Ubuntu
+# Helper: Detect preferred editor with smart fallback
+_f_detect_editor() {
+  local ed="${EDITOR:-${VISUAL:-}}"
+  if [[ -n "$ed" ]] && (( $+commands[$ed] )); then
+    echo "$ed"
+    return
+  fi
+  for cand in nvim hx helix micro code nano vim vi; do
+    if (( $+commands[$cand] )); then
+      echo "$cand"
+      return
+    fi
+  done
+  echo "vi"
+}
+
+# Helper: Open files in detected editor
+_f_open_files() {
+  local files=(${(f)1})
+  [[ ${#files} -eq 0 ]] && return
+
+  local editor="$(_f_detect_editor)"
+  case "$editor" in
+    nvim|vim|vi)
+      $editor -p "${files[@]}"
+      ;;
+    *)
+      $editor "${files[@]}"
+      ;;
+  esac
+}
+
+# Helper: Open single file jumping to specific line number
+_f_open_in_editor() {
+  local file="$1"
+  local line="${2:-}"
+  local editor="$(_f_detect_editor)"
+
+  if [[ -n "$line" ]]; then
+    case "$editor" in
+      nvim|vim|vi)
+        $editor "+${line}" "$file"
+        ;;
+      hx|helix|micro)
+        $editor "$file:$line"
+        ;;
+      code)
+        code -g "$file:$line"
+        ;;
+      nano)
+        nano "+${line}" "$file"
+        ;;
+      *)
+        $editor "$file"
+        ;;
+    esac
   else
-    rehash                    # Refresh binary cache in PATH
-    if (( $+commands[fd] )); then
-      fd_cmd="fd"             # Retry fd binary
-    elif (( $+commands[fdfind] )); then
-      fd_cmd="fdfind"         # Retry fd binaryfind
-    fi
+    $editor "$file"
+  fi
+}
+
+# Sub-mode: Directory Navigator (cd)
+_f_mode_dir() {
+  local fd_bin=""
+  (( $+commands[fd] )) && fd_bin="fd" || { (( $+commands[fdfind] )) && fd_bin="fdfind"; }
+  if [[ -z "$fd_bin" ]]; then
+    print -P "%F{#ff0055}[ERROR]%f 'fd' / 'fd-find' is required for directory navigation."
+    return 1
   fi
 
-  # Discover available bat binary (syntax-highlighted pager)
-  local bat_cmd=""            # Variable for bat binary name
-  if (( $+commands[bat] )); then
-    bat_cmd="bat"             # Use bat if available
-  elif (( $+commands[batcat] )); then
-    bat_cmd="batcat"         # Use batcat on Debian/Ubuntu
-  fi
+  local current_dir="$(realpath "${1:-.}")"
+  while true; do
+    local fzf_out
+    fzf_out=$(command $fd_bin -t d -H -E .git -E node_modules -E .cache -E target -E .venv "" "$current_dir" 2>/dev/null | \
+              fzf "${_FZF_PARADISE_STYLE[@]}" \
+                  --expect=left,right \
+                  --prompt="  Directory: $current_dir > " \
+                  --header="[Enter] CD into | [←] Parent | [→] Subdirectory | [Ctrl-/] Preview" \
+                  --preview="(eza --tree --level=2 --color=always --icons {} || tree -C -L 2 {} || ls -lhA --color=always {}) 2>/dev/null | head -50" \
+                  --preview-window="right:60%,border-left:<80(down:50%,border-top)")
 
-  # FZF Cyberpunk Theme Styling matching HUD prompt
-  local -a fzf_style          # Array of FZF styling options
-  fzf_style=(
-    --height="80%"            # 80% terminal window height
-    --layout="reverse"        # Reverse layout (search prompt at top)
-    --border="rounded"        # Rounded border geometry
-    --margin="1"              # 1-line margin
-    --padding="1"             # 1-line padding
-    --info="inline-right"     # Inline-right match count display
-    --color="fg:#FFCCFF,bg:-1,hl:#00FFDD,fg+:#00FFDD,bg+:#282a36,hl+:#00FFDD"  # Foreground, background, and highlight colors
-    --color="info:#585b70,prompt:#00FFDD,pointer:#00FFDD,marker:#FF6070,spinner:#00FFDD,header:#585b70"  # Pointers, spinners, and info colors
-    --color="border:#00FFDD,label:#00FFDD"  # Border and label colors
-  )
+    local status=$?
+    [[ $status -eq 130 || -z "$fzf_out" ]] && break
 
-  # Helper to open files in default editor (micro falling back to nano)
-  # Helper: Open selected files in preferred editor
-  _f_open_files() {
-    local files               # Local array for selected files
-    files=(${(f)1})           # Split newline-delimited file list into array
+    local key="$(echo "$fzf_out" | head -n 1)"
+    local selected="$(echo "$fzf_out" | tail -n +2)"
 
-    if [[ ${#files} -eq 0 ]]; then
-      return                  # Return if selection is empty
-    fi
-
-    local editor="${EDITOR:-${VISUAL:-}}" # Resolve default editor from environment
-    if [[ -z "$editor" ]]; then
-      if (( $+commands[micro] )); then
-        editor="micro"        # Use micro if EDITOR is unset
-      elif (( $+commands[nano] )); then
-        editor="nano"         # Fallback to nano
-      else
-        editor="vi"           # Ultimate fallback to vi
-      fi
-    fi
-
-    # Ensure editor exists
-    # Validate editor executable existence
-    if ! (( $+commands[$editor] )) && [[ "$editor" != "vi" && "$editor" != "nano" ]]; then
-      if (( $+commands[micro] )); then
-        editor="micro"        # Fallback to micro if configured editor is missing
-      else
-        editor="nano"         # Fallback to nano if micro is unavailable
-      fi
-    fi
-
-    $editor "${files[@]}"     # Launch editor to open all selected files
-  }
-
-  # Helper to open a file in default editor at a specific line number
-  # Helper: Open file jumping directly to specific line number
-  _f_open_in_editor() {
-    local file="$1"           # Arg 1: File path to open
-    local line="${2:-}"       # Arg 2: Target line number (optional)
-
-    local editor="${EDITOR:-${VISUAL:-}}" # Resolve system default editor
-    if [[ -z "$editor" ]]; then
-      if (( $+commands[micro] )); then
-        editor="micro"        # Fallback to micro if EDITOR is unset
-      elif (( $+commands[nano] )); then
-        editor="nano"         # Fallback to nano
-      else
-        editor="vi"           # Ultimate fallback to vi
-      fi
-    fi
-
-    # Validate selected editor availability
-    if ! (( $+commands[$editor] )) && [[ "$editor" != "vi" && "$editor" != "nano" ]]; then
-      if (( $+commands[micro] )); then
-        editor="micro"        # Fallback to micro
-      else
-        editor="nano"         # Fallback to nano
-      fi
-    fi
-
-    if [[ -n "$line" ]]; then
-      case "$editor" in
-        micro)
-          micro "$file:$line" # For micro: open formatted as file:line
-          ;;
-        nano)
-          nano +"$line" "$file" # For nano: open formatted with +line
-          ;;
-        *)
-          $editor "$file"     # Standard open for other editors
-          ;;
-      esac
+    if [[ "$key" == "left" ]]; then
+      current_dir="$(dirname "$current_dir")"
+    elif [[ "$key" == "right" && -n "$selected" ]]; then
+      current_dir="$selected"
     else
-      $editor "$file"         # Open file normally without line number
+      [[ -n "$selected" ]] && cd "$selected"
+      break
     fi
-  }
+  done
+}
 
-  # Sub-function: Directory browser (Navigate with Left/Right arrows)
-  _f_mode_dir() {
-    if [[ -z "$fd_cmd" ]]; then
-      print -P "%F{red}[ERROR]%f Error: 'fd' / 'fd-find' is required for this feature." # Error if fd is missing
-      return 1                # Return error code 1
+# Sub-mode: File Finder (open in editor)
+_f_mode_file() {
+  local fd_bin=""
+  (( $+commands[fd] )) && fd_bin="fd" || { (( $+commands[fdfind] )) && fd_bin="fdfind"; }
+  if [[ -z "$fd_bin" ]]; then
+    print -P "%F{#ff0055}[ERROR]%f 'fd' / 'fd-find' is required for file search."
+    return 1
+  fi
+
+  local bat_bin=""
+  (( $+commands[bat] )) && bat_bin="bat" || { (( $+commands[batcat] )) && bat_bin="batcat"; }
+
+  local current_dir="$(realpath "${1:-.}")"
+  while true; do
+    local fzf_out
+    fzf_out=$(command $fd_bin -t f -H -E .git -E node_modules -E .cache -E target -E .venv "" "$current_dir" 2>/dev/null | \
+              fzf "${_FZF_PARADISE_STYLE[@]}" \
+                  --multi \
+                  --expect=left \
+                  --prompt="󰈙  Files: $current_dir > " \
+                  --header="[Tab] Multi-select | [Enter] Open in Editor | [←] Parent | [Ctrl-/] Preview" \
+                  --preview="(${bat_bin:-cat} --style=numbers --color=always --line-range :120 {} || cat {}) 2>/dev/null | head -120" \
+                  --preview-window="right:60%,border-left:<80(down:50%,border-top)")
+
+    local status=$?
+    [[ $status -eq 130 || -z "$fzf_out" ]] && break
+
+    local key="$(echo "$fzf_out" | head -n 1)"
+    local selected="$(echo "$fzf_out" | tail -n +2)"
+
+    if [[ "$key" == "left" ]]; then
+      current_dir="$(dirname "$current_dir")"
+    else
+      _f_open_files "$selected"
+      break
     fi
-    local current_dir=$(realpath "${1:-.}") # Get absolute path of starting directory
-    while true; do            # Loop for dynamic directory navigation
-      local fzf_out           # Variable for FZF selection result
-      fzf_out=$(command $fd_cmd -t d -H -E .git -E node_modules -E .cache "" "$current_dir" 2>/dev/null | \
-                fzf "${fzf_style[@]}" \
-                    --expect=left,right \
-                    --prompt="$i_dir  Directory: $current_dir > " \
-                    --header="[Enter] CD into | [←/→] Parent / Child Directory" \
-                    --preview="(eza --tree --level=2 --color=always --icons {} || tree -C -L 2 {} || ls -lhA --color=always {} || ls -F {}) 2>/dev/null | head -50" \
-                    --preview-window="right:60%,border-left:<80(down:50%,border-top)")
-                    # Fuzzy directory search with tree preview and arrow keys navigation
-                    
-      local exit_status=$?    # Get exit status of FZF
-      if [[ $exit_status -eq 130 || -z "$fzf_out" ]]; then
-        break                 # Break if user pressed ESC (130) or cancelled
-      fi
-      
-      local key=$(echo "$fzf_out" | head -n 1)      # First line is captured key (left, right, or empty)
-      local selected=$(echo "$fzf_out" | tail -n +2) # Subsequent line is selected directory path
-      
-      if [[ "$key" == "left" ]]; then
-        # Left arrow: Navigate up to parent directory
-        current_dir=$(dirname "$current_dir")        # Move up one directory level
-      elif [[ "$key" == "right" ]]; then
-        # Right arrow: Drill down into selected child directory
-        if [[ -n "$selected" ]]; then
-          current_dir="$selected"                   # Update active directory path
+  done
+}
+
+# Sub-mode: Live Ripgrep Content Search
+_f_mode_content() {
+  if ! (( $+commands[rg] )); then
+    print -P "%F{#ff0055}[ERROR]%f 'ripgrep' (rg) is required for content search."
+    return 1
+  fi
+
+  local bat_bin=""
+  (( $+commands[bat] )) && bat_bin="bat" || { (( $+commands[batcat] )) && bat_bin="batcat"; }
+
+  local search_path="${1:-.}"
+  local result
+
+  result=$(FZF_DEFAULT_COMMAND="rg --column --line-number --no-heading --color=always --smart-case --glob '!.git' --glob '!node_modules' --glob '!target' --glob '!.venv' '' \"$search_path\"" \
+    fzf "${_FZF_PARADISE_STYLE[@]}" \
+        --ansi \
+        --disabled \
+        --delimiter=: \
+        --prompt="  Ripgrep ($search_path) > " \
+        --header="[Enter] Open in Editor at matched line | [Ctrl-/] Preview" \
+        --bind "change:reload(rg --column --line-number --no-heading --color=always --smart-case --glob '!.git' --glob '!node_modules' --glob '!target' --glob '!.venv' {q} \"$search_path\" || true)" \
+        --preview="(${bat_bin:-cat} --style=numbers --color=always --highlight-line {2} {1} 2>/dev/null || cat {1} 2>/dev/null)" \
+        --preview-window="right:60%,border-left:<80(down:50%,border-top),+{2}-/2")
+
+  if [[ -n "$result" ]]; then
+    local file="$(echo "$result" | cut -d':' -f1)"
+    local line="$(echo "$result" | cut -d':' -f2)"
+    _f_open_in_editor "$file" "$line"
+  fi
+}
+
+# Sub-mode: Git Modified / Untracked Files Browser
+_f_mode_git() {
+  if ! git rev-parse --is-inside-work-tree &>/dev/null; then
+    print -P "%F{#ff0055}[ERROR]%f Not inside a git repository."
+    return 1
+  fi
+
+  local selected
+  selected=$(git status --short | \
+    fzf "${_FZF_PARADISE_STYLE[@]}" \
+        --multi \
+        --prompt="󰊢  Git Changed Files > " \
+        --header="[Tab] Multi-select | [Enter] Open in Editor | [Ctrl-/] Preview" \
+        --preview='git diff --color=always -- {2} 2>/dev/null | head -100' \
+        --preview-window="right:60%,border-left:<80(down:50%,border-top)")
+
+  if [[ -n "$selected" ]]; then
+    local files=()
+    while IFS= read -r line; do
+      local f="$(echo "$line" | awk '{print $2}')"
+      [[ -n "$f" ]] && files+=("$f")
+    done <<< "$selected"
+    _f_open_files "${(F)files}"
+  fi
+}
+
+# Sub-mode: Command History Search & Insertion
+_f_mode_history() {
+  local cmd
+  cmd=$(fc -rln 1 2>/dev/null | awk '!seen[$0]++' | \
+    fzf "${_FZF_PARADISE_STYLE[@]}" \
+        --prompt="  Command History > " \
+        --header="[Enter] Insert command into prompt buffer" \
+        --preview="echo {}" \
+        --preview-window="down:3:wrap")
+
+  [[ -n "$cmd" ]] && print -z "$cmd"
+}
+
+# Sub-mode: Interactive Process Manager
+_f_mode_process() {
+  local ps_line
+  ps_line=$(ps -eo user,pid,ppid,%cpu,%mem,stat,start,time,comm --sort=-%cpu | \
+    fzf "${_FZF_PARADISE_STYLE[@]}" \
+        --header="[Enter] SIGTERM (15) | [Ctrl-X] SIGKILL (9) | [Ctrl-R] Reload | [Ctrl-U] Only $USER" \
+        --prompt="  Kill Process > " \
+        --preview="ps -p {2} -o pid,ppid,user,%cpu,%mem,stat,start,time,command --width 120 2>/dev/null || ps -p {2} -f" \
+        --preview-window="down:5:wrap" \
+        --expect=ctrl-x \
+        --bind="ctrl-r:reload(ps -eo user,pid,ppid,%cpu,%mem,stat,start,time,comm --sort=-%cpu)" \
+        --bind="ctrl-u:reload(ps -u \"$USER\" -o user,pid,ppid,%cpu,%mem,stat,start,time,comm --sort=-%cpu)")
+
+  if [[ -n "$ps_line" ]]; then
+    local key="$(echo "$ps_line" | head -n 1)"
+    local selected="$(echo "$ps_line" | tail -n +2)"
+
+    if [[ -n "$selected" ]]; then
+      local pid="$(echo "$selected" | awk '{print $2}')"
+      if [[ -n "$pid" && "$pid" =~ ^[0-9]+$ ]]; then
+        local sig="15"
+        local sig_name="SIGTERM (Graceful Terminate)"
+        if [[ "$key" == "ctrl-x" ]]; then
+          sig="9"
+          sig_name="SIGKILL (Force Kill)"
         fi
-      else
-        # Enter: Change working directory and exit
-        if [[ -n "$selected" ]]; then
-          cd "$selected"                            # Change shell directory to selection
-        fi
-        break                                       # Exit loop
-      fi
-    done
-  }
 
-  # Sub-function: File browser (Multi-select with Tab, Left to go up)
-  _f_mode_file() {
-    if [[ -z "$fd_cmd" ]]; then
-      print -P "%F{red}[ERROR]%f Error: 'fd' / 'fd-find' is required for this feature." # Error if fd is missing
-      return 1                # Return error code 1
-    fi
-    local current_dir=$(realpath "${1:-.}") # Get absolute search directory path
-    while true; do            # Loop for dynamic file browser
-      local fzf_out           # Variable for FZF output
-      fzf_out=$(command $fd_cmd -t f -H -E .git -E node_modules -E .cache "" "$current_dir" 2>/dev/null | \
-                fzf "${fzf_style[@]}" \
-                    --multi \
-                    --expect=left \
-                    --prompt="$i_file  Files: $current_dir > " \
-                    --header="[Tab] Multi-select | [Enter] Open in Editor | [←] Parent" \
-                    --preview "(${bat_cmd:-cat} --style=numbers --color=always --line-range :100 {} || cat {}) 2>/dev/null | head -100" \
-                    --preview-window="right:60%,border-left:<80(down:50%,border-top)")
-                    # Fuzzy file search with multi-select and syntax preview
-                    
-      local exit_status=$?    # Capture FZF exit status
-      if [[ $exit_status -eq 130 || -z "$fzf_out" ]]; then
-        break                 # Break on ESC (130) or empty selection
-      fi
-      
-      local key=$(echo "$fzf_out" | head -n 1)      # Extract captured function key
-      local selected=$(echo "$fzf_out" | tail -n +2) # Extract selected file paths
-      
-      if [[ "$key" == "left" ]]; then
-        # Left arrow: Navigate up to parent directory
-        current_dir=$(dirname "$current_dir")        # Move search path up one level
-      else
-        # Enter: Open selected files in editor
-        _f_open_files "$selected"                   # Open selected files in editor
-        break                                       # Exit loop
-      fi
-    done
-  }
-
-  # Sub-function: Live Ripgrep content search (Opens editor at matched line)
-  _f_mode_content() {
-    if ! (( $+commands[rg] )); then
-      print -P "%F{red}[ERROR]%f Error: 'ripgrep' (rg) is required for this feature." # Error if ripgrep is missing
-      return 1                # Return error code 1
-    fi
-    
-    local search_path="${1:-.}" # Get search target path (defaults to .)
-    local result              # Variable for selected line result
-    
-    result=$(FZF_DEFAULT_COMMAND="rg --column --line-number --no-heading --color=always --smart-case '' \"$search_path\"" \
-      fzf "${fzf_style[@]}" \
-          --ansi \
-          --disabled \
-          --delimiter=: \
-          --prompt="$i_search  Ripgrep ($search_path) > " \
-          --header="[Enter] Open file at matching line" \
-          --bind "change:reload(rg --column --line-number --no-heading --color=always --smart-case {q} \"$search_path\" || true)" \
-          --preview "(${bat_cmd:-cat} --style=numbers --color=always --highlight-line {2} {1} 2>/dev/null || cat {1} 2>/dev/null)" \
-          --preview-window="right:60%,border-left:<80(down:50%,border-top),+{2}-/2")
-          # Live ripgrep search with real-time match preview
-          
-    if [[ -n "$result" ]]; then
-      local file=$(echo "$result" | cut -d':' -f1) # Extract file path from line result
-      local line=$(echo "$result" | cut -d':' -f2) # Extract line number from result
-      _f_open_in_editor "$file" "$line"           # Open file in editor jumping to line
-    fi
-  }
-
-  # Sub-function: Fuzzy history picker (Deduplicated)
-  _f_mode_history() {
-    local cmd                 # Variable for selected history command
-    cmd=$(fc -rln 1 2>/dev/null | awk '!seen[$0]++' | fzf "${fzf_style[@]}" \
-          --prompt="$i_history  Command History > " \
-          --header="[Enter] Paste command to terminal" \
-          --preview="echo {}" \
-          --preview-window="down:3:wrap")
-          # Read deduplicated Zsh history for FZF search
-    if [[ -n "$cmd" ]]; then
-      print -z "$cmd"         # Paste selected command into terminal prompt
-    fi
-  }
-
-  # Sub-function: Interactive process manager & killer
-  _f_mode_process() {
-    local ps_line             # Variable for selected process line
-    ps_line=$(ps -ef | fzf "${fzf_style[@]}" \
-      --header="[Enter] SIGTERM (Graceful Kill) | [Ctrl-X] SIGKILL (Force Kill) | [Ctrl-R] Reload" \
-      --prompt="$i_jobs  Kill Process > " \
-      --preview="ps -p {2} -o pid,ppid,%cpu,%mem,stat,start,time,command --width 100 2>/dev/null || ps -p {2} -f" \
-      --preview-window="down:5:wrap" \
-      --expect=ctrl-x \
-      --bind="ctrl-r:reload(ps -ef)")
-      # List processes with live resource preview
-      
-    if [[ -n "$ps_line" ]]; then
-      local key=$(echo "$ps_line" | head -n 1)      # Captured key (ctrl-x if pressed)
-      local selected=$(echo "$ps_line" | tail -n +2) # Selected process info line
-      
-      if [[ -n "$selected" ]]; then
-        local pid=$(echo "$selected" | awk '{print $2}') # Extract PID from second column
-        if [[ -n "$pid" ]]; then
-          local sig="15"                              # Default to SIGTERM (15 - Graceful)
-          local sig_name="SIGTERM (Graceful Terminate)"     # Signal label for confirmation
-          if [[ "$key" == "ctrl-x" ]]; then
-            sig="9"                                   # If Ctrl-X pressed, use SIGKILL (9 - Force Kill)
-            sig_name="SIGKILL (Force Kill)"
-          fi
-          
-          print -P "%F{yellow}[WARN]%f Are you sure you want to send $sig_name to PID $pid? (y/N)" # Confirm kill action with user
-          read -q "confirm?"                          # Read confirmation character
-          echo ""                                     # Print newline
-          if [[ "$confirm" == "y" || "$confirm" == "Y" ]]; then
-            kill -$sig "$pid" && print -P "%F{green}[OK]%f Process PID $pid terminated successfully." || print -P "%F{red}[ERROR]%f Failed to terminate process PID $pid."
-            # Execute kill command and report result
+        print -P "%F{#ffb7d5}[WARN]%f Are you sure you want to send %F{#00f5d4}$sig_name%f to PID %F{#00ff88}$pid%f? (y/N)"
+        read -q "confirm?"
+        echo ""
+        if [[ "$confirm" == "y" || "$confirm" == "Y" ]]; then
+          if kill -$sig "$pid" 2>/dev/null; then
+            print -P "%F{#00ff88}[OK]%f Process PID $pid terminated successfully."
+          else
+            print -P "%F{#ff0055}[ERROR]%f Failed to terminate PID $pid (Permission denied or process exited)."
           fi
         fi
       fi
     fi
-  }
+  fi
+}
 
-  # Handle CLI flags or launch interactive menu
+# Main Dispatcher Function
+function f() {
+  local mode="$1"
+  local start_path="${2:-.}"
+
   case "$mode" in
     -d|d|cd)
-      _f_mode_dir "$start_path"       # Directory cd mode
+      _f_mode_dir "$start_path"
       ;;
     -f|f|file|open)
-      _f_mode_file "$start_path"      # File open mode
+      _f_mode_file "$start_path"
       ;;
     -c|c|content|rg)
-      _f_mode_content "$start_path"   # Live ripgrep content search mode
+      _f_mode_content "$start_path"
+      ;;
+    -g|g|git)
+      _f_mode_git
       ;;
     -h|h|history)
-      _f_mode_history                 # History search mode
+      _f_mode_history
       ;;
     -p|p|process|kill)
-      _f_mode_process                 # Process manager mode
+      _f_mode_process
       ;;
     --help|help)
-      # Display detailed help manual
       print -P "%F{#00f5d4}⌨️  Ultimate Interactive Search & Action Hub (f)%f"
       print -P "Usage: %F{#eafbfa}f [mode] [path]%f"
       print -P "Available Modes:"
-      print -P "  %F{#00FFDD}-d, d, cd%f        Search directories & cd into (interactive)"
-      print -P "  %F{#00FFDD}-f, f, file%f      Search files & open in editor (multi-select)"
-      print -P "  %F{#00FFDD}-c, c, content%f   Search file contents via live ripgrep"
-      print -P "  %F{#00FFDD}-h, h, history%f   Search & insert command from history"
-      print -P "  %F{#00FFDD}-p, p, process%f   Manage & terminate active processes"
+      print -P "  %F{#00f5d4}-d, d, cd%f        Search directories & cd into (interactive [←/→])"
+      print -P "  %F{#00f5d4}-f, f, file%f      Search files & open in editor (multi-select [Tab])"
+      print -P "  %F{#00f5d4}-c, c, content%f   Search file contents via live ripgrep"
+      print -P "  %F{#00f5d4}-g, g, git%f       Browse git modified/untracked files with diff preview"
+      print -P "  %F{#00f5d4}-h, h, history%f   Search & insert command from deduplicated history"
+      print -P "  %F{#00f5d4}-p, p, process%f   Manage & terminate active processes ([Enter]/[Ctrl-X])"
       print -P "If called without arguments, an interactive FZF menu is displayed."
       ;;
     *)
-      # Interactive menu selection fallback
       if ! (( $+commands[fzf] )); then
-        print -P "%F{red}[ERROR]%f Error: 'fzf' is not installed on this system!" # Error if fzf is missing
+        print -P "%F{#ff0055}[ERROR]%f 'fzf' is not installed on this system!"
         return 1
       fi
-      
-      local choice                    # Variable for menu choice
-      choice=$(echo -e "$i_dir 1. Directories (cd)\n$i_file 2. Files (open in editor)\n$i_search 3. Content Search (live ripgrep)\n$i_history 4. Command History (search & insert)\n$i_jobs 5. Process Manager (kill)" | \
-               fzf "${fzf_style[@]}" \
-                   --prompt="$i_search  Select Search Mode > " \
-                   --header="Use arrow keys and [Enter] to choose mode" \
-                   --height=15)       # Display 5-mode interactive selection menu
-               
+
+      local choice
+      choice=$(echo -e " 1. Directories (cd)\n󰈙 2. Files (open in editor)\n 3. Content Search (live ripgrep)\n󰊢 4. Git Modified Files (diff preview)\n 5. Command History (search & insert)\n 6. Process Manager (kill)" | \
+               fzf "${_FZF_PARADISE_STYLE[@]}" \
+                   --prompt="  Select Search Mode > " \
+                   --header="[Enter] Choose mode | [ESC] Exit" \
+                   --height=16)
+
       case "$choice" in
-        *1.*) _f_mode_dir "$mode" ;;   # Activate directory mode
-        *2.*) _f_mode_file "$mode" ;;  # Activate file mode
-        *3.*) _f_mode_content "$mode" ;; # Activate content search mode
-        *4.*) _f_mode_history ;;       # Activate history mode
-        *5.*) _f_mode_process ;;       # Activate process manager mode
+        *1.*) _f_mode_dir "$mode" ;;
+        *2.*) _f_mode_file "$mode" ;;
+        *3.*) _f_mode_content "$mode" ;;
+        *4.*) _f_mode_git ;;
+        *5.*) _f_mode_history ;;
+        *6.*) _f_mode_process ;;
       esac
       ;;
   esac
 }
 
-# Alias fd and f to interactive search hub
+# Aliases for instant access
 alias fd='f -d'
 alias f='f'
+
+# ZLE Widget: Press Ctrl-F on terminal prompt to launch Hub immediately
+_f_zle_widget() {
+  f
+  zle reset-prompt
+}
+zle -N _f_zle_widget 2>/dev/null || true
+bindkey '^F' _f_zle_widget 2>/dev/null || true
 
 
 # =========================================================================
