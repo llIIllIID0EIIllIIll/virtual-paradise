@@ -101,10 +101,14 @@ def get_gradient_rgb(ratio):
 
     if ratio <= 0.40:
         t = ratio / 0.40
-        return (lerp(r1, r1, t), lerp(g1, g1, t), lerp(b1, g1, t) if False else (r1, g1, b1))
+        return (lerp(r1, r2, t * 0.5), lerp(g1, g2, t * 0.5), lerp(b1, b2, t * 0.5))
     elif ratio <= 0.60:
         t = (ratio - 0.40) / 0.20
-        return (lerp(r1, r2, t), lerp(g1, g2, t), lerp(b1, b2, t))
+        return (
+            lerp(lerp(r1, r2, 0.5), r2, t),
+            lerp(lerp(g1, g2, 0.5), g2, t),
+            lerp(lerp(b1, b2, 0.5), b2, t),
+        )
     else:
         t = (ratio - 0.60) / 0.40
         return (lerp(r2, r3, t), lerp(g2, g3, t), lerp(b2, b3, t))
@@ -231,36 +235,50 @@ class Writer:
             pass
 
 def _main(screen):
-    curses.curs_set(0)
-    screen.nodelay(True)
-    curses.start_color()
     try:
-        curses.use_default_colors()
+        curses.curs_set(0)
     except Exception:
         pass
+    screen.nodelay(True)
 
-    # Initialize white leading head and default base
-    curses.init_pair(1, curses.COLOR_CYAN, -1)
-    curses.init_pair(2, curses.COLOR_WHITE, -1)
+    if curses.has_colors():
+        curses.start_color()
+        try:
+            curses.use_default_colors()
+            bg = -1
+        except Exception:
+            bg = curses.COLOR_BLACK
 
-    # Initialize Gradient Color Pairs
-    can_change = curses.can_change_color()
-    for i in range(GRADIENT_STEPS):
-        pair_num = 10 + i
-        ratio = i / (GRADIENT_STEPS - 1)
-        if can_change and curses.COLORS >= 256:
-            color_idx = 100 + i
-            r, g, b = get_gradient_rgb(ratio)
-            curses.init_color(color_idx, r, g, b)
-            curses.init_pair(pair_num, color_idx, -1)
-        else:
-            # Fallback for standard terminals
-            if ratio < 0.33:
-                curses.init_pair(pair_num, curses.COLOR_CYAN, -1)
-            elif ratio < 0.66:
-                curses.init_pair(pair_num, curses.COLOR_GREEN, -1)
+        try:
+            curses.init_pair(1, curses.COLOR_CYAN, bg)
+            curses.init_pair(2, curses.COLOR_WHITE, bg)
+        except Exception:
+            pass
+
+        # Initialize Gradient Color Pairs (40% Cyan -> 20% Green -> 40% Sakura Pink)
+        can_change = curses.can_change_color()
+        for i in range(GRADIENT_STEPS):
+            pair_num = 10 + i
+            ratio = i / (GRADIENT_STEPS - 1)
+            if can_change and curses.COLORS >= 256:
+                color_idx = 100 + i
+                r, g, b = get_gradient_rgb(ratio)
+                try:
+                    curses.init_color(color_idx, r, g, b)
+                    curses.init_pair(pair_num, color_idx, bg)
+                except Exception:
+                    pass
             else:
-                curses.init_pair(pair_num, curses.COLOR_MAGENTA, -1)
+                # Fallback for standard terminals
+                try:
+                    if ratio <= 0.40:
+                        curses.init_pair(pair_num, curses.COLOR_CYAN, bg)
+                    elif ratio <= 0.60:
+                        curses.init_pair(pair_num, curses.COLOR_GREEN, bg)
+                    else:
+                        curses.init_pair(pair_num, curses.COLOR_MAGENTA, bg)
+                except Exception:
+                    pass
 
     writer = Writer(screen)
     delay = (100 - args.speed) * 10
