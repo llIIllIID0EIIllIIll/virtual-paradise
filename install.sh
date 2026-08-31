@@ -204,7 +204,9 @@ fi
 log_step "6" "8" "Installing Cava, Btop & Fastfetch theme profiles..."
 
 # Cava
-if [[ -f "$REPO_DIR/cava_theme" ]]; then
+if [[ -f "$REPO_DIR/cava/config_bar" ]]; then
+  cp "$REPO_DIR/cava/config_bar" "$CONFIG_DIR/cava/config_bar"
+elif [[ -f "$REPO_DIR/cava_theme" ]]; then
   cp "$REPO_DIR/cava_theme" "$CONFIG_DIR/cava/config_bar"
 fi
 if [[ -f "$REPO_DIR/cava/config" ]]; then
