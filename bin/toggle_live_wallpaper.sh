@@ -15,7 +15,7 @@
 BG_DIR="$HOME/.config/omarchy/themes/virtual-paradise/backgrounds"
 STATE_DIR="$HOME/.local/state/virtual-paradise"
 STATE_FILE="$STATE_DIR/current_live_wallpaper"
-STATIC_BG="$BG_DIR/miku-cyber-peace.png"
+STATIC_BG="$BG_DIR/Big_city.jpg"
 
 mkdir -p "$STATE_DIR"
 
