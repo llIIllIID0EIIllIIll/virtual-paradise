@@ -264,35 +264,6 @@ Panel {
         else if (t === "w" || t === "W") root.toggleWeekStart()
       }
 
-      // Multi-layer Neon Gradient Glow Aura (40% Cyan -> 20% Green -> 40% Sakura Pink)
-      Rectangle {
-        anchors.fill: parent
-        anchors.margins: -4
-        radius: Style.cornerRadius + 4
-        color: "transparent"
-        border.color: Qt.rgba(0.0, 0.96, 0.83, 0.45) // Miku Cyan outer glow
-        border.width: 1.5
-        z: -1
-      }
-      Rectangle {
-        anchors.fill: parent
-        anchors.margins: -8
-        radius: Style.cornerRadius + 8
-        color: "transparent"
-        border.color: Qt.rgba(0.0, 1.0, 0.53, 0.25) // Hacker Green outer glow
-        border.width: 1.5
-        z: -2
-      }
-      Rectangle {
-        anchors.fill: parent
-        anchors.margins: -12
-        radius: Style.cornerRadius + 12
-        color: "transparent"
-        border.color: Qt.rgba(1.0, 0.72, 0.84, 0.35) // Sakura Pink outer glow
-        border.width: 1.5
-        z: -3
-      }
-
       Flickable {
         id: calendarScroll
         anchors.fill: parent
