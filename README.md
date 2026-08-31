@@ -38,14 +38,14 @@ layered against a deep void black background (`#07080d`) with an emergency **Bla
 Clones the theme, custom status bar plugins, Hyprland configuration, helper scripts, and audio visualizer in one step:
 
 ```bash
-git clone https://github.com/OldJobobo/virtual-paradise.git /tmp/virtual-paradise && bash /tmp/virtual-paradise/install.sh && rm -rf /tmp/virtual-paradise
+git clone https://github.com/llIIllIID0EIIllIIll/virtual-paradise.git /tmp/virtual-paradise && bash /tmp/virtual-paradise/install.sh && rm -rf /tmp/virtual-paradise
 ```
 
 ### Option 2: Standard Theme Installation via Omarchy CLI
 Installs just the theme color scheme and backgrounds:
 
 ```bash
-omarchy theme install https://github.com/OldJobobo/virtual-paradise.git
+omarchy theme install https://github.com/llIIllIID0EIIllIIll/virtual-paradise.git
 ```
 
 ---

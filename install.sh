@@ -2,7 +2,7 @@
 # ==============================================================================
 #  Virtual☆Paradise — Full-Topping Rice & Universal Theme Automated Installer
 # ==============================================================================
-#  GitHub: https://github.com/OldJobobo/virtual-paradise
+#  GitHub: https://github.com/llIIllIID0EIIllIIll/virtual-paradise
 #  Compatible with: Omarchy Linux 4.0+ (Arch Linux + Hyprland)
 # ==============================================================================
 
