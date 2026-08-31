@@ -74,7 +74,7 @@ if [ "$STATE" == "off" ]; then
     fi
 
     echo "on" > "$STATE_FILE"
-    notify-send -u normal -t 2000 "❄️ ${VENDOR} Cooler Boost" "ENABLED (100% Maximum Fan Speed)"
+    notify-send -u normal -t 2000 "󰈐 ${VENDOR} Cooler Boost" "ENABLED (100% Maximum Fan Speed)"
 else
     # Disable Cooler Boost (Restore Auto Profile)
     if command -v isw >/dev/null 2>&1; then
@@ -86,5 +86,5 @@ else
     fi
 
     echo "off" > "$STATE_FILE"
-    notify-send -u normal -t 2000 "❄️ ${VENDOR} Cooler Boost" "DISABLED (Auto Fan Profile)"
+    notify-send -u normal -t 2000 "󰈐 ${VENDOR} Cooler Boost" "DISABLED (Auto Fan Profile)"
 fi

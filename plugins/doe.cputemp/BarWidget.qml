@@ -57,13 +57,13 @@ BarWidget {
     horizontalMargin: 2
     verticalPadding: 2
     tooltipText: root.isOverheating
-      ? "⚠️ CPU OVERHEATING: " + root.cpuTemp + " (Cooler Boost: " + (root.coolerActive ? "ON" : "OFF") + ")\nLeft: Toggle Cooler Boost | Right: Sensor Details"
-      : ("CPU Temp: " + root.cpuTemp + (root.coolerActive ? " (Cooler Boost: ON)" : " (Cooler Boost: OFF)") + "\nLeft: Toggle Cooler Boost | Right: Sensor Details")
+      ? " CPU OVERHEATING: " + root.cpuTemp + " (Cooler Boost: " + (root.coolerActive ? "ON" : "OFF") + ")\nLeft: Toggle Cooler Boost | Right: Sensor Details"
+      : (" CPU Temp: " + root.cpuTemp + (root.coolerActive ? " (Cooler Boost: ON)" : " (Cooler Boost: OFF)") + "\nLeft: Toggle Cooler Boost | Right: Sensor Details")
 
     onPressed: function(b) {
       if (!root.bar) return
       if (b === Qt.RightButton) {
-        root.bar.run("notify-send -u normal '🌡️ Sensor Details' \"$(sensors 2>/dev/null)\"")
+        root.bar.run("notify-send -u normal ' Sensor Details' \"$(sensors 2>/dev/null)\"")
       } else {
         root.bar.run("bash -c ~/.local/bin/toggle_cooler_boost.sh")
         refreshTimer.restart()

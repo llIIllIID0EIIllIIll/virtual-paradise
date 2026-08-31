@@ -644,7 +644,7 @@ Panel {
 
               Text {
                 anchors.centerIn: parent
-                text: root.savingLocation ? "󰦖" : "✕"
+                text: root.savingLocation ? "󰦖" : "󰅖"
                 font.family: root.bar.fontFamily
                 color: Qt.darker(root.bar.foreground, 1.4)
                 font.pixelSize: Style.font.bodySmall

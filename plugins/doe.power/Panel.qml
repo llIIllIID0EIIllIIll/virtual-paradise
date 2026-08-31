@@ -293,7 +293,7 @@ Panel {
           : (root.batteryCharging ? "#00ff88" : "#00f5d4")))
     scale: button.tooltipHovered ? 1.12 : 1.0
     tooltipText: root.isBatteryCritical
-      ? "⚠️ BATTERY CRITICAL: " + Math.round(root.batteryFraction * 100) + "% (Plug in charger!)\nLeft: Power Menu"
+      ? "󰂃 BATTERY CRITICAL: " + Math.round(root.batteryFraction * 100) + "% (Plug in charger!)\nLeft: Power Menu"
       : ("Power & Battery: " + Math.round(root.batteryFraction * 100) + "% (" + (root.batteryCharging ? "Charging" : "Discharging") + ")\nLeft: Power Menu | Right: Toggle %")
 
     Rectangle {

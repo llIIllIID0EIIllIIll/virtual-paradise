@@ -971,7 +971,7 @@ Panel {
         : (root.isNetworkAlert ? "#ff0055" : (root.isConnected ? "#00f5d4" : "#556d7d")))
     scale: button.tooltipHovered ? 1.15 : 1.0
     tooltipText: root.isNetworkAlert
-      ? "⚠️ Network: Disconnected (Wi-Fi ON, No Connection / Alert)\nClick to Connect Wi-Fi"
+      ? "󰤫 Network: Disconnected (Wi-Fi ON, No Connection / Alert)\nClick to Connect Wi-Fi"
       : (root.isConnected
         ? "Network: " + (root.connectedSsid ? (root.connectedSsid + " (" + root.signalStrength + "%)") : "Ethernet Connected") + "\nClick to Open Wi-Fi Panel"
         : "Network: Wi-Fi Disabled (OFF)\nClick to Open Wi-Fi Panel")

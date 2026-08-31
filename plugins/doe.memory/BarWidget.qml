@@ -60,8 +60,8 @@ BarWidget {
     horizontalMargin: 2
     verticalPadding: 2
     tooltipText: root.isRamCritical
-      ? "⚠️ HIGH RAM USAGE: " + root.memUsage + "\nLeft: Launch Btop | Right: Memory Details"
-      : ("Memory Usage: " + root.memUsage + (root.btopActive ? " (Btop: ON)" : " (Btop: OFF)") + "\nLeft: Toggle Btop | Right: Memory Details")
+      ? " HIGH RAM USAGE: " + root.memUsage + "\nLeft: Launch Btop | Right: Memory Details"
+      : ("󰍛 Memory Usage: " + root.memUsage + (root.btopActive ? " (Btop: ON)" : " (Btop: OFF)") + "\nLeft: Toggle Btop | Right: Memory Details")
 
     onPressed: function(b) {
       if (!root.bar) return
