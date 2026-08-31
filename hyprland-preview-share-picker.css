@@ -1,123 +1,84 @@
-/*  .-^~^-. \/ .-^~^-. \\ `-._.-` // .-^~^-. \/ .-^~^-. */
-/* |                                                   | */
-/* |   ,---.          ,--.                             | */
-/* |  '   .-'  ,--,--.|  |,-.,--.,--.,--.--. ,--,--.   | */
-/* |  `.  `-. ' ,-.  ||     /|  ||  ||  .--'' ,-.  |   | */
-/* |  .-'    |\ '-'  ||  \  \'  ''  '|  |   \ '-'  |   | */
-/* |  `-----'  `--`--'`--'`--'`----' `--'    `--`--'   | */
-/* |                 . .         . .                   | */
-/* |               .-^~^-.     .-^~^-.                 | */
-/* |               `-._.-'     `-._.-'                 | */
-/* |                  |           |                    | */
-/* |     ,--.   ,--.             ,--.     ,--.         | */
-/* |     |   `.'   | ,---.  ,---.|  ,---. `--'         | */
-/* |     |  |'.'|  || .-. || .--'|  .-.  |,--.         | */
-/* |     |  |   |  |' '-' '\ `--.|  | |  ||  |         | */
-/* |     `--'   `--' `---'  `---'`--' `--'`--'         | */
-/* |                                                   | */
-/*  .-^~^-. \/ .-^~^-. \\ `-._.-` // .-^~^-. \/ .-^~^-. */
+/* ==============================================================================
+ *  Virtual☆Paradise — Hyprland Screen & Window Share Picker Stylesheet
+ * ============================================================================== */
 
-@define-color foreground #f0b7ca;
-@define-color background #0b0d11;
-@define-color accent #f23888;
-@define-color muted #678270;
-@define-color card_bg #0b0d11;
-@define-color text_dark #0b0d11;
-@define-color accent_hover #8bf0a1;
-@define-color selected_tab #f23888;
-@define-color text #f0b7ca;
+@define-color foreground #eafbfa;
+@define-color background #07080d;
+@define-color accent #00f5d4;
+@define-color accent_secondary #00ff88;
+@define-color accent_highlight #ffb7d5;
+@define-color muted #7091a4;
+@define-color card_bg #0e121a;
+@define-color text_dark #07080d;
+@define-color accent_hover #00ff88;
+@define-color selected_tab #00f5d4;
+@define-color text #eafbfa;
 
 * {
   all: unset;
-  font-family: JetBrains Mono NF;
+  font-family: JetBrains Mono NF, Inter, sans-serif;
   color: @foreground;
   font-weight: bold;
-  font-size: 16px;
+  font-size: 15px;
 }
 
 .window {
-  background: alpha(@background, 0.95);
+  background: alpha(@background, 0.94);
   border: solid 2px @accent;
+  border-radius: 16px;
   margin: 4px;
   padding: 18px;
 }
 
 tabs {
-    padding: 0.5rem 1rem;
+  padding: 0.5rem 1rem;
 }
 
 tabs > tab {
-    margin-right: 1rem;
+  margin-right: 1.2rem;
+  padding: 6px 14px;
+  border-radius: 8px;
 }
 
 .tab-label {
-    color: @text;
-    transition: all 0.2s ease;
+  color: @muted;
+  transition: all 0.2s ease;
 }
 
-tabs > tab:checked > .tab-label, tabs > tab:active > .tab-label {
-    text-decoration: underline currentColor;
-    color: @selected_tab;
+tabs > tab:checked > .tab-label,
+tabs > tab:active > .tab-label {
+  color: @accent;
+  font-weight: 800;
+  text-decoration: underline currentColor;
 }
 
-tabs > tab:focus > .tab-label {
-    color: @foreground;
+.button {
+  background-color: @card_bg;
+  border: 1px solid alpha(@accent, 0.35);
+  border-radius: 12px;
+  padding: 10px;
+  margin: 6px;
+  transition: all 0.2s ease;
 }
 
-.page {
-    padding: 1rem;
+.button:hover {
+  background-color: alpha(@accent, 0.18);
+  border-color: @accent_secondary;
 }
 
-.image-label {
-    font-size: 12px;
-    padding: 0.25rem;
+.button:active,
+.button:checked {
+  background-color: alpha(@accent, 0.28);
+  border-color: @accent;
 }
 
-flowboxchild > .card, button > .card {
-    transition: all 0.2s ease;
-    border: solid 2px transparent;
-    border-color: @background;
-    border-radius: 5px;
-    background-color: @card_bg;
-    padding: 5px;
+.card-title {
+  color: @foreground;
+  font-size: 14px;
+  padding: 4px;
 }
 
-flowboxchild:hover > .card, button:hover > .card, flowboxchild:active > .card, flowboxchild:selected > .card, button:active > .card, button:selected > .card, button:focus > .card {
-    border: solid 2px @accent;
+.preview-image {
+  border-radius: 8px;
+  border: 1px solid alpha(@muted, 0.3);
 }
-
-.image {
-    border-radius: 5px;
-}
-
-.region-button {
-    padding: 0.5rem 1rem;
-    border-radius: 5px;
-    background-color: @accent;
-    color: @text_dark;
-    transition: all 0.2s ease;
-}
-
-.region-button > label {
-    color: @text_dark;
-}
-
-.region-button:not(:disabled):hover, .region-button:not(:disabled):focus {
-    background-color: @accent_hover;
-    color: @text_dark;
-}
-
-.region-button:disabled {
-    background-color: @muted;
-    color: @background;
-}
-
-/*   ____  __   __ */
-/*  / __ \/ /__/ / */
-/* / /_/ / / _  /  */
-/* \____/_/\_,_/   */
-/*      __     __        __       */
-/*  __ / /__  / /  ___  / /  ___  */
-/* / // / _ \/ _ \/ _ \/ _ \/ _ \ */
-/* \___/\___/_.__/\___/_.__/\___/ */
-/*                                */
