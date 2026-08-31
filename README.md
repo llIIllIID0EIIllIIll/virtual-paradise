@@ -8,7 +8,8 @@
 **Virtual☆Paradise** is a full-topping, high-contrast **Neon Pastel Cyberpunk** Rice and Universal Theme for [Omarchy Linux](https://omarchy.org/) (Arch Linux + Hyprland).
 
 Featuring an electric gradient flow:
-$$\mathbf{\text{Miku Cyan (\#00f5d4)}}\ \longrightarrow\ \mathbf{\text{Hacker Green (\#00ff88)}}\ \longrightarrow\ \mathbf{\text{Sakura Pink (\#ffb7d5)}}$$
+> **Miku Cyan** (`#00f5d4`) ➔ **Hacker Green** (`#00ff88`) ➔ **Sakura Pink** (`#ffb7d5`)
+
 layered against a deep void black background (`#07080d`) with an emergency **Blazing Neon Warning Red (`#ff0055`)** diagnostic alert system.
 
 ---
@@ -26,7 +27,7 @@ layered against a deep void black background (`#07080d`) with an emergency **Bla
 | **Accent Primary** | `#00f5d4` | ![#00f5d4](https://placehold.co/15x15/00f5d4/00f5d4.png) `Miku Cyan` | Main focal accent, active badges, focus indicators |
 | **Accent Secondary** | `#00ff88` | ![#00ff88](https://placehold.co/15x15/00ff88/00ff88.png) `Hacker Green` | Occupied workspaces, playback active, live stream |
 | **Accent Highlight** | `#ffb7d5` | ![#ffb7d5](https://placehold.co/15x15/ffb7d5/ffb7d5.png) `Sakura Pink` | Gradient third stop, CPU thermal normal pill |
-| **Neon Warning Red** | `#ff0055` | ![#ff0055](https://placehold.co/15x15/ff0055/ff0055.png) `Warning Red` | Hardware error, low battery ($\le 15\%$), Wi-Fi alert, command error |
+| **Neon Warning Red** | `#ff0055` | ![#ff0055](https://placehold.co/15x15/ff0055/ff0055.png) `Warning Red` | Hardware error, low battery (≤ 15%), Wi-Fi alert, command error |
 | **Background Void** | `#07080d` | ![#07080d](https://placehold.co/15x15/07080d/07080d.png) `Void Black` | 94% Acrylic frosted glass background |
 | **Muted Slate** | `#7091a4` | ![#7091a4](https://placehold.co/15x15/7091a4/7091a4.png) `Slate Blue` | Inactive text, unselected borders, standby states |
 
