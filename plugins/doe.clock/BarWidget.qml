@@ -144,12 +144,33 @@ BarWidget {
       width: clockRow.implicitWidth + 24
       height: 28
       radius: 14
-      color: Qt.rgba(0.0, 0.96, 0.83, 0.09) // Miku Cyan frosted tint
+      color: root.opened
+        ? Qt.rgba(0.0, 1.0, 0.53, 0.25)
+        : (button.tooltipHovered ? Qt.rgba(0.0, 0.96, 0.83, 0.16) : Qt.rgba(0.0, 0.96, 0.83, 0.09))
       border.color: root.opened ? "#00ff88" : (button.tooltipHovered ? "#00f5d4" : Qt.rgba(0.0, 0.96, 0.83, 0.40))
-      border.width: 1
+      border.width: root.opened ? 2 : 1
 
-      Behavior on border.color {
-        ColorAnimation { duration: 180 }
+      Behavior on color { ColorAnimation { duration: 180 } }
+      Behavior on border.color { ColorAnimation { duration: 180 } }
+      Behavior on border.width { NumberAnimation { duration: 150 } }
+
+      // Outer Halo Glow Ring when Calendar Popup is Opened
+      Rectangle {
+        anchors.fill: parent
+        anchors.margins: -3
+        radius: clockPill.radius + 3
+        color: "transparent"
+        border.color: "#00ff88"
+        border.width: 1.8
+        opacity: 0.85
+        visible: root.opened
+
+        SequentialAnimation on opacity {
+          running: root.opened
+          loops: Animation.Infinite
+          NumberAnimation { to: 0.35; duration: 800; easing.type: Easing.InOutQuad }
+          NumberAnimation { to: 0.95; duration: 800; easing.type: Easing.InOutQuad }
+        }
       }
 
       Row {

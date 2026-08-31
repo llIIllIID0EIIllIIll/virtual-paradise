@@ -23,7 +23,7 @@ BarWidget {
   Component.onCompleted: refresh()
 
   Timer {
-    interval: 2000
+    interval: 1500
     running: true
     repeat: true
     onTriggered: root.refresh()
@@ -31,7 +31,7 @@ BarWidget {
 
   Process {
     id: memProc
-    command: ["bash", "-c", "free -m | awk '/Mem:/ { printf(\"%.1fG (%.0f%%)\", $3/1024, $3/$2*100) }'; echo ''; if pgrep -f 'Btop Monitor' >/dev/null 2>&1 || pgrep -x btop >/dev/null 2>&1; then echo 'on'; else echo 'off'; fi"]
+    command: ["bash", "-c", "free -m | awk '/Mem:/ { printf(\"%.1fG (%.0f%%)\", $3/1024, $3/$2*100) }'; if hyprctl clients -j 2>/dev/null | jq -e '.[] | select(.title == \"Btop Monitor\" or .initialTitle == \"Btop Monitor\" or .class == \"btop_float\")' >/dev/null 2>&1; then echo 'on'; else echo 'off'; fi"]
     stdout: StdioCollector {
       waitForEnd: true
       onStreamFinished: {
@@ -75,7 +75,7 @@ BarWidget {
 
     Timer {
       id: refreshTimer
-      interval: 400
+      interval: 300
       onTriggered: root.refresh()
     }
 
@@ -90,7 +90,7 @@ BarWidget {
       color: root.isRamCritical
         ? Qt.rgba(1.0, 0.0, 0.33, 0.28) // Neon Red Warning glow
         : (root.btopActive
-          ? Qt.rgba(0.0, 0.96, 0.83, 0.25) // Miku Cyan active glow
+          ? Qt.rgba(0.0, 0.96, 0.83, 0.28) // Miku Cyan active glow
           : (button.tooltipHovered ? Qt.rgba(0.0, 0.96, 0.83, 0.16) : Qt.rgba(0.0, 0.96, 0.83, 0.09)))
       border.color: root.isRamCritical
         ? "#ff0055" // Neon Warning Red
@@ -101,22 +101,41 @@ BarWidget {
       Behavior on border.color { ColorAnimation { duration: 180 } }
       Behavior on border.width { NumberAnimation { duration: 150 } }
 
-      // Outer Halo Glow Ring when Btop is Active or RAM is Critical
+      // Intense Outer Halo Glow Ring 1 (Immediate Aura)
       Rectangle {
         anchors.fill: parent
         anchors.margins: -3
         radius: memPill.radius + 3
         color: "transparent"
         border.color: root.isRamCritical ? "#ff0055" : "#00f5d4"
-        border.width: 1.5
-        opacity: 0.6
+        border.width: 1.8
+        opacity: 0.85
         visible: root.btopActive || root.isRamCritical
 
         SequentialAnimation on opacity {
-          running: (root.btopActive || root.isRamCritical) && !root.isRamCritical
+          running: root.btopActive && !root.isRamCritical
           loops: Animation.Infinite
-          NumberAnimation { to: 0.25; duration: 850; easing.type: Easing.InOutQuad }
-          NumberAnimation { to: 0.85; duration: 850; easing.type: Easing.InOutQuad }
+          NumberAnimation { to: 0.35; duration: 800; easing.type: Easing.InOutQuad }
+          NumberAnimation { to: 0.95; duration: 800; easing.type: Easing.InOutQuad }
+        }
+      }
+
+      // Outer Halo Glow Ring 2 (Diffuse Glow)
+      Rectangle {
+        anchors.fill: parent
+        anchors.margins: -6
+        radius: memPill.radius + 6
+        color: "transparent"
+        border.color: root.isRamCritical ? "#ff0055" : "#00ff88"
+        border.width: 1.2
+        opacity: 0.45
+        visible: root.btopActive || root.isRamCritical
+
+        SequentialAnimation on opacity {
+          running: root.btopActive && !root.isRamCritical
+          loops: Animation.Infinite
+          NumberAnimation { to: 0.15; duration: 800; easing.type: Easing.InOutQuad }
+          NumberAnimation { to: 0.60; duration: 800; easing.type: Easing.InOutQuad }
         }
       }
 
@@ -135,7 +154,7 @@ BarWidget {
         Text {
           anchors.verticalCenter: parent.verticalCenter
           text: "󰍛"
-          color: root.isRamCritical ? "#ff0055" : "#00f5d4"
+          color: root.isRamCritical ? "#ff0055" : (root.btopActive ? "#00f5d4" : "#00f5d4")
           font.family: root.bar.fontFamily
           font.pixelSize: Style.font.body + 1
 

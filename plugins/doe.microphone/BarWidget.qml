@@ -59,18 +59,54 @@ BarWidget {
       root.source.audio.volume = Math.max(0, Math.min(1, root.volume + (delta > 0 ? step : -step)))
     }
 
-    Item {
+    Rectangle {
+      id: micPill
       anchors.centerIn: parent
-      width: 24
-      height: 24
+      width: 28
+      height: 28
+      radius: 14
+      color: root.inUse
+        ? Qt.rgba(0.0, 1.0, 0.53, 0.28)
+        : (!root.muted
+          ? Qt.rgba(0.0, 0.96, 0.83, 0.20)
+          : (button.tooltipHovered ? Qt.rgba(1.0, 1.0, 1.0, 0.12) : "transparent"))
+      border.color: root.inUse
+        ? "#00ff88"
+        : (!root.muted
+          ? (button.tooltipHovered ? "#00ff88" : "#00f5d4")
+          : (button.tooltipHovered ? "#ffffff" : Qt.rgba(1.0, 1.0, 1.0, 0.15)))
+      border.width: (!root.muted || root.inUse) ? 2 : 1
+
+      Behavior on color { ColorAnimation { duration: 160 } }
+      Behavior on border.color { ColorAnimation { duration: 160 } }
+      Behavior on border.width { NumberAnimation { duration: 150 } }
+
+      // Outer Halo Glow Ring when Live or In-Use
+      Rectangle {
+        anchors.fill: parent
+        anchors.margins: -3
+        radius: micPill.radius + 3
+        color: "transparent"
+        border.color: root.inUse ? "#00ff88" : "#00f5d4"
+        border.width: 1.8
+        opacity: 0.85
+        visible: !root.muted || root.inUse
+
+        SequentialAnimation on opacity {
+          running: !root.muted || root.inUse
+          loops: Animation.Infinite
+          NumberAnimation { to: 0.35; duration: 800; easing.type: Easing.InOutQuad }
+          NumberAnimation { to: 0.95; duration: 800; easing.type: Easing.InOutQuad }
+        }
+      }
 
       Text {
         anchors.centerIn: parent
         text: root.muted ? "󰍭" : "󰍬"
         font.family: root.bar.fontFamily
         font.pixelSize: Style.font.icon
-        color: !root.muted ? (button.tooltipHovered ? "#00ff88" : "#00f5d4") : (button.tooltipHovered ? "#ffffff" : "#7091a4")
-        scale: button.tooltipHovered ? 1.15 : 1.0
+        color: root.inUse ? "#00ff88" : (!root.muted ? (button.tooltipHovered ? "#00ff88" : "#00f5d4") : (button.tooltipHovered ? "#ffffff" : "#7091a4"))
+        scale: button.tooltipHovered ? 1.12 : 1.0
 
         Behavior on color { ColorAnimation { duration: 160 } }
         Behavior on scale { NumberAnimation { duration: 150; easing.type: Easing.OutBack } }

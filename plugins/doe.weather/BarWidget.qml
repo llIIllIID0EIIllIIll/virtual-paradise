@@ -87,12 +87,33 @@ BarWidget {
       width: weatherRow.implicitWidth + 20
       height: 28
       radius: 14
-      color: Qt.rgba(1.0, 0.88, 0.40, 0.09) // Cyber Yellow frosted tint
-      border.color: root.opened ? "#00ff88" : (button.tooltipHovered ? "#ffe066" : Qt.rgba(1.0, 0.88, 0.40, 0.38))
-      border.width: 1
+      color: root.opened
+        ? Qt.rgba(1.0, 0.88, 0.40, 0.28)
+        : (button.tooltipHovered ? Qt.rgba(1.0, 0.88, 0.40, 0.16) : Qt.rgba(1.0, 0.88, 0.40, 0.09))
+      border.color: root.opened ? "#ffe066" : (button.tooltipHovered ? "#ffe066" : Qt.rgba(1.0, 0.88, 0.40, 0.38))
+      border.width: root.opened ? 2 : 1
 
-      Behavior on border.color {
-        ColorAnimation { duration: 180 }
+      Behavior on color { ColorAnimation { duration: 180 } }
+      Behavior on border.color { ColorAnimation { duration: 180 } }
+      Behavior on border.width { NumberAnimation { duration: 150 } }
+
+      // Outer Halo Glow Ring when Weather Popup is Opened
+      Rectangle {
+        anchors.fill: parent
+        anchors.margins: -3
+        radius: weatherPill.radius + 3
+        color: "transparent"
+        border.color: "#ffe066"
+        border.width: 1.8
+        opacity: 0.85
+        visible: root.opened
+
+        SequentialAnimation on opacity {
+          running: root.opened
+          loops: Animation.Infinite
+          NumberAnimation { to: 0.35; duration: 800; easing.type: Easing.InOutQuad }
+          NumberAnimation { to: 0.95; duration: 800; easing.type: Easing.InOutQuad }
+        }
       }
 
       Row {

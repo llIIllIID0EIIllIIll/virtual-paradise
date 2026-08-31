@@ -62,18 +62,38 @@ BarWidget {
     width: parent.width
     height: 28
     radius: 14
-    color: root.audioActive || root.isPlaying
-      ? Qt.rgba(0.0, 0.96, 0.83, 0.12)
+    color: (root.audioActive || root.isPlaying || root.popupOpen)
+      ? Qt.rgba(0.0, 0.96, 0.83, 0.25)
       : (mouseArea.containsMouse ? Qt.rgba(0.0, 1.0, 0.53, 0.12) : Qt.rgba(1.0, 1.0, 1.0, 0.04))
     border.color: root.popupOpen
       ? "#00ff88"
       : (root.audioActive || root.isPlaying
         ? "#00f5d4"
         : (mouseArea.containsMouse ? "#00ff88" : Qt.rgba(1.0, 1.0, 1.0, 0.15)))
-    border.width: 1
+    border.width: (root.audioActive || root.isPlaying || root.popupOpen) ? 2 : 1
 
     Behavior on color { ColorAnimation { duration: 160 } }
     Behavior on border.color { ColorAnimation { duration: 160 } }
+    Behavior on border.width { NumberAnimation { duration: 150 } }
+
+    // Outer Halo Glow Ring when Audio is Playing or Popup is Open
+    Rectangle {
+      anchors.fill: parent
+      anchors.margins: -3
+      radius: mediaPill.radius + 3
+      color: "transparent"
+      border.color: root.popupOpen ? "#00ff88" : "#00f5d4"
+      border.width: 1.8
+      opacity: 0.85
+      visible: root.audioActive || root.isPlaying || root.popupOpen
+
+      SequentialAnimation on opacity {
+        running: root.audioActive || root.isPlaying || root.popupOpen
+        loops: Animation.Infinite
+        NumberAnimation { to: 0.35; duration: 800; easing.type: Easing.InOutQuad }
+        NumberAnimation { to: 0.95; duration: 800; easing.type: Easing.InOutQuad }
+      }
+    }
   }
 
   Row {

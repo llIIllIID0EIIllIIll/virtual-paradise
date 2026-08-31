@@ -20,7 +20,7 @@ BarWidget {
   Component.onCompleted: refresh()
 
   Timer {
-    interval: 2000
+    interval: 1500
     running: true
     repeat: true
     onTriggered: root.refresh()
@@ -85,9 +85,9 @@ BarWidget {
       height: 28
       radius: 14
       color: root.isOverheating
-        ? Qt.rgba(1.0, 0.0, 0.33, 0.28) // Neon Red Warning glow
+        ? Qt.rgba(1.0, 0.0, 0.33, 0.32) // Neon Red Warning glow
         : (root.coolerActive
-          ? Qt.rgba(0.0, 1.0, 0.53, 0.25) // Hacker Green active glow
+          ? Qt.rgba(0.0, 1.0, 0.53, 0.32) // Intense Hacker Green active glow
           : (button.tooltipHovered ? Qt.rgba(1.0, 0.72, 0.84, 0.16) : Qt.rgba(1.0, 0.72, 0.84, 0.09)))
       border.color: root.isOverheating
         ? "#ff0055" // Neon Warning Red
@@ -100,22 +100,41 @@ BarWidget {
       Behavior on border.color { ColorAnimation { duration: 180 } }
       Behavior on border.width { NumberAnimation { duration: 150 } }
 
-      // Outer Halo Glow Ring when Cooler Boost is Active or Overheating
+      // Intense Outer Halo Glow Ring 1 (Immediate Bright Aura)
       Rectangle {
         anchors.fill: parent
         anchors.margins: -3
         radius: tempPill.radius + 3
         color: "transparent"
         border.color: root.isOverheating ? "#ff0055" : "#00ff88"
-        border.width: 1.5
-        opacity: 0.6
+        border.width: 2.0
+        opacity: 0.90
         visible: root.coolerActive || root.isOverheating
 
         SequentialAnimation on opacity {
           running: root.coolerActive && !root.isOverheating
           loops: Animation.Infinite
-          NumberAnimation { to: 0.25; duration: 800; easing.type: Easing.InOutQuad }
-          NumberAnimation { to: 0.85; duration: 800; easing.type: Easing.InOutQuad }
+          NumberAnimation { to: 0.40; duration: 750; easing.type: Easing.InOutQuad }
+          NumberAnimation { to: 1.0; duration: 750; easing.type: Easing.InOutQuad }
+        }
+      }
+
+      // Intense Outer Halo Glow Ring 2 (Diffuse Cyber Lime Aura)
+      Rectangle {
+        anchors.fill: parent
+        anchors.margins: -6
+        radius: tempPill.radius + 6
+        color: "transparent"
+        border.color: root.isOverheating ? "#ff0055" : "#39ff14"
+        border.width: 1.5
+        opacity: 0.60
+        visible: root.coolerActive || root.isOverheating
+
+        SequentialAnimation on opacity {
+          running: root.coolerActive && !root.isOverheating
+          loops: Animation.Infinite
+          NumberAnimation { to: 0.20; duration: 750; easing.type: Easing.InOutQuad }
+          NumberAnimation { to: 0.75; duration: 750; easing.type: Easing.InOutQuad }
         }
       }
 
@@ -152,7 +171,7 @@ BarWidget {
               loops: Animation.Infinite
               from: 0
               to: 360
-              duration: 800
+              duration: 700
             }
 
             Behavior on color { ColorAnimation { duration: 180 } }
