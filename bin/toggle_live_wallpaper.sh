@@ -1,26 +1,48 @@
 #!/bin/bash
 # ==============================================================================
-#  Virtual☆Paradise — Live Video Wallpaper Engine
+#  Virtual☆Paradise — Live Video & Animated GIF Wallpaper Engine
 # ==============================================================================
 #  Usage:
-#    toggle_live_wallpaper.sh          # Toggle live video wallpaper on/off
-#    toggle_live_wallpaper.sh init     # Startup: start live video
-#    toggle_live_wallpaper.sh start    # Start live video wallpaper
-#    toggle_live_wallpaper.sh stop     # Switch to static Miku wallpaper
-#    toggle_live_wallpaper.sh next     # Cycle to next video in backgrounds
+#    toggle_live_wallpaper.sh          # Toggle live wallpaper on/off
+#    toggle_live_wallpaper.sh init     # Startup: start live wallpaper
+#    toggle_live_wallpaper.sh start    # Start live wallpaper
+#    toggle_live_wallpaper.sh stop     # Switch to static wallpaper
+#    toggle_live_wallpaper.sh next     # Cycle to next live wallpaper (video/GIF)
+#    toggle_live_wallpaper.sh prev     # Cycle to previous live wallpaper
+#    toggle_live_wallpaper.sh list     # List all live wallpapers
 # ==============================================================================
 
 BG_DIR="$HOME/.config/omarchy/themes/virtual-paradise/backgrounds"
-LIVE_VIDEO="$BG_DIR/miku-horizontal-live.mp4"
+STATE_DIR="$HOME/.local/state/virtual-paradise"
+STATE_FILE="$STATE_DIR/current_live_wallpaper"
 STATIC_BG="$BG_DIR/miku-cyber-peace.png"
+
+mkdir -p "$STATE_DIR"
+
+get_live_items() {
+  local items=()
+  for ext in mp4 gif webm mkv; do
+    for f in "$BG_DIR"/*."$ext"; do
+      [[ -f "$f" ]] && items+=("$f")
+    done
+  done
+  echo "${items[@]}"
+}
 
 is_live_running() {
   pgrep -x mpvpaper >/dev/null 2>&1
 }
 
 set_live() {
-  local video="${1:-$LIVE_VIDEO}"
-  if [[ -f "$video" ]]; then
+  local target="$1"
+  if [[ -z "$target" ]] || [[ ! -f "$target" ]]; then
+    local -a items=($(get_live_items))
+    if [[ ${#items[@]} -gt 0 ]]; then
+      target="${items[0]}"
+    fi
+  fi
+
+  if [[ -n "$target" && -f "$target" ]]; then
     # Set static wallpaper as rock-solid background fallback
     if [[ -f "$STATIC_BG" ]]; then
       omarchy theme bg set "$STATIC_BG" 2>/dev/null || true
@@ -28,9 +50,10 @@ set_live() {
     # Launch mpvpaper hardware accelerated on all monitors
     killall -9 mpvpaper 2>/dev/null || true
     if command -v mpvpaper &>/dev/null; then
-      mpvpaper -vs -o "no-audio loop" '*' "$video" >/dev/null 2>&1 &
+      mpvpaper -vs -o "no-audio loop" '*' "$target" >/dev/null 2>&1 &
     fi
-    local filename=$(basename "$video")
+    echo "$target" > "$STATE_FILE"
+    local filename=$(basename "$target")
     notify-send -u normal "󰸌 Live Wallpaper" "Playing: ${filename}\n(Hardware-accelerated 60fps)"
   else
     set_static
@@ -45,12 +68,44 @@ set_static() {
   fi
 }
 
+cycle_live() {
+  local direction="${1:-next}"
+  local -a items=($(get_live_items))
+  local total=${#items[@]}
+  if [[ $total -eq 0 ]]; then
+    set_static
+    return
+  fi
+
+  local current=""
+  [[ -f "$STATE_FILE" ]] && current=$(cat "$STATE_FILE")
+  local current_idx=-1
+
+  for i in "${!items[@]}"; do
+    if [[ "${items[$i]}" == "$current" ]]; then
+      current_idx=$i
+      break
+    fi
+  done
+
+  local next_idx=0
+  if [[ $current_idx -ge 0 ]]; then
+    if [[ "$direction" == "prev" ]]; then
+      next_idx=$(( (current_idx - 1 + total) % total ))
+    else
+      next_idx=$(( (current_idx + 1) % total ))
+    fi
+  fi
+
+  set_live "${items[$next_idx]}"
+}
+
 case "$1" in
   init|autostart)
-    if [[ -f "$LIVE_VIDEO" ]]; then
-      set_live "$LIVE_VIDEO"
+    if [[ -f "$STATE_FILE" ]] && [[ -f "$(cat "$STATE_FILE" 2>/dev/null)" ]]; then
+      set_live "$(cat "$STATE_FILE")"
     else
-      set_static
+      set_live
     fi
     ;;
   stop)
@@ -60,18 +115,27 @@ case "$1" in
     set_live "$2"
     ;;
   next)
-    VIDEOS=("$BG_DIR"/*.mp4)
-    if [[ ${#VIDEOS[@]} -gt 0 ]]; then
-      set_live "${VIDEOS[0]}"
-    else
-      set_live "$LIVE_VIDEO"
-    fi
+    cycle_live next
+    ;;
+  prev)
+    cycle_live prev
+    ;;
+  list)
+    echo "Available Live Wallpapers in Virtual☆Paradise:"
+    items=($(get_live_items))
+    for f in "${items[@]}"; do
+      echo "  • $(basename "$f")"
+    done
     ;;
   "")
     if is_live_running; then
       set_static
     else
-      set_live "$LIVE_VIDEO"
+      if [[ -f "$STATE_FILE" ]] && [[ -f "$(cat "$STATE_FILE" 2>/dev/null)" ]]; then
+        set_live "$(cat "$STATE_FILE")"
+      else
+        set_live
+      fi
     fi
     ;;
   *)
