@@ -98,11 +98,32 @@ if [[ -z "$_ZSHRC_INITIALIZED" ]]; then
     git                       # Tích hợp các shortcut, gợi ý lệnh và hiển thị trạng thái Git
     zsh-completions           # Thư viện bổ sung gợi ý hoàn thành cho hàng trăm lệnh phổ biến
     zsh-autosuggestions       # Tự động gợi ý lệnh mờ khi đang gõ dựa theo lịch sử lệnh đã gõ trước đó
-    zsh-syntax-highlighting   # Tô màu cú pháp câu lệnh (xanh lục nếu lệnh đúng, đỏ nếu lệnh sai) trực quan thời gian thực
+    zsh-syntax-highlighting   # Tô màu cú pháp câu lệnh thời gian thực
   )
 
   # Nạp tập lệnh khởi động cốt lõi của Oh My Zsh
   source $ZSH/oh-my-zsh.sh
+
+  # Cấu hình màu sắc tô cú pháp động theo ngữ cảnh (Dynamic Syntax Highlighting)
+  typeset -A ZSH_HIGHLIGHT_STYLES
+  ZSH_HIGHLIGHT_STYLES[command]='fg=#00ff88,bold'               # Lệnh hợp lệ: Hacker Green
+  ZSH_HIGHLIGHT_STYLES[unknown-token]='fg=#ff0055,bold'          # Lệnh sai / không tồn tại: Neon Warning Red
+  ZSH_HIGHLIGHT_STYLES[alias]='fg=#00f5d4,bold'                  # Biệt danh / Alias: Miku Cyan
+  ZSH_HIGHLIGHT_STYLES[builtin]='fg=#ffb7d5,bold'                # Lệnh nội tại shell: Sakura Pink
+  ZSH_HIGHLIGHT_STYLES[function]='fg=#00f5d4,bold'               # Hàm shell: Miku Cyan
+  ZSH_HIGHLIGHT_STYLES[commandseparator]='fg=#7091a4'            # Ký hiệu phân tách (; && |): Muted Slate
+  ZSH_HIGHLIGHT_STYLES[path]='fg=#00f5d4,underline'              # Đường dẫn thư mục/tệp tin: Cyan gạch chân
+  ZSH_HIGHLIGHT_STYLES[path_prefix]='fg=#00f5d4'
+  ZSH_HIGHLIGHT_STYLES[single-quoted-argument]='fg=#ffe066'      # Chuỗi trong nháy đơn: Cyber Yellow
+  ZSH_HIGHLIGHT_STYLES[double-quoted-argument]='fg=#ffe066'      # Chuỗi trong nháy kép: Cyber Yellow
+  ZSH_HIGHLIGHT_STYLES[dollar-double-quoted-argument]='fg=#ffb7d5' # Biến môi trường $VAR: Sakura Pink
+  ZSH_HIGHLIGHT_STYLES[back-quoted-argument]='fg=#ffb7d5'        # Lệnh con `command`: Sakura Pink
+  ZSH_HIGHLIGHT_STYLES[single-hyphen-option]='fg=#39c5bb'        # Cờ tùy chọn ngắn (-a, -f): Cyan Blue
+  ZSH_HIGHLIGHT_STYLES[double-hyphen-option]='fg=#39c5bb'        # Cờ tùy chọn dài (--help): Cyan Blue
+  ZSH_HIGHLIGHT_STYLES[cursor]='bg=#00f5d4'
+
+  # Cấu hình gợi ý lệnh mờ (Autosuggestions)
+  ZSH_AUTOSUGGEST_HIGHLIGHT_STYLE="fg=#7091a4"
 fi
 
 # =========================================================================
@@ -1315,12 +1336,18 @@ function precmd() {
   zsh_tool_context; _CACHE_TOOL_CONTEXT="$REPLY"
   zsh_bottom_status; _CACHE_BOTTOM_STATUS="$REPLY"
 
+  if [[ $exit_status -eq 0 ]]; then
+    _CACHE_ARROW_COLOR="${C_ACCENT}"
+  else
+    _CACHE_ARROW_COLOR="${C_ALERT}"
+  fi
+
   # Thiết lập PROMPT động bằng dấu nháy đơn (single quotes) để Zsh đánh giá lại $(zsh_top_line) mỗi lần vẽ prompt.
   # Khi cửa sổ thay đổi kích thước, TRAPWINCH gọi zle reset-prompt → Zsh đánh giá lại PROMPT → zsh_top_line()
   # được gọi lại với giá trị COLUMNS mới → R_TOP tự động căn lề phải theo chiều rộng cửa sổ mới.
   # Sử dụng trực tiếp biến ${_CACHE_BOTTOM_STATUS} để loại bỏ subshell.
   PROMPT='$(zsh_top_line)
-${C_DIM}${L_BOT} ${_CACHE_BOTTOM_STATUS}${C_ACCENT}${I_ARROW} ${C_RESET}'
+${C_DIM}${L_BOT} ${_CACHE_BOTTOM_STATUS}${_CACHE_ARROW_COLOR}${I_ARROW} ${C_RESET}'
 }
 
 # Hàm tạo khối bo tròn (pill capsule) kiểu Oh My Posh
@@ -1476,11 +1503,11 @@ function zsh_user_info() {
   if [[ "$ZSH_PROMPT_STYLE" == "powerline" ]]; then
     local expanded_name="${(%)name}"
     if [[ $UID -eq 0 ]]; then
-      zsh_make_gradient_pill "#ff0055" "#ff79a8" "#07080d" "${icon} ${expanded_name}"
+      zsh_make_gradient_pill "#ff0055" "#ff1744" "#ffffff" "${icon} ${expanded_name}"
     elif [[ -n $SSH_CONNECTION ]]; then
-      zsh_make_gradient_pill "#89b4fa" "#b4befe" "#11111b" "${icon} ${expanded_name}"
+      zsh_make_gradient_pill "#8b5cf6" "#06b6d4" "#ffffff" "${icon} ${expanded_name}"
     else
-      zsh_make_gradient_pill "#00f5d4" "#00ff88" "#07080d" "${icon} ${expanded_name}"
+      zsh_make_gradient_pill "#ffb7d5" "#00f5d4" "#07080d" "${icon} ${expanded_name}"
     fi
   else
     # Classic style
@@ -1508,7 +1535,11 @@ function zsh_dir_info() {
     
     local path_str="%(3~|.../%2c|%~)"
     local expanded_path="${(%)path_str}"
-    zsh_make_gradient_pill "#00ff88" "#00f5d4" "#07080d" "${I_DIR} ${expanded_path}${lock_str}"
+    if [[ ! -w . ]]; then
+      zsh_make_gradient_pill "#ff0055" "#ff79a8" "#ffffff" "${I_DIR} ${expanded_path}${lock_str}"
+    else
+      zsh_make_gradient_pill "#00ff88" "#00f5d4" "#07080d" "${I_DIR} ${expanded_path}${lock_str}"
+    fi
   else
     # Classic style
     [[ ! -w . ]] && lock=" ${C_ALERT}${I_LOCK} "
@@ -1594,7 +1625,7 @@ function zsh_git_status() {
     if (( staged + unstaged + untracked > 0 )); then
       zsh_make_gradient_pill "#ff0055" "#ffb7d5" "#07080d" "$content"
     else
-      zsh_make_gradient_pill "#00ff88" "#00f5d4" "#07080d" "$content"
+      zsh_make_gradient_pill "#00ff88" "#39c5bb" "#07080d" "$content"
     fi
   else
     # Classic style
