@@ -37,8 +37,16 @@ is_live_running() {
   pgrep -x mpvpaper >/dev/null 2>&1
 }
 
+play_curtain_transition() {
+  local qml_script="$HOME/.local/bin/curtain_transition.qml"
+  if [[ -f "$qml_script" ]] && command -v quickshell &>/dev/null; then
+    quickshell -p "$qml_script" >/dev/null 2>&1 &
+  fi
+}
+
 set_live() {
   local target="$1"
+  local transition="${2:-true}"
   if [[ -z "$target" ]] || [[ ! -f "$target" ]]; then
     local -a items=($(get_live_items))
     if [[ ${#items[@]} -gt 0 ]]; then
@@ -47,6 +55,11 @@ set_live() {
   fi
 
   if [[ -n "$target" && -f "$target" ]]; then
+    if [[ "$transition" == "true" ]]; then
+      play_curtain_transition
+      sleep 0.22
+    fi
+
     # Set static wallpaper as rock-solid background fallback
     if [[ -f "$STATIC_BG" ]]; then
       omarchy theme bg set "$STATIC_BG" 2>/dev/null || true
