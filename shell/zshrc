@@ -675,44 +675,40 @@ function f() {
   # Sub-function: Directory browser (Navigate with Left/Right arrows)
   _f_mode_dir() {
     if [[ -z "$fd_cmd" ]]; then
-      print -P "%F{red}[ERROR]%f Error: 'fd' / 'fd-find' is required for this feature." # Error if fd is missing
-      return 1                # Return error code 1
+      print -P "%F{#ff0055}󰅚 [ERROR]%f 'fd' / 'fd-find' is required for directory navigation."
+      return 1
     fi
-    local current_dir=$(realpath "${1:-.}") # Get absolute path of starting directory
-    while true; do            # Loop for dynamic directory navigation
-      local fzf_out           # Variable for FZF selection result
+    local current_dir=$(realpath "${1:-.}")
+    while true; do
+      local fzf_out
       fzf_out=$(command $fd_cmd -t d -H -E .git -E node_modules -E .cache "" "$current_dir" 2>/dev/null | \
                 fzf "${fzf_style[@]}" \
                     --expect=left,right \
                     --prompt="$i_dir  Directory: $current_dir > " \
-                    --header="[Enter] CD · [←] Parent Dir · [→] Subdirectory · [Ctrl-/] Preview" \
+                    --header="[Enter/→] CD · [←] Parent Dir · [Ctrl-/] Preview" \
                     --border-label="  Directory Navigator " \
                     --preview="(eza --tree --level=2 --color=always --icons {} || tree -C -L 2 {} || ls -lhA --color=always {} || ls -F {}) 2>/dev/null | head -50" \
                     --preview-window="right:60%,border-rounded")
-                    # Fuzzy directory search with tree preview and arrow keys navigation
-                    
-      local exit_status=$?    # Get exit status of FZF
+
+      local exit_status=$?
       if [[ $exit_status -eq 130 || -z "$fzf_out" ]]; then
-        break                 # Break if user pressed ESC (130) or cancelled
+        break
       fi
       
-      local key=$(echo "$fzf_out" | head -n 1)      # First line is captured key (left, right, or empty)
-      local selected=$(echo "$fzf_out" | tail -n +2) # Subsequent line is selected directory path
+      local key=$(echo "$fzf_out" | head -n 1)
+      local selected=$(echo "$fzf_out" | tail -n +2)
       
       if [[ "$key" == "left" ]]; then
-        # Left arrow: Navigate up to parent directory
-        current_dir=$(dirname "$current_dir")        # Move up one directory level
+        current_dir=$(dirname "$current_dir")
       elif [[ "$key" == "right" ]]; then
-        # Right arrow: Drill down into selected child directory
         if [[ -n "$selected" ]]; then
-          current_dir="$selected"                   # Update active directory path
+          current_dir="$selected"
         fi
       else
-        # Enter: Change working directory and exit
         if [[ -n "$selected" ]]; then
-          cd "$selected"                            # Change shell directory to selection
+          cd "$selected"
         fi
-        break                                       # Exit loop
+        break
       fi
     done
   }
@@ -720,12 +716,12 @@ function f() {
   # Sub-function: File browser (Multi-select with Tab, Left to go up)
   _f_mode_file() {
     if [[ -z "$fd_cmd" ]]; then
-      print -P "%F{red}[ERROR]%f Error: 'fd' / 'fd-find' is required for this feature." # Error if fd is missing
-      return 1                # Return error code 1
+      print -P "%F{#ff0055}󰅚 [ERROR]%f 'fd' / 'fd-find' is required for file search."
+      return 1
     fi
-    local current_dir=$(realpath "${1:-.}") # Get absolute search directory path
-    while true; do            # Loop for dynamic file browser
-      local fzf_out           # Variable for FZF output
+    local current_dir=$(realpath "${1:-.}")
+    while true; do
+      local fzf_out
       fzf_out=$(command $fd_cmd -t f -H -E .git -E node_modules -E .cache "" "$current_dir" 2>/dev/null | \
                 fzf "${fzf_style[@]}" \
                     --multi \
@@ -735,23 +731,20 @@ function f() {
                     --border-label=" 󰈙 File Browser " \
                     --preview="(${bat_cmd:-cat} --style=numbers --color=always --line-range :100 {} || cat {}) 2>/dev/null | head -100" \
                     --preview-window="right:60%,border-rounded")
-                    # Fuzzy file search with multi-select and syntax preview
-                    
-      local exit_status=$?    # Capture FZF exit status
+
+      local exit_status=$?
       if [[ $exit_status -eq 130 || -z "$fzf_out" ]]; then
-        break                 # Break on ESC (130) or empty selection
+        break
       fi
       
-      local key=$(echo "$fzf_out" | head -n 1)      # Extract captured function key
-      local selected=$(echo "$fzf_out" | tail -n +2) # Extract selected file paths
+      local key=$(echo "$fzf_out" | head -n 1)
+      local selected=$(echo "$fzf_out" | tail -n +2)
       
       if [[ "$key" == "left" ]]; then
-        # Left arrow: Navigate up to parent directory
-        current_dir=$(dirname "$current_dir")        # Move search path up one level
+        current_dir=$(dirname "$current_dir")
       else
-        # Enter: Open selected files in editor
-        _f_open_files "$selected"                   # Open selected files in editor
-        break                                       # Exit loop
+        _f_open_files "$selected"
+        break
       fi
     done
   }
@@ -759,12 +752,12 @@ function f() {
   # Sub-function: Live Ripgrep content search (Opens editor at matched line)
   _f_mode_content() {
     if ! (( $+commands[rg] )); then
-      print -P "%F{red}[ERROR]%f Error: 'ripgrep' (rg) is required for this feature." # Error if ripgrep is missing
-      return 1                # Return error code 1
+      print -P "%F{#ff0055}󰅚 [ERROR]%f 'ripgrep' (rg) is required for content search."
+      return 1
     fi
     
-    local search_path="${1:-.}" # Get search target path (defaults to .)
-    local result              # Variable for selected line result
+    local search_path="${1:-.}"
+    local result
     
     result=$(FZF_DEFAULT_COMMAND="rg --column --line-number --no-heading --color=always --smart-case '' \"$search_path\"" \
       fzf "${fzf_style[@]}" \
@@ -777,33 +770,32 @@ function f() {
           --bind "change:reload(rg --column --line-number --no-heading --color=always --smart-case {q} \"$search_path\" || true)" \
           --preview="(${bat_cmd:-cat} --style=numbers --color=always --highlight-line {2} {1} 2>/dev/null || cat {1} 2>/dev/null)" \
           --preview-window="right:60%,border-rounded,+{2}-/2")
-          # Live ripgrep search with real-time match preview
-          
+
     if [[ -n "$result" ]]; then
-      local file=$(echo "$result" | cut -d':' -f1) # Extract file path from line result
-      local line=$(echo "$result" | cut -d':' -f2) # Extract line number from result
-      _f_open_in_editor "$file" "$line"           # Open file in editor jumping to line
+      local file=$(echo "$result" | cut -d':' -f1)
+      local line=$(echo "$result" | cut -d':' -f2)
+      _f_open_in_editor "$file" "$line"
     fi
   }
 
   # Sub-function: Fuzzy history picker (Deduplicated)
   _f_mode_history() {
-    local cmd                 # Variable for selected history command
+    local cmd
     cmd=$(fc -rln 1 2>/dev/null | awk '!seen[$0]++' | fzf "${fzf_style[@]}" \
           --prompt="$i_history  History > " \
           --header="[Enter] Paste command to terminal · [ESC] Cancel" \
           --border-label="  Command History " \
           --preview="echo {}" \
           --preview-window="down:3:wrap:border-rounded")
-          # Read deduplicated Zsh history for FZF search
+
     if [[ -n "$cmd" ]]; then
-      print -z "$cmd"         # Paste selected command into terminal prompt
+      print -z "$cmd"
     fi
   }
 
   # Sub-function: Interactive process manager & killer
   _f_mode_process() {
-    local ps_line             # Variable for selected process line
+    local ps_line
     ps_line=$(ps -ef | fzf "${fzf_style[@]}" \
       --header="[Enter] SIGTERM (15) · [Ctrl-X] SIGKILL (9) · [Ctrl-R] Reload" \
       --prompt="$i_jobs  Kill Process > " \
@@ -812,28 +804,26 @@ function f() {
       --preview-window="down:5:wrap:border-rounded" \
       --expect=ctrl-x \
       --bind="ctrl-r:reload(ps -ef)")
-      # List processes with live resource preview
-      
+
     if [[ -n "$ps_line" ]]; then
-      local key=$(echo "$ps_line" | head -n 1)      # Captured key (ctrl-x if pressed)
-      local selected=$(echo "$ps_line" | tail -n +2) # Selected process info line
+      local key=$(echo "$ps_line" | head -n 1)
+      local selected=$(echo "$ps_line" | tail -n +2)
       
       if [[ -n "$selected" ]]; then
-        local pid=$(echo "$selected" | awk '{print $2}') # Extract PID from second column
+        local pid=$(echo "$selected" | awk '{print $2}')
         if [[ -n "$pid" ]]; then
-          local sig="15"                              # Default to SIGTERM (15 - Graceful)
-          local sig_name="SIGTERM (Graceful Terminate)"     # Signal label for confirmation
+          local sig="15"
+          local sig_name="SIGTERM (Graceful Terminate)"
           if [[ "$key" == "ctrl-x" ]]; then
-            sig="9"                                   # If Ctrl-X pressed, use SIGKILL (9 - Force Kill)
+            sig="9"
             sig_name="SIGKILL (Force Kill)"
           fi
           
-          print -P "%F{yellow}[WARN]%f Are you sure you want to send $sig_name to PID $pid? (y/N)" # Confirm kill action with user
-          read -q "confirm?"                          # Read confirmation character
-          echo ""                                     # Print newline
+          print -P "%F{#ffb7d5}󰀪 [WARN]%f Are you sure you want to send %F{#00f5d4}$sig_name%f to PID %F{#00ff88}$pid%f? (y/N)"
+          read -q "confirm?"
+          echo ""
           if [[ "$confirm" == "y" || "$confirm" == "Y" ]]; then
-            kill -$sig "$pid" && print -P "%F{green}[OK]%f Process PID $pid terminated successfully." || print -P "%F{red}[ERROR]%f Failed to terminate process PID $pid."
-            # Execute kill command and report result
+            kill -$sig "$pid" && print -P "%F{#00ff88}󰄬 [OK]%f Process PID $pid terminated successfully." || print -P "%F{#ff0055}󰅚 [ERROR]%f Failed to terminate process PID $pid."
           fi
         fi
       fi
@@ -876,14 +866,28 @@ function f() {
         return 1
       fi
       
-      local choice                    # Variable for menu choice
-      choice=$(echo -e "  1. Directories        · Browse folders [←/→] & CD\n󰈙  2. Files              · Multi-select files [Tab] & open in editor\n  3. Content Search     · Real-time Ripgrep text search with line jump\n  4. Command History    · Fuzzy search & insert past commands\n  5. Process Manager    · System process monitor & kill manager" | \
+      local fzf_menu_out
+      fzf_menu_out=$(echo -e "  1. Directories        · Browse folders [←/→] & CD\n󰈙  2. Files              · Multi-select files [Tab] & open in editor\n  3. Content Search     · Real-time Ripgrep text search with line jump\n  4. Command History    · Fuzzy search & insert past commands\n  5. Process Manager    · System process monitor & kill manager" | \
                fzf "${fzf_style[@]}" \
+                   --expect=left,right \
                    --prompt="  Select Mode > " \
-                   --header="[↑/↓] Navigate · [Enter] Choose Mode · [ESC] Exit" \
+                   --header="[↑/↓] Navigate · [Enter/→] Choose Mode · [ESC/←] Exit" \
                    --border-label=" 🌸 Virtual☆Paradise Search Hub 🌸 " \
-                   --height=16)       # Display 5-mode interactive selection menu
-               
+                   --height=16)
+
+      local menu_exit_status=$?
+      if [[ $menu_exit_status -eq 130 || -z "$fzf_menu_out" ]]; then
+        return 0
+      fi
+
+      local menu_key=$(echo "$fzf_menu_out" | head -n 1)
+      local choice=$(echo "$fzf_menu_out" | tail -n +2)
+
+      # Left arrow (←) acts as Exit / Cancel
+      if [[ "$menu_key" == "left" || -z "$choice" ]]; then
+        return 0
+      fi
+
       case "$choice" in
         *1.*) _f_mode_dir "$mode" ;;   # Activate directory mode
         *2.*) _f_mode_file "$mode" ;;  # Activate file mode
