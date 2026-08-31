@@ -592,7 +592,6 @@ function f() {
     --color="fg:#eafbfa,bg:-1,hl:#00ff88,fg+:#00f5d4,bg+:#131920,hl+:#00ff88"  # High contrast TrueColor palette
     --color="info:#7091a4,prompt:#00f5d4,pointer:#00f5d4,marker:#ffb7d5,spinner:#00ff88,header:#ffb7d5"  # Neon pointers & headers
     --color="border:#00f5d4,label:#00f5d4"  # Miku Cyan border & title labels
-    --bind="ctrl-/:toggle-preview"          # Toggle preview pane on demand
   )
 
   # Helper to open files in default editor (micro falling back to nano)
@@ -686,7 +685,7 @@ function f() {
                 fzf "${fzf_style[@]}" \
                     --expect=left,right \
                     --prompt="$i_dir  Directory: $current_dir > " \
-                    --header="[Enter] CD & Exit · [→] Browse Inside · [←] Parent Dir · [Ctrl-/] Preview" \
+                    --header="[Enter] CD & Exit · [→] Browse Inside · [←] Parent Dir" \
                     --border-label="  Directory Navigator " \
                     --preview="(eza --tree --level=2 --color=always --icons {} || tree -C -L 2 {} || ls -lhA --color=always {}) 2>/dev/null | head -50" \
                     --preview-window="right:60%,border-rounded")
@@ -733,7 +732,7 @@ function f() {
                     --multi \
                     --expect=left \
                     --prompt="$i_file  Files: $current_dir > " \
-                    --header="[Tab] Multi-select · [Enter] Open in Editor · [←] Parent · [Ctrl-/] Preview" \
+                    --header="[Tab] Multi-select · [Enter] Open in Editor · [←] Parent Dir" \
                     --border-label=" 󰈙 File Browser " \
                     --preview="(${bat_cmd:-cat} --style=numbers --color=always --line-range :100 {} || cat {}) 2>/dev/null | head -100" \
                     --preview-window="right:60%,border-rounded")
@@ -771,7 +770,7 @@ function f() {
           --disabled \
           --delimiter=: \
           --prompt="$i_search  Ripgrep ($search_path) > " \
-          --header="[Enter] Open in Editor at matched line · [Ctrl-/] Preview" \
+          --header="[Enter] Open in Editor at matched line" \
           --border-label="  Code & Content Search " \
           --bind "change:reload(rg --column --line-number --no-heading --color=always --smart-case {q} \"$search_path\" || true)" \
           --preview="(${bat_cmd:-cat} --style=numbers --color=always --highlight-line {2} {1} 2>/dev/null || cat {1} 2>/dev/null)" \
