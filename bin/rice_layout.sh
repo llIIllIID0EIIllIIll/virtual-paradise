@@ -1,10 +1,12 @@
 #!/usr/bin/env bash
-# Virtual☆Paradise Rice Layout Launcher
-# Launches terminals in strict sequence with micro-delays to guarantee perfect tiling layout:
+# ==============================================================================
+#  Virtual☆Paradise Rice Layout Launcher
+# ==============================================================================
+# Launches terminals in sequence for a pristine tiling layout:
 # 1. Fastfetch (Main left panel)
 # 2. btop (Top-right system monitor)
 # 3. cava (Bottom-right audio visualizer)
-# 4. unimatrix (Bottom-right matrix animation)
+# 4. virtual_matrix (Bottom-right matrix animation)
 
 TERM_BIN="${TERMINAL:-ghostty}"
 if ! command -v "$TERM_BIN" &>/dev/null; then
@@ -19,17 +21,17 @@ if ! command -v "$TERM_BIN" &>/dev/null; then
   fi
 fi
 
-# 1. Fastfetch (Opens initial terminal)
-"$TERM_BIN" -e sh -c 'fastfetch; exec $SHELL' &
-sleep 0.25
+# 1. Fastfetch (Main Left Panel - waits for split layout to settle before printing to avoid reflow duplication)
+"$TERM_BIN" -e zsh -c 'sleep 0.35; fastfetch; exec zsh' &
+sleep 0.15
 
 # 2. btop (Splits to right half)
 "$TERM_BIN" -e btop &
-sleep 0.25
+sleep 0.15
 
 # 3. cava (Splits bottom-right)
 "$TERM_BIN" -e cava &
-sleep 0.25
+sleep 0.15
 
-# 4. virtual_matrix (Splits next to cava with 3-color gradient: Miku Cyan -> Hacker Green -> Sakura Pink)
+# 4. virtual_matrix (Splits next to cava with 3-color gradient)
 "$TERM_BIN" -e ~/.local/bin/virtual_matrix -a -f -s 50 -l k -u '☆★✦✧' &

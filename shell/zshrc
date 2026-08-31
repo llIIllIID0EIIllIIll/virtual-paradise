@@ -2417,12 +2417,12 @@ function zsh_top_line() {
   fi
   local right_line="${top_right}"
   
-  # Tính toán độ dài ký tự hiển thị thực tế (bỏ qua mã màu ANSI)
+  # Tính toán độ dài ký tự hiển thị thực tế (bỏ qua toàn bộ mã màu ANSI)
   local esc=$'\e'
   local left_expanded="${(%)left_line}"
   local right_expanded="${(%)right_line}"
-  local left_clean="${left_expanded//${esc}\[[0-9;]#m}"
-  local right_clean="${right_expanded//${esc}\[[0-9;]#m}"
+  local left_clean="${left_expanded//${esc}\[[0-9;]#[a-zA-Z]/}"
+  local right_clean="${right_expanded//${esc}\[[0-9;]#[a-zA-Z]/}"
   
   # Bù chiều rộng cho các icon Nerd Font hiển thị double-width nhưng Zsh đếm là 1.
   local w_left=0
@@ -2453,7 +2453,7 @@ function zsh_top_line() {
     fi
     
     local short_left_expanded="${(%)short_left}"
-    local short_left_clean="${short_left_expanded//${esc}\[[0-9;]#m}"
+    local short_left_clean="${short_left_expanded//${esc}\[[0-9;]#[a-zA-Z]/}"
     
     local w_short_left=0
     if [[ "$ZSH_HUD_NERD_MONO" != "true" ]]; then
@@ -2469,9 +2469,9 @@ function zsh_top_line() {
     return
   fi
   
-  # Nếu cửa sổ terminal quá nhỏ không đủ chứa cả hai khối (cộng thêm 1 ký tự an toàn),
-  # tự động ẩn khối bên phải và cắt bỏ ký tự phân tách dư thừa ở cuối khối bên trái.
-  if (( COLUMNS < left_len + right_len + 1 )); then
+  # Nếu cửa sổ terminal quá nhỏ không đủ chứa cả hai khối (cộng thêm 2 ký tự an toàn),
+  # tự động ẩn khối bên phải hoặc chuyển sang compact mode để ngăn tràn dòng tuyệt đối.
+  if (( COLUMNS < left_len + right_len + 2 )); then
     local short_left
     if [[ "$ZSH_PROMPT_STYLE" == "powerline" ]]; then
       local -a short_pills
@@ -2485,15 +2485,15 @@ function zsh_top_line() {
       short_left="${left_line%%$~sep_pattern}"
     fi
  
-    # Try compact right block first
+    # Thử hiển thị khối rút gọn bên phải (Compact Mode)
     local compact_right
     zsh_top_right_compact_info
     compact_right="$REPLY"
  
     local short_left_expanded="${(%)short_left}"
-    local short_left_clean="${short_left_expanded//${esc}\[[0-9;]#m}"
+    local short_left_clean="${short_left_expanded//${esc}\[[0-9;]#[a-zA-Z]/}"
     local compact_expanded="${(%)compact_right}"
-    local compact_clean="${compact_expanded//${esc}\[[0-9;]#m}"
+    local compact_clean="${compact_expanded//${esc}\[[0-9;]#[a-zA-Z]/}"
  
     local w_short_left=0
     local w_compact=0
@@ -2507,22 +2507,22 @@ function zsh_top_line() {
     local short_left_len=$(( ${#short_left_clean} + w_short_left ))
     local compact_len=$(( ${#compact_clean} + w_compact ))
  
-    if (( COLUMNS >= short_left_len + compact_len + 1 )); then
-      local indent=${ZLE_RPROMPT_INDENT:-1}
-      local right_start=$(( COLUMNS - compact_len + 1 - indent ))
+    local indent=${ZLE_RPROMPT_INDENT:-1}
+    local right_start=$(( COLUMNS - compact_len + 1 - indent ))
+    if (( COLUMNS >= short_left_len + compact_len + 2 && right_start > short_left_len + 1 )); then
       echo -n "${short_left}%{${esc}[${right_start}G%}${compact_right}"
     else
-      local short_left_inflation=""
-      if (( w_short_left > 0 )); then
-        short_left_inflation="${(l:w_short_left:: :)}%{${esc}[${w_short_left}D%}"
-      fi
-      echo -n "${short_left}${short_left_inflation}"
+      echo -n "${short_left}"
     fi
   else
-    # Căn lề phải bằng mã vị trí con trỏ ngang tuyệt đối (Cursor Horizontal Absolute).
+    # Căn lề phải an toàn bằng mã vị trí con trỏ ngang tuyệt đối (Cursor Horizontal Absolute).
     local indent=${ZLE_RPROMPT_INDENT:-1}
     local right_start=$(( COLUMNS - right_len + 1 - indent ))
-    echo -n "${left_line}%{${esc}[${right_start}G%}${right_line}"
+    if (( right_start > left_len + 1 && right_start + right_len <= COLUMNS + 1 )); then
+      echo -n "${left_line}%{${esc}[${right_start}G%}${right_line}"
+    else
+      echo -n "${left_line}"
+    fi
   fi
 }
 # Signal handler để vẽ lại prompt tức thì khi co giãn cửa sổ.
