@@ -193,61 +193,22 @@ Item {
     }
 
     // =========================================================================
-    // BOTTOM SECTION: "sleep mode_" Header & Password Input Box Below It
+    // BOTTOM SECTION: Password Input Box
     // =========================================================================
-    Column {
-      id: bottomAuthGroup
+    BorderSurface {
+      id: inputField
+      width: root.fieldWidth
+      height: root.fieldHeight
       anchors.bottom: parent.bottom
       anchors.bottomMargin: 72
       anchors.horizontalCenter: parent.horizontalCenter
-      spacing: 12
+      color: "#d9131920"
+      borderSpec: root.inputBorderSpec
+      radius: Style.cornerRadius
+      clip: true
 
-      // "sleep mode_" with Neon Blinking Hacker Cursor
-      Row {
-        id: sleepModeRow
-        anchors.horizontalCenter: parent.horizontalCenter
-        spacing: 2
-
-        Text {
-          text: "sleep mode"
-          color: "#00f5d4"
-          font.family: Style.font.family
-          font.pixelSize: Math.round(Style.font.heading * 0.95)
-          font.bold: true
-          font.letterSpacing: 1
-        }
-
-        Text {
-          id: blinkCursor
-          text: "_"
-          color: "#00ff88"
-          font.family: Style.font.family
-          font.pixelSize: Math.round(Style.font.heading * 0.95)
-          font.bold: true
-          visible: true
-
-          Timer {
-            interval: 530
-            running: true
-            repeat: true
-            onTriggered: blinkCursor.visible = !blinkCursor.visible
-          }
-        }
-      }
-
-      // Password Input Box
-      BorderSurface {
-        id: inputField
-        width: root.fieldWidth
-        height: root.fieldHeight
-        anchors.horizontalCenter: parent.horizontalCenter
-        color: "#d9131920"
-        borderSpec: root.inputBorderSpec
-        radius: Style.cornerRadius
-        clip: true
-
-        TextInput {
-          id: passwordInput
+      TextInput {
+        id: passwordInput
           anchors.fill: parent
           anchors.topMargin: inputField.borderTop
           anchors.rightMargin: inputField.borderRight + 18 + root.fingerprintReserve
@@ -329,4 +290,3 @@ Item {
       }
     }
   }
-}
