@@ -1,0 +1,52 @@
+# Virtual☆Paradise alacritty configuration
+
+[window]
+opacity = 0.85
+
+[colors.primary]
+background = "#07080d"
+foreground = "#eafbfa"
+
+[colors.cursor]
+text = "#07080d"
+cursor = "#00f5d4"
+
+[colors.vi_mode_cursor]
+text = "#07080d"
+cursor = "#00f5d4"
+
+[colors.search.matches]
+foreground = "#07080d"
+background = "#00ff88"
+
+[colors.search.focused_match]
+foreground = "#07080d"
+background = "#ffb7d5"
+
+[colors.footer_bar]
+foreground = "#07080d"
+background = "#00f5d4"
+
+[colors.selection]
+text = "#07080d"
+background = "#00f5d4"
+
+[colors.normal]
+black   = "#07080d"
+red     = "#ff5287"
+green   = "#00ff88"
+yellow  = "#ffe066"
+blue    = "#00f5d4"
+magenta = "#ffb7d5"
+cyan    = "#39c5bb"
+white   = "#eafbfa"
+
+[colors.bright]
+black   = "#526e7f"
+red     = "#ff79a8"
+green   = "#39ff14"
+yellow  = "#fff099"
+blue    = "#5effeb"
+magenta = "#ffd6e7"
+cyan    = "#70f3ff"
+white   = "#ffffff"

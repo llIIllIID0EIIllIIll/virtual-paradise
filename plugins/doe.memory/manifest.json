@@ -1,0 +1,20 @@
+{
+  "schemaVersion": 1,
+  "id": "doe.memory",
+  "name": "Memory & Btop",
+  "version": "1.0.0",
+  "author": "doe",
+  "description": "RAM usage indicator with Btop launcher",
+  "kinds": [
+    "bar-widget"
+  ],
+  "entryPoints": {
+    "barWidget": "BarWidget.qml"
+  },
+  "barWidget": {
+    "displayName": "Memory (RAM)",
+    "description": "Live RAM usage and Btop monitor",
+    "category": "System",
+    "allowMultiple": false
+  }
+}

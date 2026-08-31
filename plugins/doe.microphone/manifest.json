@@ -1,0 +1,20 @@
+{
+  "schemaVersion": 1,
+  "id": "doe.microphone",
+  "name": "My Microphone",
+  "version": "1.0.0",
+  "author": "doe",
+  "description": "Microphone mute toggle and volume indicator",
+  "kinds": [
+    "bar-widget"
+  ],
+  "entryPoints": {
+    "barWidget": "BarWidget.qml"
+  },
+  "barWidget": {
+    "displayName": "Microphone",
+    "description": "Microphone mute toggle",
+    "category": "Media",
+    "allowMultiple": false
+  }
+}

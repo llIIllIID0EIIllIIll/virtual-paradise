@@ -1,0 +1,166 @@
+# Virtual☆Paradise — Omarchy Shell Configuration (Quattro)
+# Translucent Frosted Glass with Neon Miku Cyan, Hacker Green, and Sakura Blossom highlights
+
+[bar]
+background       = "#07080d"
+background-alpha = 0.80
+text             = "#eafbfa"
+active           = "#00f5d4"
+scale-with-font  = true
+size-horizontal  = 34
+size-vertical    = 34
+
+[hyprland]
+active-border            = "rgba(00f5d4ee) rgba(00ff88cc) rgba(ffb7d5ee) 45deg"
+active-border-foreground = "rgb(00f5d4) rgb(00ff88) rgb(ffb7d5) 45deg"
+
+[controls]
+normal-color        = "#7091a4"
+normal-fill-alpha   = 0.08
+normal-border       = "#00f5d4"
+normal-border-width = 0
+normal-border-alpha = 0.0
+
+hover-cursor-color        = "#00f5d4"
+hover-cursor-fill-alpha   = 0.18
+hover-cursor-border       = "#00ff88"
+hover-cursor-border-width = 1
+hover-cursor-border-alpha = 0.65
+
+focus-color        = "#ffffff"
+focus-fill-alpha   = 0.22
+focus-border       = "hyprland.active-border-foreground"
+focus-border-width = 1
+focus-border-alpha = 0.88
+
+selected-color        = "#ffffff"
+selected-fill-alpha   = 0.25
+selected-border       = "#00f5d4"
+selected-border-width = "0 0 2 0"
+selected-border-alpha = 0.95
+
+pressed-fill-alpha   = 0.32
+selection-fill-alpha = 0.38
+
+[spacing]
+scale = 1.10
+scale-with-font = true
+control-gap       = 8
+control-padding-x = 12
+control-padding-y = 6
+input-padding-y   = 8
+control-height    = 28
+popup-row-height  = 32
+row-gap           = 8
+row-padding-x     = 14
+label-gap         = 6
+panel-gap         = 14
+panel-padding     = 18
+popup-padding     = 16
+
+[font]
+base-size     = 12
+caption       = 10
+body-small    = 11
+body          = 12
+subtitle      = 13
+title         = 15
+heading       = 18
+display       = 26
+display-large = 31
+icon-small    = 11
+icon          = 14
+icon-large    = 19
+
+[popups]
+background       = "#07080d"
+background-alpha = 0.92
+text             = "#eafbfa"
+border           = "hyprland.active-border"
+border-alpha     = 0.88
+border-width     = 2
+
+[tooltip]
+background       = "#07080d"
+background-alpha = 0.96
+text             = "#ffffff"
+border           = "#00f5d4"
+border-alpha     = 0.80
+
+[notifications]
+background       = "#07080d"
+background-alpha = 0.94
+text             = "#eafbfa"
+text-error       = "#ff0055"
+border           = "hyprland.active-border"
+border-error     = "#ff0055"
+border-alpha     = 0.90
+border-width     = 2
+countdown        = "#00ff88"
+countdown-error  = "#ff0055"
+
+[launcher]
+background                = "#07080d"
+background-alpha          = 0.93
+text                      = "#7091a4"
+border                    = "hyprland.active-border"
+border-alpha              = 0.90
+border-width              = 2
+scrim                     = "#030406"
+scrim-alpha               = 0.0
+selected-background       = "#00f5d4"
+selected-background-alpha = 0.18
+selected-text             = "#ffffff"
+selected-border           = "hyprland.active-border-foreground"
+selected-border-alpha     = 0.90
+selected-border-width     = 1
+
+[menu]
+background                = "#07080d"
+background-alpha          = 0.94
+text                      = "#7091a4"
+border                    = "hyprland.active-border"
+border-alpha              = 0.88
+border-width              = 2
+scrim                     = "#030406"
+scrim-alpha               = 0.0
+selected-background       = "#00f5d4"
+selected-background-alpha = 0.16
+selected-text             = "#ffffff"
+selected-border           = "hyprland.active-border-foreground"
+selected-border-alpha     = 0.88
+selected-border-width     = 1
+
+[polkit]
+background       = "#07080d"
+background-alpha = 0.96
+text             = "#eafbfa"
+text-error       = "#ff0055"
+border           = "hyprland.active-border"
+border-error     = "#ff0055"
+border-alpha     = 0.95
+scrim            = "#030406"
+scrim-alpha      = 0.0
+accent           = "#00f5d4"
+
+[lock]
+background       = "#07080d"
+background-alpha = 0.85
+text             = "#ffffff"
+placeholder      = "#526e7f"
+text-error       = "#ff0055"
+border           = "#00f5d4"
+border-active    = "hyprland.active-border"
+border-error     = "#ff0055"
+border-alpha     = 0.95
+selection        = "#00f5d4"
+selection-alpha  = 0.40
+
+[image-picker]
+scrim                   = "#030406"
+scrim-alpha             = 0.70
+text                    = "#ffffff"
+selected-border         = "hyprland.active-border"
+selected-border-alpha   = 1.0
+unselected-border       = "#284452"
+unselected-border-alpha = 0.50

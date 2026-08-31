@@ -1,0 +1,83 @@
+{
+  "bar": {
+    "centerAnchor": "doe.clock",
+    "layout": {
+      "center": [
+        {
+          "id": "doe.media"
+        },
+        {
+          "id": "omarchy.spacer"
+        },
+        {
+          "id": "doe.weather"
+        },
+        {
+          "id": "doe.clock",
+          "format": "ddd d MMM HH:mm",
+          "formatAlt": "yyyy-MM-dd HH:mm:ss",
+          "verticalFormat": "HH\n—\nmm"
+        },
+        {
+          "id": "doe.memory"
+        },
+        {
+          "id": "doe.cputemp"
+        },
+        {
+          "alwaysShow": true,
+          "id": "doe.indicators"
+        },
+        {
+          "id": "doe.microphone"
+        },
+        {
+          "id": "omarchy.keyboard-layout"
+        }
+      ],
+      "left": [
+        {
+          "id": "doe.menu"
+        },
+        {
+          "id": "doe.workspaces"
+        },
+        {
+          "id": "doe.active-window"
+        }
+      ],
+      "right": [
+        {
+          "id": "omarchy.tray"
+        },
+        {
+          "id": "doe.monitor"
+        },
+        {
+          "id": "doe.bluetooth"
+        },
+        {
+          "id": "doe.network"
+        },
+        {
+          "id": "doe.audio"
+        },
+        {
+          "id": "doe.power",
+          "showPercentage": true
+        },
+        {
+          "id": "doe.system-update"
+        }
+      ]
+    },
+    "position": "top",
+    "transparent": true
+  },
+  "idle": {
+    "lock": 300,
+    "screensaver": 150
+  },
+  "plugins": [],
+  "version": 1
+}
