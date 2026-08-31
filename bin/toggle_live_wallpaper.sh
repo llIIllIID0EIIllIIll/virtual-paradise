@@ -70,8 +70,6 @@ set_live() {
       mpvpaper -vs -o "no-audio loop" '*' "$target" >/dev/null 2>&1 &
     fi
     echo "$target" > "$STATE_FILE"
-    local filename=$(basename "$target")
-    notify-send -u normal "󰸌 Live Wallpaper" "Playing: ${filename}\n(Hardware-accelerated 60fps)"
   else
     set_static
   fi
@@ -81,7 +79,6 @@ set_static() {
   killall -9 mpvpaper 2>/dev/null || true
   if [[ -f "$STATIC_BG" ]]; then
     omarchy theme bg set "$STATIC_BG" 2>/dev/null || true
-    notify-send -u low "󰸌 Live Wallpaper" "Switched to Static Miku Wallpaper"
   fi
 }
 
