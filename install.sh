@@ -6,12 +6,13 @@
 #  Compatible with: Omarchy Linux 4.0+ (Arch Linux + Hyprland)
 # ==============================================================================
 
-set -e
+set -eo pipefail
 
 REPO_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 THEME_NAME="virtual-paradise"
 CONFIG_DIR="${XDG_CONFIG_HOME:-$HOME/.config}"
 LOCAL_BIN="$HOME/.local/bin"
+CACHE_DIR="${XDG_CACHE_HOME:-$HOME/.cache}"
 BACKUP_TIMESTAMP="$(date +%Y%m%d_%H%M%S)"
 CURRENT_USER="${USER:-$(id -un)}"
 IS_HOOK=0
@@ -20,30 +21,74 @@ if [[ "$1" == "--hook" ]]; then
   IS_HOOK=1
 fi
 
-log() {
+# Color helpers
+C_CYAN="\033[38;2;0;245;212m"
+C_GREEN="\033[38;2;0;255;136m"
+C_PINK="\033[38;2;255;183;213m"
+C_RED="\033[38;2;255;0;85m"
+C_RESET="\033[0m"
+C_BOLD="\033[1m"
+C_DIM="\033[2m"
+
+log_step() {
+  local num="$1"
+  local total="$2"
+  local msg="$3"
   if [[ $IS_HOOK -eq 0 ]]; then
-    echo -e "$@"
+    echo -e "${C_CYAN}[${num}/${total}]${C_RESET} ${C_BOLD}${msg}${C_RESET}"
   fi
 }
 
-log "\e[36m=================================================================\e[0m"
-log "\e[1;36m  🌸 Installing Virtual☆Paradise Rice for user '$CURRENT_USER' 🌸\e[0m"
-log "\e[36m=================================================================\e[0m"
+log_sub() {
+  if [[ $IS_HOOK -eq 0 ]]; then
+    echo -e "  ${C_GREEN}➔${C_RESET} ${C_DIM}$*${C_RESET}"
+  fi
+}
 
+log_warn() {
+  if [[ $IS_HOOK -eq 0 ]]; then
+    echo -e "  ${C_PINK}⚠${C_RESET} $*"
+  fi
+}
+
+log_info() {
+  if [[ $IS_HOOK -eq 0 ]]; then
+    echo -e "$*"
+  fi
+}
+
+# ------------------------------------------------------------------------------
+# Banner
+# ------------------------------------------------------------------------------
+if [[ $IS_HOOK -eq 0 ]]; then
+  echo -e "${C_CYAN}===================================================================${C_RESET}"
+  echo -e "${C_BOLD}${C_CYAN}  🌸 Virtual☆Paradise${C_RESET} ${C_GREEN}— Cyberpunk Rice & Theme Installer${C_RESET}"
+  echo -e "${C_DIM}  Target User: ${C_PINK}${CURRENT_USER}${C_RESET} ${C_DIM}| Platform: Omarchy / Hyprland${C_RESET}"
+  echo -e "${C_CYAN}===================================================================${C_RESET}"
+fi
+
+# ------------------------------------------------------------------------------
 # 1. Prepare Target Directories
-log "\e[32m[1/7] Creating configuration directories...\e[0m"
-mkdir -p "$CONFIG_DIR/omarchy/themes/$THEME_NAME"
+# ------------------------------------------------------------------------------
+log_step "1" "8" "Creating configuration and runtime directories..."
+mkdir -p "$CONFIG_DIR/omarchy/themes/$THEME_NAME/backgrounds"
 mkdir -p "$CONFIG_DIR/omarchy/plugins"
 mkdir -p "$CONFIG_DIR/omarchy/hooks/theme-set.d"
+mkdir -p "$CONFIG_DIR/omarchy/extensions"
 mkdir -p "$CONFIG_DIR/hypr"
 mkdir -p "$CONFIG_DIR/cava"
+mkdir -p "$CONFIG_DIR/btop/themes"
+mkdir -p "$CONFIG_DIR/fastfetch"
 mkdir -p "$LOCAL_BIN"
+log_sub "Directories verified under $CONFIG_DIR and $LOCAL_BIN"
 
+# ------------------------------------------------------------------------------
 # 2. Install Custom Omarchy Bar Plugins with dynamic user detection
-log "\e[32m[2/7] Installing custom status bar plugins for user '$CURRENT_USER'...\e[0m"
-if [ -d "$REPO_DIR/plugins" ]; then
+# ------------------------------------------------------------------------------
+log_step "2" "8" "Installing custom Quickshell plugins for user '$CURRENT_USER'..."
+if [[ -d "$REPO_DIR/plugins" ]]; then
   for pdir in "$REPO_DIR"/plugins/*; do
-    if [ -d "$pdir" ]; then
+    if [[ -d "$pdir" ]]; then
       base=$(basename "$pdir")
       plugin_suffix="${base#*.}"
       target_plugin_id="${CURRENT_USER}.${plugin_suffix}"
@@ -63,61 +108,133 @@ if [ -d "$REPO_DIR/plugins" ]; then
         -e "s/firstPartyServiceFor(\"doe\./firstPartyServiceFor(\"${CURRENT_USER}\./g" {} +
     fi
   done
+  log_sub "Synchronized and calibrated $(ls -d "$REPO_DIR"/plugins/* | wc -l) plugins"
 fi
 
-# 3. Install Status Bar Layout (shell.json) with dynamic user detection
-log "\e[32m[3/7] Installing Omarchy status bar layout for user '$CURRENT_USER'...\e[0m"
-if [ -f "$CONFIG_DIR/omarchy/shell.json" ] && [ ! -f "$CONFIG_DIR/omarchy/shell.json.bak" ]; then
+# ------------------------------------------------------------------------------
+# 3. Install Status Bar Layout (shell.json) & Menu Extensions
+# ------------------------------------------------------------------------------
+log_step "3" "8" "Installing status bar layout and menu extensions..."
+if [[ -f "$CONFIG_DIR/omarchy/shell.json" ]] && [[ ! -f "$CONFIG_DIR/omarchy/shell.json.bak" ]]; then
   cp "$CONFIG_DIR/omarchy/shell.json" "$CONFIG_DIR/omarchy/shell.json.bak.$BACKUP_TIMESTAMP"
 fi
-if [ -f "$REPO_DIR/shell/shell.json" ]; then
+if [[ -f "$REPO_DIR/shell/shell.json" ]]; then
   sed -e "s/\"doe\./\"${CURRENT_USER}\./g" \
       -e "s/\"centerAnchor\": \"doe\./\"centerAnchor\": \"${CURRENT_USER}\./g" \
       "$REPO_DIR/shell/shell.json" > "$CONFIG_DIR/omarchy/shell.json"
+  log_sub "Updated ~/.config/omarchy/shell.json"
 fi
 
-# 4. Install Hyprland Configuration
-log "\e[32m[4/7] Installing Hyprland look'n'feel, bindings, monitors & input configs...\e[0m"
-if [ -d "$REPO_DIR/hypr" ]; then
+# Install Virtual☆Paradise Quick Actions into omarchy-menu.jsonc
+cat << 'EOF' > "$CONFIG_DIR/omarchy/extensions/omarchy-menu.jsonc"
+{
+  // Virtual☆Paradise Quick Actions Menu
+  "paradise": {
+    "icon": "★",
+    "label": "Virtual☆Paradise"
+  },
+  "paradise.rice": {
+    "icon": "󰨞",
+    "label": "Rice Layout (5-Terminals)",
+    "description": "Fastfetch, btop, momoisay, cava, unimatrix",
+    "action": "bash -c ~/.local/bin/rice_layout.sh"
+  },
+  "paradise.matrix": {
+    "icon": "󰘧",
+    "label": "Tri-Color Gradient Matrix",
+    "description": "Miku Cyan -> Hacker Green -> Sakura Pink",
+    "action": "ghostty -e ~/.local/bin/virtual_matrix"
+  },
+  "paradise.wallpaper": {
+    "icon": "",
+    "label": "Next Theme Wallpaper",
+    "description": "Cycle through wallpapers",
+    "action": "omarchy theme bg next"
+  },
+  "paradise.livewallpaper": {
+    "icon": "󰸌",
+    "label": "Toggle Live Video Wallpaper",
+    "description": "Play/pause Miku 1080p live wallpaper",
+    "action": "bash -c ~/.local/bin/toggle_live_wallpaper.sh"
+  },
+  "paradise.cooler": {
+    "icon": "󰈐",
+    "label": "Toggle Cooler Boost",
+    "description": "Turn fan cooling on/off",
+    "action": "bash -c ~/.local/bin/toggle_cooler_boost.sh"
+  }
+}
+EOF
+log_sub "Installed Quick Actions menu extensions"
+
+# ------------------------------------------------------------------------------
+# 4. Install Hyprland Look'n'Feel & Keybindings
+# ------------------------------------------------------------------------------
+log_step "4" "8" "Installing Hyprland look'n'feel, bindings, input & autostart configs..."
+if [[ -d "$REPO_DIR/hypr" ]]; then
   for file in "$REPO_DIR"/hypr/*.lua; do
-    if [ -f "$file" ]; then
+    if [[ -f "$file" ]]; then
       base=$(basename "$file")
-      if [ -f "$CONFIG_DIR/hypr/$base" ] && [ ! -f "$CONFIG_DIR/hypr/$base.bak" ]; then
+      if [[ -f "$CONFIG_DIR/hypr/$base" ]] && [[ ! -f "$CONFIG_DIR/hypr/$base.bak" ]]; then
         cp "$CONFIG_DIR/hypr/$base" "$CONFIG_DIR/hypr/$base.bak.$BACKUP_TIMESTAMP"
       fi
       cp "$file" "$CONFIG_DIR/hypr/$base"
     fi
   done
+  log_sub "Installed Hyprland Lua configurations"
 fi
 
-# 5. Install Helper Scripts & Tools
-log "\e[32m[5/7] Installing helper scripts to $LOCAL_BIN...\e[0m"
-if [ -d "$REPO_DIR/bin" ]; then
+if [[ -f "$REPO_DIR/hyprland.conf" ]]; then
+  cp "$REPO_DIR/hyprland.conf" "$CONFIG_DIR/hypr/hyprland.conf" 2>/dev/null || true
+fi
+
+# ------------------------------------------------------------------------------
+# 5. Install Helper Scripts & Binaries
+# ------------------------------------------------------------------------------
+log_step "5" "8" "Installing binaries & CLI helper tools to $LOCAL_BIN..."
+if [[ -d "$REPO_DIR/bin" ]]; then
   cp -r "$REPO_DIR"/bin/* "$LOCAL_BIN/"
   chmod +x "$LOCAL_BIN"/* 2>/dev/null || true
+  log_sub "Installed helper tools (rice_layout, momoisay, toggle_live_wallpaper, etc.)"
 fi
 
-# Install Cava audio visualizer profile
-if [ -f "$REPO_DIR/cava/config_bar" ]; then
-  cp "$REPO_DIR/cava/config_bar" "$CONFIG_DIR/cava/config_bar"
+# ------------------------------------------------------------------------------
+# 6. Install Component Themes (Btop, Cava, Fastfetch)
+# ------------------------------------------------------------------------------
+log_step "6" "8" "Installing Cava, Btop & Fastfetch theme profiles..."
+
+# Cava
+if [[ -f "$REPO_DIR/cava_theme" ]]; then
+  cp "$REPO_DIR/cava_theme" "$CONFIG_DIR/cava/config_bar"
 fi
-if [ -f "$REPO_DIR/cava/config" ]; then
+if [[ -f "$REPO_DIR/cava/config" ]]; then
   cp "$REPO_DIR/cava/config" "$CONFIG_DIR/cava/config"
 fi
 
-# Install Fastfetch profile & custom anime logo
-mkdir -p "$CONFIG_DIR/fastfetch"
-if [ -d "$REPO_DIR/fastfetch" ]; then
+# Btop
+if [[ -f "$REPO_DIR/btop.theme" ]]; then
+  cp "$REPO_DIR/btop.theme" "$CONFIG_DIR/btop/themes/virtual-paradise.theme"
+fi
+
+# Fastfetch
+if [[ -d "$REPO_DIR/fastfetch" ]]; then
   cp -r "$REPO_DIR/fastfetch"/* "$CONFIG_DIR/fastfetch/"
 fi
+log_sub "Component themes installed"
 
-# 6. Install Theme Assets into ~/.config/omarchy/themes/virtual-paradise (if repo is external)
-log "\e[32m[6/7] Installing theme assets & backgrounds...\e[0m"
+# ------------------------------------------------------------------------------
+# 7. Install Theme Assets & Backgrounds
+# ------------------------------------------------------------------------------
+log_step "7" "8" "Installing theme assets, live wallpapers & hooks..."
 if [[ "$REPO_DIR" != "$CONFIG_DIR/omarchy/themes/$THEME_NAME" ]]; then
-  cp -r "$REPO_DIR"/* "$CONFIG_DIR/omarchy/themes/$THEME_NAME/" 2>/dev/null || true
+  rsync -a --delete \
+    --exclude='.git' \
+    --exclude='preview_frame.jpg' \
+    --exclude='preview_rotated.jpg' \
+    "$REPO_DIR"/ "$CONFIG_DIR/omarchy/themes/$THEME_NAME/" 2>/dev/null || true
 fi
 
-# Install post-theme-set hook to maintain synchronization
+# Post-theme-set hook
 cat << 'EOF' > "$CONFIG_DIR/omarchy/hooks/theme-set.d/virtual-paradise.sh"
 #!/bin/bash
 THEME_NAME="$1"
@@ -128,16 +245,33 @@ if [[ "$THEME_NAME" == "virtual-paradise" ]]; then
 fi
 EOF
 chmod +x "$CONFIG_DIR/omarchy/hooks/theme-set.d/virtual-paradise.sh"
+log_sub "Theme assets & automatic synchronization hooks ready"
 
-# 7. Configure ~/.bashrc for Universal Error Warning Border Hook
-log "\e[32m[7/7] Configuring shell environment & dynamic error hooks...\e[0m"
-if [ -f "$HOME/.bashrc" ]; then
-  if ! grep -q "PATH=\"\$HOME/.local/bin:\$PATH\"" "$HOME/.bashrc" && ! grep -q "PATH=\"/home/.*/.local/bin:\$PATH\"" "$HOME/.bashrc"; then
-    echo 'export PATH="$HOME/.local/bin:$PATH"' >> "$HOME/.bashrc"
+# ------------------------------------------------------------------------------
+# 8. Configure Shell Environment (Zsh & Bash) & Error Hooks
+# ------------------------------------------------------------------------------
+log_step "8" "8" "Configuring shell environment, aliases (ff, ffa) & error shake hooks..."
+
+configure_shell_file() {
+  local file="$1"
+  [[ -f "$file" ]] || return 0
+
+  # Ensure $LOCAL_BIN is in PATH
+  if ! grep -q 'export PATH="$HOME/.local/bin:$PATH"' "$file" && ! grep -q 'PATH=.*/\.local/bin' "$file"; then
+    echo 'export PATH="$HOME/.local/bin:$PATH"' >> "$file"
   fi
 
-  if ! grep -q "__omarchy_error_border_hook" "$HOME/.bashrc"; then
-    cat << 'EOF' >> "$HOME/.bashrc"
+  # Add fastfetch aliases
+  if ! grep -q "alias ff=" "$file"; then
+    echo "alias ff='fastfetch'" >> "$file"
+  fi
+  if ! grep -q "alias ffa=" "$file"; then
+    echo "alias ffa='fastfetch --logo ~/.config/fastfetch/logo_anime.txt'" >> "$file"
+  fi
+
+  # Add cyberpunk error border hook
+  if ! grep -q "__omarchy_error_border_hook" "$file"; then
+    cat << 'EOF' >> "$file"
 
 # ==============================================================================
 #  CYBERPUNK WINDOW ERROR SHAKE & BLAZING NEON RED GLOW HOOK
@@ -163,20 +297,45 @@ if [[ "$PROMPT_COMMAND" != *"__omarchy_error_border_hook"* ]]; then
 fi
 EOF
   fi
+}
+
+configure_shell_file "$HOME/.bashrc"
+configure_shell_file "$HOME/.zshrc"
+
+if command -v zsh &>/dev/null && [[ -f "$HOME/.zshrc" ]]; then
+  zsh -c "zcompile ~/.zshrc" 2>/dev/null || true
 fi
 
-# 8. Apply Theme & Reload Everything
-log "\e[1;35mApplying Virtual☆Paradise theme...\e[0m"
-if command -v omarchy &>/dev/null; then
-  omarchy theme set "$THEME_NAME" 2>/dev/null || true
-  omarchy restart shell 2>/dev/null || true
-fi
+# ------------------------------------------------------------------------------
+# Activation & Live Reload
+# ------------------------------------------------------------------------------
+if [[ $IS_HOOK -eq 0 ]]; then
+  log_info "\n${C_BOLD}${C_PINK}Applying Virtual☆Paradise theme & reloading compositor...${C_RESET}"
+  
+  # Invalidate theme switcher preview cache
+  rm -rf "$CACHE_DIR/omarchy/theme-selector" 2>/dev/null || true
 
-if command -v hyprctl &>/dev/null; then
-  hyprctl reload 2>/dev/null || true
-fi
+  if command -v omarchy &>/dev/null; then
+    omarchy theme set "$THEME_NAME" 2>/dev/null || true
+    omarchy restart shell 2>/dev/null || true
+  fi
 
-log "\e[1;32m"
-log "✨ Virtual☆Paradise Theme & Rice successfully installed for '$CURRENT_USER'!"
-log "✨ Everything is active and ready to enjoy."
-log "\e[0m"
+  if command -v hyprctl &>/dev/null; then
+    hyprctl reload 2>/dev/null || true
+  fi
+
+  # Initialize live wallpaper
+  if [[ -x "$LOCAL_BIN/toggle_live_wallpaper.sh" ]]; then
+    "$LOCAL_BIN/toggle_live_wallpaper.sh" init 2>/dev/null || true
+  fi
+
+  echo -e "\n${C_BOLD}${C_GREEN}✨ Virtual☆Paradise Theme & Rice successfully installed for '${CURRENT_USER}'!${C_RESET}"
+  echo -e "${C_CYAN}───────────────────────────────────────────────────────────────────${C_RESET}"
+  echo -e " ${C_BOLD}Useful shortcuts:${C_RESET}"
+  echo -e "   ${C_GREEN}SUPER + Q${C_RESET}       ➔ Launch 5-terminal Rice layout"
+  echo -e "   ${C_GREEN}SUPER + ALT + W${C_RESET} ➔ Toggle Live Video / Static Miku Wallpaper"
+  echo -e "   ${C_GREEN}SUPER + N${C_RESET}       ➔ Cycle next wallpaper (Curtain Reveal)"
+  echo -e "   ${C_GREEN}SUPER + C${C_RESET}       ➔ Toggle Cooler Boost fan cooling"
+  echo -e "   ${C_GREEN}ffa${C_RESET}             ➔ Launch Fastfetch with high-res Anime Braille logo"
+  echo -e "${C_CYAN}───────────────────────────────────────────────────────────────────${C_RESET}\n"
+fi
