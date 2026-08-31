@@ -1,21 +1,6 @@
---  .-^~^-. \/ .-^~^-. \\ `-._.-` // .-^~^-. \/ .-^~^-.
--- |                                                   |
--- |   ,---.          ,--.                             |
--- |  '   .-'  ,--,--.|  |,-.,--.,--.,--.--. ,--,--.   |
--- |  `.  `-. ' ,-.  ||     /|  ||  ||  .--'' ,-.  |   |
--- |  .-'    |\ '-'  ||  \  \'  ''  '|  |   \ '-'  |   |
--- |  `-----'  `--`--'`--'`--'`----' `--'    `--`--'   |
--- |                 . .         . .                   |
--- |               .-^~^-.     .-^~^-.                 |
--- |               `-._.-'     `-._.-'                 |
--- |                  |           |                    |
--- |     ,--.   ,--.             ,--.     ,--.         |
--- |     |   `.'   | ,---.  ,---.|  ,---. `--'         |
--- |     |  |'.'|  || .-. || .--'|  .-.  |,--.         |
--- |     |  |   |  |' '-' '\ `--.|  | |  ||  |         |
--- |     `--'   `--' `---'  `---'`--' `--'`--'         |
--- |                                                   |
---  .-^~^-. \/ .-^~^-. \\ `-._.-` // .-^~^-. \/ .-^~^-.
+-- ==============================================================================
+--  Virtual☆Paradise — Neovim Cyberpunk Neon Theme
+-- ==============================================================================
 
 return {
 	{
@@ -27,45 +12,34 @@ return {
 			transparent = false,
 			colors = {
 				-- Background colors
-				bg = "#0b0d11",
-				bg_dark = "#0b0d11",
-				bg_highlight = "#6f9485",
+				bg = "#07080d",
+				bg_dark = "#07080d",
+				bg_highlight = "#0e141d",
 
 				-- Foreground colors
-				-- fg: Object properties, builtin types, builtin variables, member access, default text
-				fg = "#f0b7ca",
-				-- fg_dark: Inactive elements, statusline, secondary text
-				fg_dark = "#d8c6cc",
-				-- comment: Line highlight, gutter elements, disabled states
-				comment = "#678270",
+				fg = "#eafbfa",
+				fg_dark = "#b8d5d4",
+				comment = "#7091a4",
 
 				-- Accent colors
-				-- red: Errors, diagnostics, tags, deletions, breakpoints
-				red = "#f23888",
-				-- orange: Constants, numbers, current line number, git modifications
-				orange = "#d7be96",
-				-- yellow: Types, classes, constructors, warnings, numbers, booleans
-				yellow = "#d7be96",
-				-- green: Comments, strings, success states, git additions
-				green = "#5aa15d",
-				-- cyan: Parameters, regex, preprocessor, hints, properties
-				cyan = "#6f9485",
-				-- blue: Functions, keywords, directories, links, info diagnostics
-				blue = "#67dd82",
-				-- purple: Storage keywords, special keywords, identifiers, namespaces
-				purple = "#ffd0dc",
-				-- magenta: Function declarations, exception handling, tags
-				magenta = "#ff6aa7",
+				red = "#ff0055",
+				orange = "#ffe066",
+				yellow = "#ffe066",
+				green = "#00ff88",
+				cyan = "#00f5d4",
+				blue = "#39c5bb",
+				purple = "#ffb7d5",
+				magenta = "#ff79a8",
 			},
 			on_highlights = function(hl, c)
 				hl["@constant.builtin"] = { fg = c.orange }
 				hl["@keyword.function"] = { fg = c.magenta, bold = true }
 				hl["@module"] = { fg = c.purple }
 				hl["@property"] = { fg = c.fg_dark }
-				hl["@type.builtin"] = { fg = c.blue }
+				hl["@type.builtin"] = { fg = c.cyan }
 				hl["@variable.member"] = { fg = c.fg_dark }
 
-				-- Force window separators away from the default near-black fallback.
+				-- Window separators
 				hl.WinSeparator = { fg = c.comment }
 				hl.VertSplit = { fg = c.comment }
 				hl.NeoTreeWinSeparator = { fg = c.comment }
@@ -97,22 +71,3 @@ return {
 		},
 	},
 }
-
---   ____  __   __
---  / __ \/ /__/ /
--- / /_/ / / _  /
--- \____/_/\_,_/
---      __     __        __
---  __ / /__  / /  ___  / /  ___
--- / // / _ \/ _ \/ _ \/ _ \/ _ \
--- \___/\___/_.__/\___/_.__/\___/
-
---   ____  __   __
---  / __ \/ /__/ /
--- / /_/ / / _  / 
--- \____/_/\_,_/  
---      __     __        __      
---  __ / /__  / /  ___  / /  ___ 
--- / // / _ \/ _ \/ _ \/ _ \/ _ \
--- \___/\___/_.__/\___/_.__/\___/
---                               

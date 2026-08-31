@@ -1,21 +1,6 @@
-#  .-^~^-. \/ .-^~^-. \\ `-._.-` // .-^~^-. \/ .-^~^-.
-# |                                                   |
-# |   ,---.          ,--.                             |
-# |  '   .-'  ,--,--.|  |,-.,--.,--.,--.--. ,--,--.   |
-# |  `.  `-. ' ,-.  ||     /|  ||  ||  .--'' ,-.  |   |
-# |  .-'    |\ '-'  ||  \  \'  ''  '|  |   \ '-'  |   |
-# |  `-----'  `--`--'`--'`--'`----' `--'    `--`--'   |
-# |                 . .         . .                   |
-# |               .-^~^-.     .-^~^-.                 |
-# |               `-._.-'     `-._.-'                 |
-# |                  |           |                    |
-# |     ,--.   ,--.             ,--.     ,--.         |
-# |     |   `.'   | ,---.  ,---.|  ,---. `--'         |
-# |     |  |'.'|  || .-. || .--'|  .-.  |,--.         |
-# |     |  |   |  |' '-' '\ `--.|  | |  ||  |         |
-# |     `--'   `--' `---'  `---'`--' `--'`--'         |
-# |                                                   |
-#  .-^~^-. \/ .-^~^-. \\ `-._.-` // .-^~^-. \/ .-^~^-.
+# ==============================================================================
+#  Virtual☆Paradise — Helix Editor Cyberpunk Neon Theme
+# ==============================================================================
 
 # Syntax
 "keyword" = "color5"
@@ -59,104 +44,78 @@
 "markup.list" = "color6"
 "markup.list.unchecked" = "color8"
 "markup.list.checked" = "color2"
-"markup.bold" = { fg = "color1", modifiers = ["bold"] }
-"markup.italic" = { fg = "color1", modifiers = ["italic"] }
+"markup.bold" = { modifiers = ["bold"] }
+"markup.italic" = { modifiers = ["italic"] }
 "markup.strikethrough" = { modifiers = ["crossed_out"] }
-"markup.link.url" = { fg = "color4", modifiers = ["italic", "underlined"] }
-"markup.link.text" = "color5"
-"markup.link.label" = "color4"
+"markup.link.url" = { fg = "color5", modifiers = ["underlined"] }
+"markup.link.text" = "color4"
+"markup.quote" = "color8"
 "markup.raw" = "color2"
-"markup.quote" = "color5"
 
 # Diff
 "diff.plus" = "color2"
+"diff.delta" = "color3"
 "diff.minus" = "color1"
-"diff.delta" = "color4"
 
-# Leave the editor background transparent so the terminal background shows through
-"ui.background" = { }
+# Diagnostics
+"diagnostic.info" = { underline = { color = "color4", style = "curl" } }
+"diagnostic.hint" = { underline = { color = "color6", style = "curl" } }
+"diagnostic.warning" = { underline = { color = "color3", style = "curl" } }
+"diagnostic.error" = { underline = { color = "color1", style = "curl" } }
 
-"ui.linenr" = { fg = "color8" }
-"ui.linenr.selected" = { fg = "foreground" }
-
-# Statusline uses an inverted band (background-color text on foreground-color
-# background) to guarantee contrast across both light and dark Omarchy themes.
-"ui.statusline" = { fg = "background", bg = "foreground" }
-"ui.statusline.inactive" = { fg = "background", bg = "color8" }
+# Editor
+"ui.background" = { bg = "background" }
+"ui.background.separator" = { fg = "color8" }
+"ui.cursor" = { fg = "background", bg = "cursor" }
+"ui.cursor.normal" = { fg = "background", bg = "cursor" }
+"ui.cursor.insert" = { fg = "background", bg = "cursor" }
+"ui.cursor.select" = { fg = "background", bg = "cursor" }
+"ui.cursor.match" = { fg = "color3", modifiers = ["underlined"] }
+"ui.cursorline.primary" = { bg = "lighter_background" }
+"ui.cursorline.secondary" = { bg = "lighter_background" }
+"ui.selection" = { bg = "selection_background", fg = "selection_foreground" }
+"ui.selection.primary" = { bg = "selection_background", fg = "selection_foreground" }
+"ui.linenr" = "color8"
+"ui.linenr.selected" = "color4"
+"ui.statusline" = { fg = "foreground", bg = "lighter_background" }
+"ui.statusline.inactive" = { fg = "color8", bg = "background" }
 "ui.statusline.normal" = { fg = "background", bg = "color4", modifiers = ["bold"] }
 "ui.statusline.insert" = { fg = "background", bg = "color2", modifiers = ["bold"] }
 "ui.statusline.select" = { fg = "background", bg = "color5", modifiers = ["bold"] }
-
-"ui.popup" = { fg = "foreground", bg = "background" }
+"ui.popup" = { fg = "foreground", bg = "lighter_background" }
+"ui.popup.info" = { fg = "foreground", bg = "lighter_background" }
 "ui.window" = { fg = "color8" }
-"ui.help" = { fg = "foreground", bg = "background" }
-
-"ui.bufferline" = { fg = "color8", bg = "background" }
-"ui.bufferline.active" = { fg = "foreground", bg = "background", underline = { color = "color5", style = "line" } }
-
+"ui.help" = { fg = "foreground", bg = "lighter_background" }
 "ui.text" = "foreground"
-"ui.text.focus" = { fg = "foreground", bg = "lighter_background", modifiers = ["bold"] }
-"ui.text.inactive" = { fg = "color8" }
-"ui.text.directory" = { fg = "color4" }
-
-"ui.virtual" = "color8"
+"ui.text.focus" = "color4"
+"ui.text.inactive" = "color8"
+"ui.text.info" = "color4"
 "ui.virtual.ruler" = { bg = "lighter_background" }
-"ui.virtual.indent-guide" = "color8"
-"ui.virtual.inlay-hint" = { fg = "color8" }
-"ui.virtual.jump-label" = { fg = "color1", modifiers = ["bold"] }
 "ui.virtual.whitespace" = "color8"
+"ui.virtual.indent-guide" = "color8"
+"ui.menu" = { fg = "foreground", bg = "lighter_background" }
+"ui.menu.selected" = { fg = "selection_foreground", bg = "selection_background" }
+"ui.menu.scroll" = { fg = "color4", bg = "lighter_background" }
 
-"ui.selection" = { bg = "selection_background", fg = "selection_foreground" }
-
-"ui.cursor" = { fg = "background", bg = "cursor" }
-"ui.cursor.primary" = { fg = "background", bg = "cursor" }
-"ui.cursor.match" = { fg = "color3", modifiers = ["bold"] }
-"ui.cursor.primary.normal" = { fg = "background", bg = "cursor" }
-"ui.cursor.primary.insert" = { fg = "background", bg = "color2" }
-"ui.cursor.primary.select" = { fg = "background", bg = "color5" }
-
-"ui.cursorline.primary" = { bg = "lighter_background" }
-
-"ui.highlight" = { bg = "lighter_background", modifiers = ["bold"] }
-
-"ui.menu" = { fg = "foreground", bg = "background" }
-"ui.menu.selected" = { fg = "background", bg = "foreground", modifiers = ["bold"] }
-
-"diagnostic.error" = { underline = { color = "color1", style = "curl" } }
-"diagnostic.warning" = { underline = { color = "color3", style = "curl" } }
-"diagnostic.info" = { underline = { color = "color4", style = "curl" } }
-"diagnostic.hint" = { underline = { color = "color6", style = "curl" } }
-"diagnostic.unnecessary" = { modifiers = ["dim"] }
-"diagnostic.deprecated" = { modifiers = ["crossed_out"] }
-
-error = "color1"
-warning = "color3"
+# Diagnostic badges in statusline
 info = "color4"
+warning = "color3"
+error = "color1"
 hint = "color6"
 
 [palette]
-background = "#0b0d11"
-foreground = "#f0b7ca"
-lighter_background = "#19171c"
-cursor = "#f23888"
-selection_background = "#f23888"
-selection_foreground = "#0b0d11"
-color0 = "#0b0d11"
-color1 = "#f23888"
-color2 = "#5aa15d"
-color3 = "#d7be96"
-color4 = "#67dd82"
-color5 = "#f0b7ca"
-color6 = "#6f9485"
-color7 = "#f0b7ca"
-color8 = "#678270"
-
-#   ____  __   __
-#  / __ \/ /__/ /
-# / /_/ / / _  / 
-# \____/_/\_,_/  
-#      __     __        __      
-#  __ / /__  / /  ___  / /  ___ 
-# / // / _ \/ _ \/ _ \/ _ \/ _ \
-# \___/\___/_.__/\___/_.__/\___/
-#                               
+background = "#07080d"
+foreground = "#eafbfa"
+lighter_background = "#0f141c"
+cursor = "#00f5d4"
+selection_background = "#00f5d4"
+selection_foreground = "#07080d"
+color0 = "#07080d"
+color1 = "#ff0055"
+color2 = "#00ff88"
+color3 = "#ffe066"
+color4 = "#00f5d4"
+color5 = "#ffb7d5"
+color6 = "#39c5bb"
+color7 = "#eafbfa"
+color8 = "#7091a4"
