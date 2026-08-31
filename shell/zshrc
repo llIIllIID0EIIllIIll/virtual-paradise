@@ -569,20 +569,21 @@ _FZF_PARADISE_STYLE=(
   --bind="ctrl-/:toggle-preview,ctrl-a:select-all,ctrl-d:deselect-all"
 )
 
-# Helper: Detect preferred editor with smart fallback
+# Helper: Detect preferred editor (User-friendly / Easiest first -> Modal/Vim last)
 _f_detect_editor() {
-  local ed="${EDITOR:-${VISUAL:-}}"
-  if [[ -n "$ed" ]] && (( $+commands[$ed] )); then
-    echo "$ed"
+  if [[ -n "$ZSH_F_EDITOR" ]] && (( $+commands[$ZSH_F_EDITOR] )); then
+    echo "$ZSH_F_EDITOR"
     return
   fi
-  for cand in nvim hx helix micro code nano vim vi; do
+  # Priority: micro (intuitive Ctrl-C/V/S) -> nano (easy) -> code -> helix -> nvim -> vim -> vi
+  for cand in micro nano code codium helix hx nvim vim vi; do
     if (( $+commands[$cand] )); then
       echo "$cand"
       return
     fi
   done
-  echo "vi"
+  local ed="${EDITOR:-${VISUAL:-vi}}"
+  echo "$ed"
 }
 
 # Helper: Open files in detected editor
@@ -592,6 +593,12 @@ _f_open_files() {
 
   local editor="$(_f_detect_editor)"
   case "$editor" in
+    micro|nano)
+      $editor "${files[@]}"
+      ;;
+    code|codium)
+      $editor "${files[@]}"
+      ;;
     nvim|vim|vi)
       $editor -p "${files[@]}"
       ;;
@@ -609,17 +616,17 @@ _f_open_in_editor() {
 
   if [[ -n "$line" ]]; then
     case "$editor" in
-      nvim|vim|vi)
-        $editor "+${line}" "$file"
-        ;;
-      hx|helix|micro)
+      micro|hx|helix)
         $editor "$file:$line"
-        ;;
-      code)
-        code -g "$file:$line"
         ;;
       nano)
         nano "+${line}" "$file"
+        ;;
+      code|codium)
+        $editor -g "$file:$line"
+        ;;
+      nvim|vim|vi)
+        $editor "+${line}" "$file"
         ;;
       *)
         $editor "$file"
