@@ -307,6 +307,7 @@ alias gti='git'                        # Typo auto-correction for 'git'
 alias ip='ip a'                        # ip: List network interfaces and IP addresses
 alias fr='free -h'                     # fr: Human-readable memory statistics
 alias ff='fastfetch'                   # ff: Launch Fastfetch hardware telemetry summary
+alias ffa='fastfetch --logo ~/.config/fastfetch/logo_anime.txt' # ffa: Fastfetch with Anime logo
 alias yz='yazi'                        # yz: Launch Yazi terminal file manager
 alias path='echo $PATH | tr ":" "\n"'  # path: Pretty-print $PATH directories one per line
 alias ports='sudo lsof -iTCP -sTCP:LISTEN -P -n' # ports: List listening TCP/UDP ports and owning processes
