@@ -13,6 +13,7 @@ THEME_NAME="virtual-paradise"
 CONFIG_DIR="${XDG_CONFIG_HOME:-$HOME/.config}"
 LOCAL_BIN="$HOME/.local/bin"
 BACKUP_TIMESTAMP="$(date +%Y%m%d_%H%M%S)"
+CURRENT_USER="${USER:-$(id -un)}"
 IS_HOOK=0
 
 if [[ "$1" == "--hook" ]]; then
@@ -26,7 +27,7 @@ log() {
 }
 
 log "\e[36m=================================================================\e[0m"
-log "\e[1;36m  🌸 Installing Virtual☆Paradise Rice & Universal Theme for Omarchy 🌸\e[0m"
+log "\e[1;36m  🌸 Installing Virtual☆Paradise Rice for user '$CURRENT_USER' 🌸\e[0m"
 log "\e[36m=================================================================\e[0m"
 
 # 1. Prepare Target Directories
@@ -38,19 +39,41 @@ mkdir -p "$CONFIG_DIR/hypr"
 mkdir -p "$CONFIG_DIR/cava"
 mkdir -p "$LOCAL_BIN"
 
-# 2. Install Custom Omarchy Bar Plugins
-log "\e[32m[2/7] Installing custom status bar plugins & dock...\e[0m"
+# 2. Install Custom Omarchy Bar Plugins with dynamic user detection
+log "\e[32m[2/7] Installing custom status bar plugins for user '$CURRENT_USER'...\e[0m"
 if [ -d "$REPO_DIR/plugins" ]; then
-  cp -r "$REPO_DIR"/plugins/* "$CONFIG_DIR/omarchy/plugins/"
+  for pdir in "$REPO_DIR"/plugins/*; do
+    if [ -d "$pdir" ]; then
+      base=$(basename "$pdir")
+      plugin_suffix="${base#*.}"
+      target_plugin_id="${CURRENT_USER}.${plugin_suffix}"
+      target_dir="$CONFIG_DIR/omarchy/plugins/$target_plugin_id"
+      
+      mkdir -p "$target_dir"
+      cp -r "$pdir"/* "$target_dir/"
+      
+      # Dynamically update moduleName, id, and IPC targets to match active username
+      find "$target_dir" -type f \( -name "*.json" -o -name "*.qml" -o -name "*.js" \) -exec sed -i \
+        -e "s/\"id\": \"[^\"]*\.${plugin_suffix}\"/\"id\": \"${target_plugin_id}\"/g" \
+        -e "s/moduleName: \"[^\"]*\.${plugin_suffix}\"/moduleName: \"${target_plugin_id}\"/g" \
+        -e "s/\"doe\./\"${CURRENT_USER}\./g" \
+        -e "s/moduleName: \"doe\./moduleName: \"${CURRENT_USER}\./g" \
+        -e "s/target: \"doe\./target: \"${CURRENT_USER}\./g" \
+        -e "s/ipcTarget: \"doe\./ipcTarget: \"${CURRENT_USER}\./g" \
+        -e "s/firstPartyServiceFor(\"doe\./firstPartyServiceFor(\"${CURRENT_USER}\./g" {} +
+    fi
+  done
 fi
 
-# 3. Install Status Bar Layout (shell.json)
-log "\e[32m[3/7] Installing Omarchy status bar layout...\e[0m"
+# 3. Install Status Bar Layout (shell.json) with dynamic user detection
+log "\e[32m[3/7] Installing Omarchy status bar layout for user '$CURRENT_USER'...\e[0m"
 if [ -f "$CONFIG_DIR/omarchy/shell.json" ] && [ ! -f "$CONFIG_DIR/omarchy/shell.json.bak" ]; then
   cp "$CONFIG_DIR/omarchy/shell.json" "$CONFIG_DIR/omarchy/shell.json.bak.$BACKUP_TIMESTAMP"
 fi
 if [ -f "$REPO_DIR/shell/shell.json" ]; then
-  cp "$REPO_DIR/shell/shell.json" "$CONFIG_DIR/omarchy/shell.json"
+  sed -e "s/\"doe\./\"${CURRENT_USER}\./g" \
+      -e "s/\"centerAnchor\": \"doe\./\"centerAnchor\": \"${CURRENT_USER}\./g" \
+      "$REPO_DIR/shell/shell.json" > "$CONFIG_DIR/omarchy/shell.json"
 fi
 
 # 4. Install Hyprland Configuration
@@ -148,6 +171,6 @@ if command -v hyprctl &>/dev/null; then
 fi
 
 log "\e[1;32m"
-log "✨ Virtual☆Paradise Theme & Rice successfully installed!"
+log "✨ Virtual☆Paradise Theme & Rice successfully installed for '$CURRENT_USER'!"
 log "✨ Everything is active and ready to enjoy."
 log "\e[0m"
