@@ -1,5 +1,7 @@
 import QtQuick
 import QtQuick.Effects
+import Quickshell
+import Quickshell.Io
 import qs.Commons
 import qs.Ui
 
@@ -34,7 +36,22 @@ Item {
     ? Border.surfaceSpec("lock", "border-error", Color.lock.borderError, root.outlineThickness, "border-alpha")
     : Border.surfaceSpec("lock", "border-active", Color.lock.borderActive, root.outlineThickness, "border-alpha")
 
-  // Random Cyberpunk & Developer & Miku Facts, Jokes, and Memes
+  // Linux Fortune command process for infinite random wisdom, jokes & quotes
+  Process {
+    id: fortuneProc
+    command: ["fortune", "-s"]
+    stdout: StdioCollector {
+      waitForEnd: true
+      onStreamFinished: {
+        var raw = String(text || "").trim().replace(/\r?\n|\r/g, " ")
+        if (raw.length > 0 && raw.length < 160) {
+          root.currentQuote = "✨ " + raw
+        }
+      }
+    }
+  }
+
+  // Curated Anime, Linux, Cyberpunk & Developer Memes
   readonly property var funQuotes: [
     "💡 Có 10 loại người: người hiểu hệ nhị phân và người không.",
     "✨ Miku Fact: Cần 39.390 lít trà sữa để sạc đầy 100% năng lượng!",
@@ -42,7 +59,7 @@ Item {
     "💤 Sleeping Miku: Đang nạp năng lượng... Vui lòng không đánh thức ca sĩ ảo! 🌸",
     "🐧 sudo !! chạy lại lệnh vừa gõ với quyền root — phép màu lúc bế tắc.",
     "🌸 Virtual☆Paradise: Nơi duy nhất RAM 16GB không bao giờ là đủ.",
-    "💻 git commit -m 'fixed bug for real this time (final_v2)'",
+    "💻 git commit -m 'fixed bug for real this time (final_v3)'",
     "⚡ 'I use Arch btw' tăng 50% tốc độ gõ phím và 100% độ ngầu.",
     "🧠 2 thứ khó nhất trần đời: đặt tên biến và dọn dẹp cache.",
     "🎮 Miku Meme: Leek spin 10 hours mode: ACTIVATED 🥬",
@@ -53,14 +70,20 @@ Item {
 
   property string currentQuote: funQuotes[Math.floor(Math.random() * funQuotes.length)]
 
-  Timer {
-    interval: 10000
-    running: root.loadBackground
-    repeat: true
-    onTriggered: {
+  function pickRandomQuote() {
+    if (Math.random() < 0.6) {
+      fortuneProc.running = true
+    } else {
       var nextIdx = Math.floor(Math.random() * root.funQuotes.length)
       root.currentQuote = root.funQuotes[nextIdx]
     }
+  }
+
+  Timer {
+    interval: 8000
+    running: root.loadBackground
+    repeat: true
+    onTriggered: root.pickRandomQuote()
   }
 
   signal submitPassword(string password)
@@ -96,7 +119,7 @@ Item {
   Component.onCompleted: {
     syncPasswordText()
     if (inputEnabled) Qt.callLater(forcePasswordFocus)
-    root.currentQuote = root.funQuotes[Math.floor(Math.random() * root.funQuotes.length)]
+    root.pickRandomQuote()
   }
 
   TextMetrics {
@@ -111,33 +134,22 @@ Item {
     anchors.fill: parent
     color: "#07080d"
 
-    // Animated GIF Lockscreen Background (Sleeping Miku 1080p 60fps)
+    // 100% Unblurred, Sharp, Vivid 1080p Animated GIF (Sleeping Miku)
     AnimatedImage {
       id: wallpaperGif
       anchors.fill: parent
-      source: Qt.resolvedUrl("Sleeping_miku.gif")
+      source: "file:///home/doe/.config/omarchy/plugins/doe.lock/Sleeping_miku.gif"
       fillMode: Image.PreserveAspectCrop
-      asynchronous: true
+      asynchronous: false
       cache: true
-      playing: root.loadBackground
-      visible: status === Image.Ready
+      playing: true
+      visible: true
     }
 
-    // Fallback static background if GIF is not ready
-    Image {
-      id: wallpaperFallback
-      anchors.fill: parent
-      source: root.loadBackground ? root.fileUrl(root.backgroundPath) : ""
-      fillMode: Image.PreserveAspectCrop
-      asynchronous: true
-      cache: false
-      visible: wallpaperGif.status !== Image.Ready
-    }
-
-    // Acrylic dark Cyberpunk tint overlay for optimal text/input contrast
+    // High clarity subtle dark tint so Sleeping Miku is crystal clear and vivid
     Rectangle {
       anchors.fill: parent
-      color: "#5907080d"
+      color: "#3307080d"
     }
 
     MouseArea {
@@ -147,7 +159,7 @@ Item {
       onPositionChanged: root.wakeRequested()
     }
 
-    // Top Header: Live Neon Clock & Date + Random Fun Quote
+    // Top Header: Live Neon Clock & Date + Random Fortune / Joke / Meme
     Column {
       id: headerGroup
       anchors.bottom: inputField.top
