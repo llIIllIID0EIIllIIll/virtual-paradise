@@ -1623,9 +1623,9 @@ function zsh_git_status() {
 
   if [[ "$ZSH_PROMPT_STYLE" == "powerline" ]]; then
     if (( staged + unstaged + untracked > 0 )); then
-      zsh_make_gradient_pill "#ff0055" "#ffb7d5" "#07080d" "$content"
+      zsh_make_gradient_pill "#f38ba8" "#f9e2af" "#11111b" "$content"
     else
-      zsh_make_gradient_pill "#00ff88" "#39c5bb" "#07080d" "$content"
+      zsh_make_gradient_pill "#a6e3a1" "#94e2d5" "#11111b" "$content"
     fi
   else
     # Classic style
