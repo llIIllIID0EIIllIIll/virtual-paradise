@@ -14,7 +14,7 @@
         },
         {
           "id": "doe.clock",
-          "format": "ddd d MMM HH:mm",
+          "format": "d MMMM 'W'ww yyyy",
           "formatAlt": "yyyy-MM-dd HH:mm:ss",
           "verticalFormat": "HH\n—\nmm"
         },
@@ -25,11 +25,11 @@
           "id": "doe.cputemp"
         },
         {
-          "alwaysShow": true,
-          "id": "doe.indicators"
+          "id": "doe.microphone"
         },
         {
-          "id": "doe.microphone"
+          "alwaysShow": true,
+          "id": "doe.indicators"
         },
         {
           "id": "omarchy.keyboard-layout"
