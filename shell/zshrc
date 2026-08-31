@@ -1102,11 +1102,43 @@ if [[ "$_has_jetbrains_nerd_font" -eq 1 ]]; then
           I_OS="󰣇"              # Arch Linux icon
           ZSH_HUD_OS_ID="arch"
           ZSH_HUD_OS_NAME="Arch"
+        elif [[ "$os_id" == "manjaro" ]]; then
+          I_OS=""              # Manjaro icon
+          ZSH_HUD_OS_ID="manjaro"
+          ZSH_HUD_OS_NAME="Manjaro"
+        elif [[ "$os_id" == "endeavouros" ]]; then
+          I_OS=""              # EndeavourOS icon
+          ZSH_HUD_OS_ID="endeavouros"
+          ZSH_HUD_OS_NAME="EndeavourOS"
         elif [[ "$os_id" == "fedora" ]]; then
           I_OS=""              # Fedora icon
           ZSH_HUD_OS_ID="fedora"
           ZSH_HUD_OS_NAME="Fedora"
-        elif [[ "$os_id" == "centos" ]]; then
+        elif [[ "$os_id" == "pop" ]]; then
+          I_OS=""              # Pop!_OS icon
+          ZSH_HUD_OS_ID="pop"
+          ZSH_HUD_OS_NAME="Pop!_OS"
+        elif [[ "$os_id" == "nixos" ]]; then
+          I_OS=""              # NixOS icon
+          ZSH_HUD_OS_ID="nixos"
+          ZSH_HUD_OS_NAME="NixOS"
+        elif [[ "$os_id" == "void" ]]; then
+          I_OS=""              # Void Linux icon
+          ZSH_HUD_OS_ID="void"
+          ZSH_HUD_OS_NAME="Void"
+        elif [[ "$os_id" == "gentoo" ]]; then
+          I_OS=""              # Gentoo icon
+          ZSH_HUD_OS_ID="gentoo"
+          ZSH_HUD_OS_NAME="Gentoo"
+        elif [[ "$os_id" == "kali" ]]; then
+          I_OS=""              # Kali Linux icon
+          ZSH_HUD_OS_ID="kali"
+          ZSH_HUD_OS_NAME="Kali"
+        elif [[ "$os_id" == "opensuse"* || "$os_id" == "suse"* ]]; then
+          I_OS=""              # openSUSE icon
+          ZSH_HUD_OS_ID="opensuse"
+          ZSH_HUD_OS_NAME="openSUSE"
+        elif [[ "$os_id" == "centos" || "$os_id" == "rhel" || "$os_id" == "rocky" || "$os_id" == "alma" ]]; then
           I_OS=""              # CentOS icon
           ZSH_HUD_OS_ID="centos"
           ZSH_HUD_OS_NAME="CentOS"
@@ -2393,16 +2425,56 @@ function zsh_top_line() {
         os_fg="#ffffff"
         ;;
       arch)
-        os_bg_start="#00f5d4"
-        os_bg_end="#00ff88"
+        os_bg_start="#1793D1"
+        os_bg_end="#00ffff"
         os_fg="#11111b"
+        ;;
+      manjaro)
+        os_bg_start="#35BF5C"
+        os_bg_end="#228B22"
+        os_fg="#ffffff"
+        ;;
+      endeavouros)
+        os_bg_start="#7F3FBF"
+        os_bg_end="#FF7F7F"
+        os_fg="#ffffff"
         ;;
       fedora)
         os_bg_start="#3C6EB4"
         os_bg_end="#5180C7"
         os_fg="#ffffff"
         ;;
-      centos)
+      pop)
+        os_bg_start="#48B9C7"
+        os_bg_end="#FFA800"
+        os_fg="#11111b"
+        ;;
+      nixos)
+        os_bg_start="#5277C3"
+        os_bg_end="#7EBAE4"
+        os_fg="#11111b"
+        ;;
+      void)
+        os_bg_start="#478061"
+        os_bg_end="#2b533d"
+        os_fg="#ffffff"
+        ;;
+      gentoo)
+        os_bg_start="#54487A"
+        os_bg_end="#9482C9"
+        os_fg="#ffffff"
+        ;;
+      kali)
+        os_bg_start="#557C94"
+        os_bg_end="#1F3A52"
+        os_fg="#ffffff"
+        ;;
+      opensuse)
+        os_bg_start="#73BA25"
+        os_bg_end="#35B9AB"
+        os_fg="#11111b"
+        ;;
+      centos|rhel|rocky|alma)
         os_bg_start="#262577"
         os_bg_end="#7f2b7b"
         os_fg="#ffffff"
