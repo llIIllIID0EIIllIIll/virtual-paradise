@@ -306,9 +306,10 @@ alias gti='git'                        # Typo auto-correction for 'git'
 # Hardware & Network Information Shortcuts
 alias ip='ip a'                        # ip: List network interfaces and IP addresses
 alias fr='free -h'                     # fr: Human-readable memory statistics
-alias ff='fastfetch'                   # ff: Launch Fastfetch hardware telemetry summary
-alias aff='virtual_fetch -l'              # aff: Animated continuous live gradient Fastfetch
-alias vfetch='virtual_fetch --intro 1.5'  # vfetch: Fastfetch with 1.5s smooth neon shimmer intro
+alias ff='virtual_fetch'               # ff: Animated Fastfetch (smooth neon intro)
+alias fastfetch='virtual_fetch'        # fastfetch: Animated Fastfetch
+alias aff='virtual_fetch -l'           # aff: Continuous live gradient screensaver loop
+alias sff='/usr/bin/fastfetch'         # sff: Static Fastfetch binary
 alias yz='yazi'                        # yz: Launch Yazi terminal file manager
 alias path='echo $PATH | tr ":" "\n"'  # path: Pretty-print $PATH directories one per line
 alias ports='sudo lsof -iTCP -sTCP:LISTEN -P -n' # ports: List listening TCP/UDP ports and owning processes

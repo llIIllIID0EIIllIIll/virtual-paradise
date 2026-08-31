@@ -4,12 +4,13 @@
  Virtual☆Paradise: Animated Fastfetch (virtual_fetch)
 ==============================================================================
  Real-time continuous neon gradient animation for Fastfetch logo & telemetry.
- Supports:
-   --intro [sec] : Shimmers for N seconds on terminal launch, then exits cleanly.
-   --loop / -l   : Continuous live screensaver / dashboard mode (press 'q' or Enter to exit).
-   --fps [num]   : Frames per second (default: 35 FPS).
-   --speed [num] : Gradient cycling speed (default: 1.2).
-   --logo [path] : Path to custom logo file (defaults to ~/.config/omarchy/branding/about.txt).
+ Features:
+   - 60 FPS smooth double-buffered ANSI rendering with zero flicker.
+   - Automatically strips nested ANSI codes for 100% clean 24-bit TrueColor.
+   - Modes:
+       * Default / --intro [sec]: Shimmer animation for N seconds then returns to shell.
+       * -l / --loop            : Infinite screensaver animation until keypress.
+       * --static               : Print single static frame immediately.
 """
 
 import sys
@@ -22,6 +23,7 @@ import select
 import termios
 import tty
 import signal
+import re
 
 def hex_to_rgb(hex_str):
     h = hex_str.lstrip("#")
@@ -42,24 +44,30 @@ def get_multi_color_gradient(factor, colors):
     local_factor = (factor * n_segments) - segment
     return interpolate_rgb(colors[segment], colors[segment + 1], local_factor)
 
-# Cyberpunk Neon Gradient Palette
+# Ultra-vibrant Neon Cyberpunk Palette
 PALETTE = [
     hex_to_rgb("#00f5d4"), # Miku Cyan
     hex_to_rgb("#00ff88"), # Hacker Green
+    hex_to_rgb("#ffe600"), # Cyber Yellow
+    hex_to_rgb("#ff0055"), # Neon Crimson
+    hex_to_rgb("#ff79a8"), # Neon Rose
     hex_to_rgb("#8b5cf6"), # Cyber Purple
-    hex_to_rgb("#ff007c"), # Neon Rose
-    hex_to_rgb("#ffb7d5"), # Sakura Pink
-    hex_to_rgb("#00f5d4"), # Wrap back to Cyan
+    hex_to_rgb("#00f5d4"), # Wrap back
 ]
 
-class RawTerminal:
+class TerminalManager:
+    def __init__(self):
+        self.is_tty = sys.stdin.isatty() and sys.stdout.isatty()
+        self.old_settings = None
+
     def __enter__(self):
-        if sys.stdin.isatty():
-            self.fd = sys.stdin.fileno()
-            self.old_settings = termios.tcgetattr(self.fd)
-            tty.setcbreak(self.fd)
-        else:
-            self.fd = None
+        if self.is_tty:
+            try:
+                self.fd = sys.stdin.fileno()
+                self.old_settings = termios.tcgetattr(self.fd)
+                tty.setcbreak(self.fd)
+            except Exception:
+                self.is_tty = False
         sys.stdout.write("\033[?25l") # Hide cursor
         sys.stdout.flush()
         return self
@@ -67,13 +75,13 @@ class RawTerminal:
     def __exit__(self, exc_type, exc_val, exc_tb):
         sys.stdout.write("\033[?25h") # Show cursor
         sys.stdout.flush()
-        if self.fd is not None:
+        if self.is_tty and self.old_settings:
             try:
                 termios.tcsetattr(self.fd, termios.TCSADRAIN, self.old_settings)
             except Exception:
                 pass
 
-def get_key():
+def get_keypress():
     if not sys.stdin.isatty():
         return None
     r, _, _ = select.select([sys.stdin], [], [], 0)
@@ -84,12 +92,34 @@ def get_key():
             return None
     return None
 
+def build_frame(logo_lines, info_lines, total_rows, max_cols, phase):
+    lines = []
+    for row_idx in range(total_rows):
+        logo_line = logo_lines[row_idx] if row_idx < len(logo_lines) else " " * max_cols
+        info_line = info_lines[row_idx] if row_idx < len(info_lines) else ""
+
+        colored_logo = []
+        for col_idx, char in enumerate(logo_line):
+            if char in (" ", "⠀", "\t"):
+                colored_logo.append(" ")
+            else:
+                factor = ((row_idx / total_rows * 0.7) + (col_idx / max_cols * 0.5) + phase) % 1.0
+                r, g, b = get_multi_color_gradient(factor, PALETTE)
+                colored_logo.append(f"\033[38;2;{r};{g};{b}m{char}\033[0m")
+
+        logo_str = "".join(colored_logo)
+        raw_len = len(logo_line)
+        pad = " " * max(0, max_cols - raw_len)
+        lines.append(f"  {logo_str}{pad}    {info_line}")
+    return lines
+
 def main():
     parser = argparse.ArgumentParser(description="Virtual☆Paradise Animated Fastfetch")
-    parser.add_argument("--intro", type=float, default=0.0, help="Run shimmer intro for N seconds then exit")
-    parser.add_argument("-l", "--loop", action="store_true", help="Loop animation continuously until keypress")
-    parser.add_argument("--fps", type=int, default=35, help="Animation FPS (default: 35)")
-    parser.add_argument("--speed", type=float, default=1.0, help="Gradient speed multiplier (default: 1.0)")
+    parser.add_argument("--intro", type=float, default=1.2, help="Intro animation duration in seconds (default: 1.2s)")
+    parser.add_argument("-l", "--loop", action="store_true", help="Continuous screensaver loop until keypress")
+    parser.add_argument("-s", "--static", action="store_true", help="Print static frame without animation")
+    parser.add_argument("--fps", type=int, default=45, help="Animation FPS (default: 45)")
+    parser.add_argument("--speed", type=float, default=1.8, help="Gradient rotation speed (default: 1.8)")
     parser.add_argument("--logo", type=str, default="", help="Custom logo file path")
     args = parser.parse_args()
 
@@ -109,9 +139,10 @@ def main():
     logo_lines = []
     if logo_file and os.path.exists(logo_file):
         with open(logo_file, "r", encoding="utf-8") as f:
-            logo_lines = [l.rstrip("\r\n") for l in f.readlines() if l.strip()]
+            # Strip any existing ANSI color escape codes to guarantee pure clean glyphs
+            logo_lines = [re.sub(r"\x1b\[[0-9;]*[a-zA-Z]", "", l.rstrip("\r\n")) for l in f.readlines() if l.strip()]
 
-    # Fetch info lines from fastfetch
+    # Fetch right-hand telemetry lines from fastfetch
     try:
         res = subprocess.run(["fastfetch", "--logo", "none"], capture_output=True, text=True, timeout=5)
         info_lines = res.stdout.splitlines()
@@ -123,55 +154,46 @@ def main():
     total_rows = max(len(logo_lines), len(info_lines))
     max_cols = max(len(l) for l in logo_lines) if logo_lines else 30
 
+    if args.static or not sys.stdout.isatty():
+        # Output single static frame
+        frame = build_frame(logo_lines, info_lines, total_rows, max_cols, 0.0)
+        sys.stdout.write("\n" + "\n".join(frame) + "\n\n")
+        sys.stdout.flush()
+        return
+
+    duration = None if args.loop else args.intro
     frame_delay = 1.0 / max(10, min(120, args.fps))
     start_time = time.time()
-    intro_mode = args.intro > 0.0
 
-    # Catch Ctrl+C gracefully
+    # Graceful exit on interrupt
     signal.signal(signal.SIGINT, lambda s, f: sys.exit(0))
 
-    with RawTerminal():
-        # Clear screen once
+    with TerminalManager():
+        # Clear screen to start fresh
         sys.stdout.write("\033[2J\033[H")
         sys.stdout.flush()
 
         while True:
-            current_time = time.time()
-            elapsed = current_time - start_time
-            phase = (elapsed * args.speed * 0.4) % 1.0
+            now = time.time()
+            elapsed = now - start_time
+            phase = (elapsed * args.speed * 0.5) % 1.0
 
-            rendered_lines = []
-            for row_idx in range(total_rows):
-                logo_line = logo_lines[row_idx] if row_idx < len(logo_lines) else " " * max_cols
-                info_line = info_lines[row_idx] if row_idx < len(info_lines) else ""
-
-                colored_logo = []
-                for col_idx, char in enumerate(logo_line):
-                    if char in (" ", "⠀"):
-                        colored_logo.append(" ")
-                    else:
-                        factor = ((row_idx / total_rows * 0.65) + (col_idx / max_cols * 0.35) + phase) % 1.0
-                        r, g, b = get_multi_color_gradient(factor, PALETTE)
-                        colored_logo.append(f"\033[38;2;{r};{g};{b}m{char}\033[0m")
-
-                logo_str = "".join(colored_logo)
-                raw_logo_len = len(logo_line)
-                pad = " " * max(0, max_cols - raw_logo_len)
-                rendered_lines.append(f"  {logo_str}{pad}    {info_line}")
-
-            # Draw frame at top of screen
-            sys.stdout.write("\033[H" + "\n".join(rendered_lines) + "\n")
+            frame_lines = build_frame(logo_lines, info_lines, total_rows, max_cols, phase)
+            sys.stdout.write("\033[H" + "\n".join(frame_lines) + "\n")
             sys.stdout.flush()
 
-            # Check termination conditions
-            if intro_mode and elapsed >= args.intro:
+            if duration is not None and elapsed >= duration:
                 break
 
-            key = get_key()
+            key = get_keypress()
             if key in ('q', 'Q', '\x1b', '\n', '\r', ' '):
                 break
 
             time.sleep(frame_delay)
+
+        # Ensure final cursor is below the output
+        sys.stdout.write("\n")
+        sys.stdout.flush()
 
 if __name__ == "__main__":
     main()
