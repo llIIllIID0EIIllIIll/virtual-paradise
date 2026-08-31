@@ -20,7 +20,7 @@ o.bind("SUPER + Q", "Rice Layout", "~/.local/bin/rice_layout.sh")
 o.bind("SUPER + N", "Next Wallpaper", "omarchy theme bg next")
 
 -- Toggle Live Video Wallpaper (mpvpaper GPU playback)
-o.bind("SUPER + ALT + W", "Toggle Live Wallpaper", "~/.local/bin/toggle_live_wallpaper.sh")
+o.bind("SUPER + ALT + UP", "Toggle Live Wallpaper", "~/.local/bin/toggle_live_wallpaper.sh")
 o.bind("SUPER + ALT + RIGHT", "Next Live Wallpaper", "~/.local/bin/toggle_live_wallpaper.sh next")
 o.bind("SUPER + ALT + LEFT", "Prev Live Wallpaper", "~/.local/bin/toggle_live_wallpaper.sh prev")
 

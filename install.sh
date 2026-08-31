@@ -402,19 +402,21 @@ if [[ $IS_HOOK -eq 0 ]]; then
     hyprctl reload 2>/dev/null || true
   fi
 
-  # Auto-trigger SUPER + ALT + W: Initialize and launch live video wallpaper immediately
+  # Auto-trigger SUPER + ALT + UP: Initialize and launch live video wallpaper immediately
   if [[ -x "$LOCAL_BIN/toggle_live_wallpaper.sh" ]]; then
-    log_sub "Triggering SUPER + ALT + W: Initializing Live Video Wallpaper..."
+    log_sub "Triggering SUPER + ALT + UP: Initializing Live Video Wallpaper..."
     (sleep 0.4; "$LOCAL_BIN/toggle_live_wallpaper.sh" init >/dev/null 2>&1 &)
   fi
 
   echo -e "\n${C_BOLD}${C_GREEN}✨ Virtual☆Paradise Theme & Rice successfully installed for '${CURRENT_USER}'!${C_RESET}"
   echo -e "${C_CYAN}───────────────────────────────────────────────────────────────────${C_RESET}"
   echo -e " ${C_BOLD}Useful shortcuts:${C_RESET}"
-  echo -e "   ${C_GREEN}SUPER + Q${C_RESET}       ➔ Launch 5-terminal Rice layout"
-  echo -e "   ${C_GREEN}SUPER + ALT + W${C_RESET} ➔ Toggle Live Video / Static Miku Wallpaper"
-  echo -e "   ${C_GREEN}SUPER + N${C_RESET}       ➔ Cycle next wallpaper (Curtain Reveal)"
-  echo -e "   ${C_GREEN}SUPER + C${C_RESET}       ➔ Toggle Cooler Boost fan cooling"
-  echo -e "   ${C_GREEN}ffa${C_RESET}             ➔ Launch Fastfetch with high-res Anime Braille logo"
+  echo -e "   ${C_GREEN}SUPER + Q${C_RESET}             ➔ Launch 5-terminal Rice layout"
+  echo -e "   ${C_GREEN}SUPER + ALT + UP${C_RESET}      ➔ Toggle Live Video / Static Wallpaper"
+  echo -e "   ${C_GREEN}SUPER + ALT + RIGHT${C_RESET}   ➔ Next Live Wallpaper (Portal Transition)"
+  echo -e "   ${C_GREEN}SUPER + ALT + LEFT${C_RESET}    ➔ Prev Live Wallpaper (Portal Transition)"
+  echo -e "   ${C_GREEN}SUPER + N${C_RESET}             ➔ Cycle next wallpaper"
+  echo -e "   ${C_GREEN}SUPER + C${C_RESET}             ➔ Toggle Cooler Boost fan cooling"
+  echo -e "   ${C_GREEN}ffa${C_RESET}                   ➔ Launch Fastfetch with high-res Anime Braille logo"
   echo -e "${C_CYAN}───────────────────────────────────────────────────────────────────${C_RESET}\n"
 fi

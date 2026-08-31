@@ -71,8 +71,9 @@ Launches a complete 5-pane cyberpunk development workspace in microseconds via W
 | Shortcut | Action | Description |
 | :--- | :--- | :--- |
 | `SUPER + Q` | **Rice Layout** | Sequentially launches Fastfetch, Btop, Momoisay, Cava & Virtual Matrix |
-| `SUPER + ALT + W` | **Toggle Live Wallpaper** | Switches between 1080p live video and static Miku wallpaper |
-| `SUPER + N` | **Next Wallpaper** | Cycles to next wallpaper with slanted curtain reveal animation |
+| `SUPER + ALT + UP` | **Toggle Live Wallpaper** | Toggles between 1080p live video/GIF and static wallpaper |
+| `SUPER + ALT + RIGHT` | **Next Live Wallpaper** | Cycles to next live wallpaper with Portal curtain wipe transition |
+| `SUPER + ALT + LEFT` | **Prev Live Wallpaper** | Cycles to previous live wallpaper with Portal curtain wipe transition |
 | `SUPER + C` | **Toggle Cooler Boost** | Toggles maximum fan cooling on/off |
 | `SUPER + E` | **File Manager** | Auto-detects default file manager (`xdg-open`) |
 | `SUPER + B` | **Web Browser** | Launches default web browser |
