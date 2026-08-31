@@ -578,7 +578,7 @@ function f() {
     bat_cmd="batcat"         # Use batcat on Debian/Ubuntu
   fi
 
-  # FZF Cyberpunk Theme Styling matching HUD prompt
+  # FZF Virtual☆Paradise Cyberpunk HUD Theme (40% Cyan / 20% Green / 40% Sakura Pink)
   local -a fzf_style          # Array of FZF styling options
   fzf_style=(
     --height="80%"            # 80% terminal window height
@@ -587,9 +587,12 @@ function f() {
     --margin="1"              # 1-line margin
     --padding="1"             # 1-line padding
     --info="inline-right"     # Inline-right match count display
-    --color="fg:#FFCCFF,bg:-1,hl:#00FFDD,fg+:#00FFDD,bg+:#282a36,hl+:#00FFDD"  # Foreground, background, and highlight colors
-    --color="info:#585b70,prompt:#00FFDD,pointer:#00FFDD,marker:#FF6070,spinner:#00FFDD,header:#585b70"  # Pointers, spinners, and info colors
-    --color="border:#00FFDD,label:#00FFDD"  # Border and label colors
+    --pointer="▶"             # Clean directional pointer
+    --marker="✦"              # Sakura pink multi-selection star marker
+    --color="fg:#eafbfa,bg:-1,hl:#00ff88,fg+:#00f5d4,bg+:#131920,hl+:#00ff88"  # High contrast TrueColor palette
+    --color="info:#7091a4,prompt:#00f5d4,pointer:#00f5d4,marker:#ffb7d5,spinner:#00ff88,header:#ffb7d5"  # Neon pointers & headers
+    --color="border:#00f5d4,label:#00f5d4"  # Miku Cyan border & title labels
+    --bind="ctrl-/:toggle-preview"          # Toggle preview pane on demand
   )
 
   # Helper to open files in default editor (micro falling back to nano)
@@ -682,9 +685,10 @@ function f() {
                 fzf "${fzf_style[@]}" \
                     --expect=left,right \
                     --prompt="$i_dir  Directory: $current_dir > " \
-                    --header="[Enter] CD into | [←/→] Parent / Child Directory" \
+                    --header="[Enter] CD · [←] Parent Dir · [→] Subdirectory · [Ctrl-/] Preview" \
+                    --border-label="  Directory Navigator " \
                     --preview="(eza --tree --level=2 --color=always --icons {} || tree -C -L 2 {} || ls -lhA --color=always {} || ls -F {}) 2>/dev/null | head -50" \
-                    --preview-window="right:60%,border-left:<80(down:50%,border-top)")
+                    --preview-window="right:60%,border-rounded")
                     # Fuzzy directory search with tree preview and arrow keys navigation
                     
       local exit_status=$?    # Get exit status of FZF
@@ -727,9 +731,10 @@ function f() {
                     --multi \
                     --expect=left \
                     --prompt="$i_file  Files: $current_dir > " \
-                    --header="[Tab] Multi-select | [Enter] Open in Editor | [←] Parent" \
-                    --preview "(${bat_cmd:-cat} --style=numbers --color=always --line-range :100 {} || cat {}) 2>/dev/null | head -100" \
-                    --preview-window="right:60%,border-left:<80(down:50%,border-top)")
+                    --header="[Tab] Multi-select · [Enter] Open in Editor · [←] Parent · [Ctrl-/] Preview" \
+                    --border-label=" 󰈙 File Browser " \
+                    --preview="(${bat_cmd:-cat} --style=numbers --color=always --line-range :100 {} || cat {}) 2>/dev/null | head -100" \
+                    --preview-window="right:60%,border-rounded")
                     # Fuzzy file search with multi-select and syntax preview
                     
       local exit_status=$?    # Capture FZF exit status
@@ -767,10 +772,11 @@ function f() {
           --disabled \
           --delimiter=: \
           --prompt="$i_search  Ripgrep ($search_path) > " \
-          --header="[Enter] Open file at matching line" \
+          --header="[Enter] Open in Editor at matched line · [Ctrl-/] Preview" \
+          --border-label="  Code & Content Search " \
           --bind "change:reload(rg --column --line-number --no-heading --color=always --smart-case {q} \"$search_path\" || true)" \
-          --preview "(${bat_cmd:-cat} --style=numbers --color=always --highlight-line {2} {1} 2>/dev/null || cat {1} 2>/dev/null)" \
-          --preview-window="right:60%,border-left:<80(down:50%,border-top),+{2}-/2")
+          --preview="(${bat_cmd:-cat} --style=numbers --color=always --highlight-line {2} {1} 2>/dev/null || cat {1} 2>/dev/null)" \
+          --preview-window="right:60%,border-rounded,+{2}-/2")
           # Live ripgrep search with real-time match preview
           
     if [[ -n "$result" ]]; then
@@ -784,10 +790,11 @@ function f() {
   _f_mode_history() {
     local cmd                 # Variable for selected history command
     cmd=$(fc -rln 1 2>/dev/null | awk '!seen[$0]++' | fzf "${fzf_style[@]}" \
-          --prompt="$i_history  Command History > " \
-          --header="[Enter] Paste command to terminal" \
+          --prompt="$i_history  History > " \
+          --header="[Enter] Paste command to terminal · [ESC] Cancel" \
+          --border-label="  Command History " \
           --preview="echo {}" \
-          --preview-window="down:3:wrap")
+          --preview-window="down:3:wrap:border-rounded")
           # Read deduplicated Zsh history for FZF search
     if [[ -n "$cmd" ]]; then
       print -z "$cmd"         # Paste selected command into terminal prompt
@@ -798,10 +805,11 @@ function f() {
   _f_mode_process() {
     local ps_line             # Variable for selected process line
     ps_line=$(ps -ef | fzf "${fzf_style[@]}" \
-      --header="[Enter] SIGTERM (Graceful Kill) | [Ctrl-X] SIGKILL (Force Kill) | [Ctrl-R] Reload" \
+      --header="[Enter] SIGTERM (15) · [Ctrl-X] SIGKILL (9) · [Ctrl-R] Reload" \
       --prompt="$i_jobs  Kill Process > " \
+      --border-label="  Process Manager " \
       --preview="ps -p {2} -o pid,ppid,%cpu,%mem,stat,start,time,command --width 100 2>/dev/null || ps -p {2} -f" \
-      --preview-window="down:5:wrap" \
+      --preview-window="down:5:wrap:border-rounded" \
       --expect=ctrl-x \
       --bind="ctrl-r:reload(ps -ef)")
       # List processes with live resource preview
@@ -854,11 +862,11 @@ function f() {
       print -P "%F{#00f5d4}⌨️  Ultimate Interactive Search & Action Hub (f)%f"
       print -P "Usage: %F{#eafbfa}f [mode] [path]%f"
       print -P "Available Modes:"
-      print -P "  %F{#00FFDD}-d, d, cd%f        Search directories & cd into (interactive)"
-      print -P "  %F{#00FFDD}-f, f, file%f      Search files & open in editor (multi-select)"
-      print -P "  %F{#00FFDD}-c, c, content%f   Search file contents via live ripgrep"
-      print -P "  %F{#00FFDD}-h, h, history%f   Search & insert command from history"
-      print -P "  %F{#00FFDD}-p, p, process%f   Manage & terminate active processes"
+      print -P "  %F{#00f5d4}-d, d, cd%f        Search directories & cd into (interactive [←/→])"
+      print -P "  %F{#00f5d4}-f, f, file%f      Search files & open in editor (multi-select [Tab])"
+      print -P "  %F{#00f5d4}-c, c, content%f   Search file contents via live ripgrep"
+      print -P "  %F{#00f5d4}-h, h, history%f   Search & insert command from deduplicated history"
+      print -P "  %F{#00f5d4}-p, p, process%f   Manage & terminate active processes ([Enter]/[Ctrl-X])"
       print -P "If called without arguments, an interactive FZF menu is displayed."
       ;;
     *)
@@ -869,11 +877,12 @@ function f() {
       fi
       
       local choice                    # Variable for menu choice
-      choice=$(echo -e "$i_dir 1. Directories (cd)\n$i_file 2. Files (open in editor)\n$i_search 3. Content Search (live ripgrep)\n$i_history 4. Command History (search & insert)\n$i_jobs 5. Process Manager (kill)" | \
+      choice=$(echo -e "  1. Directories        · Browse folders [←/→] & CD\n󰈙  2. Files              · Multi-select files [Tab] & open in editor\n  3. Content Search     · Real-time Ripgrep text search with line jump\n  4. Command History    · Fuzzy search & insert past commands\n  5. Process Manager    · System process monitor & kill manager" | \
                fzf "${fzf_style[@]}" \
-                   --prompt="$i_search  Select Search Mode > " \
-                   --header="Use arrow keys and [Enter] to choose mode" \
-                   --height=15)       # Display 5-mode interactive selection menu
+                   --prompt="  Select Mode > " \
+                   --header="[↑/↓] Navigate · [Enter] Choose Mode · [ESC] Exit" \
+                   --border-label=" 🌸 Virtual☆Paradise Search Hub 🌸 " \
+                   --height=16)       # Display 5-mode interactive selection menu
                
       case "$choice" in
         *1.*) _f_mode_dir "$mode" ;;   # Activate directory mode
