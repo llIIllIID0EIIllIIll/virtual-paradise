@@ -10,7 +10,10 @@ local activeBorderGradient = {
   angle = 45,
 }
 local inactiveBorderColor = "rgba(182833aa)"
-local activeNeonGlow = "rgba(00f5d428)"
+local activeNeonGlow = {
+  colors = { "rgba(00f5d448)", "rgba(00f5d448)", "rgba(00ff8838)", "rgba(ffb7d548)", "rgba(ffb7d548)" },
+  angle = 45,
+}
 local inactiveShadow = "rgba(00000099)"
 
 hl.config({
