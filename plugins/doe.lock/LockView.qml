@@ -34,6 +34,35 @@ Item {
     ? Border.surfaceSpec("lock", "border-error", Color.lock.borderError, root.outlineThickness, "border-alpha")
     : Border.surfaceSpec("lock", "border-active", Color.lock.borderActive, root.outlineThickness, "border-alpha")
 
+  // Random Cyberpunk & Developer & Miku Facts, Jokes, and Memes
+  readonly property var funQuotes: [
+    "💡 Có 10 loại người: người hiểu hệ nhị phân và người không.",
+    "✨ Miku Fact: Cần 39.390 lít trà sữa để sạc đầy 100% năng lượng!",
+    "☕ Tại sao dev thích bóng tối? Vì ánh sáng thu hút bugs!",
+    "💤 Sleeping Miku: Đang nạp năng lượng... Vui lòng không đánh thức ca sĩ ảo! 🌸",
+    "🐧 sudo !! chạy lại lệnh vừa gõ với quyền root — phép màu lúc bế tắc.",
+    "🌸 Virtual☆Paradise: Nơi duy nhất RAM 16GB không bao giờ là đủ.",
+    "💻 git commit -m 'fixed bug for real this time (final_v2)'",
+    "⚡ 'I use Arch btw' tăng 50% tốc độ gõ phím và 100% độ ngầu.",
+    "🧠 2 thứ khó nhất trần đời: đặt tên biến và dọn dẹp cache.",
+    "🎮 Miku Meme: Leek spin 10 hours mode: ACTIVATED 🥬",
+    "🛡️ Mật khẩu không nên là '123456', trừ khi bạn muốn bị Miku mắng!",
+    "🌌 Neo Tokyo: Bầu trời đêm neon xanh, cà phê đen và dòng lệnh zsh.",
+    "🐱 Mèo ngủ 16 tiếng một ngày, Miku cũng vậy khi bạn lock máy!"
+  ]
+
+  property string currentQuote: funQuotes[Math.floor(Math.random() * funQuotes.length)]
+
+  Timer {
+    interval: 10000
+    running: root.loadBackground
+    repeat: true
+    onTriggered: {
+      var nextIdx = Math.floor(Math.random() * root.funQuotes.length)
+      root.currentQuote = root.funQuotes[nextIdx]
+    }
+  }
+
   signal submitPassword(string password)
   signal passwordTextEdited(string password)
   signal clearFailureRequested()
@@ -67,6 +96,7 @@ Item {
   Component.onCompleted: {
     syncPasswordText()
     if (inputEnabled) Qt.callLater(forcePasswordFocus)
+    root.currentQuote = root.funQuotes[Math.floor(Math.random() * root.funQuotes.length)]
   }
 
   TextMetrics {
@@ -85,17 +115,11 @@ Item {
     AnimatedImage {
       id: wallpaperGif
       anchors.fill: parent
-      source: {
-        if (!root.loadBackground) return ""
-        if (root.backgroundPath && root.backgroundPath.toLowerCase().endsWith(".gif")) {
-          return root.fileUrl(root.backgroundPath)
-        }
-        return "file://" + Qt.resolvedUrl("Sleeping_miku.gif")
-      }
+      source: Qt.resolvedUrl("Sleeping_miku.gif")
       fillMode: Image.PreserveAspectCrop
       asynchronous: true
       cache: true
-      playing: true
+      playing: root.loadBackground
       visible: status === Image.Ready
     }
 
@@ -123,11 +147,11 @@ Item {
       onPositionChanged: root.wakeRequested()
     }
 
-    // Top Header: Live Neon Clock & Date + Sleeping Miku Badge
+    // Top Header: Live Neon Clock & Date + Random Fun Quote
     Column {
       id: headerGroup
       anchors.bottom: inputField.top
-      anchors.bottomMargin: 32
+      anchors.bottomMargin: 28
       anchors.horizontalCenter: parent.horizontalCenter
       spacing: 6
 
@@ -159,11 +183,16 @@ Item {
       }
 
       Text {
+        id: quoteDisplay
         anchors.horizontalCenter: parent.horizontalCenter
-        text: "🌸 Virtual☆Paradise · Sleeping Miku 💤"
-        color: "#7091a4"
+        text: root.currentQuote
+        color: "#eafbfa"
         font.family: Style.font.family
-        font.pixelSize: Math.round(Style.font.small * 1.05)
+        font.pixelSize: Math.round(Style.font.base * 0.95)
+        horizontalAlignment: Text.AlignHCenter
+        wrapMode: Text.WordWrap
+        maximumLineCount: 2
+        width: Math.min(640, parent.parent.width - 40)
       }
     }
 
