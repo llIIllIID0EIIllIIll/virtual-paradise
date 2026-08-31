@@ -692,7 +692,8 @@ function f() {
                     --preview-window="right:60%,border-rounded")
 
       exit_status=$?
-      if [[ $exit_status -eq 130 || -z "$fzf_out" ]]; then
+      # ESC / Ctrl-C (130) -> Cancel without cd
+      if [[ $exit_status -eq 130 ]]; then
         break
       fi
       
@@ -706,8 +707,11 @@ function f() {
           current_dir="$selected"
         fi
       else
+        # Enter pressed: CD to selected sub-directory, or fallback to current_dir
         if [[ -n "$selected" && -d "$selected" ]]; then
           cd "$selected"
+        elif [[ -d "$current_dir" ]]; then
+          cd "$current_dir"
         fi
         break
       fi
