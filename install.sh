@@ -68,9 +68,68 @@ if [[ $IS_HOOK -eq 0 ]]; then
 fi
 
 # ------------------------------------------------------------------------------
-# 1. Prepare Target Directories
+# 1. Check & Install Missing System Dependencies
 # ------------------------------------------------------------------------------
-log_step "1" "8" "Creating configuration and runtime directories..."
+log_step "1" "9" "Checking and installing required system packages..."
+
+CHECK_AND_INSTALL_PACKAGES() {
+  local REQUIRED_PKGS=(
+    "cava"
+    "btop"
+    "fastfetch"
+    "mpv"
+    "qt6-multimedia"
+    "qt6-multimedia-ffmpeg"
+    "libnotify"
+    "rsync"
+    "wl-clipboard"
+    "ncurses"
+  )
+  local AUR_PKGS=(
+    "mpvpaper"
+  )
+
+  local TO_INSTALL=()
+  for pkg in "${REQUIRED_PKGS[@]}"; do
+    if command -v pacman &>/dev/null; then
+      if ! pacman -Qi "$pkg" &>/dev/null; then
+        TO_INSTALL+=("$pkg")
+      fi
+    fi
+  done
+
+  for pkg in "${AUR_PKGS[@]}"; do
+    if ! command -v "$pkg" &>/dev/null; then
+      if command -v pacman &>/dev/null && ! pacman -Qi "$pkg" &>/dev/null; then
+        TO_INSTALL+=("$pkg")
+      fi
+    fi
+  done
+
+  if [[ ${#TO_INSTALL[@]} -gt 0 ]]; then
+    log_sub "Installing missing dependencies: ${TO_INSTALL[*]}"
+    if command -v yay &>/dev/null; then
+      yay -S --needed --noconfirm "${TO_INSTALL[@]}" 2>/dev/null || true
+    elif command -v paru &>/dev/null; then
+      paru -S --needed --noconfirm "${TO_INSTALL[@]}" 2>/dev/null || true
+    elif command -v sudo &>/dev/null && command -v pacman &>/dev/null; then
+      sudo pacman -S --needed --noconfirm "${TO_INSTALL[@]}" 2>/dev/null || true
+    else
+      log_warn "Please install missing packages manually: ${TO_INSTALL[*]}"
+    fi
+  else
+    log_sub "All required packages are satisfied"
+  fi
+}
+
+if [[ $IS_HOOK -eq 0 ]]; then
+  CHECK_AND_INSTALL_PACKAGES
+fi
+
+# ------------------------------------------------------------------------------
+# 2. Prepare Target Directories
+# ------------------------------------------------------------------------------
+log_step "2" "9" "Creating configuration and runtime directories..."
 mkdir -p "$CONFIG_DIR/omarchy/themes/$THEME_NAME/backgrounds"
 mkdir -p "$CONFIG_DIR/omarchy/plugins"
 mkdir -p "$CONFIG_DIR/omarchy/hooks/theme-set.d"
@@ -83,9 +142,9 @@ mkdir -p "$LOCAL_BIN"
 log_sub "Directories verified under $CONFIG_DIR and $LOCAL_BIN"
 
 # ------------------------------------------------------------------------------
-# 2. Install Custom Omarchy Bar Plugins with dynamic user detection
+# 3. Install Custom Omarchy Bar Plugins with dynamic user detection
 # ------------------------------------------------------------------------------
-log_step "2" "8" "Installing custom Quickshell plugins for user '$CURRENT_USER'..."
+log_step "3" "9" "Installing custom Quickshell plugins for user '$CURRENT_USER'..."
 if [[ -d "$REPO_DIR/plugins" ]]; then
   for pdir in "$REPO_DIR"/plugins/*; do
     if [[ -d "$pdir" ]]; then
@@ -112,9 +171,9 @@ if [[ -d "$REPO_DIR/plugins" ]]; then
 fi
 
 # ------------------------------------------------------------------------------
-# 3. Install Status Bar Layout (shell.json) & Menu Extensions
+# 4. Install Status Bar Layout (shell.json) & Menu Extensions
 # ------------------------------------------------------------------------------
-log_step "3" "8" "Installing status bar layout and menu extensions..."
+log_step "4" "9" "Installing status bar layout (transparency off) & menu extensions..."
 if [[ -f "$CONFIG_DIR/omarchy/shell.json" ]] && [[ ! -f "$CONFIG_DIR/omarchy/shell.json.bak" ]]; then
   cp "$CONFIG_DIR/omarchy/shell.json" "$CONFIG_DIR/omarchy/shell.json.bak.$BACKUP_TIMESTAMP"
 fi
@@ -122,7 +181,7 @@ if [[ -f "$REPO_DIR/shell/shell.json" ]]; then
   sed -e "s/\"doe\./\"${CURRENT_USER}\./g" \
       -e "s/\"centerAnchor\": \"doe\./\"centerAnchor\": \"${CURRENT_USER}\./g" \
       "$REPO_DIR/shell/shell.json" > "$CONFIG_DIR/omarchy/shell.json"
-  log_sub "Updated ~/.config/omarchy/shell.json"
+  log_sub "Updated ~/.config/omarchy/shell.json with transparency off"
 fi
 
 # Install Virtual☆Paradise Quick Actions into omarchy-menu.jsonc
@@ -168,9 +227,9 @@ EOF
 log_sub "Installed Quick Actions menu extensions"
 
 # ------------------------------------------------------------------------------
-# 4. Install Hyprland Look'n'Feel & Keybindings
+# 5. Install Hyprland Look'n'Feel & Keybindings
 # ------------------------------------------------------------------------------
-log_step "4" "8" "Installing Hyprland look'n'feel, bindings, input & autostart configs..."
+log_step "5" "9" "Installing Hyprland look'n'feel, bindings, input & autostart configs..."
 if [[ -d "$REPO_DIR/hypr" ]]; then
   for file in "$REPO_DIR"/hypr/*.lua; do
     if [[ -f "$file" ]]; then
@@ -189,9 +248,9 @@ if [[ -f "$REPO_DIR/hyprland.conf" ]]; then
 fi
 
 # ------------------------------------------------------------------------------
-# 5. Install Helper Scripts & Binaries
+# 6. Install Helper Scripts & Binaries
 # ------------------------------------------------------------------------------
-log_step "5" "8" "Installing binaries & CLI helper tools to $LOCAL_BIN..."
+log_step "6" "9" "Installing binaries & CLI helper tools to $LOCAL_BIN..."
 if [[ -d "$REPO_DIR/bin" ]]; then
   cp -r "$REPO_DIR"/bin/* "$LOCAL_BIN/"
   chmod +x "$LOCAL_BIN"/* 2>/dev/null || true
@@ -199,9 +258,9 @@ if [[ -d "$REPO_DIR/bin" ]]; then
 fi
 
 # ------------------------------------------------------------------------------
-# 6. Install Component Themes (Btop, Cava, Fastfetch)
+# 7. Install Component Themes (Btop, Cava, Fastfetch)
 # ------------------------------------------------------------------------------
-log_step "6" "8" "Installing Cava, Btop & Fastfetch theme profiles..."
+log_step "7" "9" "Installing Cava, Btop & Fastfetch theme profiles..."
 
 # Cava
 if [[ -f "$REPO_DIR/cava/config_bar" ]]; then
@@ -225,9 +284,9 @@ fi
 log_sub "Component themes installed"
 
 # ------------------------------------------------------------------------------
-# 7. Install Theme Assets & Backgrounds
+# 8. Install Theme Assets & Backgrounds
 # ------------------------------------------------------------------------------
-log_step "7" "8" "Installing theme assets, live wallpapers & hooks..."
+log_step "8" "9" "Installing theme assets, live wallpapers & hooks..."
 if [[ "$REPO_DIR" != "$CONFIG_DIR/omarchy/themes/$THEME_NAME" ]]; then
   rsync -a --delete \
     --exclude='.git' \
@@ -253,9 +312,9 @@ chmod +x "$CONFIG_DIR/omarchy/hooks/theme-set.d/virtual-paradise.sh"
 log_sub "Theme assets & automatic synchronization hooks ready"
 
 # ------------------------------------------------------------------------------
-# 8. Configure Shell Environment (Zsh & Bash) & Error Hooks
+# 9. Configure Shell Environment (Zsh & Bash) & Error Hooks
 # ------------------------------------------------------------------------------
-log_step "8" "8" "Configuring shell environment, aliases (ff, ffa) & error shake hooks..."
+log_step "9" "9" "Configuring shell environment, aliases (ff, ffa) & error shake hooks..."
 
 configure_shell_file() {
   local file="$1"
@@ -329,9 +388,10 @@ if [[ $IS_HOOK -eq 0 ]]; then
     hyprctl reload 2>/dev/null || true
   fi
 
-  # Initialize and launch live video wallpaper immediately
+  # Auto-trigger SUPER + ALT + W: Initialize and launch live video wallpaper immediately
   if [[ -x "$LOCAL_BIN/toggle_live_wallpaper.sh" ]]; then
-    (sleep 0.2; "$LOCAL_BIN/toggle_live_wallpaper.sh" init >/dev/null 2>&1 &)
+    log_sub "Triggering SUPER + ALT + W: Initializing Live Video Wallpaper..."
+    (sleep 0.4; "$LOCAL_BIN/toggle_live_wallpaper.sh" init >/dev/null 2>&1 &)
   fi
 
   echo -e "\n${C_BOLD}${C_GREEN}✨ Virtual☆Paradise Theme & Rice successfully installed for '${CURRENT_USER}'!${C_RESET}"
