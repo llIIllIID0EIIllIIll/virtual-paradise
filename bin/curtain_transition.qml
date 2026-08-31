@@ -20,7 +20,7 @@ ShellRoot {
 
       color: "transparent"
       WlrLayershell.namespace: "curtain-transition"
-      WlrLayershell.layer: WlrLayer.Overlay
+      WlrLayershell.layer: WlrLayer.Bottom
       exclusionMode: ExclusionMode.Ignore
 
       // Left curtain panel (Displays the left 50% of Portal.jpg)
