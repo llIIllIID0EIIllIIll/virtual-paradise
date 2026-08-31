@@ -23,13 +23,24 @@ ShellRoot {
       WlrLayershell.layer: WlrLayer.Overlay
       exclusionMode: ExclusionMode.Ignore
 
-      // Left curtain panel
-      Rectangle {
+      // Left curtain panel (Displays the left 50% of Portal.jpg)
+      Item {
         id: leftCurtain
-        width: parent.width / 2 + 4
-        height: parent.height
+        width: Math.ceil(win.width / 2)
+        height: win.height
         x: -width
-        color: "#0a0d12"
+        clip: true
+
+        Image {
+          width: win.width
+          height: win.height
+          x: 0
+          y: 0
+          source: "file:///home/doe/.local/bin/Portal.jpg"
+          fillMode: Image.PreserveAspectCrop
+          asynchronous: false
+          cache: true
+        }
 
         // Cyberpunk neon edge border
         Rectangle {
@@ -44,17 +55,28 @@ ShellRoot {
           width: 2
           height: parent.height
           color: "#ffb7d5"
-          opacity: 0.6
+          opacity: 0.7
         }
       }
 
-      // Right curtain panel
-      Rectangle {
+      // Right curtain panel (Displays the right 50% of Portal.jpg)
+      Item {
         id: rightCurtain
-        width: parent.width / 2 + 4
-        height: parent.height
-        x: parent.width
-        color: "#0a0d12"
+        width: Math.ceil(win.width / 2)
+        height: win.height
+        x: win.width
+        clip: true
+
+        Image {
+          width: win.width
+          height: win.height
+          x: -Math.floor(win.width / 2)
+          y: 0
+          source: "file:///home/doe/.local/bin/Portal.jpg"
+          fillMode: Image.PreserveAspectCrop
+          asynchronous: false
+          cache: true
+        }
 
         // Cyberpunk neon edge border
         Rectangle {
@@ -69,53 +91,50 @@ ShellRoot {
           width: 2
           height: parent.height
           color: "#ffb7d5"
-          opacity: 0.6
-        }
-      }
-
-      // Center glowing emblem & status
-      Column {
-        id: centerBadge
-        anchors.centerIn: parent
-        opacity: 0
-        spacing: 8
-
-        Text {
-          anchors.horizontalCenter: parent.horizontalCenter
-          text: "★ VIRTUAL☆PARADISE ★"
-          color: "#00f5d4"
-          font.pixelSize: 24
-          font.bold: true
-          font.letterSpacing: 2
-        }
-
-        Text {
-          anchors.horizontalCenter: parent.horizontalCenter
-          text: "󰸌 Switching Live Wallpaper..."
-          color: "#ffb7d5"
-          font.pixelSize: 14
-          font.bold: true
+          opacity: 0.7
         }
       }
 
       SequentialAnimation {
         running: true
 
-        // 1. Close curtains smoothly
+        // 1. Close Portal curtains to meet at center
         ParallelAnimation {
-          NumberAnimation { target: leftCurtain; property: "x"; to: 0; duration: 250; easing.type: Easing.OutCubic }
-          NumberAnimation { target: rightCurtain; property: "x"; to: win.width / 2 - 2; duration: 250; easing.type: Easing.OutCubic }
-          NumberAnimation { target: centerBadge; property: "opacity"; to: 1; duration: 180 }
+          NumberAnimation {
+            target: leftCurtain
+            property: "x"
+            to: 0
+            duration: 260
+            easing.type: Easing.OutCubic
+          }
+          NumberAnimation {
+            target: rightCurtain
+            property: "x"
+            to: Math.floor(win.width / 2)
+            duration: 260
+            easing.type: Easing.OutCubic
+          }
         }
 
-        // 2. Pause while wallpaper is swapped behind curtains
-        PauseAnimation { duration: 150 }
+        // 2. Hold momentarily while new wallpaper starts in background
+        PauseAnimation { duration: 160 }
 
-        // 3. Open curtains smoothly
+        // 3. Open Portal curtains to reveal the new wallpaper
         ParallelAnimation {
-          NumberAnimation { target: leftCurtain; property: "x"; to: -leftCurtain.width; duration: 280; easing.type: Easing.InCubic }
-          NumberAnimation { target: rightCurtain; property: "x"; to: win.width; duration: 280; easing.type: Easing.InCubic }
-          NumberAnimation { target: centerBadge; property: "opacity"; to: 0; duration: 140 }
+          NumberAnimation {
+            target: leftCurtain
+            property: "x"
+            to: -leftCurtain.width
+            duration: 300
+            easing.type: Easing.InCubic
+          }
+          NumberAnimation {
+            target: rightCurtain
+            property: "x"
+            to: win.width
+            duration: 300
+            easing.type: Easing.InCubic
+          }
         }
 
         ScriptAction {
