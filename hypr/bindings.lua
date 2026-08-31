@@ -19,6 +19,9 @@ o.bind("SUPER + Q", "Rice Layout", "~/.local/bin/rice_layout.sh")
 -- Cycle to next wallpaper in Virtual☆Paradise theme
 o.bind("SUPER + N", "Next Wallpaper", "omarchy theme bg next")
 
+-- Toggle Live Video Wallpaper (mpvpaper GPU playback)
+o.bind("SUPER + ALT + W", "Toggle Live Wallpaper", "~/.local/bin/toggle_live_wallpaper.sh")
+
 -- Quick theme picker menu
 o.bind("SUPER + SHIFT + T", "Theme Switcher", "omarchy-menu toggle theme")
 
