@@ -20,7 +20,7 @@ BarWidget {
   Component.onCompleted: refresh()
 
   Timer {
-    interval: 2500
+    interval: 2000
     running: true
     repeat: true
     onTriggered: root.refresh()
@@ -72,7 +72,7 @@ BarWidget {
 
     Timer {
       id: refreshTimer
-      interval: 400
+      interval: 300
       onTriggered: root.refresh()
     }
 
@@ -85,19 +85,39 @@ BarWidget {
       height: 28
       radius: 14
       color: root.isOverheating
-        ? Qt.rgba(1.0, 0.0, 0.33, 0.22) // Neon Red Warning glow
+        ? Qt.rgba(1.0, 0.0, 0.33, 0.28) // Neon Red Warning glow
         : (root.coolerActive
-          ? Qt.rgba(0.0, 1.0, 0.53, 0.18) // Hacker Green active glow
-          : Qt.rgba(1.0, 0.72, 0.84, 0.09)) // Sakura Pink frosted tint
+          ? Qt.rgba(0.0, 1.0, 0.53, 0.25) // Hacker Green active glow
+          : (button.tooltipHovered ? Qt.rgba(1.0, 0.72, 0.84, 0.16) : Qt.rgba(1.0, 0.72, 0.84, 0.09)))
       border.color: root.isOverheating
         ? "#ff0055" // Neon Warning Red
         : (root.coolerActive
           ? "#00ff88"
           : (button.tooltipHovered ? "#ffb7d5" : Qt.rgba(1.0, 0.72, 0.84, 0.38)))
-      border.width: 1
+      border.width: (root.coolerActive || root.isOverheating) ? 2 : 1
 
       Behavior on color { ColorAnimation { duration: 180 } }
       Behavior on border.color { ColorAnimation { duration: 180 } }
+      Behavior on border.width { NumberAnimation { duration: 150 } }
+
+      // Outer Halo Glow Ring when Cooler Boost is Active or Overheating
+      Rectangle {
+        anchors.fill: parent
+        anchors.margins: -3
+        radius: tempPill.radius + 3
+        color: "transparent"
+        border.color: root.isOverheating ? "#ff0055" : "#00ff88"
+        border.width: 1.5
+        opacity: 0.6
+        visible: root.coolerActive || root.isOverheating
+
+        SequentialAnimation on opacity {
+          running: root.coolerActive && !root.isOverheating
+          loops: Animation.Infinite
+          NumberAnimation { to: 0.25; duration: 800; easing.type: Easing.InOutQuad }
+          NumberAnimation { to: 0.85; duration: 800; easing.type: Easing.InOutQuad }
+        }
+      }
 
       SequentialAnimation on opacity {
         running: root.isOverheating
@@ -143,7 +163,7 @@ BarWidget {
           id: tempLabel
           anchors.verticalCenter: parent.verticalCenter
           text: root.cpuTemp
-          color: root.isOverheating ? "#ff0055" : "#ffffff"
+          color: root.isOverheating ? "#ff0055" : (root.coolerActive ? "#00ff88" : "#ffffff")
           font.family: root.bar.fontFamily
           font.pixelSize: Style.font.body
           font.bold: true

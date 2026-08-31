@@ -9,6 +9,7 @@ BarWidget {
   moduleName: "doe.memory"
 
   property string memUsage: "..."
+  property bool btopActive: false
   readonly property int ramPercent: {
     var match = root.memUsage.match(/\((\d+)%\)/)
     return match ? parseInt(match[1], 10) : 0
@@ -22,7 +23,7 @@ BarWidget {
   Component.onCompleted: refresh()
 
   Timer {
-    interval: 3000
+    interval: 2000
     running: true
     repeat: true
     onTriggered: root.refresh()
@@ -30,12 +31,17 @@ BarWidget {
 
   Process {
     id: memProc
-    command: ["bash", "-c", "free -m | awk '/Mem:/ { printf(\"%.1fG (%.0f%%)\", $3/1024, $3/$2*100) }'"]
+    command: ["bash", "-c", "free -m | awk '/Mem:/ { printf(\"%.1fG (%.0f%%)\", $3/1024, $3/$2*100) }'; echo ''; if pgrep -f 'Btop Monitor' >/dev/null 2>&1 || pgrep -x btop >/dev/null 2>&1; then echo 'on'; else echo 'off'; fi"]
     stdout: StdioCollector {
       waitForEnd: true
       onStreamFinished: {
-        var str = text.trim()
-        if (str !== "") root.memUsage = str
+        var lines = text.trim().split("\n")
+        if (lines.length > 0 && lines[0] !== "") {
+          root.memUsage = lines[0]
+        }
+        if (lines.length > 1) {
+          root.btopActive = lines[1].trim() === "on"
+        }
       }
     }
   }
@@ -55,7 +61,7 @@ BarWidget {
     verticalPadding: 2
     tooltipText: root.isRamCritical
       ? "⚠️ HIGH RAM USAGE: " + root.memUsage + "\nLeft: Launch Btop | Right: Memory Details"
-      : ("Memory Usage: " + root.memUsage + "\nLeft: Toggle Btop | Right: Memory Details")
+      : ("Memory Usage: " + root.memUsage + (root.btopActive ? " (Btop: ON)" : " (Btop: OFF)") + "\nLeft: Toggle Btop | Right: Memory Details")
 
     onPressed: function(b) {
       if (!root.bar) return
@@ -63,7 +69,14 @@ BarWidget {
         root.bar.run("~/.local/bin/memory_detail_notify.sh")
       } else {
         root.bar.run("~/.local/bin/toggle_btop.sh")
+        refreshTimer.restart()
       }
+    }
+
+    Timer {
+      id: refreshTimer
+      interval: 400
+      onTriggered: root.refresh()
     }
 
     // Glowing Neon Memory Capsule Pill
@@ -75,15 +88,37 @@ BarWidget {
       height: 28
       radius: 14
       color: root.isRamCritical
-        ? Qt.rgba(1.0, 0.0, 0.33, 0.22) // Neon Red Warning glow
-        : Qt.rgba(0.0, 0.96, 0.83, 0.09) // Miku Cyan frosted tint
+        ? Qt.rgba(1.0, 0.0, 0.33, 0.28) // Neon Red Warning glow
+        : (root.btopActive
+          ? Qt.rgba(0.0, 0.96, 0.83, 0.25) // Miku Cyan active glow
+          : (button.tooltipHovered ? Qt.rgba(0.0, 0.96, 0.83, 0.16) : Qt.rgba(0.0, 0.96, 0.83, 0.09)))
       border.color: root.isRamCritical
         ? "#ff0055" // Neon Warning Red
-        : (button.tooltipHovered ? "#00f5d4" : Qt.rgba(0.0, 0.96, 0.83, 0.38))
-      border.width: 1
+        : (root.btopActive ? "#00f5d4" : (button.tooltipHovered ? "#00f5d4" : Qt.rgba(0.0, 0.96, 0.83, 0.38)))
+      border.width: (root.btopActive || root.isRamCritical) ? 2 : 1
 
       Behavior on color { ColorAnimation { duration: 180 } }
       Behavior on border.color { ColorAnimation { duration: 180 } }
+      Behavior on border.width { NumberAnimation { duration: 150 } }
+
+      // Outer Halo Glow Ring when Btop is Active or RAM is Critical
+      Rectangle {
+        anchors.fill: parent
+        anchors.margins: -3
+        radius: memPill.radius + 3
+        color: "transparent"
+        border.color: root.isRamCritical ? "#ff0055" : "#00f5d4"
+        border.width: 1.5
+        opacity: 0.6
+        visible: root.btopActive || root.isRamCritical
+
+        SequentialAnimation on opacity {
+          running: (root.btopActive || root.isRamCritical) && !root.isRamCritical
+          loops: Animation.Infinite
+          NumberAnimation { to: 0.25; duration: 850; easing.type: Easing.InOutQuad }
+          NumberAnimation { to: 0.85; duration: 850; easing.type: Easing.InOutQuad }
+        }
+      }
 
       SequentialAnimation on opacity {
         running: root.isRamCritical
@@ -110,7 +145,7 @@ BarWidget {
         Text {
           anchors.verticalCenter: parent.verticalCenter
           text: root.memUsage !== "" ? root.memUsage : "RAM"
-          color: root.isRamCritical ? "#ff0055" : "#ffffff"
+          color: root.isRamCritical ? "#ff0055" : (root.btopActive ? "#00f5d4" : "#ffffff")
           font.family: root.bar.fontFamily
           font.pixelSize: Style.font.body
           font.bold: true
