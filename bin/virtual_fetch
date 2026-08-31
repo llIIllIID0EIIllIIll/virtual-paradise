@@ -3,14 +3,15 @@
 ==============================================================================
  Virtual☆Paradise: Animated Fastfetch (virtual_fetch)
 ==============================================================================
- Real-time continuous neon gradient animation for Fastfetch logo & telemetry.
+ Real-time continuous neon gradient animation for Fastfetch logo.
  Features:
-   - 60 FPS smooth double-buffered ANSI rendering with zero flicker.
-   - Automatically strips nested ANSI codes for 100% clean 24-bit TrueColor.
+   - High-performance 60 FPS in-place cursor rendering without clearing scrollback.
+   - The right-side telemetry boxes remain 100% frozen, solid, and unaffected.
+   - ONLY the left-side logo rotates through dynamic TrueColor RGB waves.
    - Modes:
-       * Default / --intro [sec]: Shimmer animation for N seconds then returns to shell.
-       * -l / --loop            : Infinite screensaver animation until keypress.
-       * --static               : Print single static frame immediately.
+       * Default / --intro [sec]: Shimmers logo for N seconds, then returns to shell.
+       * -l / --loop            : Continuous live screensaver until keypress.
+       * -s / --static          : Instant single-frame output.
 """
 
 import sys
@@ -92,33 +93,30 @@ def get_keypress():
             return None
     return None
 
-def build_frame(logo_lines, info_lines, total_rows, max_cols, phase):
-    lines = []
-    for row_idx in range(total_rows):
-        logo_line = logo_lines[row_idx] if row_idx < len(logo_lines) else " " * max_cols
-        info_line = info_lines[row_idx] if row_idx < len(info_lines) else ""
+def build_frame(logo_grid, max_cols, phase):
+    rendered = []
+    for line_len, row_chars, pad, info in logo_grid:
+        if not line_len:
+            rendered.append(f"  {' ' * max_cols}    {info}")
+            continue
 
-        colored_logo = []
-        for col_idx, char in enumerate(logo_line):
-            if char in (" ", "⠀", "\t"):
-                colored_logo.append(" ")
-            else:
-                factor = ((row_idx / total_rows * 0.7) + (col_idx / max_cols * 0.5) + phase) % 1.0
-                r, g, b = get_multi_color_gradient(factor, PALETTE)
-                colored_logo.append(f"\033[38;2;{r};{g};{b}m{char}\033[0m")
+        # Reconstruct line with dynamic colored characters
+        line_buffer = [" "] * line_len
+        for col_idx, char, base_factor in row_chars:
+            factor = (base_factor + phase) % 1.0
+            r, g, b = get_multi_color_gradient(factor, PALETTE)
+            line_buffer[col_idx] = f"\033[38;2;{r};{g};{b}m{char}\033[0m"
 
-        logo_str = "".join(colored_logo)
-        raw_len = len(logo_line)
-        pad = " " * max(0, max_cols - raw_len)
-        lines.append(f"  {logo_str}{pad}    {info_line}")
-    return lines
+        logo_str = "".join(line_buffer)
+        rendered.append(f"  {logo_str}{pad}    {info}")
+    return rendered
 
 def main():
     parser = argparse.ArgumentParser(description="Virtual☆Paradise Animated Fastfetch")
     parser.add_argument("--intro", type=float, default=1.2, help="Intro animation duration in seconds (default: 1.2s)")
     parser.add_argument("-l", "--loop", action="store_true", help="Continuous screensaver loop until keypress")
     parser.add_argument("-s", "--static", action="store_true", help="Print static frame without animation")
-    parser.add_argument("--fps", type=int, default=45, help="Animation FPS (default: 45)")
+    parser.add_argument("--fps", type=int, default=50, help="Animation FPS (default: 50)")
     parser.add_argument("--speed", type=float, default=1.8, help="Gradient rotation speed (default: 1.8)")
     parser.add_argument("--logo", type=str, default="", help="Custom logo file path")
     args = parser.parse_args()
@@ -142,7 +140,7 @@ def main():
             # Strip any existing ANSI color escape codes to guarantee pure clean glyphs
             logo_lines = [re.sub(r"\x1b\[[0-9;]*[a-zA-Z]", "", l.rstrip("\r\n")) for l in f.readlines() if l.strip()]
 
-    # Fetch right-hand telemetry lines from fastfetch
+    # Fetch right-hand telemetry lines from fastfetch (rendered ONCE, 100% frozen & unaffected)
     try:
         res = subprocess.run(["fastfetch", "--logo", "none"], capture_output=True, text=True, timeout=5)
         info_lines = res.stdout.splitlines()
@@ -154,9 +152,21 @@ def main():
     total_rows = max(len(logo_lines), len(info_lines))
     max_cols = max(len(l) for l in logo_lines) if logo_lines else 30
 
+    # Pre-compile the logo character grid for 60+ FPS zero-latency rendering
+    logo_grid = []
+    for r in range(total_rows):
+        line = logo_lines[r] if r < len(logo_lines) else ""
+        row_chars = []
+        for c, char in enumerate(line):
+            if char not in (" ", "⠀", "\t"):
+                base_factor = (r / total_rows * 0.7) + (c / max_cols * 0.5)
+                row_chars.append((c, char, base_factor))
+        pad = " " * (max_cols - len(line))
+        info = info_lines[r] if r < len(info_lines) else ""
+        logo_grid.append((len(line), row_chars, pad, info))
+
     if args.static or not sys.stdout.isatty():
-        # Output single static frame
-        frame = build_frame(logo_lines, info_lines, total_rows, max_cols, 0.0)
+        frame = build_frame(logo_grid, max_cols, 0.0)
         sys.stdout.write("\n" + "\n".join(frame) + "\n\n")
         sys.stdout.flush()
         return
@@ -169,8 +179,9 @@ def main():
     signal.signal(signal.SIGINT, lambda s, f: sys.exit(0))
 
     with TerminalManager():
-        # Clear screen to start fresh
-        sys.stdout.write("\033[2J\033[H")
+        # First draw (prints total_rows lines)
+        initial_frame = build_frame(logo_grid, max_cols, 0.0)
+        sys.stdout.write("\n" + "\n".join(initial_frame) + "\n")
         sys.stdout.flush()
 
         while True:
@@ -178,8 +189,9 @@ def main():
             elapsed = now - start_time
             phase = (elapsed * args.speed * 0.5) % 1.0
 
-            frame_lines = build_frame(logo_lines, info_lines, total_rows, max_cols, phase)
-            sys.stdout.write("\033[H" + "\n".join(frame_lines) + "\n")
+            frame_lines = build_frame(logo_grid, max_cols, phase)
+            # Move cursor up total_rows lines to beginning of frame and overwrite in-place
+            sys.stdout.write(f"\033[{total_rows}F" + "\n".join(frame_lines) + "\n")
             sys.stdout.flush()
 
             if duration is not None and elapsed >= duration:
@@ -191,7 +203,7 @@ def main():
 
             time.sleep(frame_delay)
 
-        # Ensure final cursor is below the output
+        # Output extra newline when done
         sys.stdout.write("\n")
         sys.stdout.flush()
 
