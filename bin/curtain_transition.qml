@@ -23,62 +23,136 @@ ShellRoot {
       WlrLayershell.layer: WlrLayer.Bottom
       exclusionMode: ExclusionMode.Ignore
 
-      // Top-to-Bottom Curtain Panel (Portal.jpg dropping smoothly from top)
+      // Left curtain panel (Displays the left 50% of Portal.jpg)
       Item {
-        id: curtainPanel
-        width: win.width
+        id: leftCurtain
+        width: Math.ceil(win.width / 2)
         height: win.height
         x: 0
         y: -win.height
         clip: true
 
         Image {
-          anchors.fill: parent
+          width: win.width
+          height: win.height
+          x: 0
+          y: 0
           source: "file:///home/doe/.local/bin/Portal.jpg"
           fillMode: Image.PreserveAspectCrop
           asynchronous: false
           cache: true
         }
 
-        // Cyberpunk neon bottom edge border
+        // Cyberpunk neon right vertical edge border (when opening to sides)
+        Rectangle {
+          anchors.right: parent.right
+          width: 3
+          height: parent.height
+          color: "#00f5d4"
+        }
+        Rectangle {
+          anchors.right: parent.right
+          anchors.rightMargin: 3
+          width: 2
+          height: parent.height
+          color: "#ffb7d5"
+          opacity: 0.7
+        }
+
+        // Cyberpunk neon bottom horizontal border (when dropping from top)
         Rectangle {
           anchors.bottom: parent.bottom
           width: parent.width
           height: 3
           color: "#00f5d4"
         }
+      }
+
+      // Right curtain panel (Displays the right 50% of Portal.jpg)
+      Item {
+        id: rightCurtain
+        width: Math.ceil(win.width / 2)
+        height: win.height
+        x: Math.floor(win.width / 2)
+        y: -win.height
+        clip: true
+
+        Image {
+          width: win.width
+          height: win.height
+          x: -Math.floor(win.width / 2)
+          y: 0
+          source: "file:///home/doe/.local/bin/Portal.jpg"
+          fillMode: Image.PreserveAspectCrop
+          asynchronous: false
+          cache: true
+        }
+
+        // Cyberpunk neon left vertical edge border (when opening to sides)
         Rectangle {
-          anchors.bottom: parent.bottom
-          anchors.bottomMargin: 3
-          width: parent.width
-          height: 2
+          anchors.left: parent.left
+          width: 3
+          height: parent.height
+          color: "#00f5d4"
+        }
+        Rectangle {
+          anchors.left: parent.left
+          anchors.leftMargin: 3
+          width: 2
+          height: parent.height
           color: "#ffb7d5"
           opacity: 0.7
+        }
+
+        // Cyberpunk neon bottom horizontal border (when dropping from top)
+        Rectangle {
+          anchors.bottom: parent.bottom
+          width: parent.width
+          height: 3
+          color: "#00f5d4"
         }
       }
 
       SequentialAnimation {
         running: true
 
-        // 1. Drop Portal curtain from top to bottom (từ trên xuống)
-        NumberAnimation {
-          target: curtainPanel
-          property: "y"
-          to: 0
-          duration: 260
-          easing.type: Easing.OutCubic
+        // 1. INTRO: Drop both panels together from top to bottom (từ trên xuống)
+        ParallelAnimation {
+          NumberAnimation {
+            target: leftCurtain
+            property: "y"
+            to: 0
+            duration: 260
+            easing.type: Easing.OutCubic
+          }
+          NumberAnimation {
+            target: rightCurtain
+            property: "y"
+            to: 0
+            duration: 260
+            easing.type: Easing.OutCubic
+          }
         }
 
-        // 2. Hold momentarily while new wallpaper starts in background
+        // 2. HOLD: Brief pause while live wallpaper swaps behind the closed Portal
         PauseAnimation { duration: 150 }
 
-        // 3. Roll Portal curtain back up to reveal new wallpaper
-        NumberAnimation {
-          target: curtainPanel
-          property: "y"
-          to: -win.height
-          duration: 300
-          easing.type: Easing.InCubic
+        // 3. OUTRO: Split and open curtains outward to both sides (mở ra 2 bên)
+        ParallelAnimation {
+          NumberAnimation {
+            target: leftCurtain
+            property: "x"
+            to: -leftCurtain.width
+            duration: 300
+            easing.type: Easing.InCubic
+          }
+          NumberAnimation {
+            target: rightCurtain
+            property: "x"
+            to: win.width
+            duration: 300
+            easing.type: Easing.InCubic
+          }
         }
 
         ScriptAction {
