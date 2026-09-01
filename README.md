@@ -12,7 +12,7 @@
 
 ## 📸 Overview & Aesthetic Philosophy
 
-**Virtual☆Paradise** transforms your Arch Linux / Omarchy desktop into a high-performance, neon-pastel cyberpunk command center. Designed with meticulous attention to detail, every element—from hardware fan cooling to terminal omnisearch and live video wallpaper transitions—delivers fluid 60fps animations, glassmorphism transparency, and rich TrueColor ergonomics.
+**Virtual☆Paradise** transforms your Arch Linux / Omarchy desktop into a high-performance, neon-pastel cyberpunk command center. Designed with meticulous attention to detail, every element—from hardware fan cooling to terminal omnisearch, live video wallpaper transitions, and full boot-to-shutdown cinematic animations—delivers fluid 60fps animations, glassmorphism transparency, and rich TrueColor ergonomics.
 
 ![Virtual Paradise Desktop Preview](preview.png)
 
@@ -39,7 +39,20 @@
 
 ---
 
-### 3. ⚡ 5-Terminal Development Rice (`SUPER + Q`)
+### 3. 🚀 Cinematic Boot & Shutdown Animation Engine
+* **Boot & LUKS Encryption Screen (`Miku_intro.gif`):**
+  * Plays the full 504-frame 1080p animation at native ~9.09 FPS during Plymouth boot and disk decryption.
+  * **Instant Lazy-Loading Architecture:** Frame 1 renders in `<15ms` with `0s` startup delay. Subsequent frames load on-demand, preventing multi-gigabyte RAM spikes and CPU lockups.
+  * **Minimalist Aesthetic:** Password entry box is anchored at the bottom edge, leaving Miku 100% visible with zero obscuring text or logos.
+  * **SDDM Display Manager:** QtQuick6 login screen natively renders `Miku_intro.gif` with 20% acrylic darkness overlay.
+* **Seamless Fullscreen Outro Shutdown (`Miku_outro.gif`):**
+  * Plays 144-frame Miku outro animation on desktop and carries through Plymouth until hardware poweroff.
+  * **Zero Black Screen Handover:** Custom systemd service drop-ins eliminate the 2-second SDDM wait gap, enabling Plymouth to claim DRM immediately upon session exit.
+  * **Cyberpunk Gradient Statusline:** Glowing `󰐥 Shutting down system...` status rendered in horizontal Miku Cyan ➔ Hacker Green ➔ Sakura Pink gradient.
+
+---
+
+### 4. ⚡ 5-Terminal Development Rice (`SUPER + Q`)
 Launches a complete 5-pane cyberpunk development workspace in microseconds via Wayland socket dispatch:
 1. 🖥️ **`fastfetch`** — Master left panel with system information and high-res anime Braille logo.
 2. 📊 **`btop`** — Top-right real-time CPU, GPU, memory, and process monitor in TrueColor.
@@ -49,7 +62,7 @@ Launches a complete 5-pane cyberpunk development workspace in microseconds via W
 
 ---
 
-### 4. 🔍 Unified Search☆Hub (`f` Command)
+### 5. 🔍 Unified Search☆Hub (`f` Command)
 * **100% Nerd Font Standardization:** Fully decorated with crisp Nerd Font glyphs (`󰍉`, ``, `󰈙`, ``, ``, ``).
 * **Omnisearch Pipeline:** Single unified search engine prioritizing:
   1. ` ` Directories (`fd -t d`) $\rightarrow$ Instant `cd`
@@ -60,18 +73,18 @@ Launches a complete 5-pane cyberpunk development workspace in microseconds via W
 
 ---
 
-### 5. 📝 Micro Editor Cyberpunk Rice
+### 6. 📝 Micro Editor Cyberpunk Rice
 * **TrueColor Theme:** `virtual-paradise.micro` custom color palette with syntax highlighting, diff gutter, and line numbers.
 * **Statusline:** Customized Nerd Font status bar (`󰈙 filename · 󰄬 Ln X, Col Y`).
 
 ---
 
-### 6. ❄️ Hardware Cooler Boost (`SUPER + C`)
+### 7. ❄️ Hardware Cooler Boost (`SUPER + C`)
 * **Instant Thermal Management:** One-key toggle that drives laptop/desktop cooling fans to maximum RPM, displaying an on-screen desktop OSD.
 
 ---
 
-### 7. 🚨 Window Error Shake & Neon Red Border Hook
+### 8. 🚨 Window Error Shake & Neon Red Border Hook
 * When any terminal command returns a non-zero exit code, Hyprland automatically shakes the active window and turns its border glowing neon red.
 
 ---
@@ -104,9 +117,9 @@ omarchy-virtual-paradise/
 ├── backgrounds/                # Live video streams, animated GIFs & static wallpapers
 │   ├── Aura_farming.gif        # Aura Farming anime live wallpaper (720p 60fps)
 │   ├── Big_city.jpg            # Default 1080p static Cyberpunk city artwork
-│   ├── Miku_intro.gif          # 1080p Miku boot / SDDM login animated wallpaper
+│   ├── Miku_intro.gif          # 1080p Miku boot / SDDM login animated wallpaper (504 frames)
 │   ├── Miku_live.mp4           # Hatsune Miku 1080p 60fps live video wallpaper
-│   ├── Miku_outro.gif          # 1080p Miku shutdown / logout animated wallpaper
+│   ├── Miku_outro.gif          # 1080p Miku shutdown / logout animated wallpaper (144 frames)
 │   ├── Night_city.gif          # Cyberpunk night city live wallpaper (1080p)
 │   └── Portal.jpg              # Curtain transition artwork (3840x1080)
 ├── bin/                        # CLI helper tools, orchestrators & transition overlays
@@ -115,6 +128,7 @@ omarchy-virtual-paradise/
 │   ├── hypr_window_error_shake.sh   # Window shake & glowing red error hook
 │   ├── logout_splash.qml       # Fullscreen Miku outro shutdown / logout animated splash
 │   ├── memory_detail_notify.sh # Memory detail desktop notification dispatcher
+│   ├── Miku_outro.gif          # Standalone asset for logout splash runner
 │   ├── momoisay                # Animated Saiba Momoi ASCII mascot dialogue generator
 │   ├── omarchy-system-logout   # Animated logout wrapper with Miku outro
 │   ├── omarchy-system-reboot   # Animated reboot wrapper with Miku outro
@@ -162,6 +176,11 @@ omarchy-virtual-paradise/
 │   ├── system-update/          # System update notification widget
 │   ├── weather/                # Weather forecast widget
 │   └── workspaces/             # Workspace switcher & window indicators
+├── plymouth/                   # Plymouth boot & shutdown theme configuration
+│   ├── omarchy.script          # Instant lazy-loading Plymouth animation engine
+│   └── override.conf           # Systemd service drop-in (zero black screen delay)
+├── sddm/                       # SDDM login display manager theme configuration
+│   └── Main.qml                # Animated login interface with Miku_intro.gif
 ├── shell/                      # Shell configurations & status bar layouts
 │   ├── shell.json              # Status bar layout (transparency off, custom modules)
 │   └── zshrc                   # Cyberpunk Zsh configuration with Search☆Hub & aliases
@@ -180,7 +199,7 @@ omarchy-virtual-paradise/
 ├── hyprland-preview-share-picker.css # Screen sharing picker dialog styles
 ├── hyprlock.conf               # Theme lock screen color overrides
 ├── icons.theme                 # Icon theme definition
-├── install.sh                  # Automated, idempotent installation script
+├── install.sh                  # Automated, idempotent 10-step installation script
 ├── keyboard.rgb                # RGB keyboard backlighting profile
 ├── kitty.conf                  # Kitty terminal theme profile
 ├── LICENSE                     # MIT License
@@ -188,6 +207,7 @@ omarchy-virtual-paradise/
 ├── preview.png                 # Theme screenshot
 ├── README.md                   # Comprehensive project documentation
 ├── shell.toml                  # Shell environment variables
+├── unlock.png                  # Master unlock logo
 ├── vscode.json                 # VS Code theme configuration
 └── vscode-theme.json           # VS Code color token definitions
 ```
@@ -196,7 +216,7 @@ omarchy-virtual-paradise/
 
 ## 🚀 Installation Guide
 
-### Option 1: Automated Installation (Recommended)
+### Option 1: Full Automated Installation (Recommended)
 
 Clone the repository and run the automated installer:
 
@@ -207,18 +227,37 @@ chmod +x install.sh
 ./install.sh
 ```
 
-The installer will automatically:
-1. Verify and install any missing packages (`cava`, `btop`, `fastfetch`, `micro`, `fortune-mod`, `mpvpaper`, `ripgrep`, `fd`, etc.).
-2. Deploy theme assets, wallpapers, and fonts.
-3. Configure and calibrate Quickshell plugins dynamically for your username.
-4. Set up Hyprland keybindings, look'n'feel, and autostart scripts.
-5. Install CLI helper tools to `~/.local/bin/`.
-6. Configure `~/.zshrc` with the Search☆Hub engine and compile bytecode cache.
-7. Apply the theme and initialize the live video wallpaper immediately.
+The installer will execute **10 comprehensive steps**:
+1. Verify and install missing packages (`cava`, `btop`, `fastfetch`, `micro`, `fortune-mod`, `mpvpaper`, `ripgrep`, `fd`, `ffmpeg`, etc.).
+2. Create runtime directories and backup existing configurations.
+3. Calibrate and install all 18 Quickshell plugins dynamically for your username (`${USER}.*`).
+4. Configure status bar layout and quick action menu extensions.
+5. Deploy Hyprland keybindings, look'n'feel, and autostart scripts.
+6. Install CLI helper tools and wrappers to `~/.local/bin/`.
+7. Install component themes (Cava, Btop, Fastfetch, Micro).
+8. Synchronize theme assets and wallpaper playlists.
+9. **Configure Plymouth boot animation, SDDM display manager & rebuild UKI / initramfs** (prompts for sudo).
+10. Configure `~/.zshrc` / `~/.bashrc` with Search☆Hub and error shake hooks.
+
+---
+
+### Option 2: Selective Installation Flags
+
+* **User-Space Only (No sudo required):**
+  ```bash
+  ./install.sh --no-boot
+  ```
+  Installs all Hyprland configs, Quickshell plugins, terminal themes, Search☆Hub, and live wallpapers without touching system files or rebuilding the UKI.
+
+* **Boot & Shutdown Animations Only:**
+  ```bash
+  sudo ./install.sh --boot-only
+  ```
+  Deploys the Plymouth lazy-loading animation engine, SDDM animated login screen, systemd drop-ins, and regenerates the UKI kernel image.
 
 ---
 
 ## 📜 License
 
-This project is licensed under the [MIT License](LICENSE).
+This project is licensed under the [MIT License](LICENSE).  
 Made with 💖 for the Omarchy & Arch Linux community.

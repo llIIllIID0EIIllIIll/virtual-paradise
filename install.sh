@@ -16,10 +16,23 @@ CACHE_DIR="${XDG_CACHE_HOME:-$HOME/.cache}"
 BACKUP_TIMESTAMP="$(date +%Y%m%d_%H%M%S)"
 CURRENT_USER="${USER:-$(id -un)}"
 IS_HOOK=0
+ENABLE_BOOT=1
+BOOT_ONLY=0
 
-if [[ "$1" == "--hook" ]]; then
-  IS_HOOK=1
-fi
+for arg in "$@"; do
+  case "$arg" in
+    --hook)
+      IS_HOOK=1
+      ENABLE_BOOT=0
+      ;;
+    --no-boot)
+      ENABLE_BOOT=0
+      ;;
+    --boot-only)
+      BOOT_ONLY=1
+      ;;
+  esac
+done
 
 # Color helpers
 C_CYAN="\033[38;2;0;245;212m"
@@ -29,6 +42,8 @@ C_RED="\033[38;2;255;0;85m"
 C_RESET="\033[0m"
 C_BOLD="\033[1m"
 C_DIM="\033[2m"
+
+TOTAL_STEPS="10"
 
 log_step() {
   local num="$1"
@@ -68,9 +83,104 @@ if [[ $IS_HOOK -eq 0 ]]; then
 fi
 
 # ------------------------------------------------------------------------------
+# Boot & Shutdown Animations Setup Function (Shared by full and --boot-only mode)
+# ------------------------------------------------------------------------------
+INSTALL_BOOT_ANIMATIONS() {
+  log_step "9" "$TOTAL_STEPS" "Configuring Plymouth Boot Animation, SDDM Display Manager & UKI Kernel..."
+
+  local can_sudo=0
+  local SUDO_CMD=""
+
+  if (( EUID == 0 )); then
+    can_sudo=1
+    SUDO_CMD=""
+  elif command -v sudo &>/dev/null && sudo -v 2>/dev/null; then
+    can_sudo=1
+    SUDO_CMD="sudo"
+  elif command -v sudo &>/dev/null; then
+    log_info "  ${C_PINK}🔑 Requesting sudo permission for system-wide Plymouth and SDDM setup...${C_RESET}"
+    if sudo -v; then
+      can_sudo=1
+      SUDO_CMD="sudo"
+    fi
+  fi
+
+  if [[ $can_sudo -eq 1 ]]; then
+    # 1. SDDM Setup
+    local sddm_theme_dir="/usr/share/sddm/themes/omarchy"
+    if [[ -d "$sddm_theme_dir" ]]; then
+      if [[ -f "$REPO_DIR/sddm/Main.qml" ]]; then
+        $SUDO_CMD cp "$REPO_DIR/sddm/Main.qml" "$sddm_theme_dir/Main.qml"
+      fi
+      if [[ -f "$REPO_DIR/backgrounds/Miku_intro.gif" ]]; then
+        $SUDO_CMD cp "$REPO_DIR/backgrounds/Miku_intro.gif" "$sddm_theme_dir/Miku_intro.gif"
+      fi
+      log_sub "Configured SDDM login theme with animated Miku_intro.gif"
+    fi
+
+    # 2. Plymouth Theme Setup
+    local plymouth_theme_dir="/usr/share/plymouth/themes/omarchy"
+    if [[ -d "$plymouth_theme_dir" ]]; then
+      if [[ -f "$REPO_DIR/plymouth/omarchy.script" ]]; then
+        $SUDO_CMD cp "$REPO_DIR/plymouth/omarchy.script" "$plymouth_theme_dir/omarchy.script"
+      fi
+
+      # Extract intro frames (504 frames) if missing
+      if [[ ! -f "$plymouth_theme_dir/intro-504.png" ]] && [[ -f "$REPO_DIR/backgrounds/Miku_intro.gif" ]]; then
+        log_sub "Extracting 504 frames from Miku_intro.gif for Plymouth..."
+        $SUDO_CMD ffmpeg -y -loglevel error -i "$REPO_DIR/backgrounds/Miku_intro.gif" "$plymouth_theme_dir/intro-%d.png"
+      fi
+
+      # Extract outro frames (144 frames) if missing
+      if [[ ! -f "$plymouth_theme_dir/outro-144.png" ]] && [[ -f "$REPO_DIR/backgrounds/Miku_outro.gif" ]]; then
+        log_sub "Extracting 144 frames from Miku_outro.gif for Plymouth..."
+        $SUDO_CMD ffmpeg -y -loglevel error -i "$REPO_DIR/backgrounds/Miku_outro.gif" "$plymouth_theme_dir/outro-%d.png"
+      fi
+
+      # Fallback single frame images
+      if [[ -f "$plymouth_theme_dir/intro-1.png" ]]; then
+        $SUDO_CMD cp "$plymouth_theme_dir/intro-1.png" "$plymouth_theme_dir/background.png" 2>/dev/null || true
+      fi
+      if [[ -f "$plymouth_theme_dir/outro-1.png" ]]; then
+        $SUDO_CMD cp "$plymouth_theme_dir/outro-1.png" "$plymouth_theme_dir/background-shutdown.png" 2>/dev/null || true
+      fi
+
+      # Systemd overrides for instant Plymouth handover (no SDDM delay)
+      $SUDO_CMD mkdir -p /etc/systemd/system/plymouth-poweroff.service.d /etc/systemd/system/plymouth-reboot.service.d
+      if [[ -f "$REPO_DIR/plymouth/override.conf" ]]; then
+        $SUDO_CMD cp "$REPO_DIR/plymouth/override.conf" "/etc/systemd/system/plymouth-poweroff.service.d/override.conf"
+        $SUDO_CMD cp "$REPO_DIR/plymouth/override.conf" "/etc/systemd/system/plymouth-reboot.service.d/override.conf"
+        $SUDO_CMD systemctl daemon-reload
+      fi
+
+      $SUDO_CMD plymouth-set-default-theme omarchy 2>/dev/null || true
+      log_sub "Configured Plymouth theme with instant lazy-loading animation engine"
+
+      # Rebuild UKI / initramfs
+      if command -v limine-mkinitcpio &>/dev/null; then
+        log_sub "Rebuilding UKI image with limine-mkinitcpio..."
+        $SUDO_CMD limine-mkinitcpio >/dev/null 2>&1 || log_warn "limine-mkinitcpio failed; check boot partition."
+      elif command -v mkinitcpio &>/dev/null; then
+        log_sub "Rebuilding initramfs with mkinitcpio -P..."
+        $SUDO_CMD mkinitcpio -P >/dev/null 2>&1 || log_warn "mkinitcpio failed."
+      fi
+    fi
+  else
+    log_warn "Sudo privileges not available. Skipping system-wide Plymouth/SDDM setup."
+    log_warn "Run 'sudo ./install.sh --boot-only' to enable boot & shutdown animations."
+  fi
+}
+
+if [[ $BOOT_ONLY -eq 1 ]]; then
+  INSTALL_BOOT_ANIMATIONS
+  echo -e "\n${C_BOLD}${C_GREEN}✨ Boot and shutdown animations updated successfully!${C_RESET}\n"
+  exit 0
+fi
+
+# ------------------------------------------------------------------------------
 # 1. Check & Install Missing System Dependencies
 # ------------------------------------------------------------------------------
-log_step "1" "9" "Checking and installing required system packages..."
+log_step "1" "$TOTAL_STEPS" "Checking and installing required system packages..."
 
 CHECK_AND_INSTALL_PACKAGES() {
   local REQUIRED_PKGS=(
@@ -89,6 +199,7 @@ CHECK_AND_INSTALL_PACKAGES() {
     "rsync"
     "wl-clipboard"
     "ncurses"
+    "ffmpeg"
   )
   local AUR_PKGS=(
     "mpvpaper"
@@ -134,7 +245,7 @@ fi
 # ------------------------------------------------------------------------------
 # 2. Prepare Target Directories
 # ------------------------------------------------------------------------------
-log_step "2" "9" "Creating configuration and runtime directories..."
+log_step "2" "$TOTAL_STEPS" "Creating configuration and runtime directories..."
 mkdir -p "$CONFIG_DIR/omarchy/themes/$THEME_NAME/backgrounds"
 mkdir -p "$CONFIG_DIR/omarchy/plugins"
 mkdir -p "$CONFIG_DIR/omarchy/hooks/theme-set.d"
@@ -151,7 +262,7 @@ log_sub "Directories verified under $CONFIG_DIR and $LOCAL_BIN"
 # ------------------------------------------------------------------------------
 # 3. Install Custom Omarchy Bar Plugins with dynamic user detection
 # ------------------------------------------------------------------------------
-log_step "3" "9" "Installing custom Quickshell plugins for user '$CURRENT_USER'..."
+log_step "3" "$TOTAL_STEPS" "Installing custom Quickshell plugins for user '$CURRENT_USER'..."
 if [[ -d "$REPO_DIR/plugins" ]]; then
   for pdir in "$REPO_DIR"/plugins/*; do
     if [[ -d "$pdir" ]]; then
@@ -175,28 +286,23 @@ fi
 # ------------------------------------------------------------------------------
 # 4. Install Status Bar Layout (shell.json) & Menu Extensions
 # ------------------------------------------------------------------------------
-log_step "4" "9" "Installing status bar layout (transparency off) & menu extensions..."
+log_step "4" "$TOTAL_STEPS" "Installing status bar layout (transparency off) & menu extensions..."
 if [[ -f "$CONFIG_DIR/omarchy/shell.json" ]] && [[ ! -f "$CONFIG_DIR/omarchy/shell.json.bak" ]]; then
   cp "$CONFIG_DIR/omarchy/shell.json" "$CONFIG_DIR/omarchy/shell.json.bak.$BACKUP_TIMESTAMP"
 fi
+
 if [[ -f "$REPO_DIR/shell/shell.json" ]]; then
-  sed -e "s/__USER__\./${CURRENT_USER}./g" \
-      "$REPO_DIR/shell/shell.json" > "$CONFIG_DIR/omarchy/shell.json"
-  log_sub "Updated ~/.config/omarchy/shell.json with calibrated [${CURRENT_USER}.*] plugins"
+  # Inject calibrated username
+  sed "s/__USER__/${CURRENT_USER}/g" "$REPO_DIR/shell/shell.json" > "$CONFIG_DIR/omarchy/shell.json"
+  log_sub "Synchronized ~/.config/omarchy/shell.json with calibrated user IDs"
 fi
 
-# Install Virtual☆Paradise Quick Actions into omarchy-menu.jsonc
-cat << 'EOF' > "$CONFIG_DIR/omarchy/extensions/omarchy-menu.jsonc"
+cat << 'EOF' > "$CONFIG_DIR/omarchy/extensions/paradise.json"
 {
-  // Virtual☆Paradise Quick Actions Menu
-  "paradise": {
-    "icon": "★",
-    "label": "Virtual☆Paradise"
-  },
   "paradise.rice": {
-    "icon": "󰨞",
-    "label": "Rice Layout (5-Terminals)",
-    "description": "Fastfetch, btop, momoisay, cava, unimatrix",
+    "icon": "󰄛",
+    "label": "5-Terminal Rice Layout",
+    "description": "Launch Cava, Btop, Matrix & Saiba Momoi ASCII",
     "action": "bash -c ~/.local/bin/rice_layout.sh"
   },
   "paradise.matrix": {
@@ -230,7 +336,7 @@ log_sub "Installed Quick Actions menu extensions"
 # ------------------------------------------------------------------------------
 # 5. Install Hyprland Look'n'Feel & Keybindings
 # ------------------------------------------------------------------------------
-log_step "5" "9" "Installing Hyprland look'n'feel, bindings, input & autostart configs..."
+log_step "5" "$TOTAL_STEPS" "Installing Hyprland look'n'feel, bindings, input & autostart configs..."
 if [[ -d "$REPO_DIR/hypr" ]]; then
   for file in "$REPO_DIR"/hypr/*.lua; do
     if [[ -f "$file" ]]; then
@@ -251,17 +357,17 @@ fi
 # ------------------------------------------------------------------------------
 # 6. Install Helper Scripts & Binaries
 # ------------------------------------------------------------------------------
-log_step "6" "9" "Installing binaries & CLI helper tools to $LOCAL_BIN..."
+log_step "6" "$TOTAL_STEPS" "Installing binaries & CLI helper tools to $LOCAL_BIN..."
 if [[ -d "$REPO_DIR/bin" ]]; then
   cp -r "$REPO_DIR"/bin/* "$LOCAL_BIN/"
   chmod +x "$LOCAL_BIN"/* 2>/dev/null || true
-  log_sub "Installed helper tools (rice_layout, momoisay, toggle_live_wallpaper, curtain_transition, etc.)"
+  log_sub "Installed helper tools (rice_layout, momoisay, toggle_live_wallpaper, logout_splash, curtain_transition, etc.)"
 fi
 
 # ------------------------------------------------------------------------------
 # 7. Install Component Themes (Btop, Cava, Fastfetch, Micro)
 # ------------------------------------------------------------------------------
-log_step "7" "9" "Installing Cava, Btop, Fastfetch & Micro editor theme profiles..."
+log_step "7" "$TOTAL_STEPS" "Installing Cava, Btop, Fastfetch & Micro editor theme profiles..."
 
 # Cava
 if [[ -f "$REPO_DIR/cava/config_bar" ]]; then
@@ -295,7 +401,7 @@ log_sub "Component themes installed (Cava, Btop, Fastfetch, Micro)"
 # ------------------------------------------------------------------------------
 # 8. Install Theme Assets & Backgrounds
 # ------------------------------------------------------------------------------
-log_step "8" "9" "Installing theme assets, live wallpapers & hooks..."
+log_step "8" "$TOTAL_STEPS" "Installing theme assets, live wallpapers & hooks..."
 if [[ "$REPO_DIR" != "$CONFIG_DIR/omarchy/themes/$THEME_NAME" ]]; then
   rsync -a --delete \
     --exclude='.git' \
@@ -321,9 +427,18 @@ chmod +x "$CONFIG_DIR/omarchy/hooks/theme-set.d/virtual-paradise.sh"
 log_sub "Theme assets & automatic synchronization hooks ready"
 
 # ------------------------------------------------------------------------------
-# 9. Configure Shell Environment (Zsh & Bash) & Error Hooks
+# 9. Install Boot & Shutdown Animations (Plymouth, SDDM & UKI)
 # ------------------------------------------------------------------------------
-log_step "9" "9" "Configuring shell environment, Search☆Hub, aliases & error shake hooks..."
+if [[ $ENABLE_BOOT -eq 1 ]]; then
+  INSTALL_BOOT_ANIMATIONS
+else
+  log_step "9" "$TOTAL_STEPS" "Boot & shutdown animation setup skipped (--no-boot)"
+fi
+
+# ------------------------------------------------------------------------------
+# 10. Configure Shell Environment (Zsh & Bash) & Error Hooks
+# ------------------------------------------------------------------------------
+log_step "10" "$TOTAL_STEPS" "Configuring shell environment, Search☆Hub, aliases & error shake hooks..."
 
 # Synchronize curated zshrc if available
 if [[ -f "$REPO_DIR/shell/zshrc" ]]; then
