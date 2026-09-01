@@ -29,6 +29,7 @@ global.fake_progress_active = 0;
 global.fake_progress_start_time = 0.0;
 global.password_shown = 0;
 global.max_progress = 0.0;
+global.progress_frame = 0;
 
 fun refresh_callback() {
   global.animation_frame++;
@@ -53,7 +54,8 @@ fun refresh_callback() {
   }
 
   if (global.fake_progress_active == 1) {
-    elapsed_time = global.animation_frame / 50.0;
+    global.progress_frame++;
+    elapsed_time = global.progress_frame / 50.0;
     time_ratio = elapsed_time / global.fake_progress_duration;
     if (time_ratio > 1.0) time_ratio = 1.0;
 
@@ -105,7 +107,7 @@ fun hide_password_dialog() {
 
 fun start_fake_progress() {
   global.fake_progress_active = 1;
-  global.animation_frame = 0;
+  global.progress_frame = 0;
   global.max_progress = 0.0;
   global.fake_progress = 0.0;
   global.fake_progress_start_time = 0.0;

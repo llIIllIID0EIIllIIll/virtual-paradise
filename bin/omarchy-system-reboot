@@ -1,21 +1,26 @@
 #!/bin/bash
 # ==============================================================================
-#  Virtual☆Paradise — Seamless Outro Reboot
+#  Virtual☆Paradise — Seamless Outro Reboot with Curtain Transition
 # ==============================================================================
 
-# Launch Miku outro animated splash in background
+# 1. Launch curtain transition on overlay layer (closes from 2 halves inward)
+if command -v quickshell &>/dev/null && [[ -f "$HOME/.local/bin/curtain_transition.qml" ]]; then
+  CURTAIN_LAYER="overlay" quickshell -p "$HOME/.local/bin/curtain_transition.qml" >/dev/null 2>&1 &
+fi
+
+# 2. Wait until curtains are fully closed covering the screen (280ms)
+sleep 0.28
+
+# 3. Behind closed curtains: close windows & launch Miku outro splash
+omarchy-state clear re*-required 2>/dev/null || true
+omarchy-hyprland-window-close-all 2>/dev/null || true
+
 if command -v quickshell &>/dev/null && [[ -f "$HOME/.local/bin/logout_splash.qml" ]]; then
   SPLASH_TEXT="󰜉 Rebooting system..." quickshell -p "$HOME/.local/bin/logout_splash.qml" >/dev/null 2>&1 &
 fi
 
-# Wait for splash window to map
-sleep 0.25
-
-omarchy-state clear re*-required 2>/dev/null || true
-omarchy-hyprland-window-close-all 2>/dev/null || true
-
-# Play outro animation smoothly before handover
+# 4. Curtains open to reveal Miku outro; play smoothly for 3.5s before handover
 sleep 3.5
 
-# Hand over to systemd reboot — Plymouth starts concurrently without waiting for SDDM
+# 5. Hand over to systemd reboot — Plymouth starts concurrently without waiting for SDDM
 systemctl reboot --no-wall

@@ -20,7 +20,7 @@ ShellRoot {
 
       color: "transparent"
       WlrLayershell.namespace: "curtain-transition"
-      WlrLayershell.layer: WlrLayer.Bottom
+      WlrLayershell.layer: (Quickshell.env("CURTAIN_LAYER") === "overlay") ? WlrLayer.Overlay : WlrLayer.Bottom
       exclusionMode: ExclusionMode.Ignore
 
       readonly property int halfWidth: Math.ceil(win.width / 2)
