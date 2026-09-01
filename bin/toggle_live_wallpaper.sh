@@ -64,14 +64,14 @@ set_live() {
       sleep 0.22
     fi
 
-    # Set static wallpaper as rock-solid background fallback
+    # Update static background symlink quietly without triggering duplicate compositor animation
     if [[ -f "$STATIC_BG" ]]; then
-      omarchy theme bg set "$STATIC_BG" 2>/dev/null || true
+      ln -nsf "$STATIC_BG" "$HOME/.local/state/omarchy/current/background" 2>/dev/null || true
     fi
     # Launch mpvpaper hardware accelerated on all monitors
     killall -9 mpvpaper 2>/dev/null || true
     if command -v mpvpaper &>/dev/null; then
-      mpvpaper -vs -o "no-audio loop" '*' "$target" >/dev/null 2>&1 &
+      nohup mpvpaper -vs -o "no-audio loop" '*' "$target" >/dev/null 2>&1 &
     fi
     echo "$target" > "$STATE_FILE"
   else

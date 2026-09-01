@@ -174,7 +174,7 @@ hl.animation({ leaf = "fade", enabled = true, speed = 3.8, bezier = "quickFade" 
 
 -- Layers & Popups (Launcher, menus, notifications)
 hl.animation({ leaf = "layers", enabled = true, speed = 4.0, bezier = "fluentDecel", style = "slidefade 20%" })
-hl.animation({ leaf = "layersIn", enabled = true, speed = 4.2, bezier = "cyberSpring", style = "slidefade 20%" })
+hl.animation({ leaf = "layersIn", enabled = true, speed = 4.2, bezier = "fluentDecel", style = "slidefade 20%" })
 hl.animation({ leaf = "layersOut", enabled = true, speed = 3.2, bezier = "quickFade", style = "fade" })
 
 -- Workspace transitions (Silky Smooth Slidefade with 35% Alpha Blend)
@@ -184,6 +184,10 @@ hl.animation({ leaf = "specialWorkspace", enabled = true, speed = 4.2, bezier = 
 -- ==============================================================================
 --  9. POPUPS & PANELS LAYER ANIMATIONS (Smooth Slidefade without Background Dim/Blur)
 -- ==============================================================================
+-- Disable compositor layer animation on wallpaper and transition overlays
+-- (Ensures only curtain_transition.qml internal animation runs cleanly with zero bounce)
+hl.layer_rule({ match = { namespace = "^(curtain-transition|mpvpaper|omarchy-background|logout-splash)$" }, no_anim = true, animation = "none" })
+
 hl.layer_rule({ match = { namespace = "^(omarchy-menu|omarchy-keyboard-panel|omarchy-clipboard|omarchy-emojis|omarchy-bar-panel|omarchy-image-selector)$" }, animation = "slidefade 25%" })
 hl.layer_rule({ match = { namespace = "omarchy-notifications" }, animation = "slidefade 25%" })
 hl.layer_rule({ match = { namespace = "omarchy-osd" }, animation = "slidefadevert 30%" })
