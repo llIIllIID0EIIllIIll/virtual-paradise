@@ -3,8 +3,8 @@
 Window.SetBackgroundTopColor(0.027, 0.031, 0.051);
 Window.SetBackgroundBottomColor(0.027, 0.031, 0.051);
 
-global.intro_count = 504;
-global.outro_count = 144;
+global.intro_count = 259;
+global.outro_count = 72;
 global.mode = Plymouth.GetMode();
 
 # Instant 0ms initial frame setup:

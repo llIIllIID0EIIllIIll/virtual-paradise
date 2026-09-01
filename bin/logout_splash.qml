@@ -27,7 +27,7 @@ ShellRoot {
       AnimatedImage {
         id: outroGif
         anchors.fill: parent
-        source: Qt.resolvedUrl("Miku_outro.gif")
+        source: Qt.resolvedUrl("Miku_missing.gif")
         fillMode: Image.PreserveAspectCrop
         playing: true
         asynchronous: false

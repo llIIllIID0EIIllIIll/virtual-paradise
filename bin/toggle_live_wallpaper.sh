@@ -15,20 +15,24 @@
 BG_DIR="$HOME/.config/omarchy/themes/virtual-paradise/backgrounds"
 STATE_DIR="$HOME/.local/state/virtual-paradise"
 STATE_FILE="$STATE_DIR/current_live_wallpaper"
-STATIC_BG="$BG_DIR/Big_city.jpg"
+STATIC_BG="$BG_DIR/Miku_missing.jpg"
 
 mkdir -p "$STATE_DIR"
 
 get_live_items() {
+  local playlist=(
+    "$BG_DIR/Miku_live.mp4"
+    "$BG_DIR/Miku_missing.gif"
+    "$BG_DIR/Miku_animated_full.gif"
+    "$BG_DIR/Miku_animated1.gif"
+    "$BG_DIR/Miku_animated2.gif"
+    "$BG_DIR/Miku_animated3.gif"
+  )
   local items=()
-  for ext in mp4 gif webm mkv; do
-    for f in "$BG_DIR"/*."$ext"; do
-      if [[ -f "$f" ]]; then
-        local bname=$(basename "$f")
-        [[ "$bname" =~ ^(Sleeping_miku|lock).* ]] && continue
-        items+=("$f")
-      fi
-    done
+  for f in "${playlist[@]}"; do
+    if [[ -f "$f" ]]; then
+      items+=("$f")
+    fi
   done
   echo "${items[@]}"
 }

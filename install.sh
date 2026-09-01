@@ -112,10 +112,10 @@ INSTALL_BOOT_ANIMATIONS() {
       if [[ -f "$REPO_DIR/sddm/Main.qml" ]]; then
         $SUDO_CMD cp "$REPO_DIR/sddm/Main.qml" "$sddm_theme_dir/Main.qml"
       fi
-      if [[ -f "$REPO_DIR/backgrounds/Miku_intro.gif" ]]; then
-        $SUDO_CMD cp "$REPO_DIR/backgrounds/Miku_intro.gif" "$sddm_theme_dir/Miku_intro.gif"
+      if [[ -f "$REPO_DIR/backgrounds/Miku_animated_full.gif" ]]; then
+        $SUDO_CMD cp "$REPO_DIR/backgrounds/Miku_animated_full.gif" "$sddm_theme_dir/Miku_animated_full.gif"
       fi
-      log_sub "Configured SDDM login theme with animated Miku_intro.gif"
+      log_sub "Configured SDDM login theme with animated Miku_animated_full.gif"
     fi
 
     # 2. Plymouth Theme Setup
@@ -125,16 +125,16 @@ INSTALL_BOOT_ANIMATIONS() {
         $SUDO_CMD cp "$REPO_DIR/plymouth/omarchy.script" "$plymouth_theme_dir/omarchy.script"
       fi
 
-      # Extract intro frames (504 frames) if missing
-      if [[ ! -f "$plymouth_theme_dir/intro-504.png" ]] && [[ -f "$REPO_DIR/backgrounds/Miku_intro.gif" ]]; then
-        log_sub "Extracting 504 frames from Miku_intro.gif for Plymouth..."
-        $SUDO_CMD ffmpeg -y -loglevel error -i "$REPO_DIR/backgrounds/Miku_intro.gif" "$plymouth_theme_dir/intro-%d.png"
+      # Extract intro frames (259 frames) if missing
+      if [[ ! -f "$plymouth_theme_dir/intro-259.png" ]] && [[ -f "$REPO_DIR/backgrounds/Miku_animated_full.gif" ]]; then
+        log_sub "Extracting 259 frames from Miku_animated_full.gif for Plymouth..."
+        $SUDO_CMD ffmpeg -y -loglevel error -i "$REPO_DIR/backgrounds/Miku_animated_full.gif" -vf "scale=1920:1080" "$plymouth_theme_dir/intro-%d.png"
       fi
 
-      # Extract outro frames (144 frames) if missing
-      if [[ ! -f "$plymouth_theme_dir/outro-144.png" ]] && [[ -f "$REPO_DIR/backgrounds/Miku_outro.gif" ]]; then
-        log_sub "Extracting 144 frames from Miku_outro.gif for Plymouth..."
-        $SUDO_CMD ffmpeg -y -loglevel error -i "$REPO_DIR/backgrounds/Miku_outro.gif" "$plymouth_theme_dir/outro-%d.png"
+      # Extract outro frames (72 frames) if missing
+      if [[ ! -f "$plymouth_theme_dir/outro-72.png" ]] && [[ -f "$REPO_DIR/backgrounds/Miku_missing.gif" ]]; then
+        log_sub "Extracting 72 frames from Miku_missing.gif for Plymouth..."
+        $SUDO_CMD ffmpeg -y -loglevel error -i "$REPO_DIR/backgrounds/Miku_missing.gif" -vf "scale=1920:1080" "$plymouth_theme_dir/outro-%d.png"
       fi
 
       # Fallback single frame images

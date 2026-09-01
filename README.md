@@ -21,12 +21,12 @@
 ## ✨ Key Architectural Innovations & Features
 
 ### 1. 🎬 Cinematic Portal Curtain Live Wallpaper Engine
-* **Hardware-Accelerated 60fps GPU Playback:** Seamlessly plays live video (`Miku_live.mp4`) and animated GIFs (`Aura_farming.gif`, `Night_city.gif`) via `mpvpaper` with negligible idle CPU impact.
+* **Hardware-Accelerated 60fps GPU Playback:** Seamlessly plays live video (`Miku_live.mp4`) and animated GIFs (`Miku_missing.gif`, `Miku_animated_full.gif`, `Miku_animated1.gif`, `Miku_animated2.gif`, `Miku_animated3.gif`) via `mpvpaper` with negligible idle CPU impact.
 * **Top-to-Bottom Drop & Dual-Split Reveal:** Switching wallpapers triggers a custom Quickshell overlay (`curtain_transition.qml`) where the `Portal.jpg` curtain drops smoothly from the top of the monitor (`Easing.OutCubic`), swaps the wallpaper behind the scenes, and parts down the middle outward to both sides (`Easing.InCubic`).
 * **Layer Hierarchy (`WlrLayer.Bottom`):** The transition operates above the wallpaper canvas while staying below the top status bar.
-* **Directional D-Pad Navigation:**
-  * `SUPER + ALT + UP`: Toggle Live Wallpaper on/off (switches to `Big_city.jpg` static fallback).
-  * `SUPER + ALT + RIGHT`: Next Live Wallpaper in playlist.
+* **Directional D-Pad Navigation & Playlist Order:**
+  * `SUPER + ALT + UP`: Toggle Live Wallpaper on/off (switches to `Miku_missing.jpg` static fallback).
+  * `SUPER + ALT + RIGHT`: Next Live Wallpaper in playlist (`Miku_live.mp4` [default] ➔ `Miku_missing.gif` ➔ `Miku_animated_full.gif` ➔ `Miku_animated1.gif` ➔ `Miku_animated2.gif` ➔ `Miku_animated3.gif`).
   * `SUPER + ALT + LEFT`: Previous Live Wallpaper in playlist.
 
 ---
@@ -40,13 +40,13 @@
 ---
 
 ### 3. 🚀 Cinematic Boot & Shutdown Animation Engine
-* **Boot & LUKS Encryption Screen (`Miku_intro.gif`):**
-  * Plays the full 504-frame 1080p animation at native ~9.09 FPS during Plymouth boot and disk decryption.
+* **Boot & LUKS Encryption Screen (`Miku_animated_full.gif`):**
+  * Plays the full 259-frame 1080p animation at native ~9.09 FPS during Plymouth boot and disk decryption.
   * **Instant Lazy-Loading Architecture:** Frame 1 renders in `<15ms` with `0s` startup delay. Subsequent frames load on-demand, preventing multi-gigabyte RAM spikes and CPU lockups.
   * **Minimalist Aesthetic:** Password entry box is anchored at the bottom edge, leaving Miku 100% visible with zero obscuring text or logos.
-  * **SDDM Display Manager:** QtQuick6 login screen natively renders `Miku_intro.gif` with 20% acrylic darkness overlay.
-* **Seamless Fullscreen Outro Shutdown (`Miku_outro.gif`):**
-  * Plays 144-frame Miku outro animation on desktop and carries through Plymouth until hardware poweroff.
+  * **SDDM Display Manager:** QtQuick6 login screen natively renders `Miku_animated_full.gif` with 20% acrylic darkness overlay.
+* **Seamless Fullscreen Outro Shutdown (`Miku_missing.gif`):**
+  * Plays 72-frame Miku outro animation on desktop and carries through Plymouth until hardware poweroff.
   * **Zero Black Screen Handover:** Custom systemd service drop-ins eliminate the 2-second SDDM wait gap, enabling Plymouth to claim DRM immediately upon session exit.
   * **Cyberpunk Gradient Statusline:** Glowing `󰐥 Shutting down system...` status rendered in horizontal Miku Cyan ➔ Hacker Green ➔ Sakura Pink gradient.
 
@@ -94,7 +94,7 @@ Launches a complete 5-pane cyberpunk development workspace in microseconds via W
 | Shortcut | Action | Description |
 | :--- | :--- | :--- |
 | `SUPER + Q` | **Rice Layout** | Launches 5-terminal workspace (Fastfetch, Btop, Momoisay, Cava, Matrix) |
-| `SUPER + ALT + UP` | **Toggle Live Wallpaper** | Switches between Live Video/GIF and static `Big_city.jpg` |
+| `SUPER + ALT + UP` | **Toggle Live Wallpaper** | Switches between Live Video/GIF and static `Miku_missing.jpg` |
 | `SUPER + ALT + RIGHT` | **Next Live Wallpaper** | Cycles to next live wallpaper with Portal curtain wipe transition |
 | `SUPER + ALT + LEFT` | **Prev Live Wallpaper** | Cycles to previous live wallpaper with Portal curtain wipe transition |
 | `SUPER + N` | **Next Wallpaper** | Cycles to next Omarchy theme background |
@@ -115,12 +115,13 @@ Launches a complete 5-pane cyberpunk development workspace in microseconds via W
 ```
 omarchy-virtual-paradise/
 ├── backgrounds/                # Live video streams, animated GIFs & static wallpapers
-│   ├── Aura_farming.gif        # Aura Farming anime live wallpaper (720p 60fps)
-│   ├── Big_city.jpg            # Default 1080p static Cyberpunk city artwork
-│   ├── Miku_intro.gif          # 1080p Miku boot / SDDM login animated wallpaper (504 frames)
-│   ├── Miku_live.mp4           # Hatsune Miku 1080p 60fps live video wallpaper
-│   ├── Miku_outro.gif          # 1080p Miku shutdown / logout animated wallpaper (144 frames)
-│   ├── Night_city.gif          # Cyberpunk night city live wallpaper (1080p)
+│   ├── Miku_animated_full.gif  # 1080p Miku boot / SDDM login animated wallpaper (259 frames)
+│   ├── Miku_animated1.gif      # 1080p anime animated wallpaper (504 frames)
+│   ├── Miku_animated2.gif      # 1080p anime animated wallpaper (144 frames)
+│   ├── Miku_animated3.gif      # 1080p anime animated wallpaper (72 frames)
+│   ├── Miku_live.mp4           # Hatsune Miku 1080p 60fps live video wallpaper (Default)
+│   ├── Miku_missing.gif        # 1080p Miku shutdown / logout animated wallpaper (72 frames)
+│   ├── Miku_missing.jpg        # Default 1080p static Cyberpunk fallback artwork
 │   └── Portal.jpg              # Curtain transition artwork (3840x1080)
 ├── bin/                        # CLI helper tools, orchestrators & transition overlays
 │   ├── curtain_transition.qml  # Quickshell Portal drop & dual-split transition overlay
@@ -128,7 +129,7 @@ omarchy-virtual-paradise/
 │   ├── hypr_window_error_shake.sh   # Window shake & glowing red error hook
 │   ├── logout_splash.qml       # Fullscreen Miku outro shutdown / logout animated splash
 │   ├── memory_detail_notify.sh # Memory detail desktop notification dispatcher
-│   ├── Miku_outro.gif          # Standalone asset for logout splash runner
+│   ├── Miku_missing.gif        # Standalone asset for logout splash runner
 │   ├── momoisay                # Animated Saiba Momoi ASCII mascot dialogue generator
 │   ├── omarchy-system-logout   # Animated logout wrapper with Miku outro
 │   ├── omarchy-system-reboot   # Animated reboot wrapper with Miku outro

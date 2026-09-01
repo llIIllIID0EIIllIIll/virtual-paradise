@@ -10,7 +10,7 @@ Rectangle {
   AnimatedImage {
     id: backgroundGif
     anchors.fill: parent
-    source: "Miku_intro.gif"
+    source: "Miku_animated_full.gif"
     fillMode: Image.PreserveAspectCrop
     playing: true
     asynchronous: false
