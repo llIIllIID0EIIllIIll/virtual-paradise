@@ -78,6 +78,8 @@ CHECK_AND_INSTALL_PACKAGES() {
     "btop"
     "fastfetch"
     "micro"
+    "fortune-mod"
+    "cowsay"
     "ripgrep"
     "fd"
     "mpv"
@@ -141,7 +143,9 @@ mkdir -p "$CONFIG_DIR/hypr"
 mkdir -p "$CONFIG_DIR/cava"
 mkdir -p "$CONFIG_DIR/btop/themes"
 mkdir -p "$CONFIG_DIR/fastfetch"
+mkdir -p "$CONFIG_DIR/micro/colorschemes"
 mkdir -p "$LOCAL_BIN"
+mkdir -p "$HOME/.local/state/virtual-paradise"
 log_sub "Directories verified under $CONFIG_DIR and $LOCAL_BIN"
 
 # ------------------------------------------------------------------------------
@@ -216,7 +220,7 @@ cat << 'EOF' > "$CONFIG_DIR/omarchy/extensions/omarchy-menu.jsonc"
   "paradise.livewallpaper": {
     "icon": "󰸌",
     "label": "Toggle Live Video Wallpaper",
-    "description": "Play/pause Miku 1080p live wallpaper",
+    "description": "Play/pause live wallpaper (SUPER + ALT + UP)",
     "action": "bash -c ~/.local/bin/toggle_live_wallpaper.sh"
   },
   "paradise.cooler": {
@@ -257,7 +261,7 @@ log_step "6" "9" "Installing binaries & CLI helper tools to $LOCAL_BIN..."
 if [[ -d "$REPO_DIR/bin" ]]; then
   cp -r "$REPO_DIR"/bin/* "$LOCAL_BIN/"
   chmod +x "$LOCAL_BIN"/* 2>/dev/null || true
-  log_sub "Installed helper tools (rice_layout, momoisay, toggle_live_wallpaper, etc.)"
+  log_sub "Installed helper tools (rice_layout, momoisay, toggle_live_wallpaper, curtain_transition, etc.)"
 fi
 
 # ------------------------------------------------------------------------------
@@ -268,8 +272,6 @@ log_step "7" "9" "Installing Cava, Btop, Fastfetch & Micro editor theme profiles
 # Cava
 if [[ -f "$REPO_DIR/cava/config_bar" ]]; then
   cp "$REPO_DIR/cava/config_bar" "$CONFIG_DIR/cava/config_bar"
-elif [[ -f "$REPO_DIR/cava_theme" ]]; then
-  cp "$REPO_DIR/cava_theme" "$CONFIG_DIR/cava/config_bar"
 fi
 if [[ -f "$REPO_DIR/cava/config" ]]; then
   cp "$REPO_DIR/cava/config" "$CONFIG_DIR/cava/config"
@@ -287,7 +289,6 @@ fi
 
 # Micro Editor Rice
 if [[ -d "$REPO_DIR/micro" ]]; then
-  mkdir -p "$CONFIG_DIR/micro/colorschemes"
   if [[ -f "$REPO_DIR/micro/settings.json" ]]; then
     cp "$REPO_DIR/micro/settings.json" "$CONFIG_DIR/micro/settings.json"
   fi
@@ -328,7 +329,16 @@ log_sub "Theme assets & automatic synchronization hooks ready"
 # ------------------------------------------------------------------------------
 # 9. Configure Shell Environment (Zsh & Bash) & Error Hooks
 # ------------------------------------------------------------------------------
-log_step "9" "9" "Configuring shell environment, aliases (ff, ffa) & error shake hooks..."
+log_step "9" "9" "Configuring shell environment, Search☆Hub, aliases & error shake hooks..."
+
+# Synchronize curated zshrc if available
+if [[ -f "$REPO_DIR/shell/zshrc" ]]; then
+  if [[ -f "$HOME/.zshrc" ]] && [[ ! -f "$HOME/.zshrc.bak" ]]; then
+    cp "$HOME/.zshrc" "$HOME/.zshrc.bak.$BACKUP_TIMESTAMP"
+  fi
+  cp "$REPO_DIR/shell/zshrc" "$HOME/.zshrc"
+  log_sub "Installed Virtual☆Paradise Cyberpunk ~/.zshrc with Search☆Hub"
+fi
 
 configure_shell_file() {
   local file="$1"
@@ -362,7 +372,7 @@ __omarchy_error_border_hook() {
     if [[ $exit_code -ne 0 && $__omarchy_last_err_state -eq 0 ]]; then
       __omarchy_last_err_state=1
       (~/.local/bin/hypr_window_error_shake.sh &>/dev/null &)
-    elif [[ $exit_code -eq 0 && $__omarchy_last_err_state -ne 0 ]]; then
+    elif [[ $exit_code -ne 0 && $__omarchy_last_err_state -ne 0 ]]; then
       __omarchy_last_err_state=0
       (~/.local/bin/hypr_window_error_restore.sh &>/dev/null &)
     fi
@@ -382,6 +392,7 @@ configure_shell_file "$HOME/.zshrc"
 
 if command -v zsh &>/dev/null && [[ -f "$HOME/.zshrc" ]]; then
   zsh -c "zcompile ~/.zshrc" 2>/dev/null || true
+  log_sub "Compiled ~/.zshrc bytecode cache (~/.zshrc.zwc)"
 fi
 
 # ------------------------------------------------------------------------------
@@ -418,5 +429,6 @@ if [[ $IS_HOOK -eq 0 ]]; then
   echo -e "   ${C_GREEN}SUPER + N${C_RESET}             ➔ Cycle next wallpaper"
   echo -e "   ${C_GREEN}SUPER + C${C_RESET}             ➔ Toggle Cooler Boost fan cooling"
   echo -e "   ${C_GREEN}ffa${C_RESET}                   ➔ Launch Fastfetch with high-res Anime Braille logo"
+  echo -e "   ${C_GREEN}f${C_RESET}                     ➔ Search☆Hub (Explorer, History, Process)"
   echo -e "${C_CYAN}───────────────────────────────────────────────────────────────────${C_RESET}\n"
 fi

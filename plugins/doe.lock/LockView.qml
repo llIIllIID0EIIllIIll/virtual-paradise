@@ -119,7 +119,7 @@ Item {
     AnimatedImage {
       id: wallpaperGif
       anchors.fill: parent
-      source: "file:///home/doe/.config/omarchy/plugins/doe.lock/Sleeping_miku.gif"
+      source: Qt.resolvedUrl("Sleeping_miku.gif")
       fillMode: Image.PreserveAspectCrop
       asynchronous: false
       cache: true

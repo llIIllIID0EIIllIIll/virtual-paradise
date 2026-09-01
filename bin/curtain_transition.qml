@@ -37,7 +37,7 @@ ShellRoot {
           height: win.height
           x: 0
           y: 0
-          source: "file:///home/doe/.local/bin/Portal.jpg"
+          source: Qt.resolvedUrl("Portal.jpg")
           fillMode: Image.PreserveAspectCrop
           asynchronous: false
           cache: true
@@ -82,7 +82,7 @@ ShellRoot {
           height: win.height
           x: -Math.floor(win.width / 2)
           y: 0
-          source: "file:///home/doe/.local/bin/Portal.jpg"
+          source: Qt.resolvedUrl("Portal.jpg")
           fillMode: Image.PreserveAspectCrop
           asynchronous: false
           cache: true
