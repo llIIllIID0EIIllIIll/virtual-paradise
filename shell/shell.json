@@ -1,35 +1,35 @@
 {
   "bar": {
-    "centerAnchor": "doe.clock",
+    "centerAnchor": "__USER__.clock",
     "layout": {
       "center": [
         {
-          "id": "doe.media"
+          "id": "__USER__.media"
         },
         {
           "id": "omarchy.spacer"
         },
         {
-          "id": "doe.weather"
+          "id": "__USER__.weather"
         },
         {
-          "id": "doe.clock",
+          "id": "__USER__.clock",
           "format": "d MMMM 'W'ww yyyy",
           "formatAlt": "yyyy-MM-dd HH:mm:ss",
           "verticalFormat": "HH\n—\nmm"
         },
         {
-          "id": "doe.memory"
+          "id": "__USER__.memory"
         },
         {
-          "id": "doe.cputemp"
+          "id": "__USER__.cputemp"
         },
         {
-          "id": "doe.microphone"
+          "id": "__USER__.microphone"
         },
         {
           "alwaysShow": true,
-          "id": "doe.indicators"
+          "id": "__USER__.indicators"
         },
         {
           "id": "omarchy.keyboard-layout"
@@ -37,13 +37,13 @@
       ],
       "left": [
         {
-          "id": "doe.menu"
+          "id": "__USER__.menu"
         },
         {
-          "id": "doe.workspaces"
+          "id": "__USER__.workspaces"
         },
         {
-          "id": "doe.active-window"
+          "id": "__USER__.active-window"
         }
       ],
       "right": [
@@ -51,23 +51,23 @@
           "id": "omarchy.tray"
         },
         {
-          "id": "doe.monitor"
+          "id": "__USER__.monitor"
         },
         {
-          "id": "doe.bluetooth"
+          "id": "__USER__.bluetooth"
         },
         {
-          "id": "doe.network"
+          "id": "__USER__.network"
         },
         {
-          "id": "doe.audio"
+          "id": "__USER__.audio"
         },
         {
-          "id": "doe.power",
+          "id": "__USER__.power",
           "showPercentage": true
         },
         {
-          "id": "doe.system-update"
+          "id": "__USER__.system-update"
         }
       ]
     },
@@ -80,7 +80,7 @@
   },
   "plugins": [
     {
-      "id": "doe.lock"
+      "id": "__USER__.lock"
     }
   ],
   "version": 1,
@@ -88,6 +88,6 @@
     "omarchy.lock"
   ],
   "cloneSourceRestores": [
-    "doe.lock"
+    "__USER__.lock"
   ]
 }

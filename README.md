@@ -31,7 +31,7 @@
 
 ---
 
-### 2. 🔒 Cyberpunk Animated Lockscreen (`doe.lock`)
+### 2. 🔒 Cyberpunk Animated Lockscreen (`[user].lock`)
 * **Native QtQuick Animated Image:** Custom Quickshell session lock plugin displaying full-screen 1080p `Sleeping_miku.gif` with zero blur or lag.
 * **Live Neon HUD Clock & Date:** Glowing Miku Cyan (`#00f5d4`) digital clock and Sakura Pink (`#ffb7d5`) calendar header.
 * **Linux `fortune` Wisdom Engine:** Automatically invokes `fortune -s` to display dynamic system wisdom, programming jokes, and Linux aphorisms, auto-refreshing every 10 seconds.
@@ -129,20 +129,25 @@ omarchy-virtual-paradise/
 ├── micro/                      # Micro editor cyberpunk configuration
 │   ├── colorschemes/           # TrueColor theme: virtual-paradise.micro
 │   └── settings.json           # Micro editor preferences & statusline
-├── plugins/                    # Customized Omarchy Quickshell plugins
-│   ├── doe.active-window/      # Active window title bar widget
-│   ├── doe.audio/              # Audio volume & output switcher
-│   ├── doe.bluetooth/          # Bluetooth device manager
-│   ├── doe.clock/              # Live clock, date & calendar
-│   ├── doe.cputemp/            # CPU temperature & cooler boost
-│   ├── doe.lock/               # Sleeping Miku lockscreen & fortune quotes
-│   ├── doe.media/              # MPRIS media player controller
-│   ├── doe.memory/             # RAM / Swap memory monitor & btop launcher
-│   ├── doe.menu/               # Omarchy quick applications menu
-│   ├── doe.network/            # Wi-Fi / Ethernet network manager
-│   ├── doe.power/              # Battery & power profile widget
-│   ├── doe.weather/            # Weather forecast widget
-│   └── doe.workspaces/         # Workspace switcher
+├── plugins/                    # Customized Omarchy Quickshell plugins (Auto-calibrated to [user].*)
+│   ├── active-window/          # Active window title bar widget
+│   ├── audio/                  # Audio volume & output switcher
+│   ├── background/             # Background service manager
+│   ├── bluetooth/              # Bluetooth device manager
+│   ├── clock/                  # Live clock, date & calendar
+│   ├── cputemp/                # CPU temperature & cooler boost
+│   ├── indicators/             # System indicator icons
+│   ├── lock/                   # Sleeping Miku lockscreen & fortune quotes
+│   ├── media/                  # MPRIS media player controller
+│   ├── memory/                 # RAM / Swap memory monitor & btop launcher
+│   ├── menu/                   # Omarchy quick applications menu
+│   ├── microphone/             # Microphone mute & volume widget
+│   ├── monitor/                # Display brightness & resolution manager
+│   ├── network/                # Wi-Fi & Ethernet network manager
+│   ├── power/                  # Battery & power profile widget
+│   ├── system-update/          # System update notification widget
+│   ├── weather/                # Weather forecast widget
+│   └── workspaces/             # Workspace switcher
 ├── shell/                      # Shell configurations
 │   ├── shell.json              # Status bar layout (transparency off)
 │   └── zshrc                   # Cyberpunk Zsh configuration with Search☆Hub

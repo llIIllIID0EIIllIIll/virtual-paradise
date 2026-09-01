@@ -155,26 +155,21 @@ log_step "3" "9" "Installing custom Quickshell plugins for user '$CURRENT_USER'.
 if [[ -d "$REPO_DIR/plugins" ]]; then
   for pdir in "$REPO_DIR"/plugins/*; do
     if [[ -d "$pdir" ]]; then
-      base=$(basename "$pdir")
-      plugin_suffix="${base#*.}"
-      target_plugin_id="${CURRENT_USER}.${plugin_suffix}"
+      plugin_name=$(basename "$pdir")
+      target_plugin_id="${CURRENT_USER}.${plugin_name}"
       target_dir="$CONFIG_DIR/omarchy/plugins/$target_plugin_id"
       
       mkdir -p "$target_dir"
       cp -r "$pdir"/* "$target_dir/"
       
-      # Dynamically update moduleName, id, and IPC targets to match active username
+      # Dynamically update __USER__. to active username (${CURRENT_USER}.)
       find "$target_dir" -type f \( -name "*.json" -o -name "*.qml" -o -name "*.js" \) -exec sed -i \
-        -e "s/\"id\": \"[^\"]*\.${plugin_suffix}\"/\"id\": \"${target_plugin_id}\"/g" \
-        -e "s/moduleName: \"[^\"]*\.${plugin_suffix}\"/moduleName: \"${target_plugin_id}\"/g" \
-        -e "s/\"doe\./\"${CURRENT_USER}\./g" \
-        -e "s/moduleName: \"doe\./moduleName: \"${CURRENT_USER}\./g" \
-        -e "s/target: \"doe\./target: \"${CURRENT_USER}\./g" \
-        -e "s/ipcTarget: \"doe\./ipcTarget: \"${CURRENT_USER}\./g" \
-        -e "s/firstPartyServiceFor(\"doe\./firstPartyServiceFor(\"${CURRENT_USER}\./g" {} +
+        -e "s/__USER__\./${CURRENT_USER}./g" \
+        -e "s/\"id\": \"[^\"]*\.${plugin_name}\"/\"id\": \"${target_plugin_id}\"/g" \
+        -e "s/moduleName: \"[^\"]*\.${plugin_name}\"/moduleName: \"${target_plugin_id}\"/g" {} +
     fi
   done
-  log_sub "Synchronized and calibrated $(ls -d "$REPO_DIR"/plugins/* | wc -l) plugins"
+  log_sub "Synchronized and calibrated $(ls -d "$REPO_DIR"/plugins/* | wc -l) plugins for '${CURRENT_USER}'"
 fi
 
 # ------------------------------------------------------------------------------
@@ -185,10 +180,9 @@ if [[ -f "$CONFIG_DIR/omarchy/shell.json" ]] && [[ ! -f "$CONFIG_DIR/omarchy/she
   cp "$CONFIG_DIR/omarchy/shell.json" "$CONFIG_DIR/omarchy/shell.json.bak.$BACKUP_TIMESTAMP"
 fi
 if [[ -f "$REPO_DIR/shell/shell.json" ]]; then
-  sed -e "s/\"doe\./\"${CURRENT_USER}\./g" \
-      -e "s/\"centerAnchor\": \"doe\./\"centerAnchor\": \"${CURRENT_USER}\./g" \
+  sed -e "s/__USER__\./${CURRENT_USER}./g" \
       "$REPO_DIR/shell/shell.json" > "$CONFIG_DIR/omarchy/shell.json"
-  log_sub "Updated ~/.config/omarchy/shell.json with transparency off"
+  log_sub "Updated ~/.config/omarchy/shell.json with calibrated [${CURRENT_USER}.*] plugins"
 fi
 
 # Install Virtual☆Paradise Quick Actions into omarchy-menu.jsonc

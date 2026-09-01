@@ -1,0 +1,20 @@
+{
+  "schemaVersion": 1,
+  "id": "__USER__.menu",
+  "name": "My Omarchy Menu",
+  "version": "1.0.0",
+  "author": "Virtual☆Paradise",
+  "description": "Glowing Omarchy logo menu button",
+  "kinds": [
+    "bar-widget"
+  ],
+  "entryPoints": {
+    "barWidget": "BarWidget.qml"
+  },
+  "barWidget": {
+    "displayName": "Menu",
+    "description": "Application menu button",
+    "category": "Launcher",
+    "allowMultiple": false
+  }
+}
