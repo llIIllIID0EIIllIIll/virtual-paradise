@@ -101,34 +101,42 @@ Launches a complete 5-pane cyberpunk development workspace in microseconds via W
 
 ```
 omarchy-virtual-paradise/
-├── backgrounds/                # Live videos, animated GIFs & static wallpapers
-│   ├── Aura_farming.gif        # Aura Farming anime live wallpaper
-│   ├── Big_city.jpg            # Default 1080p static city artwork
-│   ├── Miku_live.mp4           # 60fps Hatsune Miku live video
-│   ├── Night_city.gif          # Cyberpunk night city live wallpaper
+├── backgrounds/                # Live video streams, animated GIFs & static wallpapers
+│   ├── Aura_farming.gif        # Aura Farming anime live wallpaper (720p 60fps)
+│   ├── Big_city.jpg            # Default 1080p static Cyberpunk city artwork
+│   ├── Miku_live.mp4           # Hatsune Miku 1080p 60fps live video wallpaper
+│   ├── Night_city.gif          # Cyberpunk night city live wallpaper (1080p)
 │   └── Portal.jpg              # Curtain transition artwork (3840x1080)
-├── bin/                        # CLI helper tools & transition overlays
-│   ├── curtain_transition.qml  # Quickshell Portal drop & split transition
-│   ├── momoisay                # Animated Saiba Momoi ASCII generator
-│   ├── rice_layout.sh          # 5-terminal workspace orchestrator
-│   ├── toggle_cooler_boost.sh  # Hardware fan boost controller
-│   ├── toggle_live_wallpaper.sh# Live wallpaper playlist engine
-│   └── virtual_matrix.py       # Tri-color Cyberpunk matrix rain
-├── cava/                       # Audio spectrum visualizer configs
-│   ├── config                  # Terminal cava configuration
-│   └── config_bar              # Bar widget cava configuration
-├── fastfetch/                  # Fastfetch system info & anime ASCII logos
+├── bin/                        # CLI helper tools, orchestrators & transition overlays
+│   ├── curtain_transition.qml  # Quickshell Portal drop & dual-split transition overlay
+│   ├── hypr_window_error_restore.sh # Window error border restore helper
+│   ├── hypr_window_error_shake.sh   # Window shake & glowing red error hook
+│   ├── memory_detail_notify.sh # Memory detail desktop notification dispatcher
+│   ├── momoisay                # Animated Saiba Momoi ASCII mascot dialogue generator
+│   ├── Portal.jpg              # Relative asset for standalone transition runner
+│   ├── rice_layout.sh          # 5-terminal workspace automated orchestrator
+│   ├── toggle_btop.sh          # Toggle floating Btop system monitor
+│   ├── toggle_cooler_boost.sh  # Hardware fan Cooler Boost controller
+│   ├── toggle_live_wallpaper.sh# Live wallpaper playlist engine & curtain caller
+│   ├── toggle_voxtype_config.sh# Toggle Voxtype voice-to-text dictation config
+│   └── virtual_matrix.py       # Tri-color Cyberpunk matrix rain generator
+├── cava/                       # Audio spectrum visualizer configurations
+│   ├── config                  # Full terminal Cava configuration
+│   └── config_bar              # Lightweight status bar Cava widget configuration
+├── fastfetch/                  # Fastfetch system info & anime ASCII artworks
 │   ├── config.jsonc            # Clean fastfetch profile layout
-│   └── logo_anime.txt          # 65-line Braille Anime ASCII artwork
-├── hypr/                       # Hyprland system configuration
-│   ├── autostart.lua           # Startup daemons & live wallpaper init
-│   ├── bindings.lua            # Complete ergonomic keyboard shortcuts
-│   ├── input.lua               # Touchpad & keyboard settings
-│   ├── looknfeel.lua           # Window borders, gaps, blur & animations
-│   └── monitors.lua            # Display & resolution rules
-├── micro/                      # Micro editor cyberpunk configuration
+│   ├── logo.txt                # Fastfetch fallback logo
+│   └── logo_anime.txt          # High-res 65-line Braille Anime ASCII artwork
+├── hypr/                       # Hyprland user system configuration
+│   ├── autostart.lua           # Startup daemons, agents & wallpaper initialization
+│   ├── bindings.lua            # Complete ergonomic keyboard shortcuts & D-Pad
+│   ├── hyprland.lua            # User-level Hyprland bootstrap & window rules
+│   ├── input.lua               # Touchpad, mouse acceleration & keyboard layout
+│   ├── looknfeel.lua           # Gaps, rounded corners, blur & spring physics animations
+│   └── monitors.lua            # Display resolutions, refresh rates & layout
+├── micro/                      # Micro editor cyberpunk customization
 │   ├── colorschemes/           # TrueColor theme: virtual-paradise.micro
-│   └── settings.json           # Micro editor preferences & statusline
+│   └── settings.json           # Micro preferences, statusline & syntax config
 ├── plugins/                    # Customized Omarchy Quickshell plugins (Auto-calibrated to [user].*)
 │   ├── active-window/          # Active window title bar widget
 │   ├── audio/                  # Audio volume & output switcher
@@ -136,27 +144,46 @@ omarchy-virtual-paradise/
 │   ├── bluetooth/              # Bluetooth device manager
 │   ├── clock/                  # Live clock, date & calendar
 │   ├── cputemp/                # CPU temperature & cooler boost
-│   ├── indicators/             # System indicator icons
-│   ├── lock/                   # Sleeping Miku lockscreen & fortune quotes
+│   ├── indicators/             # System indicator icons (recording, night light, DND)
+│   ├── lock/                   # Sleeping Miku lockscreen & fortune quotes engine
 │   ├── media/                  # MPRIS media player controller
 │   ├── memory/                 # RAM / Swap memory monitor & btop launcher
 │   ├── menu/                   # Omarchy quick applications menu
-│   ├── microphone/             # Microphone mute & volume widget
+│   ├── microphone/             # Microphone mute & volume controller
 │   ├── monitor/                # Display brightness & resolution manager
 │   ├── network/                # Wi-Fi & Ethernet network manager
 │   ├── power/                  # Battery & power profile widget
 │   ├── system-update/          # System update notification widget
 │   ├── weather/                # Weather forecast widget
-│   └── workspaces/             # Workspace switcher
-├── shell/                      # Shell configurations
-│   ├── shell.json              # Status bar layout (transparency off)
-│   └── zshrc                   # Cyberpunk Zsh configuration with Search☆Hub
+│   └── workspaces/             # Workspace switcher & window indicators
+├── shell/                      # Shell configurations & status bar layouts
+│   ├── shell.json              # Status bar layout (transparency off, custom modules)
+│   └── zshrc                   # Cyberpunk Zsh configuration with Search☆Hub & aliases
+├── alacritty.toml              # Alacritty terminal theme profile
+├── btop.theme                  # Btop TrueColor theme profile
+├── chromium.theme              # Chromium browser theme profile
+├── colors.css                  # CSS color variable definitions
 ├── colors.toml                 # Master TrueColor palette definitions
-├── hyprland.lua                # Theme-level window rules & animations
+├── foot.ini                    # Foot terminal theme profile
+├── ghostty.conf                # Ghostty terminal theme profile
+├── gtk.css                     # GTK 3/4 custom cyberpunk theme styling
+├── gum_env.lua                 # Gum environment configuration
+├── helix.toml                  # Helix editor theme profile
+├── hyprland.conf               # Theme-level window rules fallback
+├── hyprland.lua                # Theme-level window decoration & animation rules
+├── hyprland-preview-share-picker.css # Screen sharing picker dialog styles
 ├── hyprlock.conf               # Theme lock screen color overrides
+├── icons.theme                 # Icon theme definition
 ├── install.sh                  # Automated, idempotent installation script
+├── keyboard.rgb                # RGB keyboard backlighting profile
+├── kitty.conf                  # Kitty terminal theme profile
 ├── LICENSE                     # MIT License
-└── preview.png                 # Theme screenshot
+├── neovim.lua                  # Neovim color profile
+├── preview.png                 # Theme screenshot
+├── README.md                   # Comprehensive project documentation
+├── shell.toml                  # Shell environment variables
+├── vscode.json                 # VS Code theme configuration
+└── vscode-theme.json           # VS Code color token definitions
 ```
 
 ---
