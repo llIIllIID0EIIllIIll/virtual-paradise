@@ -37,9 +37,9 @@ All theme components (Hyprland window borders, ambient shadows, Fastfetch logos,
 ## ✨ Key Features & Architectural Innovations
 
 ### 1. 🎬 Native Live Video Wallpaper Engine with Slanted Curtain Reveal
-- **Hardware-Accelerated Playback:** Plays high-bitrate 60fps 1080p live wallpaper (`miku-horizontal-live.mp4`) via GPU acceleration with 0% idle CPU overhead.
-- **Slanted 2-Sided Curtain Reveal Animation:** When toggling or switching between video and static wallpaper, a geometric slanted curtain opens outwards from center to both sides over 520ms (`Easing.InOutCubic`), seamlessly matching Omarchy's system wallpaper transitions.
-- **Instant Fallback Protection:** If live video playback is stopped or unavailable, the system automatically falls back to crystal-clear 1080p static artwork (`miku-cyber-peace.png`) without black screens.
+- **Hardware-Accelerated Playback:** Plays high-bitrate 60fps 1080p live wallpaper (`Miku_live.mp4`) via GPU acceleration with 0% idle CPU overhead.
+- **Top-to-Bottom Portal Curtain Wipe Animation:** When toggling or switching live wallpapers, the Portal curtain drops smoothly from top to bottom over 260ms (`Easing.OutCubic`) with glowing neon borders, seamlessly hiding wallpaper switches.
+- **Instant Fallback Protection:** If live video playback is stopped or unavailable, the system automatically falls back to crystal-clear 1080p static artwork (`Big_city.jpg`) without black screens.
 
 ### 2. ⚡ High-Speed 5-Terminal Rice Layout (`SUPER + Q`)
 Launches a complete 5-pane cyberpunk development workspace in microseconds via Wayland socket dispatch:
