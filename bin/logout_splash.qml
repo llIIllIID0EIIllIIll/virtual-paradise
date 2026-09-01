@@ -21,7 +21,7 @@ ShellRoot {
 
       color: "#0a0d12"
       WlrLayershell.namespace: "logout-splash"
-      WlrLayershell.layer: WlrLayer.Overlay
+      WlrLayershell.layer: WlrLayer.Top
       exclusionMode: ExclusionMode.Ignore
 
       AnimatedImage {

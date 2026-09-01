@@ -61,7 +61,7 @@ set_live() {
   if [[ -n "$target" && -f "$target" ]]; then
     if [[ "$transition" == "true" ]]; then
       play_curtain_transition
-      sleep 0.22
+      sleep 0.40
     fi
 
     # Update static background symlink quietly without triggering duplicate compositor animation

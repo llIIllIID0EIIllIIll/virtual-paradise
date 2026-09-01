@@ -109,7 +109,7 @@ ShellRoot {
             property: "width"
             from: 0
             to: win.halfWidth
-            duration: 280
+            duration: 320
             easing.type: Easing.OutCubic
           }
           NumberAnimation {
@@ -117,7 +117,7 @@ ShellRoot {
             property: "width"
             from: 0
             to: win.halfWidth
-            duration: 280
+            duration: 320
             easing.type: Easing.OutCubic
           }
           NumberAnimation {
@@ -125,13 +125,13 @@ ShellRoot {
             property: "x"
             from: win.width
             to: win.width - win.halfWidth
-            duration: 280
+            duration: 320
             easing.type: Easing.OutCubic
           }
         }
 
         // 2. HOLD: Brief pause while live wallpaper swaps behind the closed Portal
-        PauseAnimation { duration: 150 }
+        PauseAnimation { duration: 250 }
 
         // 3. OUTRO: Open curtains outward to both sides (mở rèm ra như cũ)
         ParallelAnimation {
@@ -140,7 +140,7 @@ ShellRoot {
             property: "x"
             from: 0
             to: -win.halfWidth
-            duration: 300
+            duration: 340
             easing.type: Easing.InCubic
           }
           NumberAnimation {
@@ -148,7 +148,7 @@ ShellRoot {
             property: "x"
             from: win.width - win.halfWidth
             to: win.width
-            duration: 300
+            duration: 340
             easing.type: Easing.InCubic
           }
         }

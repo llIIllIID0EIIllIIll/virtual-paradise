@@ -8,8 +8,8 @@ if command -v quickshell &>/dev/null && [[ -f "$HOME/.local/bin/curtain_transiti
   CURTAIN_LAYER="overlay" quickshell -p "$HOME/.local/bin/curtain_transition.qml" >/dev/null 2>&1 &
 fi
 
-# 2. Wait until curtains are fully closed covering the screen (280ms)
-sleep 0.28
+# 2. Wait until curtains are fully closed covering the screen (400ms)
+sleep 0.40
 
 # 3. Behind closed curtains: close windows & launch Miku outro splash
 omarchy-hyprland-window-close-all 2>/dev/null || true
