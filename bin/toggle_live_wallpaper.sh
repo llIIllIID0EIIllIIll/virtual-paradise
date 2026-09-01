@@ -81,6 +81,11 @@ set_live() {
 }
 
 set_static() {
+  local transition="${1:-true}"
+  if [[ "$transition" == "true" ]]; then
+    play_curtain_transition
+    sleep 0.40
+  fi
   killall -9 mpvpaper 2>/dev/null || true
   if [[ -f "$STATIC_BG" ]]; then
     omarchy theme bg set "$STATIC_BG" 2>/dev/null || true
@@ -122,16 +127,16 @@ cycle_live() {
 case "$1" in
   init|autostart)
     if [[ -f "$STATE_FILE" ]] && [[ -f "$(cat "$STATE_FILE" 2>/dev/null)" ]]; then
-      set_live "$(cat "$STATE_FILE")"
+      set_live "$(cat "$STATE_FILE")" false
     else
-      set_live
+      set_live "" false
     fi
     ;;
   stop)
-    set_static
+    set_static true
     ;;
   start)
-    set_live "$2"
+    set_live "$2" true
     ;;
   next)
     cycle_live next
@@ -148,12 +153,12 @@ case "$1" in
     ;;
   "")
     if is_live_running; then
-      set_static
+      set_static true
     else
       if [[ -f "$STATE_FILE" ]] && [[ -f "$(cat "$STATE_FILE" 2>/dev/null)" ]]; then
-        set_live "$(cat "$STATE_FILE")"
+        set_live "$(cat "$STATE_FILE")" true
       else
-        set_live
+        set_live "" true
       fi
     fi
     ;;
