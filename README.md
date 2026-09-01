@@ -104,15 +104,21 @@ omarchy-virtual-paradise/
 ├── backgrounds/                # Live video streams, animated GIFs & static wallpapers
 │   ├── Aura_farming.gif        # Aura Farming anime live wallpaper (720p 60fps)
 │   ├── Big_city.jpg            # Default 1080p static Cyberpunk city artwork
+│   ├── Miku_intro.gif          # 1080p Miku boot / SDDM login animated wallpaper
 │   ├── Miku_live.mp4           # Hatsune Miku 1080p 60fps live video wallpaper
+│   ├── Miku_outro.gif          # 1080p Miku shutdown / logout animated wallpaper
 │   ├── Night_city.gif          # Cyberpunk night city live wallpaper (1080p)
 │   └── Portal.jpg              # Curtain transition artwork (3840x1080)
 ├── bin/                        # CLI helper tools, orchestrators & transition overlays
 │   ├── curtain_transition.qml  # Quickshell Portal drop & dual-split transition overlay
 │   ├── hypr_window_error_restore.sh # Window error border restore helper
 │   ├── hypr_window_error_shake.sh   # Window shake & glowing red error hook
+│   ├── logout_splash.qml       # Fullscreen Miku outro shutdown / logout animated splash
 │   ├── memory_detail_notify.sh # Memory detail desktop notification dispatcher
 │   ├── momoisay                # Animated Saiba Momoi ASCII mascot dialogue generator
+│   ├── omarchy-system-logout   # Animated logout wrapper with Miku outro
+│   ├── omarchy-system-reboot   # Animated reboot wrapper with Miku outro
+│   ├── omarchy-system-shutdown # Animated shutdown wrapper with Miku outro
 │   ├── Portal.jpg              # Relative asset for standalone transition runner
 │   ├── rice_layout.sh          # 5-terminal workspace automated orchestrator
 │   ├── toggle_btop.sh          # Toggle floating Btop system monitor
