@@ -130,8 +130,8 @@ ShellRoot {
           }
         }
 
-        // 2. HOLD: Brief pause while live wallpaper swaps behind the closed Portal
-        PauseAnimation { duration: 250 }
+        // 2. HOLD: Generous pause (550ms) so heavy 1080p 60fps videos fully decode before curtain opens
+        PauseAnimation { duration: 550 }
 
         // 3. OUTRO: Open curtains outward to both sides (mở rèm ra như cũ)
         ParallelAnimation {

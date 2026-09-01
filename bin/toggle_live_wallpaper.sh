@@ -62,7 +62,7 @@ set_live() {
   if [[ -n "$target" && -f "$target" ]]; then
     if [[ "$transition" == "true" ]]; then
       play_curtain_transition
-      sleep 0.40
+      sleep 0.28
     fi
 
     # Update static background symlink quietly without triggering duplicate compositor animation
@@ -72,8 +72,7 @@ set_live() {
     # Launch mpvpaper hardware accelerated on all monitors
     killall -9 mpvpaper 2>/dev/null || true
     if command -v mpvpaper &>/dev/null; then
-      nohup mpvpaper -vs -o "no-audio loop" '*' "$target" >/dev/null 2>&1 &
-      disown
+      setsid -f mpvpaper -vs -o "no-audio loop hwdec=auto-safe" '*' "$target" >/dev/null 2>&1
     fi
     echo "$target" > "$STATE_FILE"
   else
@@ -85,7 +84,7 @@ set_static() {
   local transition="${1:-true}"
   if [[ "$transition" == "true" ]]; then
     play_curtain_transition
-    sleep 0.40
+    sleep 0.28
   fi
   killall -9 mpvpaper 2>/dev/null || true
   if [[ -f "$STATIC_BG" ]]; then
