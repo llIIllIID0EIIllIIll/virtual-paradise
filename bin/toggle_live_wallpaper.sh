@@ -73,6 +73,7 @@ set_live() {
     killall -9 mpvpaper 2>/dev/null || true
     if command -v mpvpaper &>/dev/null; then
       nohup mpvpaper -vs -o "no-audio loop" '*' "$target" >/dev/null 2>&1 &
+      disown
     fi
     echo "$target" > "$STATE_FILE"
   else
@@ -126,10 +127,12 @@ cycle_live() {
 
 case "$1" in
   init|autostart)
+    # Brief delay on fresh login to ensure Wayland layer-shell is fully mapped
+    sleep 0.35
     if [[ -f "$STATE_FILE" ]] && [[ -f "$(cat "$STATE_FILE" 2>/dev/null)" ]]; then
-      set_live "$(cat "$STATE_FILE")" false
+      set_live "$(cat "$STATE_FILE")" true
     else
-      set_live "" false
+      set_live "" true
     fi
     ;;
   stop)
