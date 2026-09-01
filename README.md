@@ -21,12 +21,12 @@
 ## ✨ Key Architectural Innovations & Features
 
 ### 1. 🎬 Cinematic Portal Curtain Live Wallpaper Engine
-* **Hardware-Accelerated 60fps GPU Playback:** Seamlessly plays live video (`Miku_live.mp4`) and animated GIFs (`Miku_missing.gif`, `Miku_animated_full.gif`, `Miku_animated1.gif`, `Miku_animated2.gif`, `Miku_animated3.gif`) via `mpvpaper` with negligible idle CPU impact.
+* **Hardware-Accelerated 60fps GPU Playback:** Seamlessly plays live video (`Miku_live.mp4`) and animated GIFs (`Miku_missing.gif`, `Miku_animated_full.gif`, `Miku_animated1.gif`, `Miku_animated2.gif`, `Miku_animated3.gif`, `Miku_animated4.gif`) via `mpvpaper` with negligible idle CPU impact.
 * **Dual-Curtain Close & Reveal:** Switching wallpapers triggers a custom Quickshell overlay (`curtain_transition.qml`) where the `Portal.jpg` curtain panels close inward from both sides meeting in the center (`Easing.OutCubic`), swap the wallpaper behind the scenes, and part down the middle outward to both sides (`Easing.InCubic`).
 * **Layer Hierarchy (`WlrLayer.Bottom`):** The transition operates above the wallpaper canvas while staying below the top status bar.
 * **Directional D-Pad Navigation & Playlist Order:**
   * `SUPER + ALT + UP`: Toggle Live Wallpaper on/off (switches to `Miku_missing.jpg` static fallback).
-  * `SUPER + ALT + RIGHT`: Next Live Wallpaper in playlist (`Miku_live.mp4` [default] ➔ `Miku_missing.gif` ➔ `Miku_animated_full.gif` ➔ `Miku_animated1.gif` ➔ `Miku_animated2.gif` ➔ `Miku_animated3.gif`).
+  * `SUPER + ALT + RIGHT`: Next Live Wallpaper in playlist (`Miku_live.mp4` [default] ➔ `Miku_missing.gif` ➔ `Miku_animated_full.gif` ➔ `Miku_animated1.gif` ➔ `Miku_animated2.gif` ➔ `Miku_animated3.gif` ➔ `Miku_animated4.gif`).
   * `SUPER + ALT + LEFT`: Previous Live Wallpaper in playlist.
 
 ---
@@ -119,6 +119,7 @@ omarchy-virtual-paradise/
 │   ├── Miku_animated1.gif      # 1080p anime animated wallpaper (504 frames)
 │   ├── Miku_animated2.gif      # 1080p anime animated wallpaper (144 frames)
 │   ├── Miku_animated3.gif      # 1080p anime animated wallpaper (72 frames)
+│   ├── Miku_animated4.gif      # 1080p anime animated wallpaper
 │   ├── Miku_live.mp4           # Hatsune Miku 1080p 60fps live video wallpaper (Default)
 │   ├── Miku_missing.gif        # 1080p Miku shutdown / logout animated wallpaper (72 frames)
 │   ├── Miku_missing.jpg        # Default 1080p static Cyberpunk fallback artwork

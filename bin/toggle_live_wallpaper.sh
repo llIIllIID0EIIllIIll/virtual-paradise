@@ -27,6 +27,7 @@ get_live_items() {
     "$BG_DIR/Miku_animated1.gif"
     "$BG_DIR/Miku_animated2.gif"
     "$BG_DIR/Miku_animated3.gif"
+    "$BG_DIR/Miku_animated4.gif"
   )
   local items=()
   for f in "${playlist[@]}"; do
