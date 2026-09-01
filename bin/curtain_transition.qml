@@ -28,8 +28,8 @@ ShellRoot {
         id: leftCurtain
         width: Math.ceil(win.width / 2)
         height: win.height
-        x: 0
-        y: -win.height
+        x: -width
+        y: 0
         clip: true
 
         Image {
@@ -43,7 +43,7 @@ ShellRoot {
           cache: true
         }
 
-        // Cyberpunk neon right vertical edge border (when opening to sides)
+        // Cyberpunk neon right vertical edge border (center meeting line)
         Rectangle {
           anchors.right: parent.right
           width: 3
@@ -58,14 +58,6 @@ ShellRoot {
           color: "#ffb7d5"
           opacity: 0.7
         }
-
-        // Cyberpunk neon bottom horizontal border (when dropping from top)
-        Rectangle {
-          anchors.bottom: parent.bottom
-          width: parent.width
-          height: 3
-          color: "#00f5d4"
-        }
       }
 
       // Right curtain panel (Displays the right 50% of Portal.jpg)
@@ -73,8 +65,8 @@ ShellRoot {
         id: rightCurtain
         width: Math.ceil(win.width / 2)
         height: win.height
-        x: Math.floor(win.width / 2)
-        y: -win.height
+        x: win.width
+        y: 0
         clip: true
 
         Image {
@@ -88,7 +80,7 @@ ShellRoot {
           cache: true
         }
 
-        // Cyberpunk neon left vertical edge border (when opening to sides)
+        // Cyberpunk neon left vertical edge border (center meeting line)
         Rectangle {
           anchors.left: parent.left
           width: 3
@@ -103,32 +95,24 @@ ShellRoot {
           color: "#ffb7d5"
           opacity: 0.7
         }
-
-        // Cyberpunk neon bottom horizontal border (when dropping from top)
-        Rectangle {
-          anchors.bottom: parent.bottom
-          width: parent.width
-          height: 3
-          color: "#00f5d4"
-        }
       }
 
       SequentialAnimation {
         running: true
 
-        // 1. INTRO: Drop both panels together from top to bottom (từ trên xuống)
+        // 1. INTRO: Close curtains from both sides meeting in the center (đóng rèm lại)
         ParallelAnimation {
           NumberAnimation {
             target: leftCurtain
-            property: "y"
+            property: "x"
             to: 0
             duration: 260
             easing.type: Easing.OutCubic
           }
           NumberAnimation {
             target: rightCurtain
-            property: "y"
-            to: 0
+            property: "x"
+            to: Math.floor(win.width / 2)
             duration: 260
             easing.type: Easing.OutCubic
           }
@@ -137,7 +121,7 @@ ShellRoot {
         // 2. HOLD: Brief pause while live wallpaper swaps behind the closed Portal
         PauseAnimation { duration: 150 }
 
-        // 3. OUTRO: Split and open curtains outward to both sides (mở ra 2 bên)
+        // 3. OUTRO: Open curtains outward to both sides (mở rèm ra như cũ)
         ParallelAnimation {
           NumberAnimation {
             target: leftCurtain

@@ -22,7 +22,7 @@
 
 ### 1. 🎬 Cinematic Portal Curtain Live Wallpaper Engine
 * **Hardware-Accelerated 60fps GPU Playback:** Seamlessly plays live video (`Miku_live.mp4`) and animated GIFs (`Miku_missing.gif`, `Miku_animated_full.gif`, `Miku_animated1.gif`, `Miku_animated2.gif`, `Miku_animated3.gif`) via `mpvpaper` with negligible idle CPU impact.
-* **Top-to-Bottom Drop & Dual-Split Reveal:** Switching wallpapers triggers a custom Quickshell overlay (`curtain_transition.qml`) where the `Portal.jpg` curtain drops smoothly from the top of the monitor (`Easing.OutCubic`), swaps the wallpaper behind the scenes, and parts down the middle outward to both sides (`Easing.InCubic`).
+* **Dual-Curtain Close & Reveal:** Switching wallpapers triggers a custom Quickshell overlay (`curtain_transition.qml`) where the `Portal.jpg` curtain panels close inward from both sides meeting in the center (`Easing.OutCubic`), swap the wallpaper behind the scenes, and part down the middle outward to both sides (`Easing.InCubic`).
 * **Layer Hierarchy (`WlrLayer.Bottom`):** The transition operates above the wallpaper canvas while staying below the top status bar.
 * **Directional D-Pad Navigation & Playlist Order:**
   * `SUPER + ALT + UP`: Toggle Live Wallpaper on/off (switches to `Miku_missing.jpg` static fallback).
