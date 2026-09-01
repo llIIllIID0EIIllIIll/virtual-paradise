@@ -23,12 +23,14 @@ ShellRoot {
       WlrLayershell.layer: WlrLayer.Bottom
       exclusionMode: ExclusionMode.Ignore
 
+      readonly property int halfWidth: Math.ceil(win.width / 2)
+
       // Left curtain panel (Displays the left 50% of Portal.jpg)
       Item {
         id: leftCurtain
-        width: Math.ceil(win.width / 2)
+        width: 0
         height: win.height
-        x: -width
+        x: 0
         y: 0
         clip: true
 
@@ -63,7 +65,7 @@ ShellRoot {
       // Right curtain panel (Displays the right 50% of Portal.jpg)
       Item {
         id: rightCurtain
-        width: Math.ceil(win.width / 2)
+        width: 0
         height: win.height
         x: win.width
         y: 0
@@ -72,7 +74,7 @@ ShellRoot {
         Image {
           width: win.width
           height: win.height
-          x: -Math.floor(win.width / 2)
+          anchors.right: parent.right
           y: 0
           source: Qt.resolvedUrl("Portal.jpg")
           fillMode: Image.PreserveAspectCrop
@@ -100,20 +102,30 @@ ShellRoot {
       SequentialAnimation {
         running: true
 
-        // 1. INTRO: Close curtains from both sides meeting in the center (đóng rèm lại)
+        // 1. INTRO: Close curtains from both sides meeting in the center (đóng từ 2 nửa vào)
         ParallelAnimation {
           NumberAnimation {
             target: leftCurtain
-            property: "x"
-            to: 0
-            duration: 260
+            property: "width"
+            from: 0
+            to: win.halfWidth
+            duration: 280
+            easing.type: Easing.OutCubic
+          }
+          NumberAnimation {
+            target: rightCurtain
+            property: "width"
+            from: 0
+            to: win.halfWidth
+            duration: 280
             easing.type: Easing.OutCubic
           }
           NumberAnimation {
             target: rightCurtain
             property: "x"
-            to: Math.floor(win.width / 2)
-            duration: 260
+            from: win.width
+            to: win.width - win.halfWidth
+            duration: 280
             easing.type: Easing.OutCubic
           }
         }
@@ -126,13 +138,15 @@ ShellRoot {
           NumberAnimation {
             target: leftCurtain
             property: "x"
-            to: -leftCurtain.width
+            from: 0
+            to: -win.halfWidth
             duration: 300
             easing.type: Easing.InCubic
           }
           NumberAnimation {
             target: rightCurtain
             property: "x"
+            from: win.width - win.halfWidth
             to: win.width
             duration: 300
             easing.type: Easing.InCubic
