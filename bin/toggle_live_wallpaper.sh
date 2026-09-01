@@ -62,7 +62,8 @@ set_live() {
   if [[ -n "$target" && -f "$target" ]]; then
     if [[ "$transition" == "true" ]]; then
       play_curtain_transition
-      sleep 0.28
+      # Curtain closes in 200ms. Wait 300ms so curtain is 100% closed meeting in center BEFORE killing old wallpaper
+      sleep 0.30
     fi
 
     # Update static background symlink quietly without triggering duplicate compositor animation
@@ -84,7 +85,7 @@ set_static() {
   local transition="${1:-true}"
   if [[ "$transition" == "true" ]]; then
     play_curtain_transition
-    sleep 0.28
+    sleep 0.30
   fi
   killall -9 mpvpaper 2>/dev/null || true
   if [[ -f "$STATIC_BG" ]]; then

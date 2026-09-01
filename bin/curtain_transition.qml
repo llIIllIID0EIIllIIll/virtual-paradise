@@ -102,14 +102,14 @@ ShellRoot {
       SequentialAnimation {
         running: true
 
-        // 1. INTRO: Close curtains from both sides meeting in the center (đóng từ 2 nửa vào)
+        // 1. INTRO: Snappy & fast curtain closure from both sides to center (200ms)
         ParallelAnimation {
           NumberAnimation {
             target: leftCurtain
             property: "width"
             from: 0
             to: win.halfWidth
-            duration: 320
+            duration: 200
             easing.type: Easing.OutCubic
           }
           NumberAnimation {
@@ -117,7 +117,7 @@ ShellRoot {
             property: "width"
             from: 0
             to: win.halfWidth
-            duration: 320
+            duration: 200
             easing.type: Easing.OutCubic
           }
           NumberAnimation {
@@ -125,22 +125,22 @@ ShellRoot {
             property: "x"
             from: win.width
             to: win.width - win.halfWidth
-            duration: 320
+            duration: 200
             easing.type: Easing.OutCubic
           }
         }
 
-        // 2. HOLD: Generous pause (550ms) so heavy 1080p 60fps videos fully decode before curtain opens
-        PauseAnimation { duration: 550 }
+        // 2. HOLD: 500ms pause while wallpaper decodes behind closed curtain
+        PauseAnimation { duration: 500 }
 
-        // 3. OUTRO: Open curtains outward to both sides (mở rèm ra như cũ)
+        // 3. OUTRO: Open curtains outward to both sides (280ms)
         ParallelAnimation {
           NumberAnimation {
             target: leftCurtain
             property: "x"
             from: 0
             to: -win.halfWidth
-            duration: 340
+            duration: 280
             easing.type: Easing.InCubic
           }
           NumberAnimation {
@@ -148,7 +148,7 @@ ShellRoot {
             property: "x"
             from: win.width - win.halfWidth
             to: win.width
-            duration: 340
+            duration: 280
             easing.type: Easing.InCubic
           }
         }
