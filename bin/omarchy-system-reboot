@@ -1,19 +1,15 @@
 #!/bin/bash
 # ==============================================================================
-#  Virtual☆Paradise — Animated Reboot with Miku Outro Splash
+#  Virtual☆Paradise — Seamless Fullscreen Outro Reboot
 # ==============================================================================
 
-# Launch Miku outro animated splash in background
+# Launch Miku outro animated splash in background (plays continuously until reboot)
 if command -v quickshell &>/dev/null && [[ -f "$HOME/.local/bin/logout_splash.qml" ]]; then
   SPLASH_TEXT="󰜉 Rebooting system..." quickshell -p "$HOME/.local/bin/logout_splash.qml" >/dev/null 2>&1 &
 fi
 
-# Schedule reboot in systemd
-systemd-run --user --collect --quiet --on-active="2800ms" --timer-property=AccuracySec=100ms systemctl reboot --no-wall || exit 1
-
-omarchy-osd -i reboot -m "Rebooting" -d 5000 2>/dev/null || true
 omarchy-state clear re*-required 2>/dev/null || true
-
-# Close windows cleanly while splash is visible
 omarchy-hyprland-window-close-all 2>/dev/null || true
-sleep 2.5
+
+# Hand over to systemd reboot - splash remains active until Plymouth takes over
+systemctl reboot --no-wall

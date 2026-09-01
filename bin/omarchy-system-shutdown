@@ -1,19 +1,15 @@
 #!/bin/bash
 # ==============================================================================
-#  Virtual☆Paradise — Animated Shutdown with Miku Outro Splash
+#  Virtual☆Paradise — Seamless Fullscreen Outro Shutdown
 # ==============================================================================
 
-# Launch Miku outro animated splash in background
+# Launch Miku outro animated splash in background (plays continuously until screen powers off)
 if command -v quickshell &>/dev/null && [[ -f "$HOME/.local/bin/logout_splash.qml" ]]; then
-  SPLASH_TEXT="󰐥 Shutting down system cleanly..." quickshell -p "$HOME/.local/bin/logout_splash.qml" >/dev/null 2>&1 &
+  SPLASH_TEXT="󰐥 Shutting down system..." quickshell -p "$HOME/.local/bin/logout_splash.qml" >/dev/null 2>&1 &
 fi
 
-# Schedule poweroff in systemd
-systemd-run --user --collect --quiet --on-active="2800ms" --timer-property=AccuracySec=100ms systemctl poweroff --no-wall || exit 1
-
-omarchy-osd -i shutdown -m "Shutting down" -d 5000 2>/dev/null || true
 omarchy-state clear re*-required 2>/dev/null || true
-
-# Close windows cleanly while splash is visible
 omarchy-hyprland-window-close-all 2>/dev/null || true
-sleep 2.5
+
+# Hand over to systemd poweroff - splash remains active until Plymouth takes over
+systemctl poweroff --no-wall

@@ -1,17 +1,13 @@
 #!/bin/bash
 # ==============================================================================
-#  Virtual☆Paradise — Animated Logout with Miku Outro Splash
+#  Virtual☆Paradise — Seamless Fullscreen Outro Logout
 # ==============================================================================
 
-# Launch Miku outro animated splash in background
+# Launch Miku outro animated splash in background (plays until SDDM takes over)
 if command -v quickshell &>/dev/null && [[ -f "$HOME/.local/bin/logout_splash.qml" ]]; then
   SPLASH_TEXT="󰍃 Logging out session..." quickshell -p "$HOME/.local/bin/logout_splash.qml" >/dev/null 2>&1 &
 fi
 
-nohup bash -c "sleep 2.5 && uwsm stop" >/dev/null 2>&1 &
-
-omarchy-osd -i logout -m "Logging out" -d 5000 2>/dev/null || true
-
-# Close windows cleanly while splash is visible
 omarchy-hyprland-window-close-all 2>/dev/null || true
-sleep 2.2
+sleep 1.2
+uwsm stop
