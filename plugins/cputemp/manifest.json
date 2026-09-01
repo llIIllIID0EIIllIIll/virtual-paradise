@@ -1,0 +1,20 @@
+{
+  "schemaVersion": 1,
+  "id": "__USER__.cputemp",
+  "name": "CPU Temp & Cooler Boost",
+  "version": "1.0.0",
+  "author": "Virtual☆Paradise",
+  "description": "CPU temperature indicator and Cooler Boost toggle",
+  "kinds": [
+    "bar-widget"
+  ],
+  "entryPoints": {
+    "barWidget": "BarWidget.qml"
+  },
+  "barWidget": {
+    "displayName": "CPU Temp",
+    "description": "Live temperature and Cooler Boost toggle",
+    "category": "System",
+    "allowMultiple": false
+  }
+}
