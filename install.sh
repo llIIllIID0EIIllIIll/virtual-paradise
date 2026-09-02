@@ -396,7 +396,14 @@ if [[ -d "$REPO_DIR/micro" ]]; then
     cp -r "$REPO_DIR/micro/colorschemes"/* "$CONFIG_DIR/micro/colorschemes/"
   fi
 fi
-log_sub "Component themes installed (Cava, Btop, Fastfetch, Micro)"
+
+# GTK4 & GTK3 Styling (Nautilus & Libadwaita)
+if [[ -f "$REPO_DIR/gtk.css" ]]; then
+  mkdir -p "$CONFIG_DIR/gtk-4.0" "$CONFIG_DIR/gtk-3.0"
+  cp "$REPO_DIR/gtk.css" "$CONFIG_DIR/gtk-4.0/gtk.css"
+  cp "$REPO_DIR/gtk.css" "$CONFIG_DIR/gtk-3.0/gtk.css"
+fi
+log_sub "Component themes installed (Cava, Btop, Fastfetch, Micro, GTK/Nautilus)"
 
 # ------------------------------------------------------------------------------
 # 8. Install Theme Assets & Backgrounds
