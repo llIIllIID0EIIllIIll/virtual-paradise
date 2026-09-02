@@ -43,7 +43,7 @@ YELLOW = "#ffe066"  # Cyberpunk Amber
 RED = "#ff5287"     # Glitch Crimson
 MUTED = "#708090"   # Terminal Slate
 
-# Prompt Toolkit Interactive Engine (Dropdown Autocomplete, TUI Palette, Mouse & Toolbar)
+# Prompt Toolkit Interactive Engine (Dropdown Autocomplete, TUI Grid Menu, Mouse & Status)
 try:
     from prompt_toolkit import PromptSession
     from prompt_toolkit.completion import Completer, Completion
@@ -52,7 +52,9 @@ try:
     from prompt_toolkit.history import FileHistory
     from prompt_toolkit.key_binding import KeyBindings
     from prompt_toolkit.filters import has_completions, completion_is_selected
-    from prompt_toolkit.shortcuts import radiolist_dialog
+    from prompt_toolkit.widgets import Button, Frame, Label, Box
+    from prompt_toolkit.layout import HSplit, VSplit, Layout
+    from prompt_toolkit.application import Application
     HAS_PROMPT_TOOLKIT = True
 except ImportError:
     HAS_PROMPT_TOOLKIT = False
@@ -481,54 +483,162 @@ def handle_resume_command(arg: str = "") -> Optional[Tuple[str, List[Dict[str, A
             console.print("")
             return None
 
-def show_tui_command_palette() -> Optional[str]:
-    """Displays an interactive full TUI Command Palette dialog with arrow key (↑/↓/←/→) and mouse navigation."""
+def print_prompt_status(model_name: str):
+    """Renders the current model, RAM, and mode status panel directly above the prompt line."""
+    mem = get_system_memory_info()
+    ram_str = f"{mem['available']} GiB Available / {mem['total']} GiB Total"
+    mode_style = f"bold {GREEN}" if EXECUTION_MODE == "Auto-accept" else f"bold {YELLOW}"
+
+    table = Table.grid(padding=(0, 2))
+    table.add_column(style="bold")
+    table.add_column(style="bold")
+    table.add_column(style="bold")
+    table.add_row(
+        f"[{MUTED}]Model:[/] [{GREEN}]{model_name}[/]",
+        f"[{MUTED}]RAM:[/] [{CYAN}]{ram_str}[/]",
+        f"[{MUTED}]Mode:[/] [{mode_style}]{EXECUTION_MODE}[/]"
+    )
+    table.add_row(
+        f"[bold {YELLOW}]/[/] [dim]TUI Menu (↑↓←→ / Mouse)[/]",
+        f"[bold {CYAN}]@[/] [dim]Tag File Context[/]",
+        f"[bold {PINK}]/exit[/] [dim]Quit[/]"
+    )
+
+    console.print(Panel(
+        table,
+        border_style=CYAN,
+        box=box.ROUNDED,
+        padding=(0, 1)
+    ))
+
+def run_tui_command_menu() -> Optional[str]:
+    """
+    Displays an interactive 4x4 TUI Command Menu Grid:
+    - Navigate using [↑ / ↓ / ← / →] arrow keys
+    - Select with [Enter]
+    - Click directly on any command button with [Mouse]
+    - [Esc] or [Cancel] to return to prompt
+    """
     if not HAS_PROMPT_TOOLKIT or not sys.stdin.isatty():
         print_help_table()
         return None
 
-    dialog_style = Style.from_dict({
-        'dialog': 'bg:#0f111a',
-        'dialog frame.label': 'fg:#00f5d4 bold',
-        'dialog.body': 'bg:#12151e fg:#ffffff',
-        'dialog shadow': 'bg:#05070a',
-        'button': 'bg:#1a1c26 fg:#ffb7d5',
-        'button.focused': 'bg:#00f5d4 fg:#0f111a bold',
-        'radio-list': 'bg:#12151e fg:#00f5d4',
-        'radio-selected': 'fg:#00ff88 bold',
-        'radio-checked': 'fg:#00ff88 bold',
-    })
+    chosen_cmd = {"val": None}
+    app_ref = {"app": None}
 
-    values = [
-        ("/health", "⚡ /health — Hardware diagnostic health check (CPU, RAM, Cooler)"),
-        ("/model", "🧠 /model — View & switch local models (1.5b, 3b, 7b)"),
-        ("/mode", "⚙ /mode — Toggle Auto-accept / Preview approval mode"),
-        ("/resume", "📂 /resume — Session manager (resume, rename, delete)"),
-        ("/plan", "📋 /plan — Architectural phased planning mode"),
-        ("/goal", "🎯 /goal — Autonomous multi-step goal execution"),
-        ("/skills", "🛠 /skills — List discovered specialized skills"),
-        ("/search", "🔍 /search — Grep search across codebase (ripgrep)"),
-        ("/find", "📁 /find — Find files by pattern (fd)"),
-        ("/diff", "📊 /diff — View git diff or repository status"),
-        ("/copy", "📋 /copy — Copy last response to Wayland clipboard"),
-        ("/thinking", "🧠 /thinking — Toggle real-time diagnostic reasoning"),
-        ("/clear", "🧹 /clear — Reset conversation memory context"),
-        ("/help", "❓ /help — Detailed command reference"),
-        ("/exit", "🚪 /exit — Exit session (Sayonara)"),
+    def make_handler(cmd_code: str):
+        def _handler():
+            chosen_cmd["val"] = cmd_code
+            if app_ref["app"]:
+                app_ref["app"].exit(result=cmd_code)
+        return _handler
+
+    commands = [
+        ("/health", "⚡ /health"),
+        ("/model", "🧠 /model"),
+        ("/mode", "⚙ /mode"),
+        ("/resume", "📂 /resume"),
+        ("/plan", "📋 /plan"),
+        ("/goal", "🎯 /goal"),
+        ("/skills", "🛠 /skills"),
+        ("/search", "🔍 /search"),
+        ("/find", "📁 /find"),
+        ("/diff", "📊 /diff"),
+        ("/copy", "📋 /copy"),
+        ("/thinking", "🧠 /thinking"),
+        ("/clear", "🧹 /clear"),
+        ("/help", "❓ /help"),
+        ("/exit", "🚪 /exit"),
+        ("cancel", "❌ Cancel")
     ]
 
+    buttons = []
+    for cmd, label in commands:
+        buttons.append(Button(text=label, handler=make_handler(cmd), width=18))
+
+    grid = [buttons[r * 4:(r + 1) * 4] for r in range(4)]
+    grid_rows = [VSplit(row, padding=1) for row in grid]
+
+    menu_style = Style.from_dict({
+        'frame.border': '#00f5d4 bold',
+        'frame.label': '#00f5d4 bold',
+        'button': 'bg:#12151e fg:#ffffff',
+        'button.focused': 'bg:#00f5d4 fg:#0f111a bold',
+        'label': 'fg:#ffb7d5',
+    })
+
+    container = Frame(
+        title="⚡ Virtual☆Paradise Interactive Command Menu",
+        body=HSplit([
+            Label(text="  Use [↑ / ↓ / ← / →] to navigate, [Enter] to execute, or click with [Mouse]:\n"),
+            HSplit(grid_rows, padding=1),
+            Label(text="\n  [Esc] or [❌ Cancel] to return to prompt.\n")
+        ]),
+        style="class:frame"
+    )
+
+    kb = KeyBindings()
+
+    @kb.add("right")
+    def _right(event):
+        curr = event.app.layout.current_control
+        for r in range(4):
+            for c in range(4):
+                if grid[r][c].control == curr:
+                    event.app.layout.focus(grid[r][(c + 1) % 4])
+                    return
+
+    @kb.add("left")
+    def _left(event):
+        curr = event.app.layout.current_control
+        for r in range(4):
+            for c in range(4):
+                if grid[r][c].control == curr:
+                    event.app.layout.focus(grid[r][(c - 1) % 4])
+                    return
+
+    @kb.add("down")
+    def _down(event):
+        curr = event.app.layout.current_control
+        for r in range(4):
+            for c in range(4):
+                if grid[r][c].control == curr:
+                    event.app.layout.focus(grid[(r + 1) % 4][c])
+                    return
+
+    @kb.add("up")
+    def _up(event):
+        curr = event.app.layout.current_control
+        for r in range(4):
+            for c in range(4):
+                if grid[r][c].control == curr:
+                    event.app.layout.focus(grid[(r - 1) % 4][c])
+                    return
+
+    @kb.add("escape")
+    def _esc(event):
+        event.app.exit(result=None)
+
+    @kb.add("c-c")
+    def _sigint(event):
+        event.app.exit(result=None)
+
+    app = Application(
+        layout=Layout(container, focused_element=grid[0][0]),
+        key_bindings=kb,
+        style=menu_style,
+        mouse_support=True,
+        full_screen=False
+    )
+    app_ref["app"] = app
+
     try:
-        chosen = radiolist_dialog(
-            title="Virtual☆Paradise — Interactive Command Palette",
-            text="Navigate using [↑/↓/←/→] arrow keys, [Enter] to choose, or click with [Mouse]:",
-            values=values,
-            ok_text="Execute",
-            cancel_text="Cancel",
-            style=dialog_style
-        ).run()
-        return chosen
+        res = app.run()
+        if res == "cancel":
+            return None
+        return res
     except Exception as e:
-        console.print(f"[dim]Command palette error: {e}[/]")
+        console.print(f"[dim]TUI Menu error: {e}[/]")
         return None
 
 def get_system_memory_info() -> Dict[str, float]:
@@ -2430,21 +2540,6 @@ def agent_loop(initial_prompt: Optional[str] = None, requested_model: Optional[s
         history_file = os.path.expanduser("~/.local/share/paradise-agent/history")
         os.makedirs(os.path.dirname(history_file), exist_ok=True)
 
-        def get_bottom_toolbar():
-            mem = get_system_memory_info()
-            ram_avail = mem.get("available", 8.0)
-            ram_total = mem.get("total", 16.0)
-            mode_color = "ansigreen" if EXECUTION_MODE == "Auto-accept" else "ansiyellow"
-            return HTML(
-                f" <b>Model:</b> <ansigreen><b>{model}</b></ansigreen> │ "
-                f"<b>RAM:</b> <ansicyan><b>{ram_avail} GiB Available / {ram_total} GiB Total</b></ansicyan> │ "
-                f"<b>Mode:</b> <{mode_color}><b>{EXECUTION_MODE}</b></{mode_color}>\n"
-                f" <ansimagenta>Type <b>/</b> for commands (↑↓←→ or mouse)</ansimagenta> │ "
-                f"<ansiblue><b>@</b> to tag files</ansiblue> │ "
-                f"<ansiyellow><b>/help</b></ansiyellow> │ "
-                f"<ansired><b>/exit</b> to quit</ansired>"
-            )
-
         kb = KeyBindings()
 
         @kb.add('down', filter=has_completions)
@@ -2467,6 +2562,14 @@ def agent_loop(initial_prompt: Optional[str] = None, requested_model: Optional[s
         def _nav_enter(event):
             event.current_buffer.apply_completion(event.current_buffer.complete_state.current_completion)
 
+        @kb.add('tab')
+        def _on_tab(event):
+            buf = event.current_buffer.text.strip()
+            if not buf or buf == "/":
+                event.app.exit(result="/")
+            else:
+                event.current_buffer.complete_next()
+
         @kb.add('f1')
         def _open_f1(event):
             event.app.exit(result="/")
@@ -2475,7 +2578,6 @@ def agent_loop(initial_prompt: Optional[str] = None, requested_model: Optional[s
             history=FileHistory(history_file),
             completer=SlashAndFileCompleter(),
             complete_while_typing=True,
-            bottom_toolbar=get_bottom_toolbar,
             mouse_support=sys.stdin.isatty(),
             key_bindings=kb,
             style=prompt_style
@@ -2483,6 +2585,7 @@ def agent_loop(initial_prompt: Optional[str] = None, requested_model: Optional[s
 
     while True:
         try:
+            print_prompt_status(model)
             if prompt_session:
                 user_input = prompt_session.prompt(ANSI("\033[38;2;0;245;212m\033[1myou ❯\033[0m ")).strip()
             else:
@@ -2498,8 +2601,8 @@ def agent_loop(initial_prompt: Optional[str] = None, requested_model: Optional[s
         if raw_cmd in ("/exit", "/quit", "/q", "exit", "quit", ":q", "q"):
             console.print(f"[bold {PINK}]Farewell from Virtual☆Paradise! // Sayonara.[/]")
             break
-        elif raw_cmd == "/":
-            selected = show_tui_command_palette()
+        elif raw_cmd in ("/", "/menu", "menu"):
+            selected = run_tui_command_menu()
             if not selected:
                 continue
             user_input = selected
