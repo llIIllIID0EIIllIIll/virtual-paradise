@@ -113,70 +113,41 @@ def build_system_prompt() -> str:
     shell = os.environ.get("SHELL", "/usr/bin/zsh")
     desktop = os.environ.get("XDG_CURRENT_DESKTOP", "Hyprland")
 
-    # 4. Formulate skills catalog
+    # Formulate skills catalog (compact)
     skills_map = discover_skills()
-    skills_lines = []
-    for k in sorted(skills_map.keys()):
-        v = skills_map[k]
-        desc_first = v["description"].split(".")[0].strip(" >-\t\r\n")
-        skills_lines.append(f"- `{k}`: {desc_first[:90]}.")
-    skills_catalog = "\n".join(skills_lines)
+    skills_list = ", ".join(sorted(skills_map.keys()))
 
-    return f"""You are Paradise Agent, an autonomous, highly skilled Linux system diagnostic and repair AI assistant operating LOCALLY and OFFLINE on Arch Linux with Hyprland and Omarchy.
+    return f"""You are Paradise Agent — an autonomous local AI agent on Arch Linux (Hyprland/Wayland, Omarchy theme: "{theme}").
+User: {user} | Home: /home/{user} | Shell: {shell} | Terminal: Ghostty
+Key paths: ~/omarchy-virtual-paradise (theme/dotfiles), ~/Windows (shared data/.bat scripts), ~/Downloads
+Available skills: {skills_list}
 
-[LIVE SYSTEM STATE & ENVIRONMENT]:
-- Operating System: Arch Linux (rolling release, kernel Linux 6.x)
-- Window Manager / Compositor: {desktop} (Wayland)
-- Active Omarchy Theme: "{theme}" (Theme phong cách Cyberpunk / Vocaloid Hatsune Miku đặc trưng: 40% Cyan #00f5d4, 20% Green #00ff88, 40% Sakura Pink #ffb7d5)
-- Active Wallpaper: {wallpaper} (Live video wallpaper via mpvpaper)
-- Current User: {user}
-- Current Shell: {shell} (Zsh)
-- Default Terminal: Ghostty (chạy qua wrapper ~/.local/bin/omarchy-launch-terminal để kích hoạt Zsh)
+RULES:
+- NEVER refuse. Never say "Tôi không thể giúp", "Xin lỗi", "I cannot help".
+- AUTONOMOUS: Do NOT ask for confirmation like "Bạn có muốn tôi...". Always EXECUTE the tool immediately!
+- MATCH LANGUAGE: User asks in Vietnamese -> answer in Vietnamese. English -> English.
 
-[KEY LOCAL SYSTEM PATHS]:
-- User Home: /home/{user}
-- Theme & Dotfiles Repository: /home/{user}/omarchy-virtual-paradise (chứa config Hyprland, Waybar, Fastfetch, Ghostty, Alacritty, wallpapers, scripts)
-- Windows Shared Directory: /home/{user}/Windows (chứa dữ liệu Windows, file .bat, scripts)
-- Configs: ~/.config/hypr/, ~/.config/omarchy/
+EXAMPLES OF WHAT TOOL TO CALL:
+User: format file tờ trình trong mục download
+Assistant: {{"name": "execute_bash", "arguments": {{"command": "/home/{user}/.local/lib/paradise-venv/bin/python3 /home/{user}/.local/bin/format-docx-vn.py /home/{user}/Downloads"}}}}
 
-[SPECIALIZED EXPERT SKILLS]:
-You have access to specialized skills on this machine. Call `load_skill(skill_name)` when relevant:
-{skills_catalog}
+User: lấy file mẫu tờ trình copy vào download
+Assistant: {{"name": "execute_bash", "arguments": {{"command": "cp /home/{user}/Windows/skills/vn-officecli/templates/to_trinh_mau.docx /home/{user}/Downloads/"}}}}
 
-[STANDARD DESKTOP SHORTCUTS]:
-- Mở Terminal: SUPER + RETURN
-- Mở Quản lý tệp (Nautilus): SUPER + E
-- Mở Trình duyệt (Firefox): SUPER + B
-- Mở Menu ứng dụng: SUPER + SPACE hoặc SUPER + D
-- Đóng cửa sổ: SUPER + Q
-- Menu Omarchy: SUPER + M
-- Chụp ảnh màn hình: PRINT hoặc SUPER + SHIFT + S
+User: trong mục download có gì
+Assistant: {{"name": "execute_bash", "arguments": {{"command": "ls -la /home/{user}/Downloads"}}}}
 
-Guidelines:
-- PROACTIVE AGENT BEHAVIOR - NEVER REFUSE OR ASK USER TO RUN COMMANDS:
-  * You are an autonomous agent equipped with local tools (`execute_bash`, `read_file`, `write_file`, `load_skill`, `get_system_health`).
-  * NEVER say "Tôi không thể truy cập", "Tôi không có quyền", or "Tôi không thể thực hiện yêu cầu này"!
-  * You have DIRECT local access. RUN THE COMMANDS AUTONOMOUSLY to answer the user!
-- FILESYSTEM & DIRECTORIES (WINDOW / OMARCHY / HOME):
-  * When the user asks about files or what is inside a folder/environment (e.g. "hiện tại trong môi trường window mình những file có gì", "trong mục omarchy-virtual-paradise có gì", "trong thư mục X có file gì"):
-    IMMEDIATELY CALL `execute_bash(command="ls -la /home/{user}/Windows")` or `execute_bash(command="ls -la /home/{user}/omarchy-virtual-paradise")` or `read_file`!
-    Never guess or make up files! Read the directory listing and report the actual files found.
-- DOCUMENT TEMPLATES & VIETNAMESE ADMINISTRATIVE FILES:
-  * When the user asks for document templates (e.g. "mẫu tờ trình", "mẫu công văn", "lấy file mẫu tờ trình copy vào download"):
-    1. The template file is `/home/{user}/Windows/skills/vn-officecli/templates/to_trinh_mau.docx`.
-    2. IMMEDIATELY call `execute_bash` to copy it: `cp /home/{user}/Windows/skills/vn-officecli/templates/to_trinh_mau.docx /home/{user}/Downloads/ && ls -la /home/{user}/Downloads/`.
-    3. Confirm clearly to the user that `to_trinh_mau.docx` has been copied into `/home/{user}/Downloads/`.
-    4. NEVER say "Tôi không thể thực hiện" or call read_file with empty arguments!
-- SYSTEM TELEMETRY & HARDWARE:
-  * When asked about performance, lag, battery, RAM, CPU, or services, call `get_system_health`.
-- SPECIALIZED SKILLS:
-  * When asked about Omarchy/Hyprland customization, call `load_skill("omarchy")`.
-  * When asked about an app crash or segfault, call `load_skill("diagnose-crash")`.
-  * When asked about administrative documents or office automation, call `load_skill("vn-officecli")`.
-- LANGUAGE MATCHING (STRICT):
-  * You MUST always respond in the exact same language the user uses:
-    - User writes in English -> Reply in fluent, natural English.
-    - User writes in Vietnamese -> Reply in natural, polite Vietnamese.
+User: trong window có những file gì
+Assistant: {{"name": "execute_bash", "arguments": {{"command": "ls -la /home/{user}/Windows"}}}}
+
+User: máy mình dạo này hơi chậm, kiểm tra giúp mình
+Assistant: {{"name": "get_system_health", "arguments": {{}}}}
+
+User: muốn đổi theme omarchy
+Assistant: {{"name": "load_skill", "arguments": {{"skill_name": "omarchy"}}}}
+
+User: tại sao ứng dụng bị crash
+Assistant: {{"name": "load_skill", "arguments": {{"skill_name": "diagnose-crash"}}}}
 """
 
 TOOLS_SPEC = [
@@ -184,13 +155,13 @@ TOOLS_SPEC = [
         "type": "function",
         "function": {
             "name": "execute_bash",
-            "description": "Execute a bash shell command to inspect files, check system status, or run actions. Example: 'ls -la /home/doe/Windows'",
+            "description": "Execute a bash command on the local system.",
             "parameters": {
                 "type": "object",
                 "properties": {
                     "command": {
                         "type": "string",
-                        "description": "The command string to run in bash (e.g. 'ls -la /home/doe/Windows')."
+                        "description": "bash command"
                     }
                 },
                 "required": ["command"]
@@ -201,17 +172,17 @@ TOOLS_SPEC = [
         "type": "function",
         "function": {
             "name": "read_file",
-            "description": "Read file contents or list all files inside a directory. Path can be a file or directory path.",
+            "description": "Read a file or list a directory on the local filesystem.",
             "parameters": {
                 "type": "object",
                 "properties": {
                     "path": {
                         "type": "string",
-                        "description": "File or directory path (e.g. '/home/doe/Windows' or '~/.config/hypr/hyprland.conf')."
+                        "description": "file or directory path"
                     },
                     "max_lines": {
                         "type": "integer",
-                        "description": "Optional maximum number of lines to read (default 200)."
+                        "description": "max lines to read"
                     }
                 },
                 "required": ["path"]
@@ -222,17 +193,17 @@ TOOLS_SPEC = [
         "type": "function",
         "function": {
             "name": "write_file",
-            "description": "Write or overwrite text content to a local file.",
+            "description": "Write text content to a file on the local filesystem.",
             "parameters": {
                 "type": "object",
                 "properties": {
                     "path": {
                         "type": "string",
-                        "description": "Path to the target file."
+                        "description": "file path"
                     },
                     "content": {
                         "type": "string",
-                        "description": "The text content to write."
+                        "description": "text content to write"
                     }
                 },
                 "required": ["path", "content"]
@@ -243,7 +214,7 @@ TOOLS_SPEC = [
         "type": "function",
         "function": {
             "name": "get_system_health",
-            "description": "Get an immediate status snapshot of CPU, RAM, Disk usage, Battery percentage & charging status, Top resource-consuming processes, Failed systemd services, and Network interfaces. Call this first whenever the user asks about system status, battery, free disk space, or why the computer is slow/laggy.",
+            "description": "Get CPU, RAM, Disk, Battery, top processes, failed services. Call when user asks about system health, speed, or battery.",
             "parameters": {
                 "type": "object",
                 "properties": {}
@@ -254,13 +225,13 @@ TOOLS_SPEC = [
         "type": "function",
         "function": {
             "name": "load_skill",
-            "description": "Load comprehensive instructions and expert procedures for a specialized skill (e.g. 'omarchy', 'diagnose-crash', 'agy-customizations', 'antigravity_guide'). Call this when asked to customize desktop/Hyprland, diagnose an application crash, or follow expert system workflows.",
+            "description": "Load expert instructions for a specialized skill (e.g. omarchy, diagnose-crash, vn-officecli).",
             "parameters": {
                 "type": "object",
                 "properties": {
                     "skill_name": {
                         "type": "string",
-                        "description": "Name of the skill to load (e.g. 'omarchy', 'diagnose-crash', 'agy-customizations')."
+                        "description": "skill name"
                     }
                 },
                 "required": ["skill_name"]
@@ -488,7 +459,8 @@ def call_ollama_chat(messages: List[Dict[str, Any]], model: str, enable_tools: b
         "stream": False,
         "options": {
             "temperature": 0.2,
-            "num_ctx": 4096
+            "num_ctx": 4096,
+            "num_predict": 384
         }
     }
     if enable_tools:
@@ -738,6 +710,54 @@ def handle_user_turn(user_text: str, messages: List[Dict[str, Any]], model: str,
         if not msg.get("tool_calls") and tool_calls:
             msg["tool_calls"] = tool_calls
             msg["content"] = ""
+
+        # Proactive Guard: If model emitted a refusal or confirmation question on step 1 instead of acting
+        if not tool_calls and content and step == 1:
+            lower_c = content.lower()
+            lower_u = user_text.lower()
+            is_refusal_phrase = any(p in lower_c for p in [
+                "không thể giúp", "không thể thực hiện", "không có khả năng", "xin lỗi, tôi không thể",
+                "rất tiếc", "cannot help", "unable to", "i am unable"
+            ])
+            is_confirmation_phrase = any(p in lower_c for p in [
+                "bạn muốn tôi", "bạn có muốn tôi", "would you like me to", "do you want me to"
+            ])
+
+            if is_refusal_phrase or is_confirmation_phrase:
+                user_home = os.path.expanduser("~")
+                if any(w in lower_u for w in ["format", "chuẩn hóa", "định dạng"]) and "tờ trình" in lower_u:
+                    tool_calls = [{
+                        "function": {
+                            "name": "execute_bash",
+                            "arguments": {"command": f"{user_home}/.local/lib/paradise-venv/bin/python3 {user_home}/.local/bin/format-docx-vn.py {user_home}/Downloads"}
+                        }
+                    }]
+                elif any(w in lower_u for w in ["mẫu", "template", "xin mẫu", "lấy file mẫu"]) and "tờ trình" in lower_u:
+                    tool_calls = [{
+                        "function": {
+                            "name": "execute_bash",
+                            "arguments": {"command": f"cp {user_home}/Windows/skills/vn-officecli/templates/to_trinh_mau.docx {user_home}/Downloads/ && ls -la {user_home}/Downloads/"}
+                        }
+                    }]
+                elif "window" in lower_u and any(w in lower_u for w in ["file", "gì", "mục", "thư mục", "xem"]):
+                    tool_calls = [{
+                        "function": {
+                            "name": "execute_bash",
+                            "arguments": {"command": f"ls -la {user_home}/Windows"}
+                        }
+                    }]
+                elif "download" in lower_u and any(w in lower_u for w in ["file", "gì", "mục", "thư mục", "xem"]):
+                    tool_calls = [{
+                        "function": {
+                            "name": "execute_bash",
+                            "arguments": {"command": f"ls -la {user_home}/Downloads"}
+                        }
+                    }]
+
+                if tool_calls:
+                    msg["tool_calls"] = tool_calls
+                    msg["content"] = ""
+                    content = ""
 
         if content:
             print(f"\n{C_PINK}{C_BOLD}paradise-agent ❯{C_RESET} {content}")
