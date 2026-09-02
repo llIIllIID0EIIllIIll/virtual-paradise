@@ -186,7 +186,7 @@ hl.animation({ leaf = "specialWorkspace", enabled = true, speed = 4.2, bezier = 
 -- ==============================================================================
 -- Disable compositor layer animation on wallpaper and transition overlays
 -- (Ensures only curtain_transition.qml internal animation runs cleanly with zero bounce)
-hl.layer_rule({ match = { namespace = "^(curtain-transition|mpvpaper|omarchy-background|logout-splash)$" }, no_anim = true, animation = "none" })
+hl.layer_rule({ match = { namespace = "^(curtain-transition|glitch-transition|mpvpaper|omarchy-background|logout-splash)$" }, no_anim = true, animation = "none" })
 
 hl.layer_rule({ match = { namespace = "^(omarchy-menu|omarchy-keyboard-panel|omarchy-clipboard|omarchy-emojis|omarchy-bar-panel|omarchy-image-selector)$" }, animation = "slidefade 25%" })
 hl.layer_rule({ match = { namespace = "omarchy-notifications" }, animation = "slidefade 25%" })

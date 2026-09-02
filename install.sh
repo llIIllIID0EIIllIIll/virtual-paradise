@@ -361,7 +361,7 @@ log_step "6" "$TOTAL_STEPS" "Installing binaries & CLI helper tools to $LOCAL_BI
 if [[ -d "$REPO_DIR/bin" ]]; then
   cp -r "$REPO_DIR"/bin/* "$LOCAL_BIN/"
   chmod +x "$LOCAL_BIN"/* 2>/dev/null || true
-  log_sub "Installed helper tools (rice_layout, momoisay, toggle_live_wallpaper, logout_splash, curtain_transition, etc.)"
+  log_sub "Installed helper tools (rice_layout, momoisay, toggle_live_wallpaper, logout_splash, glitch_transition, etc.)"
 fi
 
 # ------------------------------------------------------------------------------
@@ -533,8 +533,8 @@ if [[ $IS_HOOK -eq 0 ]]; then
   echo -e " ${C_BOLD}Useful shortcuts:${C_RESET}"
   echo -e "   ${C_GREEN}SUPER + Q${C_RESET}             ➔ Launch 5-terminal Rice layout"
   echo -e "   ${C_GREEN}SUPER + ALT + UP${C_RESET}      ➔ Toggle Live Video / Static Wallpaper"
-  echo -e "   ${C_GREEN}SUPER + ALT + RIGHT${C_RESET}   ➔ Next Live Wallpaper (Portal Transition)"
-  echo -e "   ${C_GREEN}SUPER + ALT + LEFT${C_RESET}    ➔ Prev Live Wallpaper (Portal Transition)"
+  echo -e "   ${C_GREEN}SUPER + ALT + RIGHT${C_RESET}   ➔ Next Live Wallpaper (Cyberpunk Glitch Transition)"
+  echo -e "   ${C_GREEN}SUPER + ALT + LEFT${C_RESET}    ➔ Prev Live Wallpaper (Cyberpunk Glitch Transition)"
   echo -e "   ${C_GREEN}SUPER + N${C_RESET}             ➔ Cycle next wallpaper"
   echo -e "   ${C_GREEN}SUPER + C${C_RESET}             ➔ Toggle Cooler Boost fan cooling"
   echo -e "   ${C_GREEN}ffa${C_RESET}                   ➔ Launch Fastfetch with high-res Anime Braille logo"

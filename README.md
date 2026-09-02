@@ -20,9 +20,9 @@
 
 ## ✨ Key Architectural Innovations & Features
 
-### 1. 🎬 Cinematic Portal Curtain Live Wallpaper Engine
+### 1. 🎬 Cinematic Cyberpunk Glitch Live Wallpaper Engine
 * **Hardware-Accelerated 60fps GPU Playback:** Seamlessly plays live video (`Miku_live.mp4`) and animated GIFs (`Miku_missing.gif`, `Miku_animated_full.gif`, `Miku_animated1.gif`, `Miku_animated2.gif`, `Miku_animated3.gif`, `Miku_animated4.gif`) via `mpvpaper` with negligible idle CPU impact.
-* **Dual-Curtain Close & Reveal:** Switching wallpapers triggers a custom Quickshell overlay (`curtain_transition.qml`) where the `Portal.jpg` curtain panels close inward from both sides meeting in the center (`Easing.OutCubic`), swap the wallpaper behind the scenes, and part down the middle outward to both sides (`Easing.InCubic`).
+* **Cyberpunk Glitch & Signal Distortion Transition:** Switching wallpapers triggers a custom Quickshell overlay (`glitch_transition.qml` / `curtain_transition.qml`) featuring `Glitch.jpg` with high-frequency horizontal slice displacement, RGB chromatic aberration flashes (Neon Cyan `#00f5d4` & Magenta `#ff007f`), and digital signal breakdown, swapping the wallpaper behind the distortion before snapping cleanly into the new stream.
 * **Layer Hierarchy (`WlrLayer.Bottom`):** The transition operates above the wallpaper canvas while staying below the top status bar.
 * **Directional D-Pad Navigation & Playlist Order:**
   * `SUPER + ALT + UP`: Toggle Live Wallpaper on/off (switches to `Miku_missing.jpg` static fallback).
@@ -95,8 +95,8 @@ Launches a complete 5-pane cyberpunk development workspace in microseconds via W
 | :--- | :--- | :--- |
 | `SUPER + Q` | **Rice Layout** | Launches 5-terminal workspace (Fastfetch, Btop, Momoisay, Cava, Matrix) |
 | `SUPER + ALT + UP` | **Toggle Live Wallpaper** | Switches between Live Video/GIF and static `Miku_missing.jpg` |
-| `SUPER + ALT + RIGHT` | **Next Live Wallpaper** | Cycles to next live wallpaper with Portal curtain wipe transition |
-| `SUPER + ALT + LEFT` | **Prev Live Wallpaper** | Cycles to previous live wallpaper with Portal curtain wipe transition |
+| `SUPER + ALT + RIGHT` | **Next Live Wallpaper** | Cycles to next live wallpaper with Cyberpunk Glitch transition |
+| `SUPER + ALT + LEFT` | **Prev Live Wallpaper** | Cycles to previous live wallpaper with Cyberpunk Glitch transition |
 | `SUPER + N` | **Next Wallpaper** | Cycles to next Omarchy theme background |
 | `SUPER + C` | **Toggle Cooler Boost** | Toggles maximum fan cooling on/off |
 | `SUPER + E` | **File Manager** | Auto-detects default file manager (`xdg-open`) |
@@ -123,9 +123,11 @@ omarchy-virtual-paradise/
 │   ├── Miku_live.mp4           # Hatsune Miku 1080p 60fps live video wallpaper (Default)
 │   ├── Miku_missing.gif        # 1080p Miku shutdown / logout animated wallpaper (72 frames)
 │   ├── Miku_missing.jpg        # Default 1080p static Cyberpunk fallback artwork
-│   └── Portal.jpg              # Curtain transition artwork (3840x1080)
+│   └── Glitch.jpg              # Cyberpunk Glitch transition artwork (8001x4500)
 ├── bin/                        # CLI helper tools, orchestrators & transition overlays
-│   ├── curtain_transition.qml  # Quickshell Portal drop & dual-split transition overlay
+│   ├── curtain_transition.qml  # Backward-compatible symlink to glitch_transition.qml
+│   ├── glitch_transition.qml   # Quickshell Cyberpunk slice-displacement glitch transition overlay
+│   ├── Glitch.jpg              # Relative asset for standalone transition runner
 │   ├── hypr_window_error_restore.sh # Window error border restore helper
 │   ├── hypr_window_error_shake.sh   # Window shake & glowing red error hook
 │   ├── logout_splash.qml       # Fullscreen Miku outro shutdown / logout animated splash
@@ -135,11 +137,10 @@ omarchy-virtual-paradise/
 │   ├── omarchy-system-logout   # Animated logout wrapper with Miku outro
 │   ├── omarchy-system-reboot   # Animated reboot wrapper with Miku outro
 │   ├── omarchy-system-shutdown # Animated shutdown wrapper with Miku outro
-│   ├── Portal.jpg              # Relative asset for standalone transition runner
 │   ├── rice_layout.sh          # 5-terminal workspace automated orchestrator
 │   ├── toggle_btop.sh          # Toggle floating Btop system monitor
 │   ├── toggle_cooler_boost.sh  # Hardware fan Cooler Boost controller
-│   ├── toggle_live_wallpaper.sh# Live wallpaper playlist engine & curtain caller
+│   ├── toggle_live_wallpaper.sh# Live wallpaper playlist engine & glitch transition caller
 │   ├── toggle_voxtype_config.sh# Toggle Voxtype voice-to-text dictation config
 │   └── virtual_matrix.py       # Tri-color Cyberpunk matrix rain generator
 ├── cava/                       # Audio spectrum visualizer configurations

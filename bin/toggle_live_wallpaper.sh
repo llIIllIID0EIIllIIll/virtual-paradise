@@ -43,7 +43,8 @@ is_live_running() {
 }
 
 play_curtain_transition() {
-  local qml_script="$HOME/.local/bin/curtain_transition.qml"
+  local qml_script="$HOME/.local/bin/glitch_transition.qml"
+  [[ ! -f "$qml_script" ]] && qml_script="$HOME/.local/bin/curtain_transition.qml"
   if [[ -f "$qml_script" ]] && command -v quickshell &>/dev/null; then
     quickshell -p "$qml_script" >/dev/null 2>&1 &
   fi
@@ -62,8 +63,8 @@ set_live() {
   if [[ -n "$target" && -f "$target" ]]; then
     if [[ "$transition" == "true" ]]; then
       play_curtain_transition
-      # Curtain closes in 200ms. Wait 300ms so curtain is 100% closed meeting in center BEFORE killing old wallpaper
-      sleep 0.30
+      # Glitch locks solid in ~125ms. Wait 180ms so screen is 100% covered by Glitch.jpg before swapping
+      sleep 0.18
     fi
 
     # Update static background symlink quietly without triggering duplicate compositor animation
@@ -85,7 +86,7 @@ set_static() {
   local transition="${1:-true}"
   if [[ "$transition" == "true" ]]; then
     play_curtain_transition
-    sleep 0.30
+    sleep 0.18
   fi
   killall -9 mpvpaper 2>/dev/null || true
   if [[ -f "$STATIC_BG" ]]; then
