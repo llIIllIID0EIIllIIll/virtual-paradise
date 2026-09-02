@@ -20,6 +20,74 @@ from typing import List, Dict, Any, Optional
 OLLAMA_HOST = os.environ.get("OLLAMA_HOST", "http://127.0.0.1:11434")
 DEFAULT_MODEL = os.environ.get("PARADISE_AGENT_MODEL", "qwen2.5-coder:3b")
 
+def get_system_memory_info() -> Dict[str, float]:
+    """Returns system memory metrics in GiB."""
+    info = {"total": 16.0, "available": 8.0, "free": 2.0}
+    try:
+        with open("/proc/meminfo", "r") as f:
+            for line in f:
+                if ":" in line:
+                    k, v = line.split(":", 1)
+                    k = k.strip()
+                    val = v.strip().split()[0]
+                    if k == "MemTotal":
+                        info["total"] = round(int(val) / (1024 * 1024), 2)
+                    elif k == "MemAvailable":
+                        info["available"] = round(int(val) / (1024 * 1024), 2)
+                    elif k == "MemFree":
+                        info["free"] = round(int(val) / (1024 * 1024), 2)
+    except Exception:
+        pass
+    return info
+
+def get_installed_models() -> List[str]:
+    """Queries installed local models from Ollama API."""
+    try:
+        req = urllib.request.Request(f"{OLLAMA_HOST}/api/tags")
+        with urllib.request.urlopen(req, timeout=3) as resp:
+            data = json.loads(resp.read().decode("utf-8"))
+            return [m.get("name", "") for m in data.get("models", [])]
+    except Exception:
+        return [DEFAULT_MODEL]
+
+def detect_optimal_model(requested_model: Optional[str] = None) -> Tuple[str, str]:
+    """
+    Intelligently inspects available system RAM and chooses the best installed model:
+    - Available RAM >= 8.0 GiB: prefers 7B (if installed) or 3B (High Capability Tier)
+    - Available RAM 3.5 - 8.0 GiB: prefers 3B (Sweet Spot Tier)
+    - Available RAM < 3.5 GiB: prefers 1.5B (Ultra-lightweight Tier)
+    """
+    if requested_model:
+        return requested_model, f"chỉ định thủ công ({requested_model})"
+
+    env_override = os.environ.get("PARADISE_AGENT_MODEL")
+    if env_override:
+        return env_override, f"biến môi trường PARADISE_AGENT_MODEL ({env_override})"
+
+    mem = get_system_memory_info()
+    avail = mem["available"]
+    installed = get_installed_models()
+
+    has_7b = any("7b" in m for m in installed)
+    has_3b = any("3b" in m for m in installed)
+    has_1_5b = any("1.5b" in m for m in installed)
+
+    if avail >= 8.0 and has_7b:
+        chosen = [m for m in installed if "7b" in m][0]
+        return chosen, f"RAM khả dụng dồi dào: {avail} GiB (Tier: 7B Cao cấp)"
+    elif avail >= 3.5 and has_3b:
+        chosen = [m for m in installed if "3b" in m][0]
+        return chosen, f"RAM khả dụng: {avail} GiB (Tier: 3B Tiêu chuẩn)"
+    elif has_1_5b:
+        chosen = [m for m in installed if "1.5b" in m][0]
+        return chosen, f"RAM khả dụng khiêm tốn: {avail} GiB (Tier: 1.5B Siêu nhẹ)"
+    elif has_3b:
+        chosen = [m for m in installed if "3b" in m][0]
+        return chosen, f"RAM khả dụng: {avail} GiB (Tier: 3B)"
+    elif installed:
+        return installed[0], f"Model khả dụng ({installed[0]})"
+    return DEFAULT_MODEL, f"Mặc định ({DEFAULT_MODEL})"
+
 # ANSI Cyberpunk Colors
 C_RESET = "\033[0m"
 C_BOLD = "\033[1m"
@@ -141,6 +209,12 @@ Assistant: {{"name": "execute_bash", "arguments": {{"command": "cp /home/{user}/
 User: trong mục download có gì
 Assistant: {{"name": "execute_bash", "arguments": {{"command": "ls -la /home/{user}/Downloads"}}}}
 
+User: nội dung file này có gì
+Assistant: {{"name": "read_file", "arguments": {{"path": "to_trinh_mau.docx"}}}}
+
+User: đọc file to_trinh_mau.docx
+Assistant: {{"name": "read_file", "arguments": {{"path": "to_trinh_mau.docx"}}}}
+
 User: trong window có những file gì
 Assistant: {{"name": "execute_bash", "arguments": {{"command": "ls -la /home/{user}/Windows"}}}}
 
@@ -217,6 +291,31 @@ TOOLS_SPEC = [
                     }
                 },
                 "required": ["path", "content"]
+            }
+        }
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "edit_file",
+            "description": "Replace specific text in an existing file with new text (works on configs, code, scripts, and Word docx documents).",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "path": {
+                        "type": "string",
+                        "description": "file path"
+                    },
+                    "target_text": {
+                        "type": "string",
+                        "description": "text to find and replace"
+                    },
+                    "replacement_text": {
+                        "type": "string",
+                        "description": "new text to insert"
+                    }
+                },
+                "required": ["path", "target_text", "replacement_text"]
             }
         }
     },
@@ -374,22 +473,55 @@ def tool_execute_bash(command: Any, yolo: bool = False) -> str:
 def tool_read_file(path: Any, max_lines: int = 200) -> str:
     path = str(unwrap_tool_arg(path)).strip()
     if not path or path in ("{}", "None", "''", '""'):
-        path = os.path.expanduser("~")
+        path = os.path.expanduser("~/Downloads")
     expanded_path = os.path.expanduser(path)
+
+    # Auto-resolve relative or basename filenames to standard dirs
     if not os.path.exists(expanded_path):
-        return f"[Error: File '{path}' does not exist]"
+        candidates = [
+            os.path.join(os.path.expanduser("~/Downloads"), path),
+            os.path.join(os.path.expanduser("~"), path),
+            os.path.join(os.path.expanduser("~/omarchy-virtual-paradise"), path),
+            os.path.join(os.path.expanduser("~/Windows"), path),
+        ]
+        for c in candidates:
+            if os.path.exists(c):
+                expanded_path = c
+                path = c
+                break
+        if not os.path.exists(expanded_path):
+            return f"[Lỗi: Không tìm thấy file hoặc thư mục '{path}']"
+
     if os.path.isdir(expanded_path):
         try:
             entries = os.listdir(expanded_path)[:50]
-            return f"[Directory listing of '{path}']:\n" + "\n".join(entries)
+            return f"[Danh sách file trong '{path}']:\n" + "\n".join(entries)
         except Exception as e:
-            return f"[Error listing directory: {e}]"
+            return f"[Lỗi đọc thư mục: {e}]"
+
+    # Trích xuất nội dung văn bản Word .docx
+    if expanded_path.lower().endswith(".docx"):
+        try:
+            venv_py = os.path.expanduser("~/.local/lib/paradise-venv/bin/python3")
+            py_bin = venv_py if os.path.exists(venv_py) else "python3"
+            cmd = [
+                py_bin, "-c",
+                "import sys; from docx import Document; doc=Document(sys.argv[1]); "
+                "paras = [p.text.strip() for p in doc.paragraphs if p.text.strip()]; "
+                "print('\\n'.join(paras[:120]))",
+                expanded_path
+            ]
+            out = subprocess.check_output(cmd, text=True, timeout=8)
+            return f"[Nội dung văn bản Word '{os.path.basename(path)}']:\n{out.strip()}"
+        except Exception as e:
+            return f"[Lỗi trích xuất file docx '{path}': {e}]"
+
     try:
         with open(expanded_path, "r", encoding="utf-8", errors="replace") as f:
             lines = [f.readline() for _ in range(max_lines)]
         return "".join(lines)
     except Exception as e:
-        return f"[Error reading file: {e}]"
+        return f"[Lỗi đọc file: {e}]"
 
 def tool_write_file(path: Any, content: Any) -> str:
     path = str(unwrap_tool_arg(path)).strip()
@@ -402,6 +534,71 @@ def tool_write_file(path: Any, content: Any) -> str:
         return f"[File '{path}' written successfully ({len(content)} bytes)]"
     except Exception as e:
         return f"[Error writing file: {e}]"
+
+def tool_edit_file(path: Any, target_text: Any, replacement_text: Any) -> str:
+    path = str(unwrap_tool_arg(path)).strip()
+    target_text = str(unwrap_tool_arg(target_text))
+    replacement_text = str(unwrap_tool_arg(replacement_text))
+    expanded_path = os.path.expanduser(path)
+
+    # Auto-resolve path if basename
+    if not os.path.exists(expanded_path):
+        candidates = [
+            os.path.join(os.path.expanduser("~/Downloads"), path),
+            os.path.join(os.path.expanduser("~"), path),
+            os.path.join(os.path.expanduser("~/omarchy-virtual-paradise"), path),
+            os.path.join(os.path.expanduser("~/.config/hypr"), path),
+        ]
+        for c in candidates:
+            if os.path.exists(c):
+                expanded_path = c
+                path = c
+                break
+
+    if not os.path.exists(expanded_path):
+        return f"[Lỗi: Không tìm thấy file '{path}']"
+
+    # Support Word docx replacement
+    if expanded_path.lower().endswith(".docx"):
+        try:
+            venv_py = os.path.expanduser("~/.local/lib/paradise-venv/bin/python3")
+            py_bin = venv_py if os.path.exists(venv_py) else "python3"
+            code = f"""
+import sys
+from docx import Document
+doc = Document({repr(expanded_path)})
+count = 0
+for p in doc.paragraphs:
+    if {repr(target_text)} in p.text:
+        p.text = p.text.replace({repr(target_text)}, {repr(replacement_text)})
+        count += 1
+for table in doc.tables:
+    for row in table.rows:
+        for cell in row.cells:
+            for p in cell.paragraphs:
+                if {repr(target_text)} in p.text:
+                    p.text = p.text.replace({repr(target_text)}, {repr(replacement_text)})
+                    count += 1
+doc.save({repr(expanded_path)})
+print(f"Đã thay thế thành công {{count}} vị trí trong file docx.")
+"""
+            out = subprocess.check_output([py_bin, "-c", code], text=True, timeout=10)
+            return f"[Chỉnh sửa file Word '{os.path.basename(path)}' thành công: {out.strip()}]"
+        except Exception as e:
+            return f"[Lỗi chỉnh sửa file Word: {e}]"
+
+    # Text / code file replacement
+    try:
+        with open(expanded_path, "r", encoding="utf-8") as f:
+            content = f.read()
+        if target_text not in content:
+            return f"[Lỗi: Không tìm thấy đoạn text '{target_text[:60]}' trong file '{path}']"
+        new_content = content.replace(target_text, replacement_text, 1)
+        with open(expanded_path, "w", encoding="utf-8") as f:
+            f.write(new_content)
+        return f"[Chỉnh sửa file '{path}' thành công: đã thay thế '{target_text[:30]}...' bằng '{replacement_text[:30]}...']"
+    except Exception as e:
+        return f"[Lỗi chỉnh sửa file: {e}]"
 
 def tool_load_skill(skill_name: Any) -> str:
     skill_name = str(unwrap_tool_arg(skill_name)).strip()
@@ -538,19 +735,24 @@ def get_banner_art() -> str:
         formatted_banner.append("  " + "".join(out))
     return "\n".join(formatted_banner)
 
-def print_banner(model_name: str):
+def print_banner(model_name: str, reason: str = ""):
     banner_text = get_banner_art()
+    mem = get_system_memory_info()
+    ram_info = f"{C_CYAN}RAM Khả Dụng:{C_RESET} {mem['available']} GiB / {mem['total']} GiB"
+    tier_info = f"{C_GRAY}({reason}){C_RESET}" if reason else ""
     banner = f"""
 {banner_text}
 
   {C_PINK}⚡ Virtual☆Paradise Local Diagnostic & Coding Agent{C_RESET}
-  {C_GRAY}Model:{C_RESET} {C_GREEN}{model_name}{C_RESET} {C_GRAY}| Mode:{C_RESET} {C_PURPLE}Pure Offline (100% Local){C_RESET}
-  {C_GRAY}Type {C_YELLOW}/help{C_GRAY} for options or {C_YELLOW}/exit{C_GRAY} to quit.{C_RESET}
+  {C_GRAY}Model:{C_RESET} {C_GREEN}{model_name}{C_RESET} {tier_info}
+  {ram_info} {C_GRAY}| Chế độ:{C_RESET} {C_PURPLE}Pure Offline (100% Local){C_RESET}
+  {C_GRAY}Gõ {C_YELLOW}/help{C_GRAY} để xem trợ giúp hoặc {C_YELLOW}/exit{C_GRAY} để thoát.{C_RESET}
   ---------------------------------------------------------------------------------------------------------------"""
     print(banner)
 
-def agent_loop(initial_prompt: Optional[str] = None, yolo: bool = False):
-    model = DEFAULT_MODEL
+def agent_loop(initial_prompt: Optional[str] = None, yolo: bool = False, requested_model: Optional[str] = None):
+    # Auto-detect optimal model based on available system RAM
+    model, reason = detect_optimal_model(requested_model)
     
     # Check if Ollama is running
     if not check_ollama_alive():
@@ -564,7 +766,7 @@ def agent_loop(initial_prompt: Optional[str] = None, yolo: bool = False):
             print(f"{C_RED}[Error] Could not connect to Ollama. Please run 'systemctl start ollama' first.{C_RESET}")
             sys.exit(1)
 
-    print_banner(model)
+    print_banner(model, reason)
 
     messages = [
         {"role": "system", "content": build_system_prompt()}
@@ -595,7 +797,7 @@ def agent_loop(initial_prompt: Optional[str] = None, yolo: bool = False):
   {C_YELLOW}/skills{C_RESET}     - List all specialized skills available to the agent
   {C_YELLOW}/health{C_RESET}     - Run immediate diagnostic health check (RAM, Disk, Network, Services)
   {C_YELLOW}/clear{C_RESET}      - Clear conversation history
-  {C_YELLOW}/model{C_RESET}      - Show active local model
+  {C_YELLOW}/model{C_RESET}      - Show active local model & RAM stats, or '/model <name>' to switch
   {C_YELLOW}/help{C_RESET}       - Show this help message
   {C_YELLOW}/exit{C_RESET}       - Exit agent
 """)
@@ -615,8 +817,23 @@ def agent_loop(initial_prompt: Optional[str] = None, yolo: bool = False):
                 messages = [{"role": "system", "content": build_system_prompt()}]
                 print(f"{C_GREEN}Conversation memory cleared.{C_RESET}")
                 continue
-            elif cmd == "/model":
-                print(f"Active model: {C_GREEN}{model}{C_RESET}")
+            elif cmd.startswith("/model"):
+                parts = user_input.split()
+                if len(parts) > 1:
+                    new_m = parts[1].strip()
+                    model = new_m
+                    print(f"Đã chuyển model sang: {C_GREEN}{model}{C_RESET}")
+                else:
+                    installed = get_installed_models()
+                    mem = get_system_memory_info()
+                    print(f"\n{C_BOLD}=== THÔNG TIN MODEL & BỘ NHỚ RAM ==={C_RESET}")
+                    print(f"  • RAM Tổng: {mem['total']} GiB | RAM Khả dụng: {C_GREEN}{mem['available']} GiB{C_RESET}")
+                    print(f"  • Model hiện tại: {C_CYAN}{model}{C_RESET} ({reason})")
+                    print(f"  • Các model đã cài đặt trong máy:")
+                    for m in installed:
+                        marker = f"{C_GREEN}✔ (đang dùng){C_RESET}" if m == model else ""
+                        print(f"    - {m} {marker}")
+                    print(f"\n  {C_GRAY}Mẹo: Gõ '/model <tên>' để đổi model ngay tức thì.{C_RESET}\n")
                 continue
 
         handle_user_turn(user_input, messages, model, yolo)
@@ -705,7 +922,7 @@ def handle_user_turn(user_text: str, messages: List[Dict[str, Any]], model: str,
                         parsed = json.loads(line)
                         raw_name = str(parsed.get("name", "")).strip()
                         raw_args = parsed.get("arguments") or parsed.get("parameters", {})
-                        if raw_name in ("get_system_health", "execute_bash", "read_file", "write_file", "load_skill"):
+                        if raw_name in ("get_system_health", "execute_bash", "read_file", "write_file", "edit_file", "load_skill"):
                             tool_calls.append({"function": {"name": raw_name, "arguments": raw_args}})
                     except Exception:
                         pass
@@ -715,7 +932,7 @@ def handle_user_turn(user_text: str, messages: List[Dict[str, Any]], model: str,
                     parsed = json.loads(trimmed)
                     raw_name = str(parsed.get("name", "")).strip()
                     raw_args = parsed.get("arguments") or parsed.get("parameters", {})
-                    if raw_name in ("get_system_health", "execute_bash", "read_file", "write_file", "load_skill"):
+                    if raw_name in ("get_system_health", "execute_bash", "read_file", "write_file", "edit_file", "load_skill"):
                         tool_calls = [{"function": {"name": raw_name, "arguments": raw_args}}]
                     elif raw_name:
                         tool_calls = [{"function": {"name": "execute_bash", "arguments": {"command": raw_name}}}]
@@ -728,7 +945,7 @@ def handle_user_turn(user_text: str, messages: List[Dict[str, Any]], model: str,
                 m = re.search(r'[\"\']?name[\"\']?\s*[:=]\s*[\"\']?([a-zA-Z0-9_ -]+)[\"\']?', trimmed)
                 if m:
                     candidate = m.group(1).strip()
-                    if candidate in ("get_system_health", "execute_bash", "read_file", "write_file", "load_skill"):
+                    if candidate in ("get_system_health", "execute_bash", "read_file", "write_file", "edit_file", "load_skill"):
                         tool_calls = [{"function": {"name": candidate, "arguments": {}}}]
                         content = ""
                     elif candidate.startswith(("omarchy", "cat", "ls", "ps", "ip", "systemctl")):
@@ -772,7 +989,31 @@ def handle_user_turn(user_text: str, messages: List[Dict[str, Any]], model: str,
                         "arguments": {"command": f"cp {user_home}/Windows/skills/vn-officecli/templates/to_trinh_mau.docx {user_home}/Downloads/ && ls -la {user_home}/Downloads/"}
                     }
                 }]
-            # 3. Downloads directory
+            # 3. Read / view file content
+            elif any(w in lower_u for w in ["nội dung", "xem file", "đọc file", "mở file", "trong file", "file này", "read file", "view file", "cat "]):
+                target_file = None
+                m_f = re.search(r'[\w.-]+\.(docx|conf|toml|ini|json|txt|md|py|sh|lua|log|yaml|yml)', lower_u)
+                if m_f:
+                    target_file = m_f.group(0)
+                elif any(w in lower_u for w in ["tờ trình", "to_trinh"]):
+                    target_file = f"{user_home}/Downloads/to_trinh_mau.docx"
+                elif any(w in lower_u for w in ["này", "this"]):
+                    for prev in reversed(messages):
+                        c = prev.get("content", "")
+                        m_prev = re.search(r'[\w.-]+\.(docx|conf|toml|ini|json|txt|md|py|sh|lua|log|yaml|yml)', c)
+                        if m_prev:
+                            target_file = m_prev.group(0)
+                            break
+                if not target_file:
+                    target_file = f"{user_home}/Downloads/to_trinh_mau.docx"
+
+                tool_calls = [{
+                    "function": {
+                        "name": "read_file",
+                        "arguments": {"path": target_file}
+                    }
+                }]
+            # 4. Downloads directory
             elif any(w in lower_u for w in ["download", "downloads", "tải về"]) and any(w in lower_u for w in ["file", "tệp", "gì", "mục", "thư mục", "xem", "danh sách", "có", "what", "list", "show"]):
                 tool_calls = [{
                     "function": {
@@ -894,6 +1135,11 @@ def handle_user_turn(user_text: str, messages: List[Dict[str, Any]], model: str,
                 p = fn_args.get("path", "")
                 c = fn_args.get("content", "")
                 tool_output = tool_write_file(p, c)
+            elif fn_name == "edit_file":
+                p = fn_args.get("path", "")
+                t = fn_args.get("target_text", "")
+                r = fn_args.get("replacement_text", "")
+                tool_output = tool_edit_file(p, t, r)
             elif fn_name == "get_system_health":
                 tool_output = tool_get_system_health()
             elif fn_name == "load_skill":
@@ -935,7 +1181,7 @@ def main():
         global DEFAULT_MODEL
         DEFAULT_MODEL = args.model
 
-    agent_loop(initial_prompt=args.prompt, yolo=args.yolo)
+    agent_loop(initial_prompt=args.prompt, yolo=args.yolo, requested_model=args.model)
 
 if __name__ == "__main__":
     main()
