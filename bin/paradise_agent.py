@@ -72,10 +72,10 @@ def detect_optimal_model(requested_model: Optional[str] = None) -> Tuple[str, st
     has_3b = any("3b" in m for m in installed)
     has_1_5b = any("1.5b" in m for m in installed)
 
-    if avail >= 8.0 and has_7b:
+    if avail >= 6.5 and has_7b:
         chosen = [m for m in installed if "7b" in m][0]
         return chosen, f"RAM khả dụng dồi dào: {avail} GiB (Tier: 7B Cao cấp)"
-    elif avail >= 3.5 and has_3b:
+    elif avail >= 3.0 and has_3b:
         chosen = [m for m in installed if "3b" in m][0]
         return chosen, f"RAM khả dụng: {avail} GiB (Tier: 3B Tiêu chuẩn)"
     elif has_1_5b:
