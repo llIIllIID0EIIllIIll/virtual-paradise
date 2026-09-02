@@ -32,6 +32,49 @@ C_GREEN = "\033[38;2;57;255;20m"    # Matrix Green #39ff14
 C_RED = "\033[38;2;255;82;135m"     # Glitch Red #ff5287
 C_GRAY = "\033[38;2;110;130;150m"   # Muted Slate
 
+SKILL_DIRS = [
+    os.path.expanduser("~/.agents/skills"),
+    os.path.expanduser("~/.gemini/antigravity-cli/skills"),
+    os.path.expanduser("~/.gemini/antigravity-cli/builtin/skills"),
+    "/usr/share/omarchy/default/agents/skills"
+]
+
+def discover_skills() -> Dict[str, Dict[str, str]]:
+    skills = {}
+    for base in SKILL_DIRS:
+        if not os.path.exists(base):
+            continue
+        try:
+            items = sorted(os.listdir(base))
+        except Exception:
+            continue
+        for item in items:
+            skill_path = os.path.join(base, item, "SKILL.md")
+            if os.path.isfile(skill_path) and item not in skills:
+                desc = ""
+                try:
+                    with open(skill_path, "r", encoding="utf-8", errors="replace") as f:
+                        content = f.read()
+                    if content.startswith("---"):
+                        parts = content.split("---", 2)
+                        if len(parts) >= 3:
+                            for line in parts[1].split("\n"):
+                                if line.strip().startswith("description:"):
+                                    desc = line.split("description:", 1)[1].strip(" >-\t\r\n")
+                                elif desc and (line.startswith("  ") or line.startswith("\t")):
+                                    desc += " " + line.strip()
+                    if not desc:
+                        desc = f"Specialized expert instructions for {item}"
+                except Exception:
+                    desc = f"Specialized expert instructions for {item}"
+                skills[item] = {
+                    "name": item,
+                    "path": skill_path,
+                    "dir": os.path.join(base, item),
+                    "description": desc.strip()
+                }
+    return skills
+
 def build_system_prompt() -> str:
     # 1. Omarchy active theme
     theme = "Virtual Paradise"
@@ -67,6 +110,15 @@ def build_system_prompt() -> str:
     shell = os.environ.get("SHELL", "/usr/bin/zsh")
     desktop = os.environ.get("XDG_CURRENT_DESKTOP", "Hyprland")
 
+    # 4. Formulate skills catalog
+    skills_map = discover_skills()
+    skills_lines = []
+    for k in sorted(skills_map.keys()):
+        v = skills_map[k]
+        desc_first = v["description"].split(".")[0].strip(" >-\t\r\n")
+        skills_lines.append(f"- `{k}`: {desc_first[:90]}.")
+    skills_catalog = "\n".join(skills_lines)
+
     return f"""You are Paradise Agent, an autonomous, highly skilled Linux system diagnostic and repair AI assistant operating LOCALLY and OFFLINE on Arch Linux with Hyprland and Omarchy.
 
 [LIVE SYSTEM STATE & ENVIRONMENT]:
@@ -78,6 +130,10 @@ def build_system_prompt() -> str:
 - Current User: {user}
 - Current Shell: {shell} (Zsh)
 - Default Terminal: Ghostty (chạy qua wrapper ~/.local/bin/omarchy-launch-terminal để kích hoạt Zsh)
+
+[SPECIALIZED EXPERT SKILLS]:
+You have access to specialized skills on this machine. If a user asks a question or has a task in any of these areas, call `load_skill(skill_name)` to load the expert rules, guidelines, and safety procedures:
+{skills_catalog}
 
 [STANDARD DESKTOP SHORTCUTS]:
 - Mở Terminal: SUPER + RETURN
@@ -96,7 +152,9 @@ def build_system_prompt() -> str:
 - Cập nhật hệ thống: `omarchy update`
 
 Guidelines:
-- CRITICAL: When the user asks what theme, wallpaper, shell, or terminal they are using, answer IMMEDIATELY, ACCURATELY, and DIRECTLY from [LIVE SYSTEM STATE & ENVIRONMENT]! Specifically, their active theme is "{theme}".
+- When a task involves Omarchy/Hyprland customization (editing configs in ~/.config/hypr/, ~/.config/omarchy/), call `load_skill("omarchy")` to follow expert safety procedures!
+- When a user reports an app crash, segfault, or core dump, call `load_skill("diagnose-crash")` to perform evidence-based diagnosis!
+- When the user asks what theme, wallpaper, shell, or terminal they are using, answer IMMEDIATELY, ACCURATELY, and DIRECTLY from [LIVE SYSTEM STATE & ENVIRONMENT]! Specifically, their active theme is "{theme}".
 - For greetings (e.g. "xin chào", "hello", "hi", "bạn là ai"), casual conversation, or general questions asking about shortcuts/usage, DO NOT call any tools. Reply directly, politely, and warmly in Vietnamese.
 - ONLY call tools when the user asks to check live dynamic system telemetry (pin, ram, ổ cứng, lag, nhiệt độ), diagnose errors, read/write files, or run system actions.
 - When a user reports a problem or asks about performance, call `get_system_health` first.
@@ -171,6 +229,23 @@ TOOLS_SPEC = [
             "parameters": {
                 "type": "object",
                 "properties": {}
+            }
+        }
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "load_skill",
+            "description": "Load comprehensive instructions and expert procedures for a specialized skill (e.g. 'omarchy', 'diagnose-crash', 'agy-customizations', 'antigravity_guide'). Call this when asked to customize desktop/Hyprland, diagnose an application crash, or follow expert system workflows.",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "skill_name": {
+                        "type": "string",
+                        "description": "Name of the skill to load (e.g. 'omarchy', 'diagnose-crash', 'agy-customizations')."
+                    }
+                },
+                "required": ["skill_name"]
             }
         }
     }
@@ -306,6 +381,64 @@ def tool_write_file(path: str, content: str) -> str:
     except Exception as e:
         return f"[Error writing file: {e}]"
 
+def tool_load_skill(skill_name: str) -> str:
+    skills = discover_skills()
+    normalized = skill_name.lower().replace("_", "-").strip()
+    matched = None
+    for k, v in skills.items():
+        if k.lower().replace("_", "-").strip() == normalized:
+            matched = v
+            break
+    if not matched:
+        for k, v in skills.items():
+            if normalized in k.lower() or k.lower() in normalized:
+                matched = v
+                break
+    if not matched:
+        return f"[Error: Skill '{skill_name}' not found. Available skills: {', '.join(skills.keys())}]"
+
+    try:
+        with open(matched["path"], "r", encoding="utf-8", errors="replace") as f:
+            content = f.read()
+
+        # Strip YAML frontmatter cleanly
+        lines = content.split("\n")
+        filtered_lines = []
+        in_frontmatter = False
+        frontmatter_done = False
+        for line in lines:
+            if line.strip() == "---":
+                if not in_frontmatter and not frontmatter_done:
+                    in_frontmatter = True
+                    continue
+                elif in_frontmatter:
+                    in_frontmatter = False
+                    frontmatter_done = True
+                    continue
+            if not in_frontmatter:
+                filtered_lines.append(line)
+
+        body = "\n".join(filtered_lines).strip()
+        pruned = body[:1800]
+        if len(body) > 1800:
+            pruned += f"\n... [Skill has {len(body) - 1800} more bytes. Read '{matched['path']}' if specific details needed]"
+
+        subfiles = []
+        try:
+            for f_name in os.listdir(matched["dir"]):
+                if f_name.endswith(".md") and f_name != "SKILL.md":
+                    subfiles.append(f_name)
+        except Exception:
+            pass
+
+        extra_note = ""
+        if subfiles:
+            extra_note = f"\n[Guides: {', '.join(subfiles)}]"
+
+        return f"=== LOADED SKILL: {matched['name']} ===\n{pruned}\n{extra_note}"
+    except Exception as e:
+        return f"[Error loading skill '{skill_name}': {e}]"
+
 def call_ollama_chat(messages: List[Dict[str, Any]], model: str, enable_tools: bool = True) -> Dict[str, Any]:
     payload = {
         "model": model,
@@ -313,7 +446,7 @@ def call_ollama_chat(messages: List[Dict[str, Any]], model: str, enable_tools: b
         "stream": False,
         "options": {
             "temperature": 0.2,
-            "num_ctx": 8192
+            "num_ctx": 4096
         }
     }
     if enable_tools:
@@ -325,7 +458,7 @@ def call_ollama_chat(messages: List[Dict[str, Any]], model: str, enable_tools: b
         data=data,
         headers={"Content-Type": "application/json"}
     )
-    with urllib.request.urlopen(req, timeout=180) as resp:
+    with urllib.request.urlopen(req, timeout=240) as resp:
         return json.loads(resp.read().decode("utf-8"))
 
 def get_banner_art() -> str:
@@ -435,12 +568,20 @@ def agent_loop(initial_prompt: Optional[str] = None, yolo: bool = False):
             elif cmd == "/help":
                 print(f"""
 {C_BOLD}Available Commands:{C_RESET}
-  {C_YELLOW}/health{C_RESET}    - Run immediate diagnostic health check (RAM, Disk, Network, Services)
-  {C_YELLOW}/clear{C_RESET}     - Clear conversation history
-  {C_YELLOW}/model{C_RESET}     - Show active local model
-  {C_YELLOW}/help{C_RESET}      - Show this help message
-  {C_YELLOW}/exit{C_RESET}      - Exit agent
+  {C_YELLOW}/skills{C_RESET}     - List all specialized skills available to the agent
+  {C_YELLOW}/health{C_RESET}     - Run immediate diagnostic health check (RAM, Disk, Network, Services)
+  {C_YELLOW}/clear{C_RESET}      - Clear conversation history
+  {C_YELLOW}/model{C_RESET}      - Show active local model
+  {C_YELLOW}/help{C_RESET}       - Show this help message
+  {C_YELLOW}/exit{C_RESET}       - Exit agent
 """)
+                continue
+            elif cmd in ("/skills", "/skill"):
+                skills_map = discover_skills()
+                print(f"\n{C_PINK}{C_BOLD}=== AVAILABLE SPECIALIZED EXPERT SKILLS ({len(skills_map)} skills) ==={C_RESET}\n")
+                for k, v in skills_map.items():
+                    print(f"  {C_CYAN}• {k}{C_RESET} {C_GRAY}({v['path']}){C_RESET}")
+                    print(f"    {v['description'][:140]}...\n")
                 continue
             elif cmd == "/health":
                 print(f"\n{C_CYAN}Running local system health check...{C_RESET}\n")
@@ -498,7 +639,7 @@ def handle_user_turn(user_text: str, messages: List[Dict[str, Any]], model: str,
                     parsed = json.loads(trimmed)
                     raw_name = str(parsed.get("name", "")).strip()
                     raw_args = parsed.get("arguments") or parsed.get("parameters", {})
-                    if raw_name in ("get_system_health", "execute_bash", "read_file", "write_file"):
+                    if raw_name in ("get_system_health", "execute_bash", "read_file", "write_file", "load_skill"):
                         tool_calls = [{"function": {"name": raw_name, "arguments": raw_args}}]
                         content = ""
                     elif raw_name:
@@ -511,7 +652,7 @@ def handle_user_turn(user_text: str, messages: List[Dict[str, Any]], model: str,
                 m = re.search(r'[\"\']?name[\"\']?\s*[:=]\s*[\"\']?([a-zA-Z0-9_ -]+)[\"\']?', trimmed)
                 if m:
                     candidate = m.group(1).strip()
-                    if candidate in ("get_system_health", "execute_bash", "read_file", "write_file"):
+                    if candidate in ("get_system_health", "execute_bash", "read_file", "write_file", "load_skill"):
                         tool_calls = [{"function": {"name": candidate, "arguments": {}}}]
                         content = ""
                     elif candidate.startswith(("omarchy", "cat", "ls", "ps", "ip", "systemctl")):
@@ -556,6 +697,9 @@ def handle_user_turn(user_text: str, messages: List[Dict[str, Any]], model: str,
                 tool_output = tool_write_file(p, c)
             elif fn_name == "get_system_health":
                 tool_output = tool_get_system_health()
+            elif fn_name == "load_skill":
+                s_name = fn_args.get("skill_name", "")
+                tool_output = tool_load_skill(s_name)
             else:
                 tool_output = f"[Unknown tool: {fn_name}]"
 
