@@ -162,17 +162,24 @@ SESSIONS_DIR = os.path.expanduser("~/.local/share/paradise-agent/sessions")
 def get_session_filepath(session_id: str) -> str:
     return os.path.join(SESSIONS_DIR, f"{session_id}.json")
 
+def generate_session_summary(messages: List[Dict[str, Any]]) -> str:
+    """Extracts clean, concise session title summary from conversation messages."""
+    for m in messages:
+        if m.get("role") == "user" and m.get("content"):
+            raw_c = m["content"].split("[LANGUAGE MANDATE")[0].strip()
+            clean_c = re.sub(r'\[ATTACHED FILE:.*?\].*?\[END ATTACHED FILE\]', '', raw_c, flags=re.DOTALL).strip()
+            title = clean_c.split("\n")[0][:65].strip()
+            if title:
+                return title
+    return "Untitled Session"
+
 def save_session(session_id: str, messages: List[Dict[str, Any]], model: str, summary: str = ""):
     """Saves conversation state to JSON file."""
     try:
         os.makedirs(SESSIONS_DIR, exist_ok=True)
         fp = get_session_filepath(session_id)
         if not summary:
-            for m in messages:
-                if m.get("role") == "user" and m.get("content"):
-                    raw_c = m["content"].split("[LANGUAGE MANDATE")[0].strip()
-                    summary = raw_c.split("\n")[0][:65].strip()
-                    break
+            summary = generate_session_summary(messages)
         data = {
             "session_id": session_id,
             "updated_at": time.strftime("%Y-%m-%d %H:%M:%S"),
@@ -1449,6 +1456,7 @@ TOOL_ALIASES = {
     "find": "find_by_name",
     "locate": "find_by_name",
     "search_files": "find_by_name",
+    "fd": "find_by_name",
     "ls": "list_dir",
     "listdir": "list_dir",
     "dir": "list_dir",
@@ -1469,10 +1477,31 @@ TOOL_ALIASES = {
     "check_health": "get_system_health",
 }
 
-def normalize_tool_call(fn_name: str, fn_args: Dict[str, Any]) -> Tuple[str, Dict[str, Any]]:
+def normalize_tool_call(fn_name: str, fn_args: Any) -> Tuple[str, Dict[str, Any]]:
     """Normalizes tool name and argument keys to prevent LLM schema hallucinations."""
-    clean_name = fn_name.lower().replace("-", "_").strip()
+    clean_name = str(fn_name).lower().replace("-", "_").strip()
     canonical_name = TOOL_ALIASES.get(clean_name, clean_name)
+
+    # If fn_args is a string (e.g. LLM passed raw JSON string), parse it
+    if isinstance(fn_args, str):
+        fn_args_str = fn_args.strip()
+        if fn_args_str.startswith("{") and fn_args_str.endswith("}"):
+            try:
+                fn_args = json.loads(fn_args_str)
+            except Exception:
+                fn_args = {}
+        else:
+            fn_args = {}
+    elif not isinstance(fn_args, dict):
+        fn_args = {}
+
+    # Unwrap top-level schema wrappers if LLM emitted {"parameters": {...}} or {"arguments": {...}}
+    while isinstance(fn_args, dict) and len(fn_args) == 1:
+        first_key = list(fn_args.keys())[0]
+        if first_key.lower() in ("parameters", "arguments", "args", "params", "input") and isinstance(fn_args[first_key], dict):
+            fn_args = fn_args[first_key]
+        else:
+            break
 
     normalized_args = {}
     for k, v in fn_args.items():
@@ -1677,7 +1706,10 @@ def tool_read_file(path: Any, start_line: Optional[int] = None, end_line: Option
             numbered = [f"{s_idx + 1 + i:4d}: {l}" for i, l in enumerate(sliced)]
             return "".join(numbered)
         else:
-            return "".join(all_lines[:max_lines])
+            res = "".join(all_lines[:max_lines])
+            if len(all_lines) > max_lines:
+                res += f"\n... ({len(all_lines) - max_lines} lines truncated)"
+            return res
     except PermissionError:
         try:
             out = subprocess.check_output(["sudo", "head", f"-n{max_lines}", expanded_path], text=True, timeout=5)
@@ -1762,7 +1794,10 @@ def tool_find_by_name(pattern: Any, search_directory: Any = None) -> str:
     if not os.path.exists(expanded_sd):
         return f"[Error: Directory '{sd}' does not exist]"
 
-    cmd = ["fd", "--hidden", "--exclude", ".git", "--max-results=40", pat, expanded_sd]
+    cmd = ["fd", "--hidden", "--exclude", ".git", "--max-results=40"]
+    if any(c in pat for c in ["*", "?", "[", "]"]):
+        cmd.append("--glob")
+    cmd.extend([pat, expanded_sd])
     try:
         p = subprocess.run(cmd, capture_output=True, text=True, timeout=10)
         out = p.stdout.strip()
@@ -1994,12 +2029,12 @@ def tool_get_system_health() -> str:
 
     # 2. RAM & Swap
     mem = get_system_memory_info()
-    report.append(f"• Memory: Total={mem['total']} GiB, Available={mem['available']} GiB, Free={mem['free']} GiB")
+    report.append(f"• Memory: Total={mem['total']} GiB, Available={mem['available']} GiB, Free={mem['free']} GiB (RAM)")
 
     # 3. Disk Space
     try:
         total, used, free = shutil.disk_usage("/")
-        report.append(f"• Root Disk (/): Total={total // (2**30)} GiB, Used={used // (2**30)} GiB, Free={free // (2**30)} GiB")
+        report.append(f"• Disk Usage (/): Total={total // (2**30)} GiB, Used={used // (2**30)} GiB, Free={free // (2**30)} GiB")
     except Exception:
         pass
 
@@ -2029,6 +2064,10 @@ def tool_get_system_health() -> str:
             report.append("• Systemd Services: All services healthy (0 failed)")
     except Exception:
         pass
+
+    # 7. Ollama Service Status
+    ollama_ok = check_ollama_alive()
+    report.append(f"• Ollama Service: {'Running & Responsive' if ollama_ok else 'Stopped / Unresponsive'}")
 
     return "\n".join(report)
 
@@ -2080,6 +2119,9 @@ def tool_delete_skill(skill_name: Any) -> str:
         return "[Error: Missing skill name]"
 
     normalized = skill_name.lower().replace("_", "-").strip()
+    if normalized in ("agy-customizations", "antigravity-guide", "antigravity_guide", "agy_customizations"):
+        return f"[Notice: '{skill_name}' is a builtin system skill and cannot be deleted]"
+
     deleted_paths = []
 
     for base in SKILL_DIRS:
