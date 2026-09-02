@@ -14,6 +14,7 @@ import subprocess
 import shutil
 import readline
 import time
+import re
 from typing import List, Dict, Any, Optional
 
 OLLAMA_HOST = os.environ.get("OLLAMA_HOST", "http://127.0.0.1:11434")
@@ -46,10 +47,18 @@ You have access to tools:
 - `get_system_health`: Get a fast snapshot of CPU, RAM, Disk, Failed Services, and Network.
 
 Guidelines:
-- When a user reports a problem (e.g. "wifi không kết nối được", "hyprland bị đơ", "mất âm thanh"), FIRST run diagnostic commands to gather evidence, then analyze and fix.
-- Be concise, professional, and clear.
-- Output formatting: Use markdown code blocks for command outputs or configs.
-- You can communicate in Vietnamese or English based on the user's language.
+- CRITICAL: For greetings (e.g. "xin chào", "hello", "hi", "bạn là ai"), casual conversation, or questions asking about general usage/shortcuts, DO NOT call any tools. Reply directly, politely, and warmly in Vietnamese.
+- Standard Desktop Shortcuts (Arch Linux / Hyprland / Omarchy):
+  * Mở Terminal: SUPER + RETURN (chạy ~/.local/bin/omarchy-launch-terminal)
+  * Mở Quản lý tệp (File Manager Nautilus): SUPER + E
+  * Mở Trình duyệt Web (Browser): SUPER + B
+  * Mở Menu ứng dụng (Launcher): SUPER + SPACE hoặc SUPER + D
+  * Đóng cửa sổ: SUPER + Q
+  * Menu hệ thống Omarchy: SUPER + M
+  * Chụp ảnh màn hình: PRINT hoặc SUPER + SHIFT + S
+- ONLY call tools when the user asks to check current system state, diagnose errors, read/write files, or run system actions.
+- When a non-tech user reports a problem (e.g. "máy bị lag", "mất mạng wifi", "mất âm thanh", "pin còn bao nhiêu"), choose the right tool to inspect the hardware/system, then explain the result in simple, clear, easy-to-understand Vietnamese.
+- Be concise, helpful, and friendly.
 """
 
 TOOLS_SPEC = [
@@ -116,7 +125,7 @@ TOOLS_SPEC = [
         "type": "function",
         "function": {
             "name": "get_system_health",
-            "description": "Get an immediate status snapshot of CPU, RAM, Disk, Failed systemd services, and Network interfaces.",
+            "description": "Get an immediate status snapshot of CPU, RAM, Disk usage, Battery percentage & charging status, Top resource-consuming processes, Failed systemd services, and Network interfaces. Call this first whenever the user asks about system status, battery, free disk space, or why the computer is slow/laggy.",
             "parameters": {
                 "type": "object",
                 "properties": {}
@@ -162,6 +171,33 @@ def tool_get_system_health() -> str:
         parts.append(f"=== NETWORK INTERFACES ===\n{net}")
     except Exception as e:
         parts.append(f"=== NETWORK INTERFACES ===\nError: {e}")
+
+    # 5. Battery & Power
+    try:
+        import glob
+        bat_info = []
+        for b in glob.glob("/sys/class/power_supply/*"):
+            name = os.path.basename(b)
+            cap_file = os.path.join(b, "capacity")
+            stat_file = os.path.join(b, "status")
+            if os.path.exists(cap_file) and os.path.exists(stat_file):
+                with open(cap_file) as f1, open(stat_file) as f2:
+                    bat_info.append(f"{name}: {f1.read().strip()}% ({f2.read().strip()})")
+        if bat_info:
+            parts.append(f"=== BATTERY & POWER ===\n" + "\n".join(bat_info))
+    except Exception:
+        pass
+
+    # 6. Top Processes by RAM & CPU
+    try:
+        top_proc = subprocess.check_output(
+            ["ps", "-eo", "pid,comm,%cpu,%mem", "--sort=-%mem"],
+            text=True
+        ).strip()
+        lines = top_proc.split("\n")[:6]
+        parts.append(f"=== TOP PROCESSES BY MEMORY ===\n" + "\n".join(lines))
+    except Exception:
+        pass
 
     return "\n\n".join(parts)
 
@@ -401,27 +437,25 @@ def handle_user_turn(user_text: str, messages: List[Dict[str, Any]], model: str,
         # Clear thinking line
         print(" " * 40, end="\r")
 
-        # Fallback: Parse inline JSON tool calls emitted directly in content
+        # Fallback: Parse inline JSON or text tool calls emitted directly in content
         if not tool_calls and content:
             trimmed = content.strip()
-            # Also handle markdown ```json ... ``` blocks
-            if "```json" in trimmed:
-                try:
-                    block = trimmed.split("```json")[1].split("```")[0].strip()
-                    parsed = json.loads(block)
-                    if "name" in parsed:
-                        tool_calls = [{"function": {"name": parsed["name"], "arguments": parsed.get("arguments") or parsed.get("parameters", {})}}]
-                        content = ""
-                except Exception:
-                    pass
-            elif trimmed.startswith("{") and "name" in trimmed:
-                try:
-                    parsed = json.loads(trimmed)
-                    if "name" in parsed:
-                        tool_calls = [{"function": {"name": parsed["name"], "arguments": parsed.get("arguments") or parsed.get("parameters", {})}}]
-                        content = ""
-                except Exception:
-                    pass
+            m = re.search(r'[\"\']?name[\"\']?\s*[:=]\s*[\"\']?([a-zA-Z0-9_]+)[\"\']?', trimmed)
+            if m and m.group(1) in ("get_system_health", "execute_bash", "read_file", "write_file"):
+                fn_name = m.group(1)
+                args = {}
+                if "arguments" in trimmed:
+                    try:
+                        arg_part = trimmed.split("arguments", 1)[1]
+                        arg_str = "{" + arg_part.split("{", 1)[1].rsplit("}", 1)[0] + "}"
+                        args = json.loads(arg_str)
+                    except Exception:
+                        pass
+                tool_calls = [{"function": {"name": fn_name, "arguments": args}}]
+                content = ""
+            elif "get_system_health" in trimmed and len(trimmed) < 45:
+                tool_calls = [{"function": {"name": "get_system_health", "arguments": {}}}]
+                content = ""
 
         if not msg.get("tool_calls") and tool_calls:
             msg["tool_calls"] = tool_calls
