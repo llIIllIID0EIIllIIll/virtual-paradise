@@ -249,17 +249,29 @@ def call_ollama_chat(messages: List[Dict[str, Any]], model: str) -> Dict[str, An
         return json.loads(resp.read().decode("utf-8"))
 
 def print_banner(model_name: str):
-    banner_art = r"""
-  __   _____ ___ _____ _   _   _     ___   ___  _   ___    _ ___ ___ ___  ___ 
-  \ \ / /_ _| _ \_   _/_\ | | /_\   | _ \ / _ \| | / _ \  /_\ | _ \_ _|   \| __|
-   \ V / | ||   / | |/ _ \| |/ _ \  |  _/| (_) | || (_) |/ _ \|   /| || |) | _| 
-    \_/ |___|_|_\ |_/_/ \_\_/_/ \_\ |_|   \___/|___\___//_/ \_\_|_\___|___/|___|
-"""
-    banner = f"""{C_CYAN}{banner_art}{C_RESET}
+    raw_lines = [
+        "██╗   ██╗██╗██████╗ ████████╗██╗   ██╗ █████╗ ██╗         ██████╗  █████╗ ██████╗  █████╗ ██████╗ ██╗███████╗███████╗",
+        "██║   ██║██║██╔══██╗╚══██╔══╝██║   ██║██╔══██╗██║         ██╔══██╗██╔══██╗██╔══██╗██╔══██╗██╔══██╗██║██╔════╝██╔════╝",
+        "██║   ██║██║██████╔╝   ██║   ██║   ██║███████║██║         ██████╔╝███████║██████╔╝███████║██║  ██║██║███████╗█████╗  ",
+        "╚██╗ ██╔╝██║██╔══██╗   ██║   ██║   ██║██╔══██║██║         ██╔═══╝ ██╔══██║██╔══██╗██╔══██║██║  ██║██║╚════██║██╔══╝  ",
+        " ╚████╔╝ ██║██║  ██║   ██║   ╚██████╔╝██║  ██║███████╗    ██║     ██║  ██║██║  ██║██║  ██║██████╔╝██║███████║███████╗",
+        "  ╚═══╝  ╚═╝╚═╝  ╚═╝   ╚═╝    ╚═════╝ ╚═╝  ╚═╝╚══════╝    ╚═╝     ╚═╝  ╚═╝╚═╝  ╚═╝╚═╝  ╚═╝╚═════╝ ╚═╝╚══════╝╚══════╝"
+    ]
+    split_idx = 58
+    formatted_banner = []
+    for line in raw_lines:
+        left = line[:split_idx]
+        right = line[split_idx:]
+        formatted_banner.append(f"  {C_CYAN}{left}{C_PINK}{right}{C_RESET}")
+    
+    banner_text = "\n".join(formatted_banner)
+    banner = f"""
+{banner_text}
+
   {C_PINK}⚡ Virtual☆Paradise Local Diagnostic & Coding Agent{C_RESET}
   {C_GRAY}Model:{C_RESET} {C_GREEN}{model_name}{C_RESET} {C_GRAY}| Mode:{C_RESET} {C_PURPLE}Pure Offline (100% Local){C_RESET}
   {C_GRAY}Type {C_YELLOW}/help{C_GRAY} for options or {C_YELLOW}/exit{C_GRAY} to quit.{C_RESET}
-  -----------------------------------------------------------------------"""
+  ---------------------------------------------------------------------------------------------------------------"""
     print(banner)
 
 def agent_loop(initial_prompt: Optional[str] = None, yolo: bool = False):
