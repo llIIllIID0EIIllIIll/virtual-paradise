@@ -1,0 +1,17 @@
+#!/bin/bash
+# ==============================================================================
+#  Virtual☆Paradise — Universal Terminal Launcher
+#  Guarantees Ghostty / Foot opens directly into /usr/bin/zsh
+# ==============================================================================
+
+cwd="$(omarchy-cmd-terminal-cwd 2>/dev/null || echo "$HOME")"
+[[ ! -d "$cwd" ]] && cwd="$HOME"
+
+# Prefer Ghostty, fallback to Foot or xdg-terminal-exec
+if command -v ghostty &>/dev/null; then
+  exec setsid uwsm-app -- ghostty --working-directory="$cwd" -e /usr/bin/zsh "$@"
+elif command -v foot &>/dev/null; then
+  exec setsid uwsm-app -- foot --working-directory="$cwd" /usr/bin/zsh "$@"
+else
+  exec setsid uwsm-app -- xdg-terminal-exec --dir="$cwd" -e /usr/bin/zsh "$@"
+fi

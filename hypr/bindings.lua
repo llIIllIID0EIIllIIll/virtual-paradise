@@ -40,3 +40,7 @@ o.bind("SUPER + B", "Web Browser", "omarchy launch browser")
 
 -- Color Picker (Magnifier + Hex Copy)
 o.bind("SUPER + SHIFT + C", "Color Picker", "omarchy-capture-color")
+
+-- Explicit Default Terminal Launcher (Guarantees Ghostty always opens into /usr/bin/zsh)
+hl.unbind("SUPER + RETURN")
+o.bind("SUPER + RETURN", "Terminal", "~/.local/bin/omarchy-launch-terminal")
