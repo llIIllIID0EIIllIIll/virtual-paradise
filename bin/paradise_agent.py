@@ -43,13 +43,16 @@ YELLOW = "#ffe066"  # Cyberpunk Amber
 RED = "#ff5287"     # Glitch Crimson
 MUTED = "#708090"   # Terminal Slate
 
-# Prompt Toolkit Interactive Engine (Dropdown Autocomplete & History)
+# Prompt Toolkit Interactive Engine (Dropdown Autocomplete, TUI Palette, Mouse & Toolbar)
 try:
     from prompt_toolkit import PromptSession
     from prompt_toolkit.completion import Completer, Completion
-    from prompt_toolkit.formatted_text import ANSI
+    from prompt_toolkit.formatted_text import ANSI, HTML
     from prompt_toolkit.styles import Style
     from prompt_toolkit.history import FileHistory
+    from prompt_toolkit.key_binding import KeyBindings
+    from prompt_toolkit.filters import has_completions, completion_is_selected
+    from prompt_toolkit.shortcuts import radiolist_dialog
     HAS_PROMPT_TOOLKIT = True
 except ImportError:
     HAS_PROMPT_TOOLKIT = False
@@ -477,6 +480,56 @@ def handle_resume_command(arg: str = "") -> Optional[Tuple[str, List[Dict[str, A
         except (KeyboardInterrupt, EOFError):
             console.print("")
             return None
+
+def show_tui_command_palette() -> Optional[str]:
+    """Displays an interactive full TUI Command Palette dialog with arrow key (↑/↓/←/→) and mouse navigation."""
+    if not HAS_PROMPT_TOOLKIT or not sys.stdin.isatty():
+        print_help_table()
+        return None
+
+    dialog_style = Style.from_dict({
+        'dialog': 'bg:#0f111a',
+        'dialog frame.label': 'fg:#00f5d4 bold',
+        'dialog.body': 'bg:#12151e fg:#ffffff',
+        'dialog shadow': 'bg:#05070a',
+        'button': 'bg:#1a1c26 fg:#ffb7d5',
+        'button.focused': 'bg:#00f5d4 fg:#0f111a bold',
+        'radio-list': 'bg:#12151e fg:#00f5d4',
+        'radio-selected': 'fg:#00ff88 bold',
+        'radio-checked': 'fg:#00ff88 bold',
+    })
+
+    values = [
+        ("/health", "⚡ /health — Hardware diagnostic health check (CPU, RAM, Cooler)"),
+        ("/model", "🧠 /model — View & switch local models (1.5b, 3b, 7b)"),
+        ("/mode", "⚙ /mode — Toggle Auto-accept / Preview approval mode"),
+        ("/resume", "📂 /resume — Session manager (resume, rename, delete)"),
+        ("/plan", "📋 /plan — Architectural phased planning mode"),
+        ("/goal", "🎯 /goal — Autonomous multi-step goal execution"),
+        ("/skills", "🛠 /skills — List discovered specialized skills"),
+        ("/search", "🔍 /search — Grep search across codebase (ripgrep)"),
+        ("/find", "📁 /find — Find files by pattern (fd)"),
+        ("/diff", "📊 /diff — View git diff or repository status"),
+        ("/copy", "📋 /copy — Copy last response to Wayland clipboard"),
+        ("/thinking", "🧠 /thinking — Toggle real-time diagnostic reasoning"),
+        ("/clear", "🧹 /clear — Reset conversation memory context"),
+        ("/help", "❓ /help — Detailed command reference"),
+        ("/exit", "🚪 /exit — Exit session (Sayonara)"),
+    ]
+
+    try:
+        chosen = radiolist_dialog(
+            title="Virtual☆Paradise — Interactive Command Palette",
+            text="Navigate using [↑/↓/←/→] arrow keys, [Enter] to choose, or click with [Mouse]:",
+            values=values,
+            ok_text="Execute",
+            cancel_text="Cancel",
+            style=dialog_style
+        ).run()
+        return chosen
+    except Exception as e:
+        console.print(f"[dim]Command palette error: {e}[/]")
+        return None
 
 def get_system_memory_info() -> Dict[str, float]:
     """Returns system memory metrics in GiB from /proc/meminfo."""
@@ -1793,19 +1846,10 @@ def get_banner_art() -> str:
         formatted_banner.append("  " + "".join(out))
     return "\n".join(formatted_banner)
 
-def print_banner(model_name: str, reason: str = ""):
-    """Renders Cyberpunk Authentic Diagonal Gradient Banner and TUI status bar."""
+def print_banner(model_name: str = "", reason: str = ""):
+    """Renders Cyberpunk Authentic Diagonal Gradient Banner."""
     art_text = get_banner_art()
-    mem = get_system_memory_info()
-    ram_str = f"{mem['available']} GiB Available / {mem['total']} GiB Total"
-    mode_style = f"bold {GREEN}" if EXECUTION_MODE == "Auto-accept" else f"bold {YELLOW}"
-    tier_desc = f" [dim]({reason})[/]" if reason else ""
-
     print(f"\n{art_text}\n")
-    console.print(f"  [bold {MUTED}]Model:[/] [bold {GREEN}]{model_name}[/]{tier_desc}")
-    console.print(f"  [bold {MUTED}]RAM:[/] [bold {CYAN}]{ram_str}[/]  |  [bold {MUTED}]Mode:[/] [{mode_style}]{EXECUTION_MODE}[/]")
-    console.print(f"  [dim]Type [bold {YELLOW}]/[/] for commands, [bold {CYAN}]@[/] to tag files, [bold {YELLOW}]/help[/] for reference, [bold {YELLOW}]/exit[/] to quit.[/]")
-    console.print(f"[dim {CYAN}]  {'─' * 95}[/]\n")
 
 def print_thinking(thinking_text: str, title: str = "🧠 Diagnostic Reasoning"):
     """Displays agent's internal thought process in a dedicated TUI panel."""
@@ -2375,6 +2419,7 @@ def agent_loop(initial_prompt: Optional[str] = None, requested_model: Optional[s
     prompt_session = None
     if HAS_PROMPT_TOOLKIT:
         prompt_style = Style.from_dict({
+            'bottom-toolbar': 'bg:#0f111a fg:#708090',
             'completion-menu.completion': 'bg:#12151e #00f5d4',
             'completion-menu.completion.current': 'bg:#00f5d4 #0f111a bold',
             'completion-menu.meta.completion': 'bg:#1a1c26 #ffb7d5',
@@ -2384,10 +2429,55 @@ def agent_loop(initial_prompt: Optional[str] = None, requested_model: Optional[s
         })
         history_file = os.path.expanduser("~/.local/share/paradise-agent/history")
         os.makedirs(os.path.dirname(history_file), exist_ok=True)
+
+        def get_bottom_toolbar():
+            mem = get_system_memory_info()
+            ram_avail = mem.get("available", 8.0)
+            ram_total = mem.get("total", 16.0)
+            mode_color = "ansigreen" if EXECUTION_MODE == "Auto-accept" else "ansiyellow"
+            return HTML(
+                f" <b>Model:</b> <ansigreen><b>{model}</b></ansigreen> │ "
+                f"<b>RAM:</b> <ansicyan><b>{ram_avail} GiB Available / {ram_total} GiB Total</b></ansicyan> │ "
+                f"<b>Mode:</b> <{mode_color}><b>{EXECUTION_MODE}</b></{mode_color}>\n"
+                f" <ansimagenta>Type <b>/</b> for commands (↑↓←→ or mouse)</ansimagenta> │ "
+                f"<ansiblue><b>@</b> to tag files</ansiblue> │ "
+                f"<ansiyellow><b>/help</b></ansiyellow> │ "
+                f"<ansired><b>/exit</b> to quit</ansired>"
+            )
+
+        kb = KeyBindings()
+
+        @kb.add('down', filter=has_completions)
+        def _nav_down(event):
+            event.current_buffer.complete_next()
+
+        @kb.add('up', filter=has_completions)
+        def _nav_up(event):
+            event.current_buffer.complete_previous()
+
+        @kb.add('right', filter=has_completions)
+        def _nav_right(event):
+            event.current_buffer.complete_next()
+
+        @kb.add('left', filter=has_completions)
+        def _nav_left(event):
+            event.current_buffer.complete_previous()
+
+        @kb.add('enter', filter=completion_is_selected)
+        def _nav_enter(event):
+            event.current_buffer.apply_completion(event.current_buffer.complete_state.current_completion)
+
+        @kb.add('f1')
+        def _open_f1(event):
+            event.app.exit(result="/")
+
         prompt_session = PromptSession(
             history=FileHistory(history_file),
             completer=SlashAndFileCompleter(),
             complete_while_typing=True,
+            bottom_toolbar=get_bottom_toolbar,
+            mouse_support=sys.stdin.isatty(),
+            key_bindings=kb,
             style=prompt_style
         )
 
@@ -2408,6 +2498,12 @@ def agent_loop(initial_prompt: Optional[str] = None, requested_model: Optional[s
         if raw_cmd in ("/exit", "/quit", "/q", "exit", "quit", ":q", "q"):
             console.print(f"[bold {PINK}]Farewell from Virtual☆Paradise! // Sayonara.[/]")
             break
+        elif raw_cmd == "/":
+            selected = show_tui_command_palette()
+            if not selected:
+                continue
+            user_input = selected
+            raw_cmd = user_input.strip().lower()
         elif raw_cmd in ("/help", "help", "?"):
             print_help_table()
             continue
