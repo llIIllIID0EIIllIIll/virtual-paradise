@@ -257,12 +257,22 @@ def get_banner_art() -> str:
         " ╚████╔╝ ██║██║  ██║   ██║   ╚██████╔╝██║  ██║███████╗    ██║     ██║  ██║██║  ██║██║  ██║██████╔╝██║███████║███████╗",
         "  ╚═══╝  ╚═╝╚═╝  ╚═╝   ╚═╝    ╚═════╝ ╚═╝  ╚═╝╚══════╝    ╚═╝     ╚═╝  ╚═╝╚═╝  ╚═╝╚═╝  ╚═╝╚═════╝ ╚═╝╚══════╝╚══════╝"
     ]
-    # Diagonal gradient: Start Miku Cyan (0, 245, 212) -> End Sakura Pink (255, 183, 213)
-    c_start = (0, 245, 212)
-    c_end = (255, 183, 213)
+    # Signature Virtual☆Paradise 40/20/40 Palette:
+    # 40% Miku Cyan (#00f5d4) -> 20% Cyber Green (#00ff88) -> 40% Sakura Pink (#ffb7d5)
+    c_cyan  = (0, 245, 212)
+    c_green = (0, 255, 136)
+    c_pink  = (255, 183, 213)
+
     h = len(raw_lines)
     w = max(len(l) for l in raw_lines)
     alpha = 10.0
+
+    def lerp(c1, c2, p):
+        return (
+            int(c1[0] + (c2[0] - c1[0]) * p),
+            int(c1[1] + (c2[1] - c1[1]) * p),
+            int(c1[2] + (c2[2] - c1[2]) * p)
+        )
 
     formatted_banner = []
     for r, line in enumerate(raw_lines):
@@ -273,9 +283,18 @@ def get_banner_art() -> str:
                 continue
             t = (c + alpha * r) / (w + alpha * (h - 1))
             t = max(0.0, min(1.0, t))
-            red = int(c_start[0] + (c_end[0] - c_start[0]) * t)
-            green = int(c_start[1] + (c_end[1] - c_start[1]) * t)
-            blue = int(c_start[2] + (c_end[2] - c_start[2]) * t)
+            
+            # Exact 40 / 20 / 40 piecewise linear diagonal gradient
+            if t < 0.40:
+                # 40% Cyan zone transitioning into Cyber Green
+                red, green, blue = lerp(c_cyan, c_green, t / 0.40)
+            elif t < 0.60:
+                # 20% Cyber Green zone center band
+                red, green, blue = c_green
+            else:
+                # 40% Sakura Pink zone transitioning from Cyber Green to Sakura Pink
+                red, green, blue = lerp(c_green, c_pink, (t - 0.60) / 0.40)
+
             out.append(f"\033[38;2;{red};{green};{blue}m{char}\033[0m")
         formatted_banner.append("  " + "".join(out))
     return "\n".join(formatted_banner)
