@@ -32,33 +32,75 @@ C_GREEN = "\033[38;2;57;255;20m"    # Matrix Green #39ff14
 C_RED = "\033[38;2;255;82;135m"     # Glitch Red #ff5287
 C_GRAY = "\033[38;2;110;130;150m"   # Muted Slate
 
-SYSTEM_PROMPT = """You are Paradise Agent, an autonomous, highly skilled Linux system diagnostic and repair AI assistant operating LOCALLY and OFFLINE on Arch Linux with Hyprland and Omarchy (Virtual☆Paradise theme).
+def build_system_prompt() -> str:
+    # 1. Omarchy active theme
+    theme = "Virtual Paradise"
+    try:
+        p = os.path.expanduser("~/.config/omarchy/current/theme.name")
+        if os.path.exists(p):
+            with open(p) as f:
+                t = f.read().strip()
+                if t:
+                    theme = t
+    except Exception:
+        pass
 
-Your primary responsibilities:
-1. Diagnose and fix system issues: Network/WiFi failures (iwd, NetworkManager, rfkill, ip), display/Hyprland crashes, audio issues (pipewire, wireplumber), and systemd service errors.
-2. Inspect logs and errors: coredumpctl, journalctl -p 3 -xb, dmesg, and application stderr.
-3. Edit, audit, and fix system configuration files: ~/.config/hypr/, ~/.config/omarchy/, ~/.config/gtk-4.0/, /etc/, etc.
-4. Maintain system stability, explain root causes clearly, and propose or execute precise solutions.
+    # 2. Installed themes
+    themes_list = []
+    try:
+        out = subprocess.check_output(["omarchy", "theme", "list"], text=True, timeout=2).strip()
+        if out:
+            themes_list = [line.strip() for line in out.split("\n") if line.strip()]
+    except Exception:
+        pass
 
-You have access to tools:
-- `execute_bash`: Run terminal commands to inspect, diagnose, or fix issues.
-- `read_file`: Inspect contents of configuration files or logs.
-- `write_file`: Create or update configuration files.
-- `get_system_health`: Get a fast snapshot of CPU, RAM, Disk, Failed Services, and Network.
+    # 3. Wallpaper
+    wallpaper = "Miku_live.mp4"
+    try:
+        out = subprocess.check_output(["pgrep", "-a", "mpvpaper"], text=True, timeout=2).strip()
+        if out:
+            wallpaper = os.path.basename(out.split()[-1])
+    except Exception:
+        pass
+
+    user = os.environ.get("USER", "doe")
+    shell = os.environ.get("SHELL", "/usr/bin/zsh")
+    desktop = os.environ.get("XDG_CURRENT_DESKTOP", "Hyprland")
+
+    return f"""You are Paradise Agent, an autonomous, highly skilled Linux system diagnostic and repair AI assistant operating LOCALLY and OFFLINE on Arch Linux with Hyprland and Omarchy.
+
+[LIVE SYSTEM STATE & ENVIRONMENT]:
+- Operating System: Arch Linux (rolling release, kernel Linux 6.x)
+- Window Manager / Compositor: {desktop} (Wayland)
+- Active Omarchy Theme: "{theme}" (Theme phong cách Cyberpunk / Vocaloid Hatsune Miku đặc trưng: 40% Cyan #00f5d4, 20% Green #00ff88, 40% Sakura Pink #ffb7d5)
+- Installed Themes Available: {', '.join(themes_list[:10])}...
+- Active Wallpaper: {wallpaper} (Live video wallpaper via mpvpaper)
+- Current User: {user}
+- Current Shell: {shell} (Zsh)
+- Default Terminal: Ghostty (chạy qua wrapper ~/.local/bin/omarchy-launch-terminal để kích hoạt Zsh)
+
+[STANDARD DESKTOP SHORTCUTS]:
+- Mở Terminal: SUPER + RETURN
+- Mở Quản lý tệp (File Manager Nautilus): SUPER + E
+- Mở Trình duyệt Web (Firefox): SUPER + B
+- Mở Menu ứng dụng (Launcher): SUPER + SPACE hoặc SUPER + D
+- Đóng cửa sổ: SUPER + Q
+- Menu hệ thống Omarchy: SUPER + M
+- Chụp ảnh màn hình: PRINT hoặc SUPER + SHIFT + S
+
+[OMARCHY CORE COMMANDS]:
+- Xem theme hiện tại: `omarchy theme current`
+- Liệt kê tất cả theme: `omarchy theme list`
+- Đổi sang theme khác: `omarchy theme set <Tên_Theme>`
+- Đổi hình nền: `omarchy menu background`
+- Cập nhật hệ thống: `omarchy update`
 
 Guidelines:
-- CRITICAL: For greetings (e.g. "xin chào", "hello", "hi", "bạn là ai"), casual conversation, or questions asking about general usage/shortcuts, DO NOT call any tools. Reply directly, politely, and warmly in Vietnamese.
-- Standard Desktop Shortcuts (Arch Linux / Hyprland / Omarchy):
-  * Mở Terminal: SUPER + RETURN (chạy ~/.local/bin/omarchy-launch-terminal)
-  * Mở Quản lý tệp (File Manager Nautilus): SUPER + E
-  * Mở Trình duyệt Web (Browser): SUPER + B
-  * Mở Menu ứng dụng (Launcher): SUPER + SPACE hoặc SUPER + D
-  * Đóng cửa sổ: SUPER + Q
-  * Menu hệ thống Omarchy: SUPER + M
-  * Chụp ảnh màn hình: PRINT hoặc SUPER + SHIFT + S
-- ONLY call tools when the user asks to check current system state, diagnose errors, read/write files, or run system actions.
-- When a non-tech user reports a problem (e.g. "máy bị lag", "mất mạng wifi", "mất âm thanh", "pin còn bao nhiêu"), choose the right tool to inspect the hardware/system, then explain the result in simple, clear, easy-to-understand Vietnamese.
-- Be concise, helpful, and friendly.
+- CRITICAL: When the user asks what theme, wallpaper, shell, or terminal they are using, answer IMMEDIATELY, ACCURATELY, and DIRECTLY from [LIVE SYSTEM STATE & ENVIRONMENT]! Specifically, their active theme is "{theme}".
+- For greetings (e.g. "xin chào", "hello", "hi", "bạn là ai"), casual conversation, or general questions asking about shortcuts/usage, DO NOT call any tools. Reply directly, politely, and warmly in Vietnamese.
+- ONLY call tools when the user asks to check live dynamic system telemetry (pin, ram, ổ cứng, lag, nhiệt độ), diagnose errors, read/write files, or run system actions.
+- When a user reports a problem or asks about performance, call `get_system_health` first.
+- Be concise, professional, friendly, and speak natural Vietnamese.
 """
 
 TOOLS_SPEC = [
@@ -368,7 +410,7 @@ def agent_loop(initial_prompt: Optional[str] = None, yolo: bool = False):
     print_banner(model)
 
     messages = [
-        {"role": "system", "content": SYSTEM_PROMPT}
+        {"role": "system", "content": build_system_prompt()}
     ]
 
     if initial_prompt:
@@ -405,7 +447,7 @@ def agent_loop(initial_prompt: Optional[str] = None, yolo: bool = False):
                 print(tool_get_system_health())
                 continue
             elif cmd == "/clear":
-                messages = [{"role": "system", "content": SYSTEM_PROMPT}]
+                messages = [{"role": "system", "content": build_system_prompt()}]
                 print(f"{C_GREEN}Conversation memory cleared.{C_RESET}")
                 continue
             elif cmd == "/model":
@@ -440,22 +482,44 @@ def handle_user_turn(user_text: str, messages: List[Dict[str, Any]], model: str,
         # Fallback: Parse inline JSON or text tool calls emitted directly in content
         if not tool_calls and content:
             trimmed = content.strip()
-            m = re.search(r'[\"\']?name[\"\']?\s*[:=]\s*[\"\']?([a-zA-Z0-9_]+)[\"\']?', trimmed)
-            if m and m.group(1) in ("get_system_health", "execute_bash", "read_file", "write_file"):
-                fn_name = m.group(1)
-                args = {}
-                if "arguments" in trimmed:
-                    try:
-                        arg_part = trimmed.split("arguments", 1)[1]
-                        arg_str = "{" + arg_part.split("{", 1)[1].rsplit("}", 1)[0] + "}"
-                        args = json.loads(arg_str)
-                    except Exception:
-                        pass
-                tool_calls = [{"function": {"name": fn_name, "arguments": args}}]
-                content = ""
-            elif "get_system_health" in trimmed and len(trimmed) < 45:
-                tool_calls = [{"function": {"name": "get_system_health", "arguments": {}}}]
-                content = ""
+            if "```json" in trimmed:
+                try:
+                    trimmed = trimmed.split("```json")[1].split("```")[0].strip()
+                except Exception:
+                    pass
+            elif "```" in trimmed:
+                try:
+                    trimmed = trimmed.split("```")[1].split("```")[0].strip()
+                except Exception:
+                    pass
+
+            if trimmed.startswith("{") and "name" in trimmed:
+                try:
+                    parsed = json.loads(trimmed)
+                    raw_name = str(parsed.get("name", "")).strip()
+                    raw_args = parsed.get("arguments") or parsed.get("parameters", {})
+                    if raw_name in ("get_system_health", "execute_bash", "read_file", "write_file"):
+                        tool_calls = [{"function": {"name": raw_name, "arguments": raw_args}}]
+                        content = ""
+                    elif raw_name:
+                        tool_calls = [{"function": {"name": "execute_bash", "arguments": {"command": raw_name}}}]
+                        content = ""
+                except Exception:
+                    pass
+
+            if not tool_calls:
+                m = re.search(r'[\"\']?name[\"\']?\s*[:=]\s*[\"\']?([a-zA-Z0-9_ -]+)[\"\']?', trimmed)
+                if m:
+                    candidate = m.group(1).strip()
+                    if candidate in ("get_system_health", "execute_bash", "read_file", "write_file"):
+                        tool_calls = [{"function": {"name": candidate, "arguments": {}}}]
+                        content = ""
+                    elif candidate.startswith(("omarchy", "cat", "ls", "ps", "ip", "systemctl")):
+                        tool_calls = [{"function": {"name": "execute_bash", "arguments": {"command": candidate}}}]
+                        content = ""
+                elif "get_system_health" in trimmed and len(trimmed) < 45:
+                    tool_calls = [{"function": {"name": "get_system_health", "arguments": {}}}]
+                    content = ""
 
         if not msg.get("tool_calls") and tool_calls:
             msg["tool_calls"] = tool_calls
