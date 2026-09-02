@@ -974,12 +974,34 @@ def get_installed_models() -> List[str]:
     except Exception:
         return [DEFAULT_MODEL]
 
+def get_model_tier(model_name: str) -> int:
+    """Returns integer ranking of model parameter tier (1: 0.5-1.5B, 2: 3-4B, 3: 7-9B, 4: 14B+)."""
+    m = model_name.lower()
+    if any(k in m for k in ["0.5b", "1b", "1.5b", "tiny"]):
+        return 1
+    elif any(k in m for k in ["3b", "4b"]):
+        return 2
+    elif any(k in m for k in ["7b", "8b", "9b"]):
+        return 3
+    elif any(k in m for k in ["14b", "32b", "70b"]):
+        return 4
+    return 2
+
+def get_next_higher_model(current_model: str) -> Optional[str]:
+    """Finds the next higher tier model installed locally for dynamic escalation."""
+    installed = get_installed_models()
+    curr_tier = get_model_tier(current_model)
+    higher = [m for m in installed if get_model_tier(m) > curr_tier]
+    if not higher:
+        return None
+    higher.sort(key=lambda m: get_model_tier(m))
+    return higher[0]
+
 def detect_optimal_model(requested_model: Optional[str] = None) -> Tuple[str, str]:
     """
-    Intelligently inspects available system RAM and chooses the best installed model:
-    - Available RAM >= 6.5 GiB: qwen2.5-coder:7b (High Capability Tier)
-    - Available RAM 3.0 - 6.5 GiB: qwen2.5-coder:3b (Sweet Spot Tier)
-    - Available RAM < 3.0 GiB: qwen2.5-coder:1.5b (Ultra-lightweight Tier)
+    Intelligently selects starting model: defaults to the smallest installed model
+    for instant response and minimal resource footprint, with automatic tier escalation
+    when complex tasks encounter obstacles.
     """
     if requested_model:
         return requested_model, f"manual override: {requested_model}"
@@ -992,26 +1014,17 @@ def detect_optimal_model(requested_model: Optional[str] = None) -> Tuple[str, st
     avail = mem["available"]
     installed = get_installed_models()
 
-    has_7b = any("7b" in m for m in installed)
-    has_3b = any("3b" in m for m in installed)
-    has_1_5b = any("1.5b" in m for m in installed)
+    if not installed:
+        return DEFAULT_MODEL, f"Default offline ({DEFAULT_MODEL})"
 
-    # 3B is the optimal high-speed sweet spot for local CPU execution (~2-3s response)
-    if has_3b and avail >= 3.0:
-        chosen = [m for m in installed if "3b" in m][0]
-        return chosen, f"Available RAM: {avail} GiB (Tier: 3B Fast & Optimal)"
-    elif avail < 3.0 and has_1_5b:
-        chosen = [m for m in installed if "1.5b" in m][0]
-        return chosen, f"Available RAM: {avail} GiB (Tier: 1.5B Ultra-light)"
-    elif has_7b:
-        chosen = [m for m in installed if "7b" in m][0]
-        return chosen, f"Available RAM: {avail} GiB (Tier: 7B)"
-    elif has_3b:
-        chosen = [m for m in installed if "3b" in m][0]
-        return chosen, f"Available RAM: {avail} GiB (Tier: 3B)"
-    elif installed:
-        return installed[0], f"Installed model: {installed[0]}"
-    return DEFAULT_MODEL, f"Default offline ({DEFAULT_MODEL})"
+    # Sort installed models by tier ascending (smallest first)
+    sorted_by_tier = sorted(installed, key=lambda m: get_model_tier(m))
+    smallest_model = sorted_by_tier[0]
+    tier_num = get_model_tier(smallest_model)
+    tier_names = {1: "1.5B Ultra-Fast", 2: "3B Sweet Spot", 3: "7B High Reasoning", 4: "14B+ Heavy"}
+    tier_desc = tier_names.get(tier_num, "Base")
+
+    return smallest_model, f"Available RAM: {avail} GiB (Tier: {tier_desc} — Auto-Escalation Enabled)"
 
 def discover_skills() -> Dict[str, Dict[str, str]]:
     """Discovers all specialized skills across known repository directories."""
@@ -2379,6 +2392,7 @@ def _handle_user_turn_inner(user_text: str, messages: List[Dict[str, Any]], mode
 
     max_steps = 8
     step = 0
+    consecutive_tool_failures = 0
 
     while step < max_steps:
         step += 1
@@ -2388,8 +2402,22 @@ def _handle_user_turn_inner(user_text: str, messages: List[Dict[str, Any]], mode
         try:
             res = call_ollama_chat(messages, model, enable_tools=(step == 1))
         except Exception as e:
-            console.print(f"\n[bold {RED}][Model Error]:[/] {e}")
-            break
+            higher = get_next_higher_model(model)
+            if higher:
+                console.print(Panel(
+                    f"[bold {YELLOW}]Model execution error on current tier:[/] [bold {RED}]{model}[/]\n"
+                    f"[bold {CYAN}]Auto-Escalating to higher tier:[/] [bold {GREEN}]{higher}[/]\n"
+                    f"[dim]Continuing task execution with enhanced reasoning capacity...[/]",
+                    title="🚀 [bold #00f5d4]Autonomous Model Tier Escalation[/]",
+                    border_style=CYAN,
+                    box=box.ROUNDED,
+                    padding=(0, 1)
+                ))
+                model = higher
+                continue
+            else:
+                console.print(f"\n[bold {RED}][Model Error]:[/] {e}")
+                break
 
         elapsed_ms = int((time.time() - start_time) * 1000)
         console.print(" " * 45, end="\r")
@@ -2746,6 +2774,40 @@ def _handle_user_turn_inner(user_text: str, messages: List[Dict[str, Any]], mode
             except Exception as exc:
                 tool_output = f"[Tool Error in {fn_name}: {exc}]"
 
+            # Check for tool errors and track failure streak for model tier escalation
+            is_error = (
+                tool_output.startswith("[Tool Error") or
+                tool_output.startswith("[Error:") or
+                "failed with return code" in tool_output.lower() or
+                "exit status 1" in tool_output.lower() or
+                "syntax error" in tool_output.lower() or
+                ("not found" in tool_output.lower() and "command" in tool_output.lower())
+            )
+            if is_error:
+                consecutive_tool_failures += 1
+            else:
+                consecutive_tool_failures = 0
+
+            if consecutive_tool_failures >= 2:
+                higher = get_next_higher_model(model)
+                if higher:
+                    console.print(Panel(
+                        f"[bold {YELLOW}]Task encountered repeated errors on tier:[/] [bold {RED}]{model}[/]\n"
+                        f"[bold {CYAN}]Auto-Escalating to higher tier:[/] [bold {GREEN}]{higher}[/]\n"
+                        f"[dim]Upgrading model intelligence to diagnose and resolve errors...[/]",
+                        title="🚀 [bold #00f5d4]Autonomous Model Tier Escalation[/]",
+                        border_style=CYAN,
+                        box=box.ROUNDED,
+                        padding=(0, 1)
+                    ))
+                    old_m = model
+                    model = higher
+                    consecutive_tool_failures = 0
+                    messages.append({
+                        "role": "system",
+                        "content": f"[TIER ESCALATION NOTICE: The previous lower-tier model ({old_m}) encountered errors. You are upgraded to {model}. Analyze the tool errors above, fix the approach, and complete the objective decisively.]"
+                    })
+
             tool_time_ms = int((time.time() - tool_start) * 1000)
 
             # Display concise preview of tool output
@@ -2778,8 +2840,31 @@ def _handle_user_turn_inner(user_text: str, messages: List[Dict[str, Any]], mode
         synth_start = time.time()
         synth_content = stream_ollama_synthesis(messages, model, lang=lang)
         synth_ms = int((time.time() - synth_start) * 1000)
+
+        # Detect if model admitted inability to solve task
+        lower_synth = synth_content.lower()
+        struggle_phrases = ["i cannot solve", "unable to solve", "could not solve", "failed to solve", "tôi không thể giải quyết", "không thể hoàn thành", "chưa giải quyết được"]
+        if any(p in lower_synth for p in struggle_phrases):
+            higher = get_next_higher_model(model)
+            if higher:
+                console.print(Panel(
+                    f"[bold {YELLOW}]Model admitted difficulty solving task on tier:[/] [bold {RED}]{model}[/]\n"
+                    f"[bold {CYAN}]Auto-Escalating to higher tier:[/] [bold {GREEN}]{higher}[/]\n"
+                    f"[dim]Re-evaluating with higher capability model...[/]",
+                    title="🚀 [bold #00f5d4]Autonomous Model Tier Escalation[/]",
+                    border_style=CYAN,
+                    box=box.ROUNDED,
+                    padding=(0, 1)
+                ))
+                model = higher
+                messages.append({
+                    "role": "system",
+                    "content": f"[TIER ESCALATION NOTICE: Previous model could not solve this task. You are upgraded to {model}. Solve the user's objective thoroughly without refusing.]"
+                })
+                synth_content = stream_ollama_synthesis(messages, model, lang=lang)
+
         if SHOW_THINKING and synth_content:
-            print_thinking(f"• [bold {CYAN}]Synthesis Stream:[/] Delivered in {synth_ms} ms | Language: [bold]{lang.upper()}[/]")
+            print_thinking(f"• [bold {CYAN}]Synthesis Stream:[/] Delivered in {synth_ms} ms | Language: [bold]{lang.upper()}[/] | Model: [bold]{model}[/]")
         messages.append({
             "role": "assistant",
             "content": synth_content
@@ -2788,15 +2873,17 @@ def _handle_user_turn_inner(user_text: str, messages: List[Dict[str, Any]], mode
 
     if session_id:
         save_session(session_id, messages, model)
+    return model
 
-def handle_user_turn(user_text: str, messages: List[Dict[str, Any]], model: str, session_id: Optional[str] = None):
+def handle_user_turn(user_text: str, messages: List[Dict[str, Any]], model: str, session_id: Optional[str] = None) -> str:
     """Safe execution wrapper that handles Ctrl+C (KeyboardInterrupt) by cancelling without crashing."""
     try:
-        _handle_user_turn_inner(user_text, messages, model, session_id=session_id)
+        return _handle_user_turn_inner(user_text, messages, model, session_id=session_id) or model
     except KeyboardInterrupt:
         console.print(f"\n[bold {YELLOW}]^C[/] [dim]Operation cancelled by user.[/]\n")
         if session_id:
             save_session(session_id, messages, model)
+        return model
 
 def agent_loop(initial_prompt: Optional[str] = None, requested_model: Optional[str] = None, resume_session: Optional[str] = None):
     """Main interactive REPL loop with session persistence and /resume support."""
@@ -2835,7 +2922,7 @@ def agent_loop(initial_prompt: Optional[str] = None, requested_model: Optional[s
         print_banner(model, reason)
 
     if initial_prompt:
-        handle_user_turn(initial_prompt, messages, model, session_id=session_id)
+        model = handle_user_turn(initial_prompt, messages, model, session_id=session_id) or model
         return
 
     prompt_session = None
@@ -3002,7 +3089,7 @@ def agent_loop(initial_prompt: Optional[str] = None, requested_model: Optional[s
                     f"Formulate a structured, step-by-step diagnostic and execution plan with clear numbered phases "
                     f"and verification criteria for: {task_content}"
                 )
-                handle_user_turn(plan_prompt, messages, model, session_id=session_id)
+                model = handle_user_turn(plan_prompt, messages, model, session_id=session_id) or model
                 continue
             elif cmd.startswith("/goal"):
                 parts = user_input.split(maxsplit=1)
@@ -3019,7 +3106,7 @@ def agent_loop(initial_prompt: Optional[str] = None, requested_model: Optional[s
                     f"[AUTONOMOUS GOAL DIRECTIVE]: Execute all necessary diagnostic, inspection, and coding steps "
                     f"autonomously without stopping until this goal is fully accomplished and verified: {goal_content}"
                 )
-                handle_user_turn(goal_prompt, messages, model, session_id=session_id)
+                model = handle_user_turn(goal_prompt, messages, model, session_id=session_id) or model
                 continue
             elif cmd in ("/copy", "/cp"):
                 last_resp = ""
@@ -3129,7 +3216,7 @@ def agent_loop(initial_prompt: Optional[str] = None, requested_model: Optional[s
                     console.print(f"[bold {YELLOW}]Usage: /find <glob_pattern> [dir][/]")
                 continue
 
-        handle_user_turn(user_input, messages, model, session_id=session_id)
+        model = handle_user_turn(user_input, messages, model, session_id=session_id) or model
 
 def main():
     import argparse
