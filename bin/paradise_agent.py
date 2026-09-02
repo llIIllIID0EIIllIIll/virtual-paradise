@@ -679,6 +679,10 @@ def run_tui_model_picker(installed: List[str], current_model: str) -> Optional[s
     def _esc(event):
         event.app.exit()
 
+    @kb.add("c-c")
+    def _sigint(event):
+        event.app.exit()
+
     app = Application(
         layout=Layout(container, focused_element=buttons[0]),
         key_bindings=kb,
@@ -761,6 +765,10 @@ def run_tui_mode_picker(current_mode: str) -> Optional[str]:
                 return
     @kb.add("escape")
     def _esc(event):
+        event.app.exit()
+
+    @kb.add("c-c")
+    def _sigint(event):
         event.app.exit()
 
     app = Application(
@@ -2302,7 +2310,7 @@ def detect_language(text: str) -> str:
         return "vi"
     return "en" if words else "vi"
 
-def handle_user_turn(user_text: str, messages: List[Dict[str, Any]], model: str, session_id: Optional[str] = None):
+def _handle_user_turn_inner(user_text: str, messages: List[Dict[str, Any]], model: str, session_id: Optional[str] = None):
     """Processes a multi-step user turn with reasoning extraction and tool execution."""
     global EXECUTION_MODE
 
@@ -2781,6 +2789,15 @@ def handle_user_turn(user_text: str, messages: List[Dict[str, Any]], model: str,
     if session_id:
         save_session(session_id, messages, model)
 
+def handle_user_turn(user_text: str, messages: List[Dict[str, Any]], model: str, session_id: Optional[str] = None):
+    """Safe execution wrapper that handles Ctrl+C (KeyboardInterrupt) by cancelling without crashing."""
+    try:
+        _handle_user_turn_inner(user_text, messages, model, session_id=session_id)
+    except KeyboardInterrupt:
+        console.print(f"\n[bold {YELLOW}]^C[/] [dim]Đã hủy tác vụ đang chạy. (Action cancelled by user)[/]\n")
+        if session_id:
+            save_session(session_id, messages, model)
+
 def agent_loop(initial_prompt: Optional[str] = None, requested_model: Optional[str] = None, resume_session: Optional[str] = None):
     """Main interactive REPL loop with session persistence and /resume support."""
     global EXECUTION_MODE, SHOW_THINKING
@@ -2835,7 +2852,25 @@ def agent_loop(initial_prompt: Optional[str] = None, requested_model: Optional[s
         history_file = os.path.expanduser("~/.local/share/paradise-agent/history")
         os.makedirs(os.path.dirname(history_file), exist_ok=True)
 
+        last_sigint_time = {"time": 0.0}
         kb = KeyBindings()
+
+        @kb.add('c-c')
+        def _on_sigint(event):
+            buf = event.current_buffer.text
+            now = time.time()
+            if buf:
+                event.current_buffer.text = ""
+                event.current_buffer.cursor_position = 0
+                last_sigint_time["time"] = now
+                console.print(f"\n[bold {YELLOW}]^C[/] [dim]Đã hủy dòng nhập. (Nhấn [bold {RED}]Ctrl+C[/] lần nữa để thoát)[/]")
+            else:
+                if now - last_sigint_time["time"] < 3.0:
+                    console.print(f"\n[bold {PINK}]Farewell from Virtual☆Paradise! // Sayonara.[/]")
+                    event.app.exit(exception=SystemExit)
+                else:
+                    last_sigint_time["time"] = now
+                    console.print(f"\n[bold {YELLOW}]^C[/] [dim]Nhấn [bold {RED}]Ctrl+C[/] lần nữa trong 3s để thoát (hoặc gõ [bold {YELLOW}]/exit[/]).[/]")
 
         @kb.add('down', filter=has_completions)
         def _nav_down(event):
@@ -2877,6 +2912,8 @@ def agent_loop(initial_prompt: Optional[str] = None, requested_model: Optional[s
             key_bindings=kb,
             style=prompt_style
         )
+    else:
+        last_sigint_time = {"time": 0.0}
 
     while True:
         try:
@@ -2885,7 +2922,17 @@ def agent_loop(initial_prompt: Optional[str] = None, requested_model: Optional[s
                 user_input = prompt_session.prompt(ANSI("\033[38;2;0;245;212m\033[1myou ❯\033[0m ")).strip()
             else:
                 user_input = input(f"\n\033[38;2;0;245;212m\033[1myou ❯\033[0m ").strip()
-        except (KeyboardInterrupt, EOFError):
+            last_sigint_time["time"] = 0.0
+        except KeyboardInterrupt:
+            now = time.time()
+            if now - last_sigint_time["time"] < 3.0:
+                console.print(f"\n[bold {PINK}]Farewell from Virtual☆Paradise! // Sayonara.[/]")
+                break
+            else:
+                last_sigint_time["time"] = now
+                console.print(f"\n[bold {YELLOW}]^C[/] [dim]Đã hủy thao tác. (Nhấn [bold {RED}]Ctrl+C[/] lần nữa trong 3s để thoát)[/]\n")
+                continue
+        except (EOFError, SystemExit):
             console.print(f"\n[bold {PINK}]Farewell from Virtual☆Paradise! // Sayonara.[/]")
             break
 
