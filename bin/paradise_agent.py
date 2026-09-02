@@ -265,9 +265,10 @@ def get_banner_art() -> str:
 
     h = len(raw_lines)
     w = max(len(l) for l in raw_lines)
-    alpha = 10.0
+    alpha = 2.0
 
     def lerp(c1, c2, p):
+        p = max(0.0, min(1.0, p))
         return (
             int(c1[0] + (c2[0] - c1[0]) * p),
             int(c1[1] + (c2[1] - c1[1]) * p),
@@ -284,16 +285,17 @@ def get_banner_art() -> str:
             t = (c + alpha * r) / (w + alpha * (h - 1))
             t = max(0.0, min(1.0, t))
             
-            # Exact 40 / 20 / 40 piecewise linear diagonal gradient
-            if t < 0.40:
-                # 40% Cyan zone transitioning into Cyber Green
-                red, green, blue = lerp(c_cyan, c_green, t / 0.40)
-            elif t < 0.60:
-                # 20% Cyber Green zone center band
+            # True visual 40% Cyan / 20% Green / 40% Sakura Pink
+            if t < 0.35:
+                red, green, blue = c_cyan
+            elif t < 0.45:
+                red, green, blue = lerp(c_cyan, c_green, (t - 0.35) / 0.10)
+            elif t < 0.55:
                 red, green, blue = c_green
+            elif t < 0.65:
+                red, green, blue = lerp(c_green, c_pink, (t - 0.55) / 0.10)
             else:
-                # 40% Sakura Pink zone transitioning from Cyber Green to Sakura Pink
-                red, green, blue = lerp(c_green, c_pink, (t - 0.60) / 0.40)
+                red, green, blue = c_pink
 
             out.append(f"\033[38;2;{red};{green};{blue}m{char}\033[0m")
         formatted_banner.append("  " + "".join(out))
