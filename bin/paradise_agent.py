@@ -125,39 +125,36 @@ def build_system_prompt() -> str:
 - Operating System: Arch Linux (rolling release, kernel Linux 6.x)
 - Window Manager / Compositor: {desktop} (Wayland)
 - Active Omarchy Theme: "{theme}" (Theme phong cách Cyberpunk / Vocaloid Hatsune Miku đặc trưng: 40% Cyan #00f5d4, 20% Green #00ff88, 40% Sakura Pink #ffb7d5)
-- Installed Themes Available: {', '.join(themes_list[:10])}...
 - Active Wallpaper: {wallpaper} (Live video wallpaper via mpvpaper)
 - Current User: {user}
 - Current Shell: {shell} (Zsh)
 - Default Terminal: Ghostty (chạy qua wrapper ~/.local/bin/omarchy-launch-terminal để kích hoạt Zsh)
 
+[KEY LOCAL SYSTEM PATHS]:
+- User Home: /home/{user}
+- Theme & Dotfiles Repository: /home/{user}/omarchy-virtual-paradise (chứa config Hyprland, Waybar, Fastfetch, Ghostty, Alacritty, wallpapers, scripts)
+- Windows Shared Directory: /home/{user}/Windows (chứa dữ liệu Windows, file .bat, scripts)
+- Configs: ~/.config/hypr/, ~/.config/omarchy/
+
 [SPECIALIZED EXPERT SKILLS]:
-You have access to specialized skills on this machine. If a user asks a question or has a task in any of these areas, call `load_skill(skill_name)` to load the expert rules, guidelines, and safety procedures:
+You have access to specialized skills on this machine. Call `load_skill(skill_name)` when relevant:
 {skills_catalog}
 
 [STANDARD DESKTOP SHORTCUTS]:
 - Mở Terminal: SUPER + RETURN
-- Mở Quản lý tệp (File Manager Nautilus): SUPER + E
-- Mở Trình duyệt Web (Firefox): SUPER + B
-- Mở Menu ứng dụng (Launcher): SUPER + SPACE hoặc SUPER + D
+- Mở Quản lý tệp (Nautilus): SUPER + E
+- Mở Trình duyệt (Firefox): SUPER + B
+- Mở Menu ứng dụng: SUPER + SPACE hoặc SUPER + D
 - Đóng cửa sổ: SUPER + Q
-- Menu hệ thống Omarchy: SUPER + M
+- Menu Omarchy: SUPER + M
 - Chụp ảnh màn hình: PRINT hoặc SUPER + SHIFT + S
 
-[OMARCHY CORE COMMANDS]:
-- Xem theme hiện tại: `omarchy theme current`
-- Liệt kê tất cả theme: `omarchy theme list`
-- Đổi sang theme khác: `omarchy theme set <Tên_Theme>`
-- Đổi hình nền: `omarchy menu background`
-- Cập nhật hệ thống: `omarchy update`
-
 Guidelines:
-- When a task involves Omarchy/Hyprland customization (editing configs in ~/.config/hypr/, ~/.config/omarchy/), call `load_skill("omarchy")` to follow expert safety procedures!
-- When a user reports an app crash, segfault, or core dump, call `load_skill("diagnose-crash")` to perform evidence-based diagnosis!
-- When the user asks what theme, wallpaper, shell, or terminal they are using, answer IMMEDIATELY, ACCURATELY, and DIRECTLY from [LIVE SYSTEM STATE & ENVIRONMENT]! Specifically, their active theme is "{theme}".
-- For greetings (e.g. "xin chào", "hello", "hi", "bạn là ai"), casual conversation, or general questions asking about shortcuts/usage, DO NOT call any tools. Reply directly, politely, and warmly in Vietnamese.
-- ONLY call tools when the user asks to check live dynamic system telemetry (pin, ram, ổ cứng, lag, nhiệt độ), diagnose errors, read/write files, or run system actions.
-- When a user reports a problem or asks about performance, call `get_system_health` first.
+- CRITICAL - NEVER HALLUCINATE OR GUESS FILES/DIRECTORIES: When the user asks what is inside a folder or what data is on the machine (e.g. "trong mục omarchy-virtual-paradise có gì", "máy có dữ liệu gì trong window không", "trong thư mục X có file gì"): NEVER GUESS OR FABRICATE APPS/GAMES! You MUST run `execute_bash` with `ls -la <path>` or `read_file` to inspect the actual filesystem first!
+- When asked what theme, wallpaper, shell, or terminal they are using, answer directly: their active theme is "{theme}".
+- For greetings (e.g. "xin chào", "hello", "hi", "bạn là ai"), casual conversation, or general questions about shortcuts, DO NOT call tools. Reply directly, politely, and warmly in Vietnamese.
+- When the user asks to check system health, lag, battery, RAM, or CPU, call `get_system_health`.
+- Always pass clean string arguments to tools (e.g. command="ls -la ~/Windows").
 - Be concise, professional, friendly, and speak natural Vietnamese.
 """
 
@@ -318,7 +315,25 @@ def tool_get_system_health() -> str:
 
     return "\n\n".join(parts)
 
-def tool_execute_bash(command: str, yolo: bool = False) -> str:
+def unwrap_tool_arg(val: Any) -> Any:
+    """Unwrap schema-wrapped dictionaries or malformed arguments emitted by small models."""
+    if isinstance(val, dict):
+        for key in ("command", "path", "skill_name", "description", "value", "input", "content"):
+            if key in val and isinstance(val[key], (str, int, float, list)):
+                return unwrap_tool_arg(val[key])
+        for k, v in val.items():
+            if k not in ("type", "description", "properties", "required"):
+                return unwrap_tool_arg(v)
+        if "description" in val:
+            return val["description"]
+        return str(val)
+    return val
+
+def tool_execute_bash(command: Any, yolo: bool = False) -> str:
+    command = str(unwrap_tool_arg(command)).strip()
+    if not command:
+        return "[Error: Empty bash command provided]"
+
     # Potentially dangerous commands requiring confirmation if not in yolo mode
     dangerous_keywords = ["rm -rf", "mkfs", "dd if=", "shutdown", "poweroff", "reboot", ":(){ :|:& };:"]
     is_dangerous = any(k in command for k in dangerous_keywords)
@@ -354,7 +369,8 @@ def tool_execute_bash(command: str, yolo: bool = False) -> str:
     except Exception as e:
         return f"[Execution Error: {e}]"
 
-def tool_read_file(path: str, max_lines: int = 200) -> str:
+def tool_read_file(path: Any, max_lines: int = 200) -> str:
+    path = str(unwrap_tool_arg(path)).strip()
     expanded_path = os.path.expanduser(path)
     if not os.path.exists(expanded_path):
         return f"[Error: File '{path}' does not exist]"
@@ -371,7 +387,9 @@ def tool_read_file(path: str, max_lines: int = 200) -> str:
     except Exception as e:
         return f"[Error reading file: {e}]"
 
-def tool_write_file(path: str, content: str) -> str:
+def tool_write_file(path: Any, content: Any) -> str:
+    path = str(unwrap_tool_arg(path)).strip()
+    content = str(unwrap_tool_arg(content))
     expanded_path = os.path.expanduser(path)
     try:
         os.makedirs(os.path.dirname(os.path.abspath(expanded_path)), exist_ok=True)
@@ -381,7 +399,8 @@ def tool_write_file(path: str, content: str) -> str:
     except Exception as e:
         return f"[Error writing file: {e}]"
 
-def tool_load_skill(skill_name: str) -> str:
+def tool_load_skill(skill_name: Any) -> str:
+    skill_name = str(unwrap_tool_arg(skill_name)).strip()
     skills = discover_skills()
     normalized = skill_name.lower().replace("_", "-").strip()
     matched = None
@@ -678,8 +697,21 @@ def handle_user_turn(user_text: str, messages: List[Dict[str, Any]], model: str,
         # Execute requested tools
         for tc in tool_calls:
             fn = tc.get("function", {})
-            fn_name = fn.get("name")
+            fn_name = str(fn.get("name", "")).strip()
             fn_args = fn.get("arguments", {})
+            if isinstance(fn_args, str):
+                try:
+                    fn_args = json.loads(fn_args)
+                except Exception:
+                    pass
+            if not isinstance(fn_args, dict):
+                fn_args = {"command": str(fn_args)}
+
+            # Clean and unwrap all schema-wrapped arguments
+            clean_args = {}
+            for k, v in fn_args.items():
+                clean_args[k] = unwrap_tool_arg(v)
+            fn_args = clean_args
 
             print(f"\n{C_PURPLE}⚙ Tool Call:{C_RESET} {C_BOLD}{fn_name}{C_RESET}({fn_args})")
 
