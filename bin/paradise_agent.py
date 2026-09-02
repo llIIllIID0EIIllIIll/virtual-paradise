@@ -417,71 +417,366 @@ def handle_resume_command(arg: str = "") -> Optional[Tuple[str, List[Dict[str, A
         console.print(f"[bold {RED}]Session '{arg}' not found.[/]")
         return None
 
+    return run_tui_resume_picker()
+
+def run_tui_resume_picker() -> Optional[Tuple[str, List[Dict[str, Any]], str]]:
+    """Interactive TUI Session Manager with mouse clicking, arrow keys (↑↓←→), resume, rename, and delete."""
     while True:
         sessions = list_saved_sessions()
         if not sessions:
-            console.print(f"[bold {YELLOW}]No saved sessions remaining.[/]")
+            console.print(f"[bold {YELLOW}]No saved sessions remaining in {SESSIONS_DIR}[/]")
             return None
 
-        table = Table(title=f"Saved Conversations ({len(sessions)} available)", border_style=CYAN, box=box.ROUNDED)
-        table.add_column("#", style=f"bold {YELLOW}", width=4)
-        table.add_column("Session ID", style=f"bold {CYAN}", width=25)
-        table.add_column("Last Updated", style=f"{MUTED}", width=19)
-        table.add_column("Model", style=f"{GREEN}", width=16)
-        table.add_column("Title / Summary", style=f"{PINK}")
-
-        for idx, s in enumerate(sessions[:15]):
-            sid = s.get("session_id", "")
-            upd = s.get("updated_at", "")
-            mod = s.get("model", "")
-            summ = s.get("summary", "")
-            table.add_row(str(idx + 1), sid, upd, mod, summ)
-
-        console.print(table)
-        console.print(
-            f"[bold {CYAN}]Options:[/] Enter [1-{min(len(sessions), 15)}] to resume  |  "
-            f"[bold {YELLOW}]r <#> <name>[/] to rename  |  "
-            f"[bold {RED}]d <#>[/] to delete  |  "
-            f"[bold {MUTED}]c[/] to cancel"
-        )
-
-        try:
-            choice = input(f"\033[38;2;255;224;102mAction [Enter=1 / r # <name> / d # / c]: \033[0m").strip()
-            if not choice:
-                choice = "1"
-            if choice.lower() in ("c", "cancel", "q", "quit"):
-                console.print(f"[dim]Resume cancelled.[/]")
+        if not sys.stdin.isatty() or not HAS_PROMPT_TOOLKIT:
+            table = Table(title=f"Saved Conversations ({len(sessions)} available)", border_style=CYAN, box=box.ROUNDED)
+            table.add_column("#", style=f"bold {YELLOW}", width=4)
+            table.add_column("Session ID", style=f"bold {CYAN}", width=25)
+            table.add_column("Last Updated", style=f"{MUTED}", width=19)
+            table.add_column("Model", style=f"{GREEN}", width=16)
+            table.add_column("Title / Summary", style=f"{PINK}")
+            for idx, s in enumerate(sessions[:15]):
+                table.add_row(str(idx + 1), s.get("session_id", ""), s.get("updated_at", ""), s.get("model", ""), s.get("summary", ""))
+            console.print(table)
+            try:
+                choice = input("Enter session # to resume (or 'c' to cancel): ").strip()
+                if choice.lower() in ("c", "q", "cancel"):
+                    return None
+                return load_session(choice)
+            except Exception:
                 return None
 
-            if choice.lower().startswith("r ") or choice.lower().startswith("rename "):
-                r_parts = choice.split(maxsplit=2)
-                if len(r_parts) >= 3:
-                    if rename_session(r_parts[1], r_parts[2]):
-                        console.print(f"[bold {GREEN}]✔ Renamed session #{r_parts[1]} to: '{r_parts[2]}'[/]")
-                    else:
-                        console.print(f"[bold {RED}]Failed to rename session #{r_parts[1]}[/]")
-                else:
-                    console.print(f"[bold {YELLOW}]Usage: r <#> <new_name>[/]")
-                continue
+        selected_idx = {"val": 0}
+        action = {"val": None}
+        app_ref = {"app": None}
 
-            if choice.lower().startswith("d ") or choice.lower().startswith("del ") or choice.lower().startswith("rm ") or choice.lower().startswith("delete "):
-                d_parts = choice.split(maxsplit=1)
-                if len(d_parts) >= 2:
-                    if delete_session(d_parts[1]):
-                        console.print(f"[bold {GREEN}]✔ Deleted session #{d_parts[1]}[/]")
-                    else:
-                        console.print(f"[bold {RED}]Failed to delete session #{d_parts[1]}[/]")
-                else:
-                    console.print(f"[bold {YELLOW}]Usage: d <#>[/]")
-                continue
+        session_buttons = []
+        for i, s in enumerate(sessions[:12]):
+            def make_select_h(index):
+                def _h():
+                    selected_idx["val"] = index
+                    action["val"] = ("resume", index)
+                    if app_ref["app"]:
+                        app_ref["app"].exit()
+                return _h
+            time_str = s.get("updated_at", "")[5:16]
+            mod_str = s.get("model", "")[:12]
+            summ_str = s.get("summary", "New session")[:36]
+            label = f"#{i+1:2} │ {time_str} │ {mod_str:12} │ {summ_str}"
+            session_buttons.append(Button(text=label, handler=make_select_h(i), width=74))
 
-            loaded = load_session(choice)
-            if loaded:
-                return loaded
-            console.print(f"[bold {RED}]Invalid session selection: '{choice}'[/]")
-        except (KeyboardInterrupt, EOFError):
-            console.print("")
+        def do_resume():
+            action["val"] = ("resume", selected_idx["val"])
+            if app_ref["app"]:
+                app_ref["app"].exit()
+
+        def do_rename():
+            action["val"] = ("rename", selected_idx["val"])
+            if app_ref["app"]:
+                app_ref["app"].exit()
+
+        def do_delete():
+            action["val"] = ("delete", selected_idx["val"])
+            if app_ref["app"]:
+                app_ref["app"].exit()
+
+        def do_cancel():
+            action["val"] = None
+            if app_ref["app"]:
+                app_ref["app"].exit()
+
+        action_buttons = [
+            Button(text="📂 Resume", handler=do_resume, width=15),
+            Button(text="✏ Rename", handler=do_rename, width=15),
+            Button(text="🗑 Delete", handler=do_delete, width=15),
+            Button(text="❌ Cancel", handler=do_cancel, width=15)
+        ]
+
+        picker_style = Style.from_dict({
+            'frame.border': '#00f5d4 bold',
+            'frame.label': '#00f5d4 bold',
+            'button': 'bg:#12151e fg:#ffffff',
+            'button.focused': 'bg:#00f5d4 fg:#0f111a bold',
+            'label': 'fg:#ffb7d5',
+        })
+
+        container = Frame(
+            title="📂 Virtual☆Paradise — Saved Conversations Manager",
+            body=HSplit([
+                Label(text="  Click any session with [Mouse] or press [Enter] to resume immediately.\n"
+                           "  Use [↑ / ↓] to navigate sessions, [← / →] to choose action buttons:\n"),
+                HSplit(session_buttons, padding=0),
+                Label(text="\n  ──────────────────────────────────────────────────────────────────────────\n"),
+                VSplit(action_buttons, padding=1),
+                Label(text="\n  [Esc] to cancel and return to prompt.\n")
+            ]),
+            style="class:frame"
+        )
+
+        kb = KeyBindings()
+
+        @kb.add("down")
+        def _down(event):
+            curr = event.app.layout.current_control
+            for idx, btn in enumerate(session_buttons):
+                if btn.control == curr:
+                    next_idx = (idx + 1) % len(session_buttons)
+                    selected_idx["val"] = next_idx
+                    event.app.layout.focus(session_buttons[next_idx])
+                    return
+            for idx, btn in enumerate(action_buttons):
+                if btn.control == curr:
+                    event.app.layout.focus(session_buttons[selected_idx["val"]])
+                    return
+
+        @kb.add("up")
+        def _up(event):
+            curr = event.app.layout.current_control
+            for idx, btn in enumerate(session_buttons):
+                if btn.control == curr:
+                    prev_idx = (idx - 1) % len(session_buttons)
+                    selected_idx["val"] = prev_idx
+                    event.app.layout.focus(session_buttons[prev_idx])
+                    return
+            for idx, btn in enumerate(action_buttons):
+                if btn.control == curr:
+                    event.app.layout.focus(session_buttons[selected_idx["val"]])
+                    return
+
+        @kb.add("right")
+        def _right(event):
+            curr = event.app.layout.current_control
+            for idx, btn in enumerate(action_buttons):
+                if btn.control == curr:
+                    event.app.layout.focus(action_buttons[(idx + 1) % len(action_buttons)])
+                    return
+            event.app.layout.focus(action_buttons[0])
+
+        @kb.add("left")
+        def _left(event):
+            curr = event.app.layout.current_control
+            for idx, btn in enumerate(action_buttons):
+                if btn.control == curr:
+                    event.app.layout.focus(action_buttons[(idx - 1) % len(action_buttons)])
+                    return
+            event.app.layout.focus(action_buttons[-1])
+
+        @kb.add("escape")
+        def _esc(event):
+            action["val"] = None
+            event.app.exit()
+
+        @kb.add("c-c")
+        def _sigint(event):
+            action["val"] = None
+            event.app.exit()
+
+        app = Application(
+            layout=Layout(container, focused_element=session_buttons[0]),
+            key_bindings=kb,
+            style=picker_style,
+            mouse_support=True,
+            full_screen=False
+        )
+        app_ref["app"] = app
+
+        try:
+            app.run()
+        except Exception as e:
+            console.print(f"[dim]TUI Picker error: {e}[/]")
             return None
+
+        act_result = action["val"]
+        if not act_result:
+            return None
+
+        op, target_i = act_result
+        if 0 <= target_i < len(sessions):
+            target_session = sessions[target_i]
+            target_id = target_session.get("session_id", "")
+
+            if op == "resume":
+                loaded = load_session(target_id)
+                if loaded:
+                    return loaded
+                return None
+
+            elif op == "rename":
+                try:
+                    new_title = input(f"\n\033[38;2;255;224;102mEnter new title for session #{target_i + 1}: \033[0m").strip()
+                    if new_title:
+                        rename_session(target_id, new_title)
+                        console.print(f"[bold {GREEN}]✔ Renamed session #{target_i + 1} to: '{new_title}'[/]")
+                except (KeyboardInterrupt, EOFError):
+                    pass
+                continue
+
+            elif op == "delete":
+                delete_session(target_id)
+                console.print(f"[bold {GREEN}]✔ Deleted session #{target_i + 1} ('{target_id}')[/]")
+                continue
+
+        return None
+
+def run_tui_model_picker(installed: List[str], current_model: str) -> Optional[str]:
+    """Interactive TUI Model Selector with mouse and arrow key support."""
+    if not HAS_PROMPT_TOOLKIT or not sys.stdin.isatty():
+        return None
+
+    chosen = {"val": None}
+    app_ref = {"app": None}
+    buttons = []
+
+    for m in installed:
+        label = f"✔ {m} (Active)" if m == current_model else f"  {m}"
+        def make_h(model_name: str):
+            def _h():
+                chosen["val"] = model_name
+                if app_ref["app"]:
+                    app_ref["app"].exit()
+            return _h
+        buttons.append(Button(text=label, handler=make_h(m), width=36))
+
+    def on_cancel():
+        chosen["val"] = None
+        if app_ref["app"]:
+            app_ref["app"].exit()
+    buttons.append(Button(text="❌ Cancel", handler=on_cancel, width=36))
+
+    tui_style = Style.from_dict({
+        'frame.border': '#00f5d4 bold',
+        'frame.label': '#00f5d4 bold',
+        'button': 'bg:#12151e fg:#ffffff',
+        'button.focused': 'bg:#00f5d4 fg:#0f111a bold',
+        'label': 'fg:#ffb7d5',
+    })
+
+    container = Frame(
+        title="🧠 Virtual☆Paradise — Model Selector",
+        body=HSplit([
+            Label(text="  Use [↑ / ↓] to choose model, [Enter] or [Mouse] to activate:\n"),
+            HSplit(buttons, padding=1),
+            Label(text="\n  [Esc] to cancel and keep current model.\n")
+        ]),
+        style="class:frame"
+    )
+
+    kb = KeyBindings()
+    @kb.add("down")
+    def _down(event):
+        curr = event.app.layout.current_control
+        for idx, btn in enumerate(buttons):
+            if btn.control == curr:
+                event.app.layout.focus(buttons[(idx + 1) % len(buttons)])
+                return
+    @kb.add("up")
+    def _up(event):
+        curr = event.app.layout.current_control
+        for idx, btn in enumerate(buttons):
+            if btn.control == curr:
+                event.app.layout.focus(buttons[(idx - 1) % len(buttons)])
+                return
+    @kb.add("escape")
+    def _esc(event):
+        event.app.exit()
+
+    app = Application(
+        layout=Layout(container, focused_element=buttons[0]),
+        key_bindings=kb,
+        style=tui_style,
+        mouse_support=True,
+        full_screen=False
+    )
+    app_ref["app"] = app
+
+    try:
+        app.run()
+        return chosen["val"]
+    except Exception:
+        return None
+
+def run_tui_mode_picker(current_mode: str) -> Optional[str]:
+    """Interactive TUI Mode Selector with mouse and arrow key support."""
+    if not HAS_PROMPT_TOOLKIT or not sys.stdin.isatty():
+        return None
+
+    chosen = {"val": None}
+    app_ref = {"app": None}
+
+    def on_auto():
+        chosen["val"] = "Auto-accept"
+        if app_ref["app"]:
+            app_ref["app"].exit()
+
+    def on_preview():
+        chosen["val"] = "Preview"
+        if app_ref["app"]:
+            app_ref["app"].exit()
+
+    def on_cancel():
+        chosen["val"] = None
+        if app_ref["app"]:
+            app_ref["app"].exit()
+
+    auto_mark = "✔ " if current_mode == "Auto-accept" else "  "
+    prev_mark = "✔ " if current_mode == "Preview" else "  "
+
+    buttons = [
+        Button(text=f"{auto_mark}⚡ Auto-accept (Autonomous execution without prompts)", handler=on_auto, width=64),
+        Button(text=f"{prev_mark}🛡  Preview (Interactive approval before every action)", handler=on_preview, width=64),
+        Button(text="❌ Cancel", handler=on_cancel, width=64)
+    ]
+
+    tui_style = Style.from_dict({
+        'frame.border': '#ffe066 bold',
+        'frame.label': '#ffe066 bold',
+        'button': 'bg:#12151e fg:#ffffff',
+        'button.focused': 'bg:#ffe066 fg:#0f111a bold',
+        'label': 'fg:#ffb7d5',
+    })
+
+    container = Frame(
+        title="⚙ Virtual☆Paradise — Execution Mode Configuration",
+        body=HSplit([
+            Label(text="  Use [↑ / ↓] to choose mode, [Enter] or [Mouse] to activate:\n"),
+            HSplit(buttons, padding=1),
+            Label(text="\n  [Esc] to cancel and keep current mode.\n")
+        ]),
+        style="class:frame"
+    )
+
+    kb = KeyBindings()
+    @kb.add("down")
+    def _down(event):
+        curr = event.app.layout.current_control
+        for idx, btn in enumerate(buttons):
+            if btn.control == curr:
+                event.app.layout.focus(buttons[(idx + 1) % len(buttons)])
+                return
+    @kb.add("up")
+    def _up(event):
+        curr = event.app.layout.current_control
+        for idx, btn in enumerate(buttons):
+            if btn.control == curr:
+                event.app.layout.focus(buttons[(idx - 1) % len(buttons)])
+                return
+    @kb.add("escape")
+    def _esc(event):
+        event.app.exit()
+
+    app = Application(
+        layout=Layout(container, focused_element=buttons[0]),
+        key_bindings=kb,
+        style=tui_style,
+        mouse_support=True,
+        full_screen=False
+    )
+    app_ref["app"] = app
+
+    try:
+        app.run()
+        return chosen["val"]
+    except Exception:
+        return None
 
 def print_prompt_status(model_name: str):
     """Renders the current model, RAM, and mode status panel directly above the prompt line."""
@@ -2727,16 +3022,20 @@ def agent_loop(initial_prompt: Optional[str] = None, requested_model: Optional[s
                     console.print(f"[bold {GREEN}]Active model switched to:[/] [bold {CYAN}]{model}[/]")
                 else:
                     installed = get_installed_models()
-                    mem = get_system_memory_info()
-                    table = Table(title="System Memory & Installed Models", border_style=CYAN, box=box.ROUNDED)
-                    table.add_column("Model Name", style=f"bold {CYAN}")
-                    table.add_column("Status", style=f"{GREEN}")
-                    for m in installed:
-                        status = "✔ Active" if m == model else "Available"
-                        table.add_row(m, status)
-                    console.print(f"RAM Available: [bold {CYAN}]{mem['available']} GiB[/] / {mem['total']} GiB Total")
-                    console.print(table)
-                    console.print(f"[dim]Tip: Use '/model <name>' (e.g. '/model 7b' or '/model 3b') to switch models on the fly.[/]")
+                    chosen_m = run_tui_model_picker(installed, model)
+                    if chosen_m:
+                        model = chosen_m
+                        console.print(f"[bold {GREEN}]Active model switched to:[/] [bold {CYAN}]{model}[/]")
+                    else:
+                        mem = get_system_memory_info()
+                        table = Table(title="System Memory & Installed Models", border_style=CYAN, box=box.ROUNDED)
+                        table.add_column("Model Name", style=f"bold {CYAN}")
+                        table.add_column("Status", style=f"{GREEN}")
+                        for m in installed:
+                            status = "✔ Active" if m == model else "Available"
+                            table.add_row(m, status)
+                        console.print(f"RAM Available: [bold {CYAN}]{mem['available']} GiB[/] / {mem['total']} GiB Total")
+                        console.print(table)
                 continue
             elif cmd == "/mode" or cmd.startswith("/mode "):
                 parts = user_input.split()
@@ -2750,14 +3049,19 @@ def agent_loop(initial_prompt: Optional[str] = None, requested_model: Optional[s
                         EXECUTION_MODE = "Preview" if EXECUTION_MODE == "Auto-accept" else "Auto-accept"
                     console.print(f"[bold {GREEN}]Execution Mode set to:[/] [bold {YELLOW}]{EXECUTION_MODE}[/]")
                 else:
-                    mode_table = Table(title="Execution Mode Configuration", border_style=YELLOW, box=box.ROUNDED)
-                    mode_table.add_column("Property", style="bold")
-                    mode_table.add_column("Setting", style=f"bold {GREEN}")
-                    mode_table.add_row("Current Mode", EXECUTION_MODE)
-                    mode_table.add_row("Auto-accept", "Autonomous tool execution without prompts (Default)")
-                    mode_table.add_row("Preview", "Interactive approval prompt before any tool action")
-                    mode_table.add_row("Usage", "/mode auto  |  /mode preview  |  /mode toggle")
-                    console.print(mode_table)
+                    chosen_mode = run_tui_mode_picker(EXECUTION_MODE)
+                    if chosen_mode:
+                        EXECUTION_MODE = chosen_mode
+                        console.print(f"[bold {GREEN}]Execution Mode set to:[/] [bold {YELLOW}]{EXECUTION_MODE}[/]")
+                    else:
+                        mode_table = Table(title="Execution Mode Configuration", border_style=YELLOW, box=box.ROUNDED)
+                        mode_table.add_column("Property", style="bold")
+                        mode_table.add_column("Setting", style=f"bold {GREEN}")
+                        mode_table.add_row("Current Mode", EXECUTION_MODE)
+                        mode_table.add_row("Auto-accept", "Autonomous tool execution without prompts (Default)")
+                        mode_table.add_row("Preview", "Interactive approval prompt before any tool action")
+                        mode_table.add_row("Usage", "/mode auto  |  /mode preview  |  /mode toggle")
+                        console.print(mode_table)
                 continue
             elif cmd.startswith("/search"):
                 parts = user_input.split(maxsplit=2)
