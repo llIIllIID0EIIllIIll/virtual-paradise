@@ -1,0 +1,7 @@
+#!/bin/bash
+# ==============================================================================
+#  Virtual☆Paradise — Default Offline AI Agent Launcher
+#  Executes the local Qwen 2.5 Coder 3B Agent without requiring WiFi or Cloud
+# ==============================================================================
+
+exec /home/doe/.local/bin/paradise-agent "$@"

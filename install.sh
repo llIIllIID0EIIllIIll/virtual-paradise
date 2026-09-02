@@ -201,6 +201,7 @@ CHECK_AND_INSTALL_PACKAGES() {
     "ncurses"
     "ffmpeg"
     "tela-circle-icon-theme-all"
+    "ollama"
   )
   local AUR_PKGS=(
     "mpvpaper"
@@ -362,7 +363,9 @@ log_step "6" "$TOTAL_STEPS" "Installing binaries & CLI helper tools to $LOCAL_BI
 if [[ -d "$REPO_DIR/bin" ]]; then
   cp -r "$REPO_DIR"/bin/* "$LOCAL_BIN/"
   chmod +x "$LOCAL_BIN"/* 2>/dev/null || true
-  log_sub "Installed helper tools (rice_layout, momoisay, toggle_live_wallpaper, logout_splash, glitch_transition, etc.)"
+  ln -nsf "$LOCAL_BIN/paradise_agent.py" "$LOCAL_BIN/paradise-agent" 2>/dev/null || true
+  ln -nsf "$LOCAL_BIN/paradise_agent.py" "$LOCAL_BIN/offline-agent" 2>/dev/null || true
+  log_sub "Installed helper tools (rice_layout, momoisay, toggle_live_wallpaper, logout_splash, paradise-agent, etc.)"
 fi
 
 # ------------------------------------------------------------------------------

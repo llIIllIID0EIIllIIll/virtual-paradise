@@ -89,6 +89,17 @@ Launches a complete 5-pane cyberpunk development workspace in microseconds via W
 
 ---
 
+### 9. 🤖 Pure Offline Local AI System Agent (`paradise-agent` / `a`)
+* **100% Air-Gapped & Zero Internet Requirement:** Powered by local **Ollama** running **Qwen 2.5 Coder 3B**, consuming only ~2GB RAM on CPU with zero cloud latency and no API keys.
+* **Autonomous System Diagnostics & Repair:**
+  * Diagnoses network/WiFi issues (`iwd`, `NetworkManager`, `ip`, `rfkill`).
+  * Fixes Hyprland & graphical glitches, audio/pipewire services, and systemd failed units.
+  * Reads and fixes local configuration files (`~/.config/hypr/`, `~/.config/omarchy/`, `~/.config/gtk-4.0/`, etc.).
+  * Native tool execution loop with safe command confirmation and `--diagnose` fast health snapshots.
+* **Instant Terminal Access:** Accessible anytime via alias `a`, `agent`, `offline-agent`, or `paradise-agent`.
+
+---
+
 ## ⌨️ Ergonomic Keybindings & Shortcuts
 
 | Shortcut | Action | Description |
@@ -107,6 +118,7 @@ Launches a complete 5-pane cyberpunk development workspace in microseconds via W
 | `SUPER + CTRL + L` | **Lock Screen** | Locks screen with Sleeping Miku animated HUD |
 | `f` *(in terminal)* | **Search☆Hub** | Unified Explorer, Command History & Process Manager |
 | `ffa` *(in terminal)* | **Fastfetch Anime** | High-res 65-line Braille anime art with 24-bit TrueColor gradient |
+| `a` *(in terminal)* | **Offline AI Agent** | Launches local Qwen 2.5 Coder 3B system diagnostic agent |
 
 ---
 
@@ -133,10 +145,11 @@ omarchy-virtual-paradise/
 │   ├── logout_splash.qml       # Fullscreen Miku outro shutdown / logout animated splash
 │   ├── memory_detail_notify.sh # Memory detail desktop notification dispatcher
 │   ├── Miku_missing.gif        # Standalone asset for logout splash runner
-│   ├── momoisay                # Animated Saiba Momoi ASCII mascot dialogue generator
+│   ├── omarchy-agent           # Default agent runner routing to paradise-agent
 │   ├── omarchy-system-logout   # Animated logout wrapper with Miku outro
 │   ├── omarchy-system-reboot   # Animated reboot wrapper with Miku outro
 │   ├── omarchy-system-shutdown # Animated shutdown wrapper with Miku outro
+│   ├── paradise_agent.py       # Native 100% offline Qwen 2.5 Coder 3B system diagnostic agent
 │   ├── rice_layout.sh          # 5-terminal workspace automated orchestrator
 │   ├── toggle_btop.sh          # Toggle floating Btop system monitor
 │   ├── toggle_cooler_boost.sh  # Hardware fan Cooler Boost controller
