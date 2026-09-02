@@ -1,279 +1,261 @@
-# 🌸 Virtual☆Paradise
+<div align="center">
 
-> **Full-Topping Cyberpunk Rice & Universal Theme for Omarchy Linux (Arch Linux + Hyprland)**  
-> *Tri-Color Palette: 40% Miku Cyan (`#00f5d4`) · 20% Hacker Green (`#00ff88`) · 40% Sakura Pink (`#ffb7d5`)*
+# Virtual☆Paradise
+
+**Full-Topping Cyberpunk Rice & Universal Theme for Omarchy Linux**
+
+*Arch Linux · Hyprland · Wayland*
 
 [![Platform](https://img.shields.io/badge/Platform-Arch_Linux_|_Omarchy_4.0+-1793D1?logo=arch-linux&logoColor=white)](https://archlinux.org)
 [![Compositor](https://img.shields.io/badge/Compositor-Hyprland_0.56+-00f5d4?logo=wayland&logoColor=white)](https://hyprland.org)
 [![Shell](https://img.shields.io/badge/Shell-Quickshell_|_Zsh-ffb7d5)](https://github.com/outfoxxed/quickshell)
 [![License](https://img.shields.io/badge/License-MIT-00ff88.svg)](LICENSE)
 
----
+*Tri-Color Palette — 40% Miku Cyan `#00f5d4` · 20% Hacker Green `#00ff88` · 40% Sakura Pink `#ffb7d5`*
 
-## 📸 Overview & Aesthetic Philosophy
-
-**Virtual☆Paradise** transforms your Arch Linux / Omarchy desktop into a high-performance, neon-pastel cyberpunk command center. Designed with meticulous attention to detail, every element—from hardware fan cooling to terminal omnisearch, live video wallpaper transitions, and full boot-to-shutdown cinematic animations—delivers fluid 60fps animations, glassmorphism transparency, and rich TrueColor ergonomics.
-
-![Virtual Paradise Desktop Preview](preview.png)
+</div>
 
 ---
 
-## ✨ Key Architectural Innovations & Features
-
-### 1. 🎬 Cinematic Cyberpunk Glitch Live Wallpaper Engine
-* **Hardware-Accelerated 60fps GPU Playback:** Seamlessly plays live video (`Miku_live.mp4`) and animated GIFs (`Miku_missing.gif`, `Miku_animated_full.gif`, `Miku_animated1.gif`, `Miku_animated2.gif`, `Miku_animated3.gif`, `Miku_animated4.gif`) via `mpvpaper` with negligible idle CPU impact.
-* **Cyberpunk Glitch & Signal Distortion Transition:** Switching wallpapers triggers a custom Quickshell overlay (`glitch_transition.qml` / `curtain_transition.qml`) featuring `Glitch.jpg` with high-frequency horizontal slice displacement, RGB chromatic aberration flashes (Neon Cyan `#00f5d4` & Magenta `#ff007f`), and digital signal breakdown, swapping the wallpaper behind the distortion before snapping cleanly into the new stream.
-* **Layer Hierarchy (`WlrLayer.Bottom`):** The transition operates above the wallpaper canvas while staying below the top status bar.
-* **Directional D-Pad Navigation & Playlist Order:**
-  * `SUPER + ALT + UP`: Toggle Live Wallpaper on/off (switches to `Miku_missing.jpg` static fallback).
-  * `SUPER + ALT + RIGHT`: Next Live Wallpaper in playlist (`Miku_live.mp4` [default] ➔ `Miku_missing.gif` ➔ `Miku_animated_full.gif` ➔ `Miku_animated1.gif` ➔ `Miku_animated2.gif` ➔ `Miku_animated3.gif` ➔ `Miku_animated4.gif`).
-  * `SUPER + ALT + LEFT`: Previous Live Wallpaper in playlist.
+![Virtual Paradise Desktop Preview](assets/preview.png)
 
 ---
 
-### 2. 🔒 Cyberpunk Animated Lockscreen (`[user].lock`)
-* **Native QtQuick Animated Image:** Custom Quickshell session lock plugin displaying full-screen 1080p `Sleeping_miku.gif` with zero blur or lag.
-* **Live Neon HUD Clock & Date:** Glowing Miku Cyan (`#00f5d4`) digital clock and Sakura Pink (`#ffb7d5`) calendar header.
-* **Linux `fortune` Wisdom Engine:** Automatically invokes `fortune -s` to display dynamic system wisdom, programming jokes, and Linux aphorisms, auto-refreshing every 10 seconds.
-* **Acrylic Glassmorphism Password Input:** Rounded input surface positioned at the bottom with neon green masked dots (`#00ff88`).
+## Features
+
+### 🎬 Cinematic Live Wallpaper Engine
+Hardware-accelerated 60fps video & GIF playback via `mpvpaper`. Switching wallpapers triggers a Cyberpunk **Glitch Transition** — horizontal slice displacement, RGB chromatic aberration flashes, and digital signal breakdown — courtesy of a custom Quickshell overlay (`glitch_transition.qml`).
+
+| Shortcut | Action |
+| :--- | :--- |
+| `SUPER + ALT + UP` | Toggle live wallpaper on/off |
+| `SUPER + ALT + RIGHT` | Next wallpaper in playlist |
+| `SUPER + ALT + LEFT` | Previous wallpaper in playlist |
+
+Playlist order: `Miku_live.mp4` → `Miku_missing.gif` → `Miku_animated_full.gif` → `Miku_animated1~4.gif`
 
 ---
 
-### 3. 🚀 Cinematic Boot & Shutdown Animation Engine
-* **Boot & LUKS Encryption Screen (`Miku_animated_full.gif`):**
-  * Plays the full 259-frame 1080p animation at native ~9.09 FPS during Plymouth boot and disk decryption.
-  * **Instant Lazy-Loading Architecture:** Frame 1 renders in `<15ms` with `0s` startup delay. Subsequent frames load on-demand, preventing multi-gigabyte RAM spikes and CPU lockups.
-  * **Minimalist Aesthetic:** Password entry box is anchored at the bottom edge, leaving Miku 100% visible with zero obscuring text or logos.
-  * **SDDM Display Manager:** QtQuick6 login screen natively renders `Miku_animated_full.gif` with 20% acrylic darkness overlay.
-* **Seamless Fullscreen Outro Shutdown (`Miku_missing.gif`):**
-  * Plays 72-frame Miku outro animation on desktop and carries through Plymouth until hardware poweroff.
-  * **Zero Black Screen Handover:** Custom systemd service drop-ins eliminate the 2-second SDDM wait gap, enabling Plymouth to claim DRM immediately upon session exit.
-  * **Cyberpunk Gradient Statusline:** Glowing `󰐥 Shutting down system...` status rendered in horizontal Miku Cyan ➔ Hacker Green ➔ Sakura Pink gradient.
+### 🔒 Animated Cyberpunk Lockscreen
+Full-screen `Sleeping_miku.gif` via native QtQuick. Neon HUD clock (`#00f5d4`), Sakura Pink date (`#ffb7d5`), live `fortune` quotes refreshing every 10 seconds, and a glassmorphism acrylic password field with neon green masked dots.
 
 ---
 
-### 4. ⚡ 5-Terminal Development Rice (`SUPER + Q`)
-Launches a complete 5-pane cyberpunk development workspace in microseconds via Wayland socket dispatch:
-1. 🖥️ **`fastfetch`** — Master left panel with system information and high-res anime Braille logo.
-2. 📊 **`btop`** — Top-right real-time CPU, GPU, memory, and process monitor in TrueColor.
-3. 🌸 **`momoisay`** — Center-bottom animated Saiba Momoi ASCII mascot dialogue in glowing Cyan.
-4. 🎵 **`cava`** — Bottom-right 8-band audio spectrum visualizer.
-5. 👾 **`virtual_matrix`** — Tri-color cyber matrix rain (Cyan ➔ Green ➔ Sakura Pink).
+### 🚀 Cinematic Boot & Shutdown Animations
+- **Plymouth boot:** 259-frame 1080p `Miku_animated_full.gif` with instant lazy-loading (frame 1 renders in `<15ms`). Also shown during LUKS decryption.
+- **SDDM login:** QtQuick6 animated login screen with 20% acrylic overlay.
+- **Shutdown outro:** 72-frame `Miku_missing.gif`. Custom systemd drop-ins eliminate the black screen gap — Plymouth claims DRM immediately on session exit.
 
 ---
 
-### 5. 🔍 Unified Search☆Hub (`f` Command)
-* **100% Nerd Font Standardization:** Fully decorated with crisp Nerd Font glyphs (`󰍉`, ``, `󰈙`, ``, ``, ``).
-* **Omnisearch Pipeline:** Single unified search engine prioritizing:
-  1. ` ` Directories (`fd -t d`) $\rightarrow$ Instant `cd`
-  2. `󰈙 ` Files (`fd -t f`) $\rightarrow$ Multi-select file editor open (`micro`)
-  3. ` ` Text inside files (`rg`) $\rightarrow$ Direct jump to matched line number
-* **Adaptive Live Preview:** Real-time directory trees (`eza`), syntax-highlighted code (`bat`), and line previews.
-* **Hierarchical `[←]` Back Navigation:** Seamlessly browse upward through parent folders or return to Search☆Hub.
+### ⚡ 5-Terminal Development Rice (`SUPER + Q`)
+Launches a complete cyberpunk workspace in a single keystroke:
 
----
-
-### 6. 📝 Micro Editor Cyberpunk Rice
-* **TrueColor Theme:** `virtual-paradise.micro` custom color palette with syntax highlighting, diff gutter, and line numbers.
-* **Statusline:** Customized Nerd Font status bar (`󰈙 filename · 󰄬 Ln X, Col Y`).
-
----
-
-### 7. ❄️ Hardware Cooler Boost (`SUPER + C`)
-* **Instant Thermal Management:** One-key toggle that drives laptop/desktop cooling fans to maximum RPM, displaying an on-screen desktop OSD.
-
----
-
-### 8. 🚨 Window Error Shake & Neon Red Border Hook
-* When any terminal command returns a non-zero exit code, Hyprland automatically shakes the active window and turns its border glowing neon red.
-
----
-
-### 9. 🤖 Pure Offline Local AI System Agent (`paradise-agent` / `a`)
-* **100% Air-Gapped & Zero Internet Requirement:** Powered by local **Ollama** running **Qwen 2.5 Coder 3B**, consuming only ~2GB RAM on CPU with zero cloud latency and no API keys.
-* **Autonomous System Diagnostics & Repair:**
-  * Diagnoses network/WiFi issues (`iwd`, `NetworkManager`, `ip`, `rfkill`).
-  * Fixes Hyprland & graphical glitches, audio/pipewire services, and systemd failed units.
-  * Reads and fixes local configuration files (`~/.config/hypr/`, `~/.config/omarchy/`, `~/.config/gtk-4.0/`, etc.).
-  * Native tool execution loop with safe command confirmation and `--diagnose` fast health snapshots.
-* **Instant Terminal Access:** Accessible anytime via alias `a`, `agent`, `offline-agent`, or `paradise-agent`.
-
----
-
-## ⌨️ Ergonomic Keybindings & Shortcuts
-
-| Shortcut | Action | Description |
+| Pane | App | Role |
 | :--- | :--- | :--- |
-| `SUPER + Q` | **Rice Layout** | Launches 5-terminal workspace (Fastfetch, Btop, Momoisay, Cava, Matrix) |
-| `SUPER + ALT + UP` | **Toggle Live Wallpaper** | Switches between Live Video/GIF and static `Miku_missing.jpg` |
-| `SUPER + ALT + RIGHT` | **Next Live Wallpaper** | Cycles to next live wallpaper with Cyberpunk Glitch transition |
-| `SUPER + ALT + LEFT` | **Prev Live Wallpaper** | Cycles to previous live wallpaper with Cyberpunk Glitch transition |
-| `SUPER + N` | **Next Wallpaper** | Cycles to next Omarchy theme background |
-| `SUPER + C` | **Toggle Cooler Boost** | Toggles maximum fan cooling on/off |
-| `SUPER + E` | **File Manager** | Auto-detects default file manager (`xdg-open`) |
-| `SUPER + B` | **Web Browser** | Launches default web browser |
-| `SUPER + SHIFT + T` | **Theme Switcher** | Opens interactive theme selector menu |
-| `SUPER + SHIFT + C` | **Color Picker** | Magnifier with auto hex copy |
-| `SUPER + \` | **Matrix Screensaver** | Fullscreen Cyberpunk Matrix in terminal |
-| `SUPER + CTRL + L` | **Lock Screen** | Locks screen with Sleeping Miku animated HUD |
-| `f` *(in terminal)* | **Search☆Hub** | Unified Explorer, Command History & Process Manager |
-| `ffa` *(in terminal)* | **Fastfetch Anime** | High-res 65-line Braille anime art with 24-bit TrueColor gradient |
-| `a` *(in terminal)* | **Offline AI Agent** | Launches local Qwen 2.5 Coder 3B system diagnostic agent |
+| Left | `fastfetch` | System info with high-res Braille anime logo |
+| Top-right | `btop` | Real-time CPU / memory / process monitor |
+| Center | `momoisay` | Saiba Momoi ASCII mascot dialogue |
+| Bottom-right | `cava` | 8-band audio spectrum visualizer |
+| Far-right | `virtual_matrix` | Tri-color matrix rain (Cyan → Green → Pink) |
 
 ---
 
-## 📂 Repository Directory Layout
+### 🔍 Search☆Hub (`f`)
+Unified terminal omnisearch with adaptive live preview:
+- **Directories** (`fd -t d`) → instant `cd`
+- **Files** (`fd -t f`) → multi-select open in `micro`
+- **Text in files** (`rg`) → jump to matched line
+- `[←]` back navigation through parent folders
+
+---
+
+### 🤖 Offline AI System Agent (`paradise-agent` / `a`)
+100% air-gapped local AI powered by **Ollama + Qwen 2.5 Coder** — no cloud, no API keys, ~2 GB RAM:
+
+- **Auto-escalating model tiers:** starts on the smallest installed model (1.5B), automatically upgrades to 3B → 7B when tasks become too complex.
+- **Full tool belt:** read/write/edit files, run bash, grep/find codebase, system health diagnostics, session persistence, expert skills (Hyprland config, crash diagnosis).
+- **Local Intent Analysis panel:** shows the agent's decision reasoning, planned tool call, and telemetry inline before every action.
+- Accessible via: `paradise-agent` · `agy-offline` · `agy-local` · alias `a`
+
+---
+
+### 🚨 Window Error Shake & Neon Red Border
+Any terminal command returning a non-zero exit code automatically shakes the active window and turns its border glowing neon red.
+
+### ❄️ Hardware Cooler Boost (`SUPER + C`)
+One-key fan cooling toggle with on-screen OSD notification.
+
+---
+
+## Keybindings
+
+| Shortcut | Action |
+| :--- | :--- |
+| `SUPER + Q` | 5-Terminal Rice Layout |
+| `SUPER + ALT + UP` | Toggle Live Wallpaper |
+| `SUPER + ALT + RIGHT/LEFT` | Next / Prev Live Wallpaper |
+| `SUPER + N` | Next theme background |
+| `SUPER + C` | Toggle Cooler Boost |
+| `SUPER + E` | File Manager |
+| `SUPER + B` | Web Browser |
+| `SUPER + SHIFT + T` | Theme Switcher |
+| `SUPER + SHIFT + C` | Color Picker |
+| `SUPER + \` | Matrix Screensaver |
+| `SUPER + CTRL + L` | Lock Screen |
+| `f` *(terminal)* | Search☆Hub |
+| `ffa` *(terminal)* | Fastfetch with Anime Braille logo |
+| `a` *(terminal)* | Offline AI Agent |
+
+---
+
+## Repository Structure
 
 ```
 omarchy-virtual-paradise/
-├── backgrounds/                # Live video streams, animated GIFs & static wallpapers
-│   ├── Miku_animated_full.gif  # 1080p Miku boot / SDDM login animated wallpaper (259 frames)
-│   ├── Miku_animated1.gif      # 1080p anime animated wallpaper (504 frames)
-│   ├── Miku_animated2.gif      # 1080p anime animated wallpaper (144 frames)
-│   ├── Miku_animated3.gif      # 1080p anime animated wallpaper (72 frames)
-│   ├── Miku_animated4.gif      # 1080p anime animated wallpaper
-│   ├── Miku_live.mp4           # Hatsune Miku 1080p 60fps live video wallpaper (Default)
-│   ├── Miku_missing.gif        # 1080p Miku shutdown / logout animated wallpaper (72 frames)
-│   ├── Miku_missing.jpg        # Default 1080p static Cyberpunk fallback artwork
-│   └── Glitch.jpg              # Cyberpunk Glitch transition artwork (8001x4500)
-├── bin/                        # CLI helper tools, orchestrators & transition overlays
-│   ├── curtain_transition.qml  # Backward-compatible symlink to glitch_transition.qml
-│   ├── glitch_transition.qml   # Quickshell Cyberpunk slice-displacement glitch transition overlay
-│   ├── Glitch.jpg              # Relative asset for standalone transition runner
-│   ├── hypr_window_error_restore.sh # Window error border restore helper
-│   ├── hypr_window_error_shake.sh   # Window shake & glowing red error hook
-│   ├── logout_splash.qml       # Fullscreen Miku outro shutdown / logout animated splash
-│   ├── memory_detail_notify.sh # Memory detail desktop notification dispatcher
-│   ├── Miku_missing.gif        # Standalone asset for logout splash runner
-│   ├── omarchy-agent           # Default agent runner routing to paradise-agent
-│   ├── omarchy-system-logout   # Animated logout wrapper with Miku outro
-│   ├── omarchy-system-reboot   # Animated reboot wrapper with Miku outro
-│   ├── omarchy-system-shutdown # Animated shutdown wrapper with Miku outro
-│   ├── paradise_agent.py       # Native 100% offline Qwen 2.5 Coder 3B system diagnostic agent
-│   ├── rice_layout.sh          # 5-terminal workspace automated orchestrator
-│   ├── toggle_btop.sh          # Toggle floating Btop system monitor
-│   ├── toggle_cooler_boost.sh  # Hardware fan Cooler Boost controller
-│   ├── toggle_live_wallpaper.sh# Live wallpaper playlist engine & glitch transition caller
-│   ├── toggle_voxtype_config.sh# Toggle Voxtype voice-to-text dictation config
-│   └── virtual_matrix.py       # Tri-color Cyberpunk matrix rain generator
-├── cava/                       # Audio spectrum visualizer configurations
-│   ├── config                  # Full terminal Cava configuration
-│   └── config_bar              # Lightweight status bar Cava widget configuration
-├── fastfetch/                  # Fastfetch system info & anime ASCII artworks
-│   ├── config.jsonc            # Clean fastfetch profile layout
-│   ├── logo.txt                # Fastfetch fallback logo
-│   └── logo_anime.txt          # High-res 65-line Braille Anime ASCII artwork
-├── hypr/                       # Hyprland user system configuration
-│   ├── autostart.lua           # Startup daemons, agents & wallpaper initialization
-│   ├── bindings.lua            # Complete ergonomic keyboard shortcuts & D-Pad
-│   ├── hyprland.lua            # User-level Hyprland bootstrap & window rules
-│   ├── input.lua               # Touchpad, mouse acceleration & keyboard layout
-│   ├── looknfeel.lua           # Gaps, rounded corners, blur & spring physics animations
-│   └── monitors.lua            # Display resolutions, refresh rates & layout
-├── micro/                      # Micro editor cyberpunk customization
-│   ├── colorschemes/           # TrueColor theme: virtual-paradise.micro
-│   └── settings.json           # Micro preferences, statusline & syntax config
-├── plugins/                    # Customized Omarchy Quickshell plugins (Auto-calibrated to [user].*)
-│   ├── active-window/          # Active window title bar widget
-│   ├── audio/                  # Audio volume & output switcher
-│   ├── background/             # Background service manager
-│   ├── bluetooth/              # Bluetooth device manager
-│   ├── clock/                  # Live clock, date & calendar
-│   ├── cputemp/                # CPU temperature & cooler boost
-│   ├── indicators/             # System indicator icons (recording, night light, DND)
-│   ├── lock/                   # Sleeping Miku lockscreen & fortune quotes engine
-│   ├── media/                  # MPRIS media player controller
-│   ├── memory/                 # RAM / Swap memory monitor & btop launcher
-│   ├── menu/                   # Omarchy quick applications menu
-│   ├── microphone/             # Microphone mute & volume controller
-│   ├── monitor/                # Display brightness & resolution manager
-│   ├── network/                # Wi-Fi & Ethernet network manager
-│   ├── power/                  # Battery & power profile widget
-│   ├── system-update/          # System update notification widget
-│   ├── weather/                # Weather forecast widget
-│   └── workspaces/             # Workspace switcher & window indicators
-├── plymouth/                   # Plymouth boot & shutdown theme configuration
-│   ├── omarchy.script          # Instant lazy-loading Plymouth animation engine
-│   └── override.conf           # Systemd service drop-in (zero black screen delay)
-├── sddm/                       # SDDM login display manager theme configuration
-│   └── Main.qml                # Animated login interface with Miku_intro.gif
-├── shell/                      # Shell configurations & status bar layouts
-│   ├── shell.json              # Status bar layout (transparency off, custom modules)
-│   └── zshrc                   # Cyberpunk Zsh configuration with Search☆Hub & aliases
-├── alacritty.toml              # Alacritty terminal theme profile
-├── btop.theme                  # Btop TrueColor theme profile
-├── chromium.theme              # Chromium browser theme profile
-├── colors.css                  # CSS color variable definitions
-├── colors.toml                 # Master TrueColor palette definitions
-├── foot.ini                    # Foot terminal theme profile
-├── ghostty.conf                # Ghostty terminal theme profile
-├── gtk.css                     # GTK 3/4 custom cyberpunk theme styling
-├── gum_env.lua                 # Gum environment configuration
-├── helix.toml                  # Helix editor theme profile
-├── hyprland.conf               # Theme-level window rules fallback
-├── hyprland.lua                # Theme-level window decoration & animation rules
-├── hyprland-preview-share-picker.css # Screen sharing picker dialog styles
-├── hyprlock.conf               # Theme lock screen color overrides
-├── icons.theme                 # Icon theme definition
-├── install.sh                  # Automated, idempotent 10-step installation script
-├── keyboard.rgb                # RGB keyboard backlighting profile
-├── kitty.conf                  # Kitty terminal theme profile
-├── LICENSE                     # MIT License
-├── neovim.lua                  # Neovim color profile
-├── preview.png                 # Theme screenshot
-├── README.md                   # Comprehensive project documentation
-├── shell.toml                  # Shell environment variables
-├── unlock.png                  # Master unlock logo
-├── vscode.json                 # VS Code theme configuration
-└── vscode-theme.json           # VS Code color token definitions
+│
+├── README.md               Project documentation
+├── LICENSE                 MIT License
+├── .gitignore
+├── install.sh              Automated 10-step installer
+│
+├── assets/
+│   ├── preview.png         Desktop screenshot
+│   └── unlock.png          Lock screen logo
+│
+├── config/
+│   ├── terminal/           alacritty · foot · ghostty · kitty configs
+│   ├── editor/             helix · neovim · gum_env configs
+│   └── gtk.css             GTK 3/4 cyberpunk stylesheet
+│
+├── theme/
+│   ├── colors.toml         Master TrueColor palette
+│   ├── colors.css          CSS custom property definitions
+│   ├── btop.theme          Btop TrueColor theme
+│   ├── chromium.theme      Chromium browser theme
+│   ├── shell.toml          Shell environment color tokens
+│   ├── icons.theme         Icon theme definition
+│   ├── keyboard.rgb        RGB backlight profile
+│   ├── vscode.json         VS Code extension config
+│   └── vscode-theme.json   VS Code color token definitions
+│
+├── hypr/
+│   ├── hyprland.conf       Hyprland top-level config
+│   ├── hyprland.lua        Window decoration & animation rules
+│   ├── hyprlock.conf       Lockscreen color overrides
+│   ├── hyprland-preview-share-picker.css
+│   ├── autostart.lua       Startup daemons & wallpaper init
+│   ├── bindings.lua        Keybindings & D-Pad navigation
+│   ├── input.lua           Touchpad, mouse & keyboard layout
+│   ├── looknfeel.lua       Gaps, blur & spring physics
+│   └── monitors.lua        Display resolution & layout
+│
+├── bin/
+│   ├── paradise_agent.py         Offline AI agent (Ollama / Qwen)
+│   ├── toggle_live_wallpaper.sh  Live wallpaper playlist engine
+│   ├── glitch_transition.qml     Cyberpunk glitch transition overlay
+│   ├── curtain_transition.qml    Alternate transition overlay
+│   ├── logout_splash.qml         Miku outro shutdown splash
+│   ├── rice_layout.sh            5-terminal workspace launcher
+│   ├── virtual_matrix.py         Tri-color matrix rain generator
+│   ├── toggle_cooler_boost.sh    Fan Cooler Boost controller
+│   ├── toggle_btop.sh            Floating Btop toggle
+│   ├── momoisay                  Saiba Momoi ASCII mascot
+│   ├── format-docx-vn.py         Vietnamese .docx formatter
+│   ├── memory_detail_notify.sh   RAM desktop notification
+│   ├── hypr_window_error_shake.sh    Error shake hook
+│   ├── hypr_window_error_restore.sh  Error border restore
+│   ├── omarchy-agent             Agent router entry point
+│   ├── omarchy-launch-terminal   Terminal launcher
+│   ├── omarchy-system-logout     Animated logout wrapper
+│   ├── omarchy-system-reboot     Animated reboot wrapper
+│   ├── omarchy-system-shutdown   Animated shutdown wrapper
+│   └── toggle_voxtype_config.sh  Voice-to-text config toggle
+│
+├── backgrounds/
+│   ├── Miku_live.mp4             1080p 60fps live video wallpaper (default)
+│   ├── Miku_animated_full.gif    259-frame boot/SDDM wallpaper
+│   ├── Miku_animated1~4.gif      Additional animated wallpapers
+│   ├── Miku_missing.gif          72-frame shutdown outro
+│   ├── Miku_missing.jpg          Static cyberpunk fallback
+│   └── Glitch.jpg                Glitch transition artwork (8001×4500)
+│
+├── plugins/                Quickshell status bar plugins (auto-calibrated to $USER.*)
+│   ├── active-window/      Window title widget
+│   ├── audio/              Volume & output switcher
+│   ├── bluetooth/          Bluetooth manager
+│   ├── clock/              Clock, date & calendar
+│   ├── cputemp/            CPU temp & Cooler Boost
+│   ├── indicators/         System indicators (recording, night light, DND)
+│   ├── lock/               Sleeping Miku lockscreen plugin
+│   ├── media/              MPRIS media controller
+│   ├── memory/             RAM monitor & btop launcher
+│   ├── menu/               Quick applications menu
+│   ├── microphone/         Mic mute & volume
+│   ├── monitor/            Brightness & resolution
+│   ├── network/            Wi-Fi & Ethernet manager
+│   ├── power/              Battery & power profile
+│   ├── system-update/      Update notifications
+│   ├── weather/            Weather forecast
+│   └── workspaces/         Workspace switcher
+│
+├── cava/                   Audio spectrum visualizer configs
+├── fastfetch/              System info layout & anime Braille logo
+├── micro/                  Micro editor theme & settings
+├── shell/                  shell.json (bar layout) & zshrc
+├── plymouth/               Boot animation engine & systemd drop-ins
+└── sddm/                   Animated login display manager theme
 ```
 
 ---
 
-## 🚀 Installation Guide
+## Installation
 
-### Option 1: Full Automated Installation (Recommended)
-
-Clone the repository and run the automated installer:
+### Quick Install (Recommended)
 
 ```bash
 git clone https://github.com/llIIllIID0EIIllIIll/virtual-paradise.git
 cd virtual-paradise
-chmod +x install.sh
 ./install.sh
 ```
 
-The installer will execute **10 comprehensive steps**:
-1. Verify and install missing packages (`cava`, `btop`, `fastfetch`, `micro`, `fortune-mod`, `mpvpaper`, `ripgrep`, `fd`, `ffmpeg`, etc.).
-2. Create runtime directories and backup existing configurations.
-3. Calibrate and install all 18 Quickshell plugins dynamically for your username (`${USER}.*`).
-4. Configure status bar layout and quick action menu extensions.
-5. Deploy Hyprland keybindings, look'n'feel, and autostart scripts.
-6. Install CLI helper tools and wrappers to `~/.local/bin/`.
-7. Install component themes (Cava, Btop, Fastfetch, Micro).
-8. Synchronize theme assets and wallpaper playlists.
-9. **Configure Plymouth boot animation, SDDM display manager & rebuild UKI / initramfs** (prompts for sudo).
-10. Configure `~/.zshrc` / `~/.bashrc` with Search☆Hub and error shake hooks.
+The installer runs **10 automated steps**:
+
+1. Verify & install required packages (`mpvpaper`, `btop`, `cava`, `fastfetch`, `micro`, `fortune-mod`, `ripgrep`, `fd`, `ffmpeg`, `ollama`, …)
+2. Create runtime directories & back up existing configs
+3. Calibrate & install all 18 Quickshell plugins for your `$USER`
+4. Deploy status bar layout & quick-action menu extensions
+5. Install Hyprland keybindings, look'n'feel & autostart configs
+6. Install CLI tools & scripts to `~/.local/bin/`
+7. Install component themes (Cava, Btop, Fastfetch, Micro, GTK)
+8. Sync theme assets, wallpapers & automation hooks
+9. Configure Plymouth boot animation, SDDM login & rebuild UKI *(requires sudo)*
+10. Configure `~/.zshrc` / `~/.bashrc` with Search☆Hub & error shake hooks
+
+### Flags
+
+| Flag | Effect |
+| :--- | :--- |
+| *(none)* | Full installation |
+| `--no-boot` | Skip Plymouth / SDDM / UKI — no sudo required |
+| `--boot-only` | Boot & shutdown animations only |
+
+```bash
+# User-space only, no sudo needed
+./install.sh --no-boot
+
+# Boot animations only
+sudo ./install.sh --boot-only
+```
+
+### Requirements
+
+- **Omarchy Linux 4.0+** (Arch Linux + Hyprland)
+- **Ollama** with at least one `qwen2.5-coder` model for the AI agent
+- Internet connection for the initial package install step
 
 ---
 
-### Option 2: Selective Installation Flags
+## License
 
-* **User-Space Only (No sudo required):**
-  ```bash
-  ./install.sh --no-boot
-  ```
-  Installs all Hyprland configs, Quickshell plugins, terminal themes, Search☆Hub, and live wallpapers without touching system files or rebuilding the UKI.
-
-* **Boot & Shutdown Animations Only:**
-  ```bash
-  sudo ./install.sh --boot-only
-  ```
-  Deploys the Plymouth lazy-loading animation engine, SDDM animated login screen, systemd drop-ins, and regenerates the UKI kernel image.
-
----
-
-## 📜 License
-
-This project is licensed under the [MIT License](LICENSE).  
-Made with 💖 for the Omarchy & Arch Linux community.
+[MIT](LICENSE) · Made with 💖 for the Omarchy & Arch Linux community.
