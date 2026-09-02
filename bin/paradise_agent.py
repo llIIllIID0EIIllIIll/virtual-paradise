@@ -2794,7 +2794,7 @@ def handle_user_turn(user_text: str, messages: List[Dict[str, Any]], model: str,
     try:
         _handle_user_turn_inner(user_text, messages, model, session_id=session_id)
     except KeyboardInterrupt:
-        console.print(f"\n[bold {YELLOW}]^C[/] [dim]Đã hủy tác vụ đang chạy. (Action cancelled by user)[/]\n")
+        console.print(f"\n[bold {YELLOW}]^C[/] [dim]Operation cancelled by user.[/]\n")
         if session_id:
             save_session(session_id, messages, model)
 
@@ -2863,14 +2863,14 @@ def agent_loop(initial_prompt: Optional[str] = None, requested_model: Optional[s
                 event.current_buffer.text = ""
                 event.current_buffer.cursor_position = 0
                 last_sigint_time["time"] = now
-                console.print(f"\n[bold {YELLOW}]^C[/] [dim]Đã hủy dòng nhập. (Nhấn [bold {RED}]Ctrl+C[/] lần nữa để thoát)[/]")
+                console.print(f"\n[bold {YELLOW}]^C[/] [dim]Input cancelled. (Press [bold {RED}]Ctrl+C[/] again to exit)[/]")
             else:
                 if now - last_sigint_time["time"] < 3.0:
                     console.print(f"\n[bold {PINK}]Farewell from Virtual☆Paradise! // Sayonara.[/]")
                     event.app.exit(exception=SystemExit)
                 else:
                     last_sigint_time["time"] = now
-                    console.print(f"\n[bold {YELLOW}]^C[/] [dim]Nhấn [bold {RED}]Ctrl+C[/] lần nữa trong 3s để thoát (hoặc gõ [bold {YELLOW}]/exit[/]).[/]")
+                    console.print(f"\n[bold {YELLOW}]^C[/] [dim]Press [bold {RED}]Ctrl+C[/] again within 3s to exit (or type [bold {YELLOW}]/exit[/]).[/]")
 
         @kb.add('down', filter=has_completions)
         def _nav_down(event):
@@ -2930,7 +2930,7 @@ def agent_loop(initial_prompt: Optional[str] = None, requested_model: Optional[s
                 break
             else:
                 last_sigint_time["time"] = now
-                console.print(f"\n[bold {YELLOW}]^C[/] [dim]Đã hủy thao tác. (Nhấn [bold {RED}]Ctrl+C[/] lần nữa trong 3s để thoát)[/]\n")
+                console.print(f"\n[bold {YELLOW}]^C[/] [dim]Action cancelled. (Press [bold {RED}]Ctrl+C[/] again within 3s to exit)[/]\n")
                 continue
         except (EOFError, SystemExit):
             console.print(f"\n[bold {PINK}]Farewell from Virtual☆Paradise! // Sayonara.[/]")
