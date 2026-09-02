@@ -711,53 +711,66 @@ def handle_user_turn(user_text: str, messages: List[Dict[str, Any]], model: str,
             msg["tool_calls"] = tool_calls
             msg["content"] = ""
 
-        # Proactive Guard: If model emitted a refusal or confirmation question on step 1 instead of acting
-        if not tool_calls and content and step == 1:
+        # Proactive Grounding & Anti-Hallucination Guard:
+        # If model did not call a tool on step 1, prevent hallucinated files or refusals
+        if not tool_calls and step == 1:
             lower_c = content.lower()
             lower_u = user_text.lower()
-            is_refusal_phrase = any(p in lower_c for p in [
-                "không thể giúp", "không thể thực hiện", "không có khả năng", "xin lỗi, tôi không thể",
-                "rất tiếc", "cannot help", "unable to", "i am unable"
-            ])
-            is_confirmation_phrase = any(p in lower_c for p in [
-                "bạn muốn tôi", "bạn có muốn tôi", "would you like me to", "do you want me to"
-            ])
+            user_home = os.path.expanduser("~")
 
-            if is_refusal_phrase or is_confirmation_phrase:
-                user_home = os.path.expanduser("~")
-                if any(w in lower_u for w in ["format", "chuẩn hóa", "định dạng"]) and "tờ trình" in lower_u:
-                    tool_calls = [{
-                        "function": {
-                            "name": "execute_bash",
-                            "arguments": {"command": f"{user_home}/.local/lib/paradise-venv/bin/python3 {user_home}/.local/bin/format-docx-vn.py {user_home}/Downloads"}
-                        }
-                    }]
-                elif any(w in lower_u for w in ["mẫu", "template", "xin mẫu", "lấy file mẫu"]) and "tờ trình" in lower_u:
-                    tool_calls = [{
-                        "function": {
-                            "name": "execute_bash",
-                            "arguments": {"command": f"cp {user_home}/Windows/skills/vn-officecli/templates/to_trinh_mau.docx {user_home}/Downloads/ && ls -la {user_home}/Downloads/"}
-                        }
-                    }]
-                elif "window" in lower_u and any(w in lower_u for w in ["file", "gì", "mục", "thư mục", "xem"]):
-                    tool_calls = [{
-                        "function": {
-                            "name": "execute_bash",
-                            "arguments": {"command": f"ls -la {user_home}/Windows"}
-                        }
-                    }]
-                elif "download" in lower_u and any(w in lower_u for w in ["file", "gì", "mục", "thư mục", "xem"]):
-                    tool_calls = [{
-                        "function": {
-                            "name": "execute_bash",
-                            "arguments": {"command": f"ls -la {user_home}/Downloads"}
-                        }
-                    }]
+            # 1. Format document
+            if any(w in lower_u for w in ["format", "chuẩn hóa", "định dạng"]) and any(w in lower_u for w in ["tờ trình", "to_trinh", "docx", "word", "tài liệu"]):
+                tool_calls = [{
+                    "function": {
+                        "name": "execute_bash",
+                        "arguments": {"command": f"{user_home}/.local/lib/paradise-venv/bin/python3 {user_home}/.local/bin/format-docx-vn.py {user_home}/Downloads"}
+                    }
+                }]
+            # 2. Template tờ trình
+            elif any(w in lower_u for w in ["mẫu", "template", "xin mẫu", "lấy file mẫu", "tải mẫu"]) and any(w in lower_u for w in ["tờ trình", "to_trinh", "công văn"]):
+                tool_calls = [{
+                    "function": {
+                        "name": "execute_bash",
+                        "arguments": {"command": f"cp {user_home}/Windows/skills/vn-officecli/templates/to_trinh_mau.docx {user_home}/Downloads/ && ls -la {user_home}/Downloads/"}
+                    }
+                }]
+            # 3. Downloads directory
+            elif any(w in lower_u for w in ["download", "downloads", "tải về"]) and any(w in lower_u for w in ["file", "tệp", "gì", "mục", "thư mục", "xem", "danh sách", "có", "what", "list", "show"]):
+                tool_calls = [{
+                    "function": {
+                        "name": "execute_bash",
+                        "arguments": {"command": f"ls -la {user_home}/Downloads"}
+                    }
+                }]
+            # 4. Windows directory
+            elif any(w in lower_u for w in ["window", "windows"]) and any(w in lower_u for w in ["file", "tệp", "gì", "mục", "thư mục", "xem", "danh sách", "có", "what", "list", "show"]):
+                tool_calls = [{
+                    "function": {
+                        "name": "execute_bash",
+                        "arguments": {"command": f"ls -la {user_home}/Windows"}
+                    }
+                }]
+            # 5. Omarchy theme / dotfiles repo directory
+            elif any(w in lower_u for w in ["omarchy-virtual-paradise", "virtual-paradise", "theme folder"]) and any(w in lower_u for w in ["file", "tệp", "gì", "mục", "thư mục", "xem", "danh sách", "có", "what", "list", "show"]):
+                tool_calls = [{
+                    "function": {
+                        "name": "execute_bash",
+                        "arguments": {"command": f"ls -la {user_home}/omarchy-virtual-paradise"}
+                    }
+                }]
+            # 6. System health / performance
+            elif any(w in lower_u for w in ["chậm", "lag", "đơ", "sức khỏe", "tình trạng máy", "kiểm tra máy", "pin", "ram", "cpu", "slow", "battery", "health"]):
+                tool_calls = [{
+                    "function": {
+                        "name": "get_system_health",
+                        "arguments": {}
+                    }
+                }]
 
-                if tool_calls:
-                    msg["tool_calls"] = tool_calls
-                    msg["content"] = ""
-                    content = ""
+            if tool_calls:
+                msg["tool_calls"] = tool_calls
+                msg["content"] = ""
+                content = ""
 
         if content:
             print(f"\n{C_PINK}{C_BOLD}paradise-agent ❯{C_RESET} {content}")
