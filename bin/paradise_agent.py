@@ -43,6 +43,49 @@ YELLOW = "#ffe066"  # Cyberpunk Amber
 RED = "#ff5287"     # Glitch Crimson
 MUTED = "#708090"   # Terminal Slate
 
+# Prompt Toolkit Interactive Engine (Dropdown Autocomplete & History)
+try:
+    from prompt_toolkit import PromptSession
+    from prompt_toolkit.completion import Completer, Completion
+    from prompt_toolkit.formatted_text import ANSI
+    from prompt_toolkit.styles import Style
+    from prompt_toolkit.history import FileHistory
+    HAS_PROMPT_TOOLKIT = True
+except ImportError:
+    HAS_PROMPT_TOOLKIT = False
+
+class SlashCommandCompleter(Completer):
+    """Provides dropdown autocomplete suggestions when user types '/' in terminal."""
+    COMMANDS = [
+        ("/resume", "Session manager: resume, rename, or delete past conversations"),
+        ("/plan", "Planning mode: generate phased diagnostic/coding plan before action"),
+        ("/goal", "Goal mode: run autonomous multi-step execution until complete"),
+        ("/model", "Switch local Ollama model (1.5b, 3b, 7b)"),
+        ("/mode", "Toggle between Auto-accept and Preview approval modes"),
+        ("/skills", "List all specialized expert skills discovered on machine"),
+        ("/search", "Grep search across codebase using ripgrep: /search <query> [path]"),
+        ("/find", "Find files by glob pattern using fd: /find <pattern> [dir]"),
+        ("/health", "Hardware diagnostic health check (RAM, CPU, Cooler Boost, Disk)"),
+        ("/thinking", "Toggle real-time diagnostic reasoning visibility (ON / OFF)"),
+        ("/clear", "Reset active conversation memory context and start fresh"),
+        ("/help", "Show detailed command reference table"),
+        ("/exit", "Exit session (Sayonara)"),
+        ("/quit", "Exit session (Sayonara)"),
+    ]
+
+    def get_completions(self, document, complete_event):
+        text = document.text_before_cursor
+        if text.startswith("/"):
+            word = text.strip()
+            for cmd, desc in self.COMMANDS:
+                if cmd.startswith(word):
+                    yield Completion(
+                        cmd,
+                        start_position=-len(text),
+                        display=cmd,
+                        display_meta=desc
+                    )
+
 SKILL_DIRS = [
     os.path.expanduser("~/.agents/skills"),
     os.path.expanduser("~/Windows/skills"),
@@ -1475,10 +1518,11 @@ def print_banner(model_name: str, reason: str = ""):
     tier_desc = f" [dim]({reason})[/]" if reason else ""
 
     print(f"\n{art_text}\n")
-    console.print(f"  [bold {PINK}]⚡ Virtual☆Paradise Autonomous Diagnostic & Coding Agent[/]")
+    console.print(f"  [bold {PINK}]⚡ AGY Offline — Autonomous Local AI Pair Programmer & System Engineer[/]")
+    console.print(f"  [bold {CYAN}]Virtual☆Paradise Edition[/] [dim](100% Local / Zero Cloud)[/]")
     console.print(f"  [bold {MUTED}]Model:[/] [bold {GREEN}]{model_name}[/]{tier_desc}")
     console.print(f"  [bold {MUTED}]RAM:[/] [bold {CYAN}]{ram_str}[/]  |  [bold {MUTED}]Mode:[/] [{mode_style}]{EXECUTION_MODE}[/]")
-    console.print(f"  [dim]Type [bold {YELLOW}]/help[/] for commands or [bold {YELLOW}]/exit[/] to quit.[/]")
+    console.print(f"  [dim]Type [bold {YELLOW}]/[/] for interactive command dropdown, [bold {YELLOW}]/help[/] for reference, [bold {YELLOW}]/exit[/] to quit.[/]")
     console.print(f"[dim {CYAN}]  {'─' * 95}[/]\n")
 
 def print_thinking(thinking_text: str, title: str = "🧠 Diagnostic Reasoning"):
@@ -1495,18 +1539,20 @@ def print_thinking(thinking_text: str, title: str = "🧠 Diagnostic Reasoning")
 
 def print_help_table():
     """Displays commands in a clean TUI table."""
-    table = Table(title="Virtual☆Paradise Agent Commands", border_style=CYAN, box=box.ROUNDED)
+    table = Table(title="AGY Offline — Interactive Command Reference", border_style=CYAN, box=box.ROUNDED)
     table.add_column("Command", style=f"bold {YELLOW}", width=15)
     table.add_column("Description", style=f"{GREEN}")
+    table.add_row("/resume", "Session manager: /resume [id|last|rename # name|delete #]")
+    table.add_row("/plan", "Planning mode: /plan <task> (generate structured plan)")
+    table.add_row("/goal", "Goal mode: /goal <objective> (autonomous execution)")
+    table.add_row("/search", "Grep search across codebase: /search <query> [path]")
+    table.add_row("/find", "Find files by glob pattern: /find <pattern> [dir]")
     table.add_row("/skills", "List all specialized expert skills available to the agent")
     table.add_row("/health", "Run immediate diagnostic health check (RAM, CPU, Disk, Services)")
     table.add_row("/mode", "Inspect or switch execution mode: /mode [auto|preview|toggle]")
     table.add_row("/model", "Inspect or switch local Ollama models: /model [1.5b|3b|7b]")
     table.add_row("/thinking", "Toggle real-time diagnostic reasoning visibility (ON / OFF)")
     table.add_row("/clear", "Clear active conversation memory context")
-    table.add_row("/resume", "Resume past conversation session: /resume [id|last]")
-    table.add_row("/search", "Grep search across codebase: /search <query> [path]")
-    table.add_row("/find", "Find files by glob pattern: /find <pattern> [dir]")
     table.add_row("/help", "Show this command reference table")
     table.add_row("/exit", "Exit session (Sayonara)")
     console.print(table)
@@ -1988,9 +2034,31 @@ def agent_loop(initial_prompt: Optional[str] = None, requested_model: Optional[s
         handle_user_turn(initial_prompt, messages, model, session_id=session_id)
         return
 
+    prompt_session = None
+    if HAS_PROMPT_TOOLKIT:
+        prompt_style = Style.from_dict({
+            'completion-menu.completion': 'bg:#12151e #00f5d4',
+            'completion-menu.completion.current': 'bg:#00f5d4 #0f111a bold',
+            'completion-menu.meta.completion': 'bg:#1a1c26 #ffb7d5',
+            'completion-menu.meta.completion.current': 'bg:#00f5d4 #1a1c26 bold',
+            'scrollbar.background': 'bg:#0f111a',
+            'scrollbar.button': 'bg:#00ff88',
+        })
+        history_file = os.path.expanduser("~/.local/share/paradise-agent/history")
+        os.makedirs(os.path.dirname(history_file), exist_ok=True)
+        prompt_session = PromptSession(
+            history=FileHistory(history_file),
+            completer=SlashCommandCompleter(),
+            complete_while_typing=True,
+            style=prompt_style
+        )
+
     while True:
         try:
-            user_input = input(f"\n\033[38;2;0;245;212m\033[1myou ❯\033[0m ").strip()
+            if prompt_session:
+                user_input = prompt_session.prompt(ANSI("\033[38;2;0;245;212m\033[1myou ❯\033[0m ")).strip()
+            else:
+                user_input = input(f"\n\033[38;2;0;245;212m\033[1myou ❯\033[0m ").strip()
         except (KeyboardInterrupt, EOFError):
             console.print(f"\n[bold {PINK}]Farewell from Virtual☆Paradise! // Sayonara.[/]")
             break
@@ -2031,6 +2099,31 @@ def agent_loop(initial_prompt: Optional[str] = None, requested_model: Optional[s
                     session_id, messages, s_model = res
                     model = s_model
                     render_restored_session(messages)
+                continue
+            elif cmd.startswith("/plan"):
+                parts = user_input.split(maxsplit=1)
+                task_content = parts[1].strip() if len(parts) > 1 else ""
+                if not task_content:
+                    console.print(f"[bold {YELLOW}]Usage: /plan <task or problem description>[/]")
+                    continue
+                plan_prompt = (
+                    f"[PLANNING DIRECTIVE]: You are in deep architectural planning mode. "
+                    f"Formulate a structured, step-by-step diagnostic and execution plan with clear numbered phases "
+                    f"and verification criteria for: {task_content}"
+                )
+                handle_user_turn(plan_prompt, messages, model, session_id=session_id)
+                continue
+            elif cmd.startswith("/goal"):
+                parts = user_input.split(maxsplit=1)
+                goal_content = parts[1].strip() if len(parts) > 1 else ""
+                if not goal_content:
+                    console.print(f"[bold {YELLOW}]Usage: /goal <objective to achieve>[/]")
+                    continue
+                goal_prompt = (
+                    f"[AUTONOMOUS GOAL DIRECTIVE]: Execute all necessary diagnostic, inspection, and coding steps "
+                    f"autonomously without stopping until this goal is fully accomplished and verified: {goal_content}"
+                )
+                handle_user_turn(goal_prompt, messages, model, session_id=session_id)
                 continue
             elif cmd.startswith("/thinking"):
                 SHOW_THINKING = not SHOW_THINKING
