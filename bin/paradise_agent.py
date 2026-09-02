@@ -53,6 +53,122 @@ SKILL_DIRS = [
     "/usr/share/omarchy/default/agents/skills"
 ]
 
+SESSIONS_DIR = os.path.expanduser("~/.local/share/paradise-agent/sessions")
+
+def get_session_filepath(session_id: str) -> str:
+    return os.path.join(SESSIONS_DIR, f"{session_id}.json")
+
+def save_session(session_id: str, messages: List[Dict[str, Any]], model: str, summary: str = ""):
+    """Saves conversation state to JSON file."""
+    try:
+        os.makedirs(SESSIONS_DIR, exist_ok=True)
+        fp = get_session_filepath(session_id)
+        if not summary:
+            for m in messages:
+                if m.get("role") == "user" and m.get("content"):
+                    raw_c = m["content"].split("[LANGUAGE MANDATE")[0].strip()
+                    summary = raw_c.split("\n")[0][:65].strip()
+                    break
+        data = {
+            "session_id": session_id,
+            "updated_at": time.strftime("%Y-%m-%d %H:%M:%S"),
+            "model": model,
+            "summary": summary or "Untitled Session",
+            "messages": messages
+        }
+        with open(fp, "w", encoding="utf-8") as f:
+            json.dump(data, f, ensure_ascii=False, indent=2)
+    except Exception:
+        pass
+
+def list_saved_sessions() -> List[Dict[str, Any]]:
+    """Returns sorted list of saved sessions (newest first)."""
+    if not os.path.exists(SESSIONS_DIR):
+        return []
+    sessions = []
+    for fn in os.listdir(SESSIONS_DIR):
+        if fn.endswith(".json"):
+            fp = os.path.join(SESSIONS_DIR, fn)
+            try:
+                with open(fp, "r", encoding="utf-8") as f:
+                    d = json.load(f)
+                    d["_mtime"] = os.path.getmtime(fp)
+                    d["_filepath"] = fp
+                    sessions.append(d)
+            except Exception:
+                pass
+    sessions.sort(key=lambda x: x.get("_mtime", 0), reverse=True)
+    return sessions
+
+def load_session(session_id_or_number: str) -> Optional[Tuple[str, List[Dict[str, Any]], str]]:
+    """Loads session by index number or session ID prefix. Returns (session_id, messages, model)."""
+    sessions = list_saved_sessions()
+    if not sessions:
+        return None
+
+    matched = None
+    target = session_id_or_number.strip()
+    if target.isdigit():
+        idx = int(target) - 1
+        if 0 <= idx < len(sessions):
+            matched = sessions[idx]
+    elif target.lower() in ("last", "latest", "default"):
+        matched = sessions[0]
+
+    if not matched:
+        for s in sessions:
+            sid = s.get("session_id", "")
+            if sid == target or sid.startswith(target):
+                matched = s
+                break
+
+    if matched:
+        return matched.get("session_id", ""), matched.get("messages", []), matched.get("model", DEFAULT_MODEL)
+    return None
+
+def handle_resume_command(arg: str = "") -> Optional[Tuple[str, List[Dict[str, Any]], str]]:
+    """Interactive /resume handler."""
+    sessions = list_saved_sessions()
+    if not sessions:
+        console.print(f"[bold {YELLOW}]No saved sessions found in {SESSIONS_DIR}[/]")
+        return None
+
+    if arg:
+        res = load_session(arg)
+        if res:
+            return res
+        console.print(f"[bold {RED}]Session '{arg}' not found.[/]")
+        return None
+
+    table = Table(title=f"Saved Conversations ({len(sessions)} available)", border_style=CYAN, box=box.ROUNDED)
+    table.add_column("#", style=f"bold {YELLOW}", width=4)
+    table.add_column("Session ID", style=f"bold {CYAN}", width=25)
+    table.add_column("Last Updated", style=f"{MUTED}", width=19)
+    table.add_column("Model", style=f"{GREEN}", width=16)
+    table.add_column("Summary / First Prompt", style=f"{PINK}")
+
+    for idx, s in enumerate(sessions[:12]):
+        sid = s.get("session_id", "")
+        upd = s.get("updated_at", "")
+        mod = s.get("model", "")
+        summ = s.get("summary", "")
+        table.add_row(str(idx + 1), sid, upd, mod, summ)
+
+    console.print(table)
+    console.print(f"[dim]Tip: Press Enter to resume latest (#1), enter a number [1-{min(len(sessions), 12)}], or 'c' to cancel.[/]")
+
+    try:
+        choice = input(f"\033[38;2;255;224;102mSelect session to resume [1-{min(len(sessions), 12)}]: \033[0m").strip()
+        if choice.lower() in ("c", "cancel", "q", "quit"):
+            console.print(f"[dim]Resume cancelled.[/]")
+            return None
+        if not choice:
+            choice = "1"
+        return load_session(choice)
+    except (KeyboardInterrupt, EOFError):
+        console.print("")
+        return None
+
 def get_system_memory_info() -> Dict[str, float]:
     """Returns system memory metrics in GiB from /proc/meminfo."""
     info = {"total": 16.0, "available": 8.0, "free": 2.0}
@@ -1182,6 +1298,7 @@ def print_help_table():
     table.add_row("/model", "Inspect or switch local Ollama models: /model [1.5b|3b|7b]")
     table.add_row("/thinking", "Toggle real-time diagnostic reasoning visibility (ON / OFF)")
     table.add_row("/clear", "Clear active conversation memory context")
+    table.add_row("/resume", "Resume past conversation session: /resume [id|last]")
     table.add_row("/search", "Grep search across codebase: /search <query> [path]")
     table.add_row("/find", "Find files by glob pattern: /find <pattern> [dir]")
     table.add_row("/help", "Show this command reference table")
@@ -1200,7 +1317,7 @@ def detect_language(text: str) -> str:
         return "vi"
     return "en" if words else "vi"
 
-def handle_user_turn(user_text: str, messages: List[Dict[str, Any]], model: str):
+def handle_user_turn(user_text: str, messages: List[Dict[str, Any]], model: str, session_id: Optional[str] = None):
     """Processes a multi-step user turn with reasoning extraction and tool execution."""
     global EXECUTION_MODE
 
@@ -1224,6 +1341,8 @@ def handle_user_turn(user_text: str, messages: List[Dict[str, Any]], model: str)
 
     augmented_user_text = f"{user_text}\n\n{lang_directive}"
     messages.append({"role": "user", "content": augmented_user_text})
+    if session_id:
+        save_session(session_id, messages, model)
 
     max_steps = 8
     step = 0
@@ -1620,11 +1739,15 @@ def handle_user_turn(user_text: str, messages: List[Dict[str, Any]], model: str)
                 "content": tool_content_for_model
             })
 
-def agent_loop(initial_prompt: Optional[str] = None, requested_model: Optional[str] = None):
-    """Main interactive REPL loop."""
+    if session_id:
+        save_session(session_id, messages, model)
+
+def agent_loop(initial_prompt: Optional[str] = None, requested_model: Optional[str] = None, resume_session: Optional[str] = None):
+    """Main interactive REPL loop with session persistence and /resume support."""
     global EXECUTION_MODE, SHOW_THINKING
 
     model, reason = detect_optimal_model(requested_model)
+    session_id = f"session_{time.strftime('%Y%m%d_%H%M%S')}"
 
     if not check_ollama_alive():
         console.print(f"[bold {YELLOW}][!] Ollama service is not responding. Attempting to start...[/]")
@@ -1637,14 +1760,29 @@ def agent_loop(initial_prompt: Optional[str] = None, requested_model: Optional[s
             console.print(f"[bold {RED}][Error] Could not connect to Ollama. Please run 'systemctl start ollama'.[/]")
             sys.exit(1)
 
-    print_banner(model, reason)
-
     messages = [
         {"role": "system", "content": build_system_prompt()}
     ]
 
+    if resume_session:
+        res = load_session(resume_session)
+        if res:
+            session_id, messages, s_model = res
+            if not requested_model:
+                model = s_model
+            console.print(Panel(
+                f"[bold {GREEN}]✔ Resumed conversation session:[/] [bold {CYAN}]{session_id}[/]\n"
+                f"[bold {MUTED}]Model:[/] [bold {GREEN}]{model}[/] | [bold {MUTED}]History Restored:[/] {len(messages)} messages",
+                border_style=GREEN,
+                box=box.ROUNDED
+            ))
+        else:
+            console.print(f"[bold {RED}]Session '{resume_session}' not found. Starting fresh session.[/]")
+
+    print_banner(model, reason)
+
     if initial_prompt:
-        handle_user_turn(initial_prompt, messages, model)
+        handle_user_turn(initial_prompt, messages, model, session_id=session_id)
         return
 
     while True:
@@ -1678,8 +1816,23 @@ def agent_loop(initial_prompt: Optional[str] = None, requested_model: Optional[s
                 console.print(Panel(tool_get_system_health(), title=f"[bold {CYAN}]Hardware & System Health[/]", border_style=CYAN, box=box.ROUNDED))
                 continue
             elif cmd == "/clear":
+                session_id = f"session_{time.strftime('%Y%m%d_%H%M%S')}"
                 messages = [{"role": "system", "content": build_system_prompt()}]
-                console.print(f"[bold {GREEN}]Active conversation memory cleared.[/]")
+                console.print(f"[bold {GREEN}]Active conversation memory cleared (New session started).[/]")
+                continue
+            elif cmd.startswith("/resume"):
+                parts = user_input.split(maxsplit=1)
+                arg_val = parts[1].strip() if len(parts) > 1 else ""
+                res = handle_resume_command(arg_val)
+                if res:
+                    session_id, messages, s_model = res
+                    model = s_model
+                    console.print(Panel(
+                        f"[bold {GREEN}]✔ Resumed conversation session:[/] [bold {CYAN}]{session_id}[/]\n"
+                        f"[bold {MUTED}]Model:[/] [bold {GREEN}]{model}[/] | [bold {MUTED}]History Restored:[/] {len(messages)} messages",
+                        border_style=GREEN,
+                        box=box.ROUNDED
+                    ))
                 continue
             elif cmd.startswith("/thinking"):
                 SHOW_THINKING = not SHOW_THINKING
@@ -1745,7 +1898,7 @@ def agent_loop(initial_prompt: Optional[str] = None, requested_model: Optional[s
                     console.print(f"[bold {YELLOW}]Usage: /find <glob_pattern> [dir][/]")
                 continue
 
-        handle_user_turn(user_input, messages, model)
+        handle_user_turn(user_input, messages, model, session_id=session_id)
 
 def main():
     import argparse
@@ -1754,6 +1907,7 @@ def main():
     parser.add_argument("--preview", "-p", action="store_true", help="Start in Preview mode (prompts before executing actions)")
     parser.add_argument("--yolo", "-y", "--auto-accept", action="store_true", help="Start in Auto-accept mode (default)")
     parser.add_argument("--model", "-m", help="Override Ollama model name")
+    parser.add_argument("--resume", "-r", nargs="?", const="last", help="Resume past conversation session (specify session ID, index number, or 'last')")
     parser.add_argument("--diagnose", "-d", action="store_true", help="Run system health diagnosis immediately")
 
     args = parser.parse_args()
@@ -1768,7 +1922,7 @@ def main():
         console.print(Panel(tool_get_system_health(), title=f"[bold {CYAN}]System Health Diagnostics[/]", border_style=CYAN, box=box.ROUNDED))
         sys.exit(0)
 
-    agent_loop(initial_prompt=args.prompt, requested_model=args.model)
+    agent_loop(initial_prompt=args.prompt, requested_model=args.model, resume_session=args.resume)
 
 if __name__ == "__main__":
     main()
