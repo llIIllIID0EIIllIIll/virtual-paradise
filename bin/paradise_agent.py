@@ -2213,9 +2213,26 @@ def stream_ollama_synthesis(messages: List[Dict[str, Any]], model: str, lang: st
             compacted_tail.append(m_copy)
         active_msgs = head + compacted_tail
 
+    # Format messages cleanly for synthesis to prevent local LLM from echoing <tool_response>
+    synthesis_messages = []
+    for m in active_msgs:
+        if m.get("role") == "tool":
+            fn_name = m.get("name", "tool")
+            clean_c = m.get("content", "").split("[SYSTEM MANDATE")[0].strip()
+            if lang == "vi":
+                content = f"[Kết quả thực thi công cụ '{fn_name}']:\n{clean_c}\n\nHãy tổng hợp kết quả này và trả lời người dùng bằng tiếng Việt tự nhiên, ngắn gọn, đúng trọng tâm."
+            else:
+                content = f"[Tool Execution Result for '{fn_name}']:\n{clean_c}\n\nSynthesize this result and answer the user in clear, professional English."
+            synthesis_messages.append({"role": "user", "content": content})
+        elif m.get("role") == "assistant" and m.get("tool_calls"):
+            if m.get("content"):
+                synthesis_messages.append({"role": "assistant", "content": m["content"]})
+        else:
+            synthesis_messages.append(m)
+
     payload = {
         "model": model,
-        "messages": active_msgs,
+        "messages": synthesis_messages,
         "stream": True,
         "options": {
             "temperature": 0.1,
@@ -2232,6 +2249,9 @@ def stream_ollama_synthesis(messages: List[Dict[str, Any]], model: str, lang: st
     )
     full_content = []
     console.print(f"\n[bold {PINK}]paradise-agent ❯[/] ", end="")
+    suppress_tag = False
+    buffer_tag = ""
+
     try:
         with urllib.request.urlopen(req, timeout=60) as resp:
             for line in resp:
@@ -2240,13 +2260,31 @@ def stream_ollama_synthesis(messages: List[Dict[str, Any]], model: str, lang: st
                 try:
                     chunk = json.loads(line.decode("utf-8"))
                     delta = chunk.get("message", {}).get("content", "")
-                    if delta:
+                    if not delta:
+                        continue
+                    full_content.append(delta)
+
+                    # Suppress tool_response echo if model emits it
+                    if not buffer_tag and "<tool_response" in delta:
+                        suppress_tag = True
+                    
+                    if suppress_tag:
+                        buffer_tag += delta
+                        if "</tool_response>" in buffer_tag:
+                            suppress_tag = False
+                            after_tag = buffer_tag.split("</tool_response>", 1)[1]
+                            clean_after = re.sub(r'\[SYSTEM MANDATE.*?\].*?', '', after_tag, flags=re.DOTALL).strip()
+                            if clean_after:
+                                print(clean_after, end="", flush=True)
+                    else:
                         print(delta, end="", flush=True)
-                        full_content.append(delta)
                 except Exception:
                     pass
         print()
-        return "".join(full_content)
+        raw_final = "".join(full_content)
+        cleaned_final = re.sub(r'<tool_response>.*?</tool_response>', '', raw_final, flags=re.DOTALL).strip()
+        cleaned_final = re.sub(r'\[SYSTEM MANDATE.*?\].*?', '', cleaned_final, flags=re.DOTALL).strip()
+        return cleaned_final or raw_final
     except Exception as e:
         console.print(f"\n[bold {RED}][Stream Error: {e}][/]")
         return "".join(full_content)
@@ -2318,6 +2356,82 @@ def print_banner(model_name: str = "", reason: str = ""):
     """Renders Cyberpunk Authentic Diagonal Gradient Banner."""
     art_text = get_banner_art()
     print(f"\n{art_text}\n")
+
+def print_intent_analysis(
+    step: int,
+    user_prompt: str,
+    tool_calls: List[Dict[str, Any]],
+    extracted_think: str = "",
+    content: str = "",
+    elapsed_ms: int = 0,
+    model_name: str = "",
+    lang: str = "en"
+):
+    """Renders the local intent analysis and decision breakdown directly to the interface."""
+    clean_prompt = user_prompt.split("[LANGUAGE MANDATE")[0].split("[ATTACHED FILE")[0].strip()
+    clean_prompt_one_line = clean_prompt.split("\n")[0].strip()
+    if len(clean_prompt_one_line) > 85:
+        clean_prompt_one_line = clean_prompt_one_line[:82] + "..."
+
+    if tool_calls:
+        tc = tool_calls[0].get("function", {})
+        fn_name = tc.get("name", "tool")
+        fn_args = tc.get("arguments", {})
+        if isinstance(fn_args, str):
+            try:
+                fn_args = json.loads(fn_args)
+            except Exception:
+                fn_args = {}
+
+        if fn_name == "read_file":
+            action_desc = f"Read & inspect file: [bold {YELLOW}]{fn_args.get('path', '')}[/]"
+        elif fn_name == "write_file":
+            action_desc = f"Create / write file: [bold {YELLOW}]{fn_args.get('path', '')}[/]"
+        elif fn_name == "edit_file":
+            action_desc = f"Surgically edit file: [bold {YELLOW}]{fn_args.get('path', '')}[/]"
+        elif fn_name == "list_dir":
+            action_desc = f"List directory contents: [bold {YELLOW}]{fn_args.get('directory_path', '.')}[/]"
+        elif fn_name == "grep_search":
+            action_desc = f"Grep search '[bold {YELLOW}]{fn_args.get('query', '')}[/]' in '[bold]{fn_args.get('search_path', '.')}[/]'"
+        elif fn_name == "find_by_name":
+            action_desc = f"Find files matching '[bold {YELLOW}]{fn_args.get('pattern', '')}[/]' in '[bold]{fn_args.get('search_directory', '.')}[/]'"
+        elif fn_name == "execute_bash":
+            cmd_preview = str(fn_args.get("command", "")).strip().replace("\n", "; ")
+            if len(cmd_preview) > 65:
+                cmd_preview = cmd_preview[:62] + "..."
+            action_desc = f"Execute shell command: [bold {YELLOW}]{cmd_preview}[/]"
+        elif fn_name == "get_system_health":
+            action_desc = "Inspect hardware & system health diagnostics"
+        elif fn_name == "load_skill":
+            action_desc = f"Load expert skill instructions: [bold {YELLOW}]{fn_args.get('skill_name', '')}[/]"
+        elif fn_name == "delete_skill":
+            action_desc = f"Delete specialized skill: [bold {YELLOW}]{fn_args.get('skill_name', '')}[/]"
+        else:
+            action_desc = f"Invoke tool: [bold {YELLOW}]{fn_name}[/]"
+        action_type = f"[bold {GREEN}]Tool Call:[/] [bold {YELLOW}]{fn_name}[/]"
+    else:
+        action_type = f"[bold {CYAN}]Direct Response[/]"
+        action_desc = "Formulate comprehensive assistant answer"
+
+    body_lines = [
+        f"[bold {CYAN}]• Target Intent:[/] [white]{clean_prompt_one_line}[/]",
+        f"[bold {CYAN}]• Planned Action:[/] {action_desc} ({action_type})",
+    ]
+
+    if extracted_think:
+        body_lines.append(f"[bold {PURPLE}]• Internal Thought:[/] [dim]{extracted_think[:350]}[/]")
+
+    body_lines.append(
+        f"[dim]• Telemetry:[/] Model: [bold {GREEN}]{model_name}[/] | Decision: [bold {YELLOW}]{elapsed_ms} ms[/] | Lang: [bold]{lang.upper()}[/] | Mode: [bold]{EXECUTION_MODE}[/]"
+    )
+
+    console.print(Panel(
+        "\n".join(body_lines),
+        title=f"[bold #00f5d4]⚡ Local Intent Analysis (Step {step})[/]",
+        border_style=CYAN,
+        box=box.ROUNDED,
+        padding=(0, 1)
+    ))
 
 def print_thinking(thinking_text: str, title: str = "🧠 Diagnostic Reasoning"):
     """Displays agent's internal thought process in a dedicated TUI panel."""
@@ -2707,23 +2821,19 @@ def _handle_user_turn_inner(user_text: str, messages: List[Dict[str, Any]], mode
                 msg["content"] = ""
                 content = ""
 
-        # Print reasoning / thinking process if available or display telemetry
-        if SHOW_THINKING:
-            diagnostic_reasoning = ""
-            if extracted_think:
-                diagnostic_reasoning = f"[bold {PURPLE}]Internal Reasoning Stream:[/]\n{extracted_think}\n\n"
-            if tool_calls:
-                fn_intent = tool_calls[0].get("function", {}).get("name", "action")
-                diagnostic_reasoning += (
-                    f"• [bold {CYAN}]Step {step} Analysis:[/] Intent verified | Target tool: [bold {YELLOW}]{fn_intent}[/]\n"
-                    f"• [bold {CYAN}]Model Decision Time:[/] {elapsed_ms} ms | Lang: [bold]{lang.upper()}[/] | Mode: [bold]{EXECUTION_MODE}[/]"
-                )
-            elif content:
-                diagnostic_reasoning += (
-                    f"• [bold {CYAN}]Synthesis Step:[/] Formulation completed in {elapsed_ms} ms | Language: [bold]{lang.upper()}[/]"
-                )
-            if diagnostic_reasoning.strip():
-                print_thinking(diagnostic_reasoning)
+        # Display Local Intent Analysis panel directly on the interface
+        print_intent_analysis(
+            step=step,
+            user_prompt=user_text,
+            tool_calls=tool_calls,
+            extracted_think=extracted_think,
+            content=content,
+            elapsed_ms=elapsed_ms,
+            model_name=model,
+            lang=lang
+        )
+        if SHOW_THINKING and extracted_think and len(extracted_think) > 350:
+            print_thinking(extracted_think, title="🧠 Extended Reasoning Stream")
 
         if content:
             console.print(f"\n[bold {PINK}]paradise-agent ❯[/]")
