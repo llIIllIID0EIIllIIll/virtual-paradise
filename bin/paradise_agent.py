@@ -54,8 +54,8 @@ try:
 except ImportError:
     HAS_PROMPT_TOOLKIT = False
 
-class SlashCommandCompleter(Completer):
-    """Provides dropdown autocomplete suggestions when user types '/' in terminal."""
+class SlashAndFileCompleter(Completer):
+    """Provides dropdown autocomplete suggestions for '/' slash commands and '@' file tags."""
     COMMANDS = [
         ("/resume", "Session manager: resume, rename, or delete past conversations"),
         ("/plan", "Planning mode: generate phased diagnostic/coding plan before action"),
@@ -76,17 +76,71 @@ class SlashCommandCompleter(Completer):
     ]
 
     def get_completions(self, document, complete_event):
-        text = document.text_before_cursor
-        if text.startswith("/"):
-            word = text.strip()
+        text_before = document.text_before_cursor
+
+        # 1. Slash command completion at start of line
+        if text_before.startswith("/") and " " not in text_before:
+            word = text_before.strip()
             for cmd, desc in self.COMMANDS:
                 if cmd.startswith(word):
                     yield Completion(
                         cmd,
-                        start_position=-len(text),
+                        start_position=-len(text_before),
                         display=cmd,
                         display_meta=desc
                     )
+            return
+
+        # 2. @ File tag completion anywhere in prompt
+        last_at = text_before.rfind("@")
+        if last_at != -1:
+            token = text_before[last_at:]
+            if " " not in token:
+                prefix = token[1:].strip()  # strip '@'
+                search_dirs = [
+                    os.getcwd(),
+                    os.path.expanduser("~/Downloads"),
+                    os.path.expanduser("~"),
+                    os.path.expanduser("~/omarchy-virtual-paradise"),
+                    os.path.expanduser("~/.config/hypr"),
+                ]
+                seen_files = set()
+                count = 0
+                for sdir in search_dirs:
+                    if not os.path.exists(sdir) or count >= 30:
+                        continue
+                    try:
+                        for entry in sorted(os.listdir(sdir)):
+                            if entry.startswith(".git") or entry.startswith("__pycache__"):
+                                continue
+                            if not prefix or prefix.lower() in entry.lower():
+                                if entry in seen_files:
+                                    continue
+                                seen_files.add(entry)
+                                count += 1
+
+                                full_p = os.path.join(sdir, entry)
+                                is_dir = os.path.isdir(full_p)
+                                if is_dir:
+                                    meta = f"📁 Dir  | {sdir}"
+                                else:
+                                    try:
+                                        sz = os.path.getsize(full_p)
+                                        sz_str = f"{sz/1024:.1f} KB" if sz < 1024*1024 else f"{sz/(1024*1024):.1f} MB"
+                                    except Exception:
+                                        sz_str = ""
+                                    meta = f"📄 {sz_str} | {sdir}"
+
+                                yield Completion(
+                                    f"@{entry}",
+                                    start_position=-len(token),
+                                    display=f"@{entry}",
+                                    display_meta=meta
+                                )
+                                if count >= 30:
+                                    break
+                    except Exception:
+                        pass
 
 SKILL_DIRS = [
     os.path.expanduser("~/.agents/skills"),
@@ -472,15 +526,16 @@ def detect_optimal_model(requested_model: Optional[str] = None) -> Tuple[str, st
     has_3b = any("3b" in m for m in installed)
     has_1_5b = any("1.5b" in m for m in installed)
 
-    if avail >= 6.5 and has_7b:
-        chosen = [m for m in installed if "7b" in m][0]
-        return chosen, f"Available RAM: {avail} GiB (Tier: 7B High Capability)"
-    elif avail >= 3.0 and has_3b:
+    # 3B is the optimal high-speed sweet spot for local CPU execution (~2-3s response)
+    if has_3b and avail >= 3.0:
         chosen = [m for m in installed if "3b" in m][0]
-        return chosen, f"Available RAM: {avail} GiB (Tier: 3B Standard)"
-    elif has_1_5b:
+        return chosen, f"Available RAM: {avail} GiB (Tier: 3B Fast & Optimal)"
+    elif avail < 3.0 and has_1_5b:
         chosen = [m for m in installed if "1.5b" in m][0]
         return chosen, f"Available RAM: {avail} GiB (Tier: 1.5B Ultra-light)"
+    elif has_7b:
+        chosen = [m for m in installed if "7b" in m][0]
+        return chosen, f"Available RAM: {avail} GiB (Tier: 7B)"
     elif has_3b:
         chosen = [m for m in installed if "3b" in m][0]
         return chosen, f"Available RAM: {avail} GiB (Tier: 3B)"
@@ -1573,7 +1628,9 @@ def call_ollama_chat(messages: List[Dict[str, Any]], model: str, enable_tools: b
         "stream": False,
         "options": {
             "temperature": 0.1,
-            "num_predict": 512
+            "num_thread": min(12, os.cpu_count() or 8),
+            "num_ctx": 4096,
+            "num_predict": 128 if enable_tools else 384
         }
     }
     if enable_tools:
@@ -1592,6 +1649,59 @@ def call_ollama_chat(messages: List[Dict[str, Any]], model: str, enable_tools: b
         return {"message": {"role": "assistant", "content": f"[Network Error communicating with Ollama: {e}]"}}
     except Exception as e:
         return {"message": {"role": "assistant", "content": f"[Error: {e}]"}}
+
+def stream_ollama_synthesis(messages: List[Dict[str, Any]], model: str, lang: str = "vi") -> str:
+    """Streams the assistant synthesis response directly to terminal in real-time for instant responsiveness."""
+    active_msgs = messages
+    if len(messages) > 16:
+        head = messages[:2]
+        tail = messages[-12:]
+        compacted_tail = []
+        for m in tail:
+            m_copy = dict(m)
+            if m_copy.get("role") == "tool" and len(m_copy.get("content", "")) > 400:
+                c = m_copy["content"]
+                m_copy["content"] = c[:250] + "\n... [Output truncated] ...\n" + c[-150:]
+            compacted_tail.append(m_copy)
+        active_msgs = head + compacted_tail
+
+    payload = {
+        "model": model,
+        "messages": active_msgs,
+        "stream": True,
+        "options": {
+            "temperature": 0.1,
+            "num_thread": min(12, os.cpu_count() or 8),
+            "num_ctx": 4096,
+            "num_predict": 512
+        }
+    }
+    data = json.dumps(payload).encode("utf-8")
+    req = urllib.request.Request(
+        f"{OLLAMA_HOST}/api/chat",
+        data=data,
+        headers={"Content-Type": "application/json"}
+    )
+    full_content = []
+    console.print(f"\n[bold {PINK}]paradise-agent ❯[/] ", end="")
+    try:
+        with urllib.request.urlopen(req, timeout=60) as resp:
+            for line in resp:
+                if not line.strip():
+                    continue
+                try:
+                    chunk = json.loads(line.decode("utf-8"))
+                    delta = chunk.get("message", {}).get("content", "")
+                    if delta:
+                        print(delta, end="", flush=True)
+                        full_content.append(delta)
+                except Exception:
+                    pass
+        print()
+        return "".join(full_content)
+    except Exception as e:
+        console.print(f"\n[bold {RED}][Stream Error: {e}][/]")
+        return "".join(full_content)
 
 def check_ollama_alive() -> bool:
     """Checks if Ollama service is reachable."""
@@ -1665,11 +1775,9 @@ def print_banner(model_name: str, reason: str = ""):
     tier_desc = f" [dim]({reason})[/]" if reason else ""
 
     print(f"\n{art_text}\n")
-    console.print(f"  [bold {PINK}]⚡ AGY Offline — Autonomous Local AI Pair Programmer & System Engineer[/]")
-    console.print(f"  [bold {CYAN}]Virtual☆Paradise Edition[/] [dim](100% Local / Zero Cloud)[/]")
     console.print(f"  [bold {MUTED}]Model:[/] [bold {GREEN}]{model_name}[/]{tier_desc}")
     console.print(f"  [bold {MUTED}]RAM:[/] [bold {CYAN}]{ram_str}[/]  |  [bold {MUTED}]Mode:[/] [{mode_style}]{EXECUTION_MODE}[/]")
-    console.print(f"  [dim]Type [bold {YELLOW}]/[/] for interactive command dropdown, [bold {YELLOW}]/help[/] for reference, [bold {YELLOW}]/exit[/] to quit.[/]")
+    console.print(f"  [dim]Type [bold {YELLOW}]/[/] for commands, [bold {CYAN}]@[/] to tag files, [bold {YELLOW}]/help[/] for reference, [bold {YELLOW}]/exit[/] to quit.[/]")
     console.print(f"[dim {CYAN}]  {'─' * 95}[/]\n")
 
 def print_thinking(thinking_text: str, title: str = "🧠 Diagnostic Reasoning"):
@@ -1739,6 +1847,46 @@ def handle_user_turn(user_text: str, messages: List[Dict[str, Any]], model: str,
         lang_directive = "[LANGUAGE MANDATE: The user explicitly wrote in VIETNAMESE. You MUST answer in natural, professional, polite VIETNAMESE.]"
     else:
         lang_directive = "[LANGUAGE MANDATE: DEFAULT LANGUAGE IS ENGLISH. Formulate your entire response in clear, fluent, professional ENGLISH.]"
+
+    # Resolve and attach @file tags to prompt context
+    at_tags = re.findall(r'@([^\s"\'`]+)', user_text)
+    attached_files = []
+    attached_descriptions = []
+
+    for tag in at_tags:
+        clean_tag = tag.strip(".,;:?!")
+        resolved = None
+        for cand in [
+            clean_tag,
+            os.path.expanduser(clean_tag),
+            os.path.join(os.getcwd(), clean_tag),
+            os.path.join(os.path.expanduser("~/Downloads"), clean_tag),
+            os.path.join(os.path.expanduser("~"), clean_tag),
+            os.path.join(os.path.expanduser("~/omarchy-virtual-paradise"), clean_tag),
+            os.path.join(os.path.expanduser("~/.config/hypr"), clean_tag),
+        ]:
+            if os.path.exists(cand):
+                resolved = os.path.abspath(cand)
+                break
+        if resolved and resolved not in attached_files:
+            attached_files.append(resolved)
+            file_body = tool_read_file(resolved, max_lines=150)
+            attached_descriptions.append(f"\n[ATTACHED FILE: {resolved}]\n{file_body}\n[END ATTACHED FILE]")
+
+    if attached_files:
+        for af in attached_files:
+            try:
+                sz = os.path.getsize(af)
+                sz_str = f"{sz/1024:.1f} KB" if sz < 1024*1024 else f"{sz/(1024*1024):.1f} MB"
+            except Exception:
+                sz_str = ""
+            console.print(Panel(
+                f"[bold {CYAN}]📎 Attached File Context:[/] [bold {PINK}]{af}[/] [dim]({sz_str})[/]",
+                border_style=CYAN,
+                box=box.ROUNDED,
+                padding=(0, 1)
+            ))
+        user_text += "\n" + "\n".join(attached_descriptions)
 
     augmented_user_text = f"{user_text}\n\n{lang_directive}"
     messages.append({"role": "user", "content": augmented_user_text})
@@ -2142,6 +2290,18 @@ def handle_user_turn(user_text: str, messages: List[Dict[str, Any]], model: str,
                 "content": tool_content_for_model
             })
 
+        # Directly stream the assistant synthesis response to the terminal in real-time!
+        synth_start = time.time()
+        synth_content = stream_ollama_synthesis(messages, model, lang=lang)
+        synth_ms = int((time.time() - synth_start) * 1000)
+        if SHOW_THINKING and synth_content:
+            print_thinking(f"• [bold {CYAN}]Synthesis Stream:[/] Delivered in {synth_ms} ms | Language: [bold]{lang.upper()}[/]")
+        messages.append({
+            "role": "assistant",
+            "content": synth_content
+        })
+        break
+
     if session_id:
         save_session(session_id, messages, model)
 
@@ -2199,7 +2359,7 @@ def agent_loop(initial_prompt: Optional[str] = None, requested_model: Optional[s
         os.makedirs(os.path.dirname(history_file), exist_ok=True)
         prompt_session = PromptSession(
             history=FileHistory(history_file),
-            completer=SlashCommandCompleter(),
+            completer=SlashAndFileCompleter(),
             complete_while_typing=True,
             style=prompt_style
         )
