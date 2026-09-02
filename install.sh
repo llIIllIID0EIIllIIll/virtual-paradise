@@ -355,8 +355,14 @@ if [[ -d "$REPO_DIR/hypr" ]]; then
   log_sub "Installed Hyprland Lua configurations"
 fi
 
-if [[ -f "$REPO_DIR/hyprland.conf" ]]; then
-  cp "$REPO_DIR/hyprland.conf" "$CONFIG_DIR/hypr/hyprland.conf" 2>/dev/null || true
+if [[ -f "$REPO_DIR/hypr/hyprland.conf" ]]; then
+  cp "$REPO_DIR/hypr/hyprland.conf" "$CONFIG_DIR/hypr/hyprland.conf" 2>/dev/null || true
+fi
+if [[ -f "$REPO_DIR/hypr/hyprlock.conf" ]]; then
+  cp "$REPO_DIR/hypr/hyprlock.conf" "$CONFIG_DIR/hypr/hyprlock.conf" 2>/dev/null || true
+fi
+if [[ -f "$REPO_DIR/hypr/hyprland-preview-share-picker.css" ]]; then
+  cp "$REPO_DIR/hypr/hyprland-preview-share-picker.css" "$CONFIG_DIR/hypr/hyprland-preview-share-picker.css" 2>/dev/null || true
 fi
 
 # ------------------------------------------------------------------------------
@@ -385,8 +391,8 @@ if [[ -f "$REPO_DIR/cava/config" ]]; then
 fi
 
 # Btop
-if [[ -f "$REPO_DIR/btop.theme" ]]; then
-  cp "$REPO_DIR/btop.theme" "$CONFIG_DIR/btop/themes/virtual-paradise.theme"
+if [[ -f "$REPO_DIR/theme/btop.theme" ]]; then
+  cp "$REPO_DIR/theme/btop.theme" "$CONFIG_DIR/btop/themes/virtual-paradise.theme"
 fi
 
 # Fastfetch
@@ -405,10 +411,10 @@ if [[ -d "$REPO_DIR/micro" ]]; then
 fi
 
 # GTK4 & GTK3 Styling (Nautilus & Libadwaita) and Minimal Cybertech Icons
-if [[ -f "$REPO_DIR/gtk.css" ]]; then
+if [[ -f "$REPO_DIR/config/gtk.css" ]]; then
   mkdir -p "$CONFIG_DIR/gtk-4.0" "$CONFIG_DIR/gtk-3.0"
-  cp "$REPO_DIR/gtk.css" "$CONFIG_DIR/gtk-4.0/gtk.css"
-  cp "$REPO_DIR/gtk.css" "$CONFIG_DIR/gtk-3.0/gtk.css"
+  cp "$REPO_DIR/config/gtk.css" "$CONFIG_DIR/gtk-4.0/gtk.css"
+  cp "$REPO_DIR/config/gtk.css" "$CONFIG_DIR/gtk-3.0/gtk.css"
 fi
 if command -v gsettings &>/dev/null; then
   gsettings set org.gnome.desktop.interface icon-theme "Tela-circle-dracula-dark" 2>/dev/null || true
@@ -426,6 +432,30 @@ if [[ "$REPO_DIR" != "$CONFIG_DIR/omarchy/themes/$THEME_NAME" ]]; then
     --exclude='preview_rotated.jpg' \
     "$REPO_DIR"/ "$CONFIG_DIR/omarchy/themes/$THEME_NAME/" 2>/dev/null || true
 fi
+
+# Flatten theme/ color/appearance files into theme root (Omarchy reads them directly)
+THEME_DEST="$CONFIG_DIR/omarchy/themes/$THEME_NAME"
+if [[ -d "$THEME_DEST/theme" ]]; then
+  cp -r "$THEME_DEST/theme"/. "$THEME_DEST/" 2>/dev/null || true
+  log_sub "Flattened theme/ color files to Omarchy theme root"
+fi
+# Flatten terminal configs into theme root (Omarchy re-templates them from colors.toml)
+if [[ -d "$THEME_DEST/config/terminal" ]]; then
+  cp -r "$THEME_DEST/config/terminal"/. "$THEME_DEST/" 2>/dev/null || true
+  log_sub "Flattened config/terminal/ files to Omarchy theme root"
+fi
+# Flatten editor configs into theme root
+if [[ -d "$THEME_DEST/config/editor" ]]; then
+  cp -r "$THEME_DEST/config/editor"/. "$THEME_DEST/" 2>/dev/null || true
+  log_sub "Flattened config/editor/ files to Omarchy theme root"
+fi
+# Flatten hyprland configs from hypr/ into theme root (Omarchy expects hyprland.lua at root)
+for f in hyprland.lua hyprland-preview-share-picker.css hyprlock.conf; do
+  if [[ -f "$THEME_DEST/hypr/$f" ]]; then
+    cp "$THEME_DEST/hypr/$f" "$THEME_DEST/$f" 2>/dev/null || true
+  fi
+done
+log_sub "Flattened hypr/ Omarchy-required files to theme root"
 
 # Post-theme-set hook
 cat << 'EOF' > "$CONFIG_DIR/omarchy/hooks/theme-set.d/virtual-paradise.sh"
