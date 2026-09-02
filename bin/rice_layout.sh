@@ -62,8 +62,15 @@ LAUNCH_TERM() {
 }
 
 # 4. Sequential Launch with Optimized Micro-Delay for Perfect Tiling Tree Layout
-# 1. Fastfetch (Master Left Panel)
-LAUNCH_TERM "$USER_SHELL" -c "fastfetch; exec $USER_SHELL"
+# 1. Fastfetch + Paradise Agent (Master Left Panel)
+case "$TERM_BIN" in
+  ghostty|foot|alacritty|kitty)
+    "$TERM_BIN" --title="fastfetch-agent" -e "$USER_SHELL" -c "printf '\033]0;fastfetch-agent\007'; fastfetch; /home/doe/.local/bin/paradise-agent; exec $USER_SHELL" &
+    ;;
+  *)
+    LAUNCH_TERM "$USER_SHELL" -c "printf '\033]0;fastfetch-agent\007'; fastfetch; /home/doe/.local/bin/paradise-agent; exec $USER_SHELL"
+    ;;
+esac
 sleep 0.10
 
 # 2. btop (Top Right)
@@ -80,4 +87,8 @@ sleep 0.10
 
 # 5. unimatrix (Tri-color Hacker Matrix)
 LAUNCH_TERM "$HOME/.local/bin/virtual_matrix" -a -f -s 50 -l k -u "☆★✦✧"
+
+# 6. Auto-focus Fastfetch + Paradise Agent terminal
+sleep 0.35
+hyprctl dispatch "hl.dsp.focus({ window = 'title:fastfetch-agent' })" 2>/dev/null || true
 

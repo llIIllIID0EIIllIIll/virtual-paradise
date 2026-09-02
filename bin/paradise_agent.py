@@ -34,6 +34,9 @@ C_GRAY = "\033[38;2;110;130;150m"   # Muted Slate
 
 SKILL_DIRS = [
     os.path.expanduser("~/.agents/skills"),
+    os.path.expanduser("~/Windows/skills"),
+    os.path.expanduser("~/Windows/.agents/skills"),
+    os.path.expanduser("~/Windows/agy-skills"),
     os.path.expanduser("~/.gemini/antigravity-cli/skills"),
     os.path.expanduser("~/.gemini/antigravity-cli/builtin/skills"),
     "/usr/share/omarchy/default/agents/skills"
@@ -152,21 +155,28 @@ You have access to specialized skills on this machine. Call `load_skill(skill_na
 Guidelines:
 - PROACTIVE AGENT BEHAVIOR - NEVER REFUSE OR ASK USER TO RUN COMMANDS:
   * You are an autonomous agent equipped with local tools (`execute_bash`, `read_file`, `write_file`, `load_skill`, `get_system_health`).
-  * NEVER say "Tôi không thể truy cập", "Tôi không có quyền truy cập", or tell the user to open a terminal and run commands themselves!
+  * NEVER say "Tôi không thể truy cập", "Tôi không có quyền", or "Tôi không thể thực hiện yêu cầu này"!
   * You have DIRECT local access. RUN THE COMMANDS AUTONOMOUSLY to answer the user!
 - FILESYSTEM & DIRECTORIES (WINDOW / OMARCHY / HOME):
   * When the user asks about files or what is inside a folder/environment (e.g. "hiện tại trong môi trường window mình những file có gì", "trong mục omarchy-virtual-paradise có gì", "trong thư mục X có file gì"):
     IMMEDIATELY CALL `execute_bash(command="ls -la /home/{user}/Windows")` or `execute_bash(command="ls -la /home/{user}/omarchy-virtual-paradise")` or `read_file`!
     Never guess or make up files! Read the directory listing and report the actual files found.
+- DOCUMENT TEMPLATES & VIETNAMESE ADMINISTRATIVE FILES:
+  * When the user asks for document templates (e.g. "mẫu tờ trình", "mẫu công văn", "lấy file mẫu tờ trình copy vào download"):
+    1. The template file is `/home/{user}/Windows/skills/vn-officecli/templates/to_trinh_mau.docx`.
+    2. IMMEDIATELY call `execute_bash` to copy it: `cp /home/{user}/Windows/skills/vn-officecli/templates/to_trinh_mau.docx /home/{user}/Downloads/ && ls -la /home/{user}/Downloads/`.
+    3. Confirm clearly to the user that `to_trinh_mau.docx` has been copied into `/home/{user}/Downloads/`.
+    4. NEVER say "Tôi không thể thực hiện" or call read_file with empty arguments!
 - SYSTEM TELEMETRY & HARDWARE:
   * When asked about performance, lag, battery, RAM, CPU, or services, call `get_system_health`.
 - SPECIALIZED SKILLS:
   * When asked about Omarchy/Hyprland customization, call `load_skill("omarchy")`.
   * When asked about an app crash or segfault, call `load_skill("diagnose-crash")`.
-- CONVERSATION & GREETINGS:
-  * For simple greetings ("xin chào", "hello", "hi") or theme questions ("theme mình là gì"), answer directly in Vietnamese without tools. Theme is "{theme}".
-- OUTPUT FORMAT:
-  * Speak natural, polite, and helpful Vietnamese.
+  * When asked about administrative documents or office automation, call `load_skill("vn-officecli")`.
+- LANGUAGE MATCHING (STRICT):
+  * You MUST always respond in the exact same language the user uses:
+    - User writes in English -> Reply in fluent, natural English.
+    - User writes in Vietnamese -> Reply in natural, polite Vietnamese.
 """
 
 TOOLS_SPEC = [
@@ -382,6 +392,8 @@ def tool_execute_bash(command: Any, yolo: bool = False) -> str:
 
 def tool_read_file(path: Any, max_lines: int = 200) -> str:
     path = str(unwrap_tool_arg(path)).strip()
+    if not path or path in ("{}", "None", "''", '""'):
+        path = os.path.expanduser("~")
     expanded_path = os.path.expanduser(path)
     if not os.path.exists(expanded_path):
         return f"[Error: File '{path}' does not exist]"
@@ -627,8 +639,26 @@ def agent_loop(initial_prompt: Optional[str] = None, yolo: bool = False):
 
         handle_user_turn(user_input, messages, model, yolo)
 
+def detect_language(text: str) -> str:
+    vn_chars = "àáảãạăằắẳẵặâầấẩẫậèéẻẽẹêềếểễệìíỉĩịòóỏõọôồốổỗộơờớởỡợùúủũụưừứửữựỳýỷỹỵđ"
+    lower = text.lower()
+    if any(c in vn_chars for c in lower):
+        return "vi"
+    vn_words = {"xin", "chao", "toi", "ban", "minh", "giup", "lay", "cua", "trong", "co", "gi", "may", "nay", "he", "thong", "la", "o", "va", "cho", "to", "trinh", "don", "mau", "van", "sao", "khong", "duoc"}
+    words = set(re.findall(r"\b\w+\b", lower))
+    if words & vn_words:
+        return "vi"
+    return "en" if words else "vi"
+
 def handle_user_turn(user_text: str, messages: List[Dict[str, Any]], model: str, yolo: bool):
-    messages.append({"role": "user", "content": user_text})
+    lang = detect_language(user_text)
+    if lang == "en":
+        lang_directive = "[LANGUAGE MANDATE: The user input is in ENGLISH. You MUST formulate your entire response in natural, fluent ENGLISH.]"
+    else:
+        lang_directive = "[LANGUAGE MANDATE: Người dùng hỏi bằng TIẾNG VIỆT. Bạn BẮT BUỘC phải trả lời bằng TIẾNG VIỆT tự nhiên, lịch sự.]"
+
+    augmented_user_text = f"{user_text}\n\n{lang_directive}"
+    messages.append({"role": "user", "content": augmented_user_text})
 
     # Agent ReAct loop (supports multiple tool calls per turn)
     max_steps = 10
@@ -664,21 +694,34 @@ def handle_user_turn(user_text: str, messages: List[Dict[str, Any]], model: str,
                 except Exception:
                     pass
 
-            if trimmed.startswith("{") and "name" in trimmed:
+            # Check for JSONL (multiple JSON objects separated by newlines)
+            for line in trimmed.split("\n"):
+                line = line.strip()
+                if line.startswith("{") and line.endswith("}") and "name" in line:
+                    try:
+                        parsed = json.loads(line)
+                        raw_name = str(parsed.get("name", "")).strip()
+                        raw_args = parsed.get("arguments") or parsed.get("parameters", {})
+                        if raw_name in ("get_system_health", "execute_bash", "read_file", "write_file", "load_skill"):
+                            tool_calls.append({"function": {"name": raw_name, "arguments": raw_args}})
+                    except Exception:
+                        pass
+
+            if not tool_calls and trimmed.startswith("{") and "name" in trimmed:
                 try:
                     parsed = json.loads(trimmed)
                     raw_name = str(parsed.get("name", "")).strip()
                     raw_args = parsed.get("arguments") or parsed.get("parameters", {})
                     if raw_name in ("get_system_health", "execute_bash", "read_file", "write_file", "load_skill"):
                         tool_calls = [{"function": {"name": raw_name, "arguments": raw_args}}]
-                        content = ""
                     elif raw_name:
                         tool_calls = [{"function": {"name": "execute_bash", "arguments": {"command": raw_name}}}]
-                        content = ""
                 except Exception:
                     pass
 
-            if not tool_calls:
+            if tool_calls:
+                content = ""
+            else:
                 m = re.search(r'[\"\']?name[\"\']?\s*[:=]\s*[\"\']?([a-zA-Z0-9_ -]+)[\"\']?', trimmed)
                 if m:
                     candidate = m.group(1).strip()
