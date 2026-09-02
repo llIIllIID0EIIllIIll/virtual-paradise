@@ -76,12 +76,9 @@ log_info() {
 # Banner
 # ------------------------------------------------------------------------------
 if [[ $IS_HOOK -eq 0 ]]; then
-  echo -e "${C_CYAN}  ██╗   ██╗██╗██████╗ ████████╗██╗   ██╗ █████╗ ██╗     ${C_PINK}    ██████╗  █████╗ ██████╗  █████╗ ██████╗ ██╗███████╗███████╗${C_RESET}"
-  echo -e "${C_CYAN}  ██║   ██║██║██╔══██╗╚══██╔══╝██║   ██║██╔══██╗██║     ${C_PINK}    ██╔══██╗██╔══██╗██╔══██╗██╔══██╗██╔══██╗██║██╔════╝██╔════╝${C_RESET}"
-  echo -e "${C_CYAN}  ██║   ██║██║██████╔╝   ██║   ██║   ██║███████║██║     ${C_PINK}    ██████╔╝███████║██████╔╝███████║██║  ██║██║███████╗█████╗  ${C_RESET}"
-  echo -e "${C_CYAN}  ╚██╗ ██╔╝██║██╔══██╗   ██║   ██║   ██║██╔══██║██║     ${C_PINK}    ██╔═══╝ ██╔══██║██╔══██╗██╔══██║██║  ██║██║╚════██║██╔══╝  ${C_RESET}"
-  echo -e "${C_CYAN}   ╚████╔╝ ██║██║  ██║   ██║   ╚██████╔╝██║  ██║███████╗${C_PINK}    ██║     ██║  ██║██║  ██║██║  ██║██████╔╝██║███████║███████╗${C_RESET}"
-  echo -e "${C_CYAN}    ╚═══╝  ╚═╝╚═╝  ╚═╝   ╚═╝    ╚═════╝ ╚═╝  ╚═╝╚══════╝${C_PINK}    ╚═╝     ╚═╝  ╚═╝╚═╝  ╚═╝╚═╝  ╚═╝╚═════╝ ╚═╝╚══════╝╚══════╝${C_RESET}"
+  if command -v python3 &>/dev/null && [[ -f "$REPO_DIR/bin/paradise_agent.py" ]]; then
+    python3 -c "import sys; sys.path.insert(0, '$REPO_DIR/bin'); import paradise_agent; print(paradise_agent.get_banner_art())" 2>/dev/null || true
+  fi
   echo -e "${C_CYAN}===================================================================================================================${C_RESET}"
   echo -e "${C_BOLD}${C_CYAN}  🌸 Virtual☆Paradise${C_RESET} ${C_GREEN}— Cyberpunk Rice & Theme Installer${C_RESET}"
   echo -e "${C_DIM}  Target User: ${C_PINK}${CURRENT_USER}${C_RESET} ${C_DIM}| Platform: Omarchy / Hyprland${C_RESET}"

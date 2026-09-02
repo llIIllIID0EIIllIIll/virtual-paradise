@@ -248,7 +248,7 @@ def call_ollama_chat(messages: List[Dict[str, Any]], model: str) -> Dict[str, An
     with urllib.request.urlopen(req, timeout=180) as resp:
         return json.loads(resp.read().decode("utf-8"))
 
-def print_banner(model_name: str):
+def get_banner_art() -> str:
     raw_lines = [
         "██╗   ██╗██╗██████╗ ████████╗██╗   ██╗ █████╗ ██╗         ██████╗  █████╗ ██████╗  █████╗ ██████╗ ██╗███████╗███████╗",
         "██║   ██║██║██╔══██╗╚══██╔══╝██║   ██║██╔══██╗██║         ██╔══██╗██╔══██╗██╔══██╗██╔══██╗██╔══██╗██║██╔════╝██╔════╝",
@@ -257,14 +257,31 @@ def print_banner(model_name: str):
         " ╚████╔╝ ██║██║  ██║   ██║   ╚██████╔╝██║  ██║███████╗    ██║     ██║  ██║██║  ██║██║  ██║██████╔╝██║███████║███████╗",
         "  ╚═══╝  ╚═╝╚═╝  ╚═╝   ╚═╝    ╚═════╝ ╚═╝  ╚═╝╚══════╝    ╚═╝     ╚═╝  ╚═╝╚═╝  ╚═╝╚═╝  ╚═╝╚═════╝ ╚═╝╚══════╝╚══════╝"
     ]
-    split_idx = 58
+    # Diagonal gradient: Start Miku Cyan (0, 245, 212) -> End Sakura Pink (255, 183, 213)
+    c_start = (0, 245, 212)
+    c_end = (255, 183, 213)
+    h = len(raw_lines)
+    w = max(len(l) for l in raw_lines)
+    alpha = 10.0
+
     formatted_banner = []
-    for line in raw_lines:
-        left = line[:split_idx]
-        right = line[split_idx:]
-        formatted_banner.append(f"  {C_CYAN}{left}{C_PINK}{right}{C_RESET}")
-    
-    banner_text = "\n".join(formatted_banner)
+    for r, line in enumerate(raw_lines):
+        out = []
+        for c, char in enumerate(line):
+            if char == ' ':
+                out.append(' ')
+                continue
+            t = (c + alpha * r) / (w + alpha * (h - 1))
+            t = max(0.0, min(1.0, t))
+            red = int(c_start[0] + (c_end[0] - c_start[0]) * t)
+            green = int(c_start[1] + (c_end[1] - c_start[1]) * t)
+            blue = int(c_start[2] + (c_end[2] - c_start[2]) * t)
+            out.append(f"\033[38;2;{red};{green};{blue}m{char}\033[0m")
+        formatted_banner.append("  " + "".join(out))
+    return "\n".join(formatted_banner)
+
+def print_banner(model_name: str):
+    banner_text = get_banner_art()
     banner = f"""
 {banner_text}
 
