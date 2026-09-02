@@ -47,6 +47,15 @@ play_curtain_transition() {
   [[ ! -f "$qml_script" ]] && qml_script="$HOME/.local/bin/curtain_transition.qml"
   if [[ -f "$qml_script" ]] && command -v quickshell &>/dev/null; then
     quickshell -p "$qml_script" >/dev/null 2>&1 &
+    # Wait until glitch layer surface is physically rendered on screen by Hyprland
+    for ((i=0; i<35; i++)); do
+      if hyprctl layers 2>/dev/null | grep -q "curtain-transition"; then
+        break
+      fi
+      sleep 0.015
+    done
+    # Allow the violent Phase 1 glitch to hit full swing before swapping wallpaper
+    sleep 0.14
   fi
 }
 
@@ -63,15 +72,13 @@ set_live() {
   if [[ -n "$target" && -f "$target" ]]; then
     if [[ "$transition" == "true" ]]; then
       play_curtain_transition
-      # Glitch locks solid in ~125ms. Wait 180ms so screen is 100% covered by Glitch.jpg before swapping
-      sleep 0.18
     fi
 
     # Update static background symlink quietly without triggering duplicate compositor animation
     if [[ -f "$STATIC_BG" ]]; then
       ln -nsf "$STATIC_BG" "$HOME/.local/state/omarchy/current/background" 2>/dev/null || true
     fi
-    # Launch mpvpaper hardware accelerated on all monitors
+    # Launch mpvpaper hardware accelerated on all monitors (screen is already covered by Glitch)
     killall -9 mpvpaper 2>/dev/null || true
     if command -v mpvpaper &>/dev/null; then
       setsid -f mpvpaper -vs -o "no-audio loop hwdec=auto-safe" '*' "$target" >/dev/null 2>&1
@@ -86,7 +93,6 @@ set_static() {
   local transition="${1:-true}"
   if [[ "$transition" == "true" ]]; then
     play_curtain_transition
-    sleep 0.18
   fi
   killall -9 mpvpaper 2>/dev/null || true
   if [[ -f "$STATIC_BG" ]]; then

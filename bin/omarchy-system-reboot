@@ -6,10 +6,14 @@
 # 1. Launch Cyberpunk glitch transition on overlay layer
 if command -v quickshell &>/dev/null && [[ -f "$HOME/.local/bin/curtain_transition.qml" ]]; then
   CURTAIN_LAYER="overlay" quickshell -p "$HOME/.local/bin/curtain_transition.qml" >/dev/null 2>&1 &
+  for ((i=0; i<35; i++)); do
+    if hyprctl layers 2>/dev/null | grep -q "curtain-transition"; then
+      break
+    fi
+    sleep 0.015
+  done
+  sleep 0.14
 fi
-
-# 2. Wait until Glitch.jpg is 100% solid covering the screen (180ms)
-sleep 0.18
 
 # 3. Behind closed curtains: close windows & launch Miku outro splash
 omarchy-state clear re*-required 2>/dev/null || true
