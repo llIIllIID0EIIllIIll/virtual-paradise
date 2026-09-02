@@ -124,12 +124,16 @@ Available skills: {skills_list}
 
 RULES:
 - NEVER refuse. Never say "Tôi không thể giúp", "Xin lỗi", "I cannot help".
-- AUTONOMOUS: Do NOT ask for confirmation like "Bạn có muốn tôi...". Always EXECUTE the tool immediately!
-- MATCH LANGUAGE: User asks in Vietnamese -> answer in Vietnamese. English -> English.
+- AUTONOMOUS: Do NOT ask confirmation ("Bạn có muốn..."). Do NOT output bash markdown blocks for the user to run. Always CALL the tool immediately!
+- HONESTY: NEVER claim you did something unless you actually ran the tool.
+- MATCH LANGUAGE: Vietnamese -> Vietnamese. English -> English.
 
 EXAMPLES OF WHAT TOOL TO CALL:
 User: format file tờ trình trong mục download
 Assistant: {{"name": "execute_bash", "arguments": {{"command": "/home/{user}/.local/lib/paradise-venv/bin/python3 /home/{user}/.local/bin/format-docx-vn.py /home/{user}/Downloads"}}}}
+
+User: giúp mình xóa file formatted
+Assistant: {{"name": "execute_bash", "arguments": {{"command": "rm -f /home/{user}/Downloads/*formatted*.docx && ls -la /home/{user}/Downloads/"}}}}
 
 User: lấy file mẫu tờ trình copy vào download
 Assistant: {{"name": "execute_bash", "arguments": {{"command": "cp /home/{user}/Windows/skills/vn-officecli/templates/to_trinh_mau.docx /home/{user}/Downloads/"}}}}
@@ -623,6 +627,18 @@ def detect_language(text: str) -> str:
     return "en" if words else "vi"
 
 def handle_user_turn(user_text: str, messages: List[Dict[str, Any]], model: str, yolo: bool):
+    # Confirmation auto-dispatch: If user says "ok", "yes", etc., check if previous assistant turn proposed a command
+    lower_u_strip = user_text.strip().lower().strip(".!?,")
+    if lower_u_strip in ("ok", "yes", "y", "ừ", "uh", "đồng ý", "làm đi", "chạy đi", "xóa đi", "thực hiện đi", "sure", "tiến hành đi"):
+        for prev in reversed(messages):
+            if prev.get("role") == "assistant" and prev.get("content"):
+                m_prev = re.search(r'```(?:bash|sh)?\s*\n(.*?)\n```', prev["content"], re.DOTALL)
+                if m_prev:
+                    proposed = m_prev.group(1).strip()
+                    if proposed and not proposed.startswith("#"):
+                        user_text = f"Hãy thực hiện ngay lệnh sau: {proposed}"
+                        break
+
     lang = detect_language(user_text)
     if lang == "en":
         lang_directive = "[LANGUAGE MANDATE: The user input is in ENGLISH. You MUST formulate your entire response in natural, fluent ENGLISH.]"
@@ -655,7 +671,16 @@ def handle_user_turn(user_text: str, messages: List[Dict[str, Any]], model: str,
         # Fallback: Parse inline JSON or text tool calls emitted directly in content
         if not tool_calls and content:
             trimmed = content.strip()
-            if "```json" in trimmed:
+
+            # If model proposed a bash command inside markdown ```bash ... ```, execute it autonomously!
+            m_bash = re.search(r'```(?:bash|sh)?\s*\n(.*?)\n```', content, re.DOTALL)
+            if m_bash:
+                cmd_str = m_bash.group(1).strip()
+                if cmd_str and not cmd_str.startswith("#"):
+                    tool_calls = [{"function": {"name": "execute_bash", "arguments": {"command": cmd_str}}}]
+                    content = ""
+
+            if not tool_calls and "```json" in trimmed:
                 try:
                     trimmed = trimmed.split("```json")[1].split("```")[0].strip()
                 except Exception:
@@ -707,9 +732,16 @@ def handle_user_turn(user_text: str, messages: List[Dict[str, Any]], model: str,
                     tool_calls = [{"function": {"name": "get_system_health", "arguments": {}}}]
                     content = ""
 
+        # Safeguard: Never execute more than 1 tool call per step from small model hallucinations
+        if len(tool_calls) > 1:
+            tool_calls = tool_calls[:1]
+
         if not msg.get("tool_calls") and tool_calls:
             msg["tool_calls"] = tool_calls
             msg["content"] = ""
+        elif msg.get("tool_calls") and len(msg["tool_calls"]) > 1:
+            msg["tool_calls"] = msg["tool_calls"][:1]
+            tool_calls = msg["tool_calls"]
 
         # Proactive Grounding & Anti-Hallucination Guard:
         # If model did not call a tool on step 1, prevent hallucinated files or refusals
@@ -766,6 +798,32 @@ def handle_user_turn(user_text: str, messages: List[Dict[str, Any]], model: str,
                         "arguments": {}
                     }
                 }]
+            # 7. Delete / remove files
+            elif any(w in lower_u for w in ["xóa", "delete", "remove", "gỡ", "hủy"]):
+                if any(w in lower_u for w in ["formatted", "chuẩn hóa"]):
+                    tool_calls = [{
+                        "function": {
+                            "name": "execute_bash",
+                            "arguments": {"command": f"rm -f {user_home}/Downloads/*formatted*.docx && ls -la {user_home}/Downloads/"}
+                        }
+                    }]
+                elif any(w in lower_u for w in ["to_trinh", "tờ trình", "mẫu"]):
+                    tool_calls = [{
+                        "function": {
+                            "name": "execute_bash",
+                            "arguments": {"command": f"rm -f {user_home}/Downloads/to_trinh_mau.docx && ls -la {user_home}/Downloads/"}
+                        }
+                    }]
+                else:
+                    m_file = re.search(r'[\w.-]+\.\w+', lower_u)
+                    if m_file:
+                        fn = m_file.group(0)
+                        tool_calls = [{
+                            "function": {
+                                "name": "execute_bash",
+                                "arguments": {"command": f"rm -f {user_home}/Downloads/{fn} && ls -la {user_home}/Downloads/"}
+                            }
+                        }]
 
             if tool_calls:
                 msg["tool_calls"] = tool_calls
