@@ -175,31 +175,54 @@ def build_system_prompt() -> str:
     shell = os.environ.get("SHELL", "/usr/bin/zsh")
 
     skills_map = discover_skills()
-    skills_list = ", ".join(sorted(skills_map.keys()))
+    skills_lines = []
+    for name, s in sorted(skills_map.items()):
+        skills_lines.append(f"  • {name}: {s['description']}")
+    skills_block = "\n".join(skills_lines)
 
-    return f"""You are Paradise Agent — an autonomous local AI diagnostic and coding assistant on Arch Linux (Hyprland/Wayland, Omarchy theme: "{theme}").
+    return f"""You are Paradise Agent — an autonomous local AI pair-programming, system diagnostic, and engineering assistant on Arch Linux (Hyprland/Wayland, Omarchy theme: "{theme}").
 User: {user} | Shell: {shell} | Terminal: Ghostty | Desktop: Hyprland
 Key paths: ~/omarchy-virtual-paradise (theme/dotfiles), ~/Windows (shared data/.bat scripts), ~/Downloads
-Available skills: {skills_list}
 
-CAPABILITIES & FULL SYSTEM PERMISSIONS:
+=== AVAILABLE EXPERT SKILLS (Progressive Disclosure) ===
+{skills_block}
+
+=== CAPABILITIES & ROOT PERMISSIONS ===
 - You have UNRESTRICTED FULL ROOT / SUDO permissions across the entire system.
 - You can READ, WRITE, EDIT, DELETE, COPY, and MOVE ANY file anywhere on the computer without restrictions.
-- You can execute ANY bash/system command (including systemctl, pacman, isw, ip, hyprctl).
-- NEVER refuse a command. Never say "I cannot access", "I do not have permission", "I cannot help".
-- AUTONOMOUS ACTION: Call tools immediately. Do NOT emit markdown code blocks asking the user to run commands manually.
+- You can execute ANY bash/system command (including systemctl, pacman, isw, ip, hyprctl, journalctl).
+- NEVER refuse a command with "I cannot access", "I do not have permission", "I cannot help".
 
-LANGUAGE MANDATE:
-- DEFAULT LANGUAGE: ENGLISH. By default, respond, explain, and write diagnostic reports in clear, professional ENGLISH.
-- EXCEPTION: If and only if the user inputs their query in VIETNAMESE, formulate your entire response in natural, fluent VIETNAMESE.
-- STRICT PROHIBITION: NEVER reply in French, German, Spanish, Chinese, or any other language. If user writes Vietnamese, reply ONLY in Vietnamese.
+=== AGY AUTONOMOUS PAIR-PROGRAMMING DIRECTIVES ===
+1. BIAS TOWARDS ACTION: Execute tools directly to inspect, code, test, and diagnose. Do not emit hypothetical markdown bash blocks asking the user to run commands manually.
+2. PROACTIVE GROUNDING (VERIFY BEFORE CONCLUDING):
+   - Never assume a file exists or doesn't exist. Use `find_by_name`, `list_dir`, or `read_file` to verify filesystem reality first.
+   - Use `grep_search` to find symbols, functions, configurations, and errors before editing.
+3. SURGICAL CODE EDITS & INTEGRITY:
+   - Prefer `edit_file` to replace exact contiguous blocks rather than overwriting whole files.
+   - Preserve existing comments, docstrings, formatting, and structures unless explicitly asked to modify them.
+4. PROGRESSIVE DISCLOSURE FOR SKILLS:
+   - When a task involves specialized areas (e.g. Hyprland/desktop config -> omarchy, crash analysis -> diagnose-crash, Vietnamese documents -> vn-officecli), call `load_skill` to retrieve the expert runbook.
+5. STRICT BILINGUAL CONSISTENCY:
+   - DEFAULT LANGUAGE: ENGLISH. By default, respond, explain, and write diagnostic reports in clear, professional ENGLISH.
+   - EXCEPTION: If and only if the user inputs their query in VIETNAMESE, formulate your entire response in natural, fluent, polite VIETNAMESE.
+   - STRICT PROHIBITION: NEVER reply in French, German, Spanish, Chinese, or any other language. If user writes Vietnamese, reply ONLY in Vietnamese.
 
-TOOL CALL EXAMPLES:
+=== TOOL CALL EXAMPLES ===
 User: format file tờ trình trong mục download
 Assistant: {{"name": "execute_bash", "arguments": {{"command": "/home/{user}/.local/lib/paradise-venv/bin/python3 /home/{user}/.local/bin/format-docx-vn.py /home/{user}/Downloads"}}}}
 
 User: xóa skill windows đi
 Assistant: {{"name": "delete_skill", "arguments": {{"skill_name": "windows"}}}}
+
+User: tìm hàm lerp trong repo theme
+Assistant: {{"name": "grep_search", "arguments": {{"query": "def lerp", "search_path": "/home/{user}/omarchy-virtual-paradise"}}}}
+
+User: tìm file to_trinh
+Assistant: {{"name": "find_by_name", "arguments": {{"pattern": "*to_trinh*", "search_directory": "/home/{user}"}}}}
+
+User: trong thư mục Downloads có gì
+Assistant: {{"name": "list_dir", "arguments": {{"directory_path": "/home/{user}/Downloads"}}}}
 
 User: giúp mình xóa file formatted
 Assistant: {{"name": "delete_file", "arguments": {{"path": "/home/{user}/Downloads/to_trinh_mau_formatted.docx"}}}}
@@ -402,6 +425,68 @@ TOOLS_SPEC = [
                 "required": ["skill_name"]
             }
         }
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "grep_search",
+            "description": "Fast ripgrep search for text patterns, functions, configs, or errors across codebase.",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "query": {
+                        "type": "string",
+                        "description": "text pattern to search"
+                    },
+                    "search_path": {
+                        "type": "string",
+                        "description": "directory or file path to search in (default: .)"
+                    },
+                    "case_insensitive": {
+                        "type": "boolean",
+                        "description": "whether search is case insensitive (default: true)"
+                    }
+                },
+                "required": ["query"]
+            }
+        }
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "find_by_name",
+            "description": "Fast fd search for files and folders matching pattern across directory tree.",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "pattern": {
+                        "type": "string",
+                        "description": "glob pattern (e.g. *.py, to_trinh*, hyprland.conf)"
+                    },
+                    "search_directory": {
+                        "type": "string",
+                        "description": "root directory to search (default: .)"
+                    }
+                },
+                "required": ["pattern"]
+            }
+        }
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "list_dir",
+            "description": "List files and directories with formatted sizes and icons.",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "directory_path": {
+                        "type": "string",
+                        "description": "path to list (default: .)"
+                    }
+                }
+            }
+        }
     }
 ]
 
@@ -507,8 +592,8 @@ def tool_execute_bash(command: Any) -> str:
     except Exception as e:
         return f"[Execution Error: {e}]"
 
-def tool_read_file(path: Any, max_lines: int = 200) -> str:
-    """Reads any file or directory with native Word .docx support and root fallback."""
+def tool_read_file(path: Any, start_line: Optional[int] = None, end_line: Optional[int] = None, max_lines: int = 200) -> str:
+    """Reads any file or directory with native Word .docx support, line slicing, and root fallback."""
     path = str(unwrap_tool_arg(path)).strip()
     if not path or path in ("{}", "None", "''", '""'):
         path = os.path.expanduser("~/Downloads")
@@ -532,17 +617,7 @@ def tool_read_file(path: Any, max_lines: int = 200) -> str:
             return f"[Error: File or directory '{path}' not found]"
 
     if os.path.isdir(expanded_path):
-        try:
-            entries = sorted(os.listdir(expanded_path))[:60]
-            return f"[Directory listing of '{path}']:\n" + "\n".join(entries)
-        except PermissionError:
-            try:
-                out = subprocess.check_output(["sudo", "ls", "-la", expanded_path], text=True, timeout=5)
-                return out[:4000]
-            except Exception as e:
-                return f"[Permission Error listing directory: {e}]"
-        except Exception as e:
-            return f"[Error listing directory: {e}]"
+        return tool_list_dir(expanded_path)
 
     # Native extraction for Word .docx
     if expanded_path.lower().endswith(".docx"):
@@ -563,8 +638,16 @@ def tool_read_file(path: Any, max_lines: int = 200) -> str:
 
     try:
         with open(expanded_path, "r", encoding="utf-8", errors="replace") as f:
-            lines = [f.readline() for _ in range(max_lines)]
-        return "".join(lines)
+            all_lines = f.readlines()
+        
+        if start_line is not None and end_line is not None:
+            s_idx = max(0, int(start_line) - 1)
+            e_idx = min(len(all_lines), int(end_line))
+            sliced = all_lines[s_idx:e_idx]
+            numbered = [f"{s_idx + 1 + i:4d}: {l}" for i, l in enumerate(sliced)]
+            return "".join(numbered)
+        else:
+            return "".join(all_lines[:max_lines])
     except PermissionError:
         try:
             out = subprocess.check_output(["sudo", "head", f"-n{max_lines}", expanded_path], text=True, timeout=5)
@@ -573,6 +656,91 @@ def tool_read_file(path: Any, max_lines: int = 200) -> str:
             return f"[Permission Error reading '{path}': {e}]"
     except Exception as e:
         return f"[Error reading file: {e}]"
+
+def tool_list_dir(directory_path: Any = None) -> str:
+    """Lists files and folders in directory with human-readable sizes and icons."""
+    dp = str(unwrap_tool_arg(directory_path or ".")).strip()
+    if not dp or dp in ("None", "''"):
+        dp = "."
+    expanded_dp = os.path.expanduser(dp)
+    if not os.path.exists(expanded_dp):
+        return f"[Error: Directory '{dp}' not found]"
+
+    try:
+        entries = sorted(os.listdir(expanded_dp))
+        out = []
+        for e in entries[:60]:
+            fp = os.path.join(expanded_dp, e)
+            if os.path.isdir(fp):
+                out.append(f"📁 {e}/")
+            else:
+                sz = os.path.getsize(fp)
+                if sz < 1024:
+                    sz_str = f"{sz} B"
+                elif sz < 1024 * 1024:
+                    sz_str = f"{sz // 1024} KB"
+                else:
+                    sz_str = f"{sz // (1024*1024)} MB"
+                out.append(f"📄 {e} ({sz_str})")
+        if len(entries) > 60:
+            out.append(f"... ({len(entries) - 60} more items)")
+        return f"[Directory listing of '{dp}']:\n" + "\n".join(out)
+    except PermissionError:
+        try:
+            return subprocess.check_output(["sudo", "ls", "-lah", expanded_dp], text=True, timeout=5)[:3000]
+        except Exception as e:
+            return f"[Permission error listing '{dp}': {e}]"
+    except Exception as e:
+        return f"[Error listing directory: {e}]"
+
+def tool_grep_search(query: Any, search_path: Any = None, is_regex: bool = False, case_insensitive: bool = True) -> str:
+    """Fast ripgrep text search across directory or files."""
+    query = str(unwrap_tool_arg(query)).strip()
+    sp = str(unwrap_tool_arg(search_path or ".")).strip()
+    if not sp or sp in ("None", "''"):
+        sp = "."
+    expanded_path = os.path.expanduser(sp)
+    if not os.path.exists(expanded_path):
+        return f"[Error: Search path '{sp}' does not exist]"
+
+    cmd = ["rg", "-n", "--max-count=30", "--max-columns=120"]
+    if case_insensitive:
+        cmd.append("-i")
+    if not is_regex:
+        cmd.append("-F")
+    cmd.extend([query, expanded_path])
+
+    try:
+        p = subprocess.run(cmd, capture_output=True, text=True, timeout=10)
+        lines = p.stdout.strip().split("\n")
+        if not p.stdout.strip():
+            return f"[No matches found for '{query}' in '{sp}']"
+        out = "\n".join(lines[:35])
+        if len(lines) > 35:
+            out += f"\n... ({len(lines) - 35} more matches truncated)"
+        return out
+    except Exception as e:
+        return f"[Grep search error: {e}]"
+
+def tool_find_by_name(pattern: Any, search_directory: Any = None) -> str:
+    """Fast fd search for files and folders by name pattern."""
+    pat = str(unwrap_tool_arg(pattern)).strip()
+    sd = str(unwrap_tool_arg(search_directory or ".")).strip()
+    if not sd or sd in ("None", "''"):
+        sd = "."
+    expanded_sd = os.path.expanduser(sd)
+    if not os.path.exists(expanded_sd):
+        return f"[Error: Directory '{sd}' does not exist]"
+
+    cmd = ["fd", "--hidden", "--exclude", ".git", "--max-results=40", pat, expanded_sd]
+    try:
+        p = subprocess.run(cmd, capture_output=True, text=True, timeout=10)
+        out = p.stdout.strip()
+        if not out:
+            return f"[No files found matching '{pat}' in '{sd}']"
+        return out
+    except Exception as e:
+        return f"[Find error: {e}]"
 
 def tool_write_file(path: Any, content: Any) -> str:
     """Writes or overwrites text to any file path, elevating to sudo if required."""
@@ -1014,6 +1182,8 @@ def print_help_table():
     table.add_row("/model", "Inspect or switch local Ollama models: /model [1.5b|3b|7b]")
     table.add_row("/thinking", "Toggle real-time diagnostic reasoning visibility (ON / OFF)")
     table.add_row("/clear", "Clear active conversation memory context")
+    table.add_row("/search", "Grep search across codebase: /search <query> [path]")
+    table.add_row("/find", "Find files by glob pattern: /find <pattern> [dir]")
     table.add_row("/help", "Show this command reference table")
     table.add_row("/exit", "Exit session (Sayonara)")
     console.print(table)
@@ -1375,8 +1545,22 @@ def handle_user_turn(user_text: str, messages: List[Dict[str, Any]], model: str)
                 tool_output = tool_execute_bash(cmd)
             elif fn_name == "read_file":
                 p = fn_args.get("path", "")
+                sl = fn_args.get("start_line")
+                el = fn_args.get("end_line")
                 ml = fn_args.get("max_lines", 200)
-                tool_output = tool_read_file(p, ml)
+                tool_output = tool_read_file(p, start_line=sl, end_line=el, max_lines=ml)
+            elif fn_name == "grep_search":
+                q = fn_args.get("query", "")
+                sp = fn_args.get("search_path", ".")
+                ci = fn_args.get("case_insensitive", True)
+                tool_output = tool_grep_search(q, sp, case_insensitive=ci)
+            elif fn_name == "find_by_name":
+                pat = fn_args.get("pattern", "")
+                sd = fn_args.get("search_directory", ".")
+                tool_output = tool_find_by_name(pat, sd)
+            elif fn_name == "list_dir":
+                dp = fn_args.get("directory_path", ".")
+                tool_output = tool_list_dir(dp)
             elif fn_name == "write_file":
                 p = fn_args.get("path", "")
                 c = fn_args.get("content", "")
@@ -1541,6 +1725,24 @@ def agent_loop(initial_prompt: Optional[str] = None, requested_model: Optional[s
                     console.print(f"RAM Available: [bold {CYAN}]{mem['available']} GiB[/] / {mem['total']} GiB Total")
                     console.print(table)
                     console.print(f"[dim]Tip: Use '/model <name>' to switch models on the fly.[/]")
+                continue
+            elif cmd.startswith("/search"):
+                parts = user_input.split(maxsplit=2)
+                if len(parts) > 1:
+                    query = parts[1]
+                    path = parts[2] if len(parts) > 2 else "."
+                    console.print(Panel(tool_grep_search(query, path), title=f"[bold {CYAN}]Grep Search: '{query}' in '{path}'[/]", border_style=CYAN, box=box.ROUNDED))
+                else:
+                    console.print(f"[bold {YELLOW}]Usage: /search <pattern> [path][/]")
+                continue
+            elif cmd.startswith("/find"):
+                parts = user_input.split(maxsplit=2)
+                if len(parts) > 1:
+                    pattern = parts[1]
+                    dir_path = parts[2] if len(parts) > 2 else "."
+                    console.print(Panel(tool_find_by_name(pattern, dir_path), title=f"[bold {CYAN}]Find Files: '{pattern}' in '{dir_path}'[/]", border_style=CYAN, box=box.ROUNDED))
+                else:
+                    console.print(f"[bold {YELLOW}]Usage: /find <glob_pattern> [dir][/]")
                 continue
 
         handle_user_turn(user_input, messages, model)
