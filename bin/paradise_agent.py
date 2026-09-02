@@ -855,34 +855,73 @@ def check_ollama_alive() -> bool:
         return False
 
 def get_banner_art() -> str:
-    """Returns styled Cyberpunk ASCII banner."""
+    """Returns styled Cyberpunk ASCII banner with 45-degree diagonal gradient (Cyan -> Green -> Pink)."""
     raw_lines = [
-        r"  ██╗   ██╗██╗██████╗ ████████╗██╗   ██╗ █████╗ ██╗         ██████╗  █████╗ ██████╗  █████╗ ██████╗ ██╗███████╗███████╗",
-        r"  ██║   ██║██║██╔══██╗╚══██╔══╝██║   ██║██╔══██╗██║         ██╔══██╗██╔══██╗██╔══██╗██╔══██╗██╔══██╗██║██╔════╝██╔════╝",
-        r"  ██║   ██║██║██████╔╝   ██║   ██║   ██║███████║██║         ██████╔╝███████║██████╔╝███████║██║  ██║██║███████╗█████╗  ",
-        r"  ╚██╗ ██╔╝██║██╔══██╗   ██║   ██║   ██║██╔══██║██║         ██╔═══╝ ██╔══██║██╔══██╗██╔══██║██║  ██║██║╚════██║██╔══╝  ",
-        r"   ╚████╔╝ ██║██║  ██║   ██║   ╚██████╔╝██║  ██║███████╗    ██║     ██║  ██║██║  ██║██║  ██║██████╔╝██║███████║███████╗",
-        r"    ╚═══╝  ╚═╝╚═╝  ╚═╝   ╚═╝    ╚═════╝ ╚═╝  ╚═╝╚══════╝    ╚═╝     ╚═╝  ╚═╝╚═╝  ╚═╝╚═╝  ╚═╝╚═════╝ ╚═╝╚══════╝╚══════╝"
+        "██╗   ██╗██╗██████╗ ████████╗██╗   ██╗ █████╗ ██╗         ██████╗  █████╗ ██████╗  █████╗ ██████╗ ██╗███████╗███████╗",
+        "██║   ██║██║██╔══██╗╚══██╔══╝██║   ██║██╔══██╗██║         ██╔══██╗██╔══██╗██╔══██╗██╔══██╗██╔══██╗██║██╔════╝██╔════╝",
+        "██║   ██║██║██████╔╝   ██║   ██║   ██║███████║██║         ██████╔╝███████║██████╔╝███████║██║  ██║██║███████╗█████╗  ",
+        "╚██╗ ██╔╝██║██╔══██╗   ██║   ██║   ██║██╔══██║██║         ██╔═══╝ ██╔══██║██╔══██╗██╔══██║██║  ██║██║╚════██║██╔══╝  ",
+        " ╚████╔╝ ██║██║  ██║   ██║   ╚██████╔╝██║  ██║███████╗    ██║     ██║  ██║██║  ██║██║  ██║██████╔╝██║███████║███████╗",
+        "  ╚═══╝  ╚═╝╚═╝  ╚═╝   ╚═╝    ╚═════╝ ╚═╝  ╚═╝╚══════╝    ╚═╝     ╚═╝  ╚═╝╚═╝  ╚═╝╚═╝  ╚═╝╚═════╝ ╚═╝╚══════╝╚══════╝"
     ]
-    return "\n".join(raw_lines)
+    # Signature Virtual☆Paradise 40/20/40 Palette:
+    # 40% Miku Cyan (#00f5d4) -> 20% Cyber Green (#00ff88) -> 40% Sakura Pink (#ffb7d5)
+    c_cyan  = (0, 245, 212)
+    c_green = (0, 255, 136)
+    c_pink  = (255, 183, 213)
+
+    h = len(raw_lines)
+    w = max(len(l) for l in raw_lines)
+    alpha = 2.0
+
+    def lerp(c1, c2, p):
+        p = max(0.0, min(1.0, p))
+        return (
+            int(c1[0] + (c2[0] - c1[0]) * p),
+            int(c1[1] + (c2[1] - c1[1]) * p),
+            int(c1[2] + (c2[2] - c1[2]) * p)
+        )
+
+    formatted_banner = []
+    for r, line in enumerate(raw_lines):
+        out = []
+        for c, char in enumerate(line):
+            if char == ' ':
+                out.append(' ')
+                continue
+            t = (c + alpha * r) / (w + alpha * (h - 1))
+            t = max(0.0, min(1.0, t))
+            
+            # True visual 40% Cyan / 20% Green / 40% Sakura Pink
+            if t < 0.28:
+                red, green, blue = c_cyan
+            elif t < 0.38:
+                red, green, blue = lerp(c_cyan, c_green, (t - 0.28) / 0.10)
+            elif t < 0.62:
+                red, green, blue = c_green
+            elif t < 0.72:
+                red, green, blue = lerp(c_green, c_pink, (t - 0.62) / 0.10)
+            else:
+                red, green, blue = c_pink
+
+            out.append(f"\033[38;2;{red};{green};{blue}m{char}\033[0m")
+        formatted_banner.append("  " + "".join(out))
+    return "\n".join(formatted_banner)
 
 def print_banner(model_name: str, reason: str = ""):
-    """Renders Cyberpunk TUI Main Header Panel."""
+    """Renders Cyberpunk Authentic Diagonal Gradient Banner and TUI status bar."""
     art_text = get_banner_art()
     mem = get_system_memory_info()
     ram_str = f"{mem['available']} GiB Available / {mem['total']} GiB Total"
     mode_style = f"bold {GREEN}" if EXECUTION_MODE == "Auto-accept" else f"bold {YELLOW}"
-
     tier_desc = f" [dim]({reason})[/]" if reason else ""
 
-    banner_content = (
-        f"[bold {CYAN}]{art_text}[/]\n\n"
-        f"  [bold {PINK}]⚡ Virtual☆Paradise Autonomous Diagnostic & Coding Agent[/]\n"
-        f"  [bold {MUTED}]Model:[/] [bold {GREEN}]{model_name}[/]{tier_desc}\n"
-        f"  [bold {MUTED}]RAM:[/] [bold {CYAN}]{ram_str}[/]  |  [bold {MUTED}]Mode:[/] [{mode_style}]{EXECUTION_MODE}[/]\n"
-        f"  [dim]Type [bold {YELLOW}]/help[/] for commands or [bold {YELLOW}]/exit[/] to quit.[/]"
-    )
-    console.print(Panel(banner_content, border_style=CYAN, box=box.ROUNDED))
+    print(f"\n{art_text}\n")
+    console.print(f"  [bold {PINK}]⚡ Virtual☆Paradise Autonomous Diagnostic & Coding Agent[/]")
+    console.print(f"  [bold {MUTED}]Model:[/] [bold {GREEN}]{model_name}[/]{tier_desc}")
+    console.print(f"  [bold {MUTED}]RAM:[/] [bold {CYAN}]{ram_str}[/]  |  [bold {MUTED}]Mode:[/] [{mode_style}]{EXECUTION_MODE}[/]")
+    console.print(f"  [dim]Type [bold {YELLOW}]/help[/] for commands or [bold {YELLOW}]/exit[/] to quit.[/]")
+    console.print(f"[dim {CYAN}]  {'─' * 95}[/]\n")
 
 def print_thinking(thinking_text: str, title: str = "🧠 Diagnostic Reasoning"):
     """Displays agent's internal thought process in a dedicated TUI panel."""
