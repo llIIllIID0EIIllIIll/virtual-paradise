@@ -285,15 +285,15 @@ def get_banner_art() -> str:
             t = (c + alpha * r) / (w + alpha * (h - 1))
             t = max(0.0, min(1.0, t))
             
-            # True visual 40% Cyan / 20% Green / 40% Sakura Pink
-            if t < 0.35:
+            # True visual 40% Cyan / 20% Green / 40% Sakura Pink (Expanded Green band)
+            if t < 0.28:
                 red, green, blue = c_cyan
-            elif t < 0.45:
-                red, green, blue = lerp(c_cyan, c_green, (t - 0.35) / 0.10)
-            elif t < 0.55:
+            elif t < 0.38:
+                red, green, blue = lerp(c_cyan, c_green, (t - 0.28) / 0.10)
+            elif t < 0.62:
                 red, green, blue = c_green
-            elif t < 0.65:
-                red, green, blue = lerp(c_green, c_pink, (t - 0.55) / 0.10)
+            elif t < 0.72:
+                red, green, blue = lerp(c_green, c_pink, (t - 0.62) / 0.10)
             else:
                 red, green, blue = c_pink
 
