@@ -6,6 +6,7 @@
 # speeds between 100% Boost and Auto mode via ISW, Asusctl, NBFC, or EC tools.
 
 STATE_FILE="/tmp/cooler_boost_state"
+ACTION="${1:-toggle}"
 
 # --- 1. Dynamic Hardware Vendor Detection ---
 detect_vendor() {
@@ -60,11 +61,29 @@ if [ ! -f "$STATE_FILE" ]; then
     echo "off" > "$STATE_FILE"
 fi
 
-STATE=$(cat "$STATE_FILE")
+CURRENT_STATE=$(cat "$STATE_FILE")
 
-# --- 3. Toggle Fan Profile ---
-if [ "$STATE" == "off" ]; then
-    # Enable Cooler Boost
+case "$ACTION" in
+    on|enable|start)
+        TARGET_ACTION="enable" ;;
+    off|disable|stop)
+        TARGET_ACTION="disable" ;;
+    status)
+        echo "Cooler Boost hiện tại: ${CURRENT_STATE^^}"
+        exit 0
+        ;;
+    *)
+        if [ "$CURRENT_STATE" == "on" ]; then
+            TARGET_ACTION="disable"
+        else
+            TARGET_ACTION="enable"
+        fi
+        ;;
+esac
+
+# --- 3. Execute Fan Profile ---
+if [ "$TARGET_ACTION" == "enable" ]; then
+    # Enable Cooler Boost (100% Maximum Fan Speed)
     if command -v isw >/dev/null 2>&1; then
         sudo /usr/bin/isw -b on >/dev/null 2>&1 || sudo isw -b on >/dev/null 2>&1
     elif command -v asusctl >/dev/null 2>&1; then
@@ -74,7 +93,8 @@ if [ "$STATE" == "off" ]; then
     fi
 
     echo "on" > "$STATE_FILE"
-    notify-send -u normal -t 2000 "󰈐 ${VENDOR} Cooler Boost" "ENABLED (100% Maximum Fan Speed)"
+    notify-send -u normal -t 2500 "󰈐 ${VENDOR} Cooler Boost" "ENABLED (100% Maximum Fan Speed)" 2>/dev/null || true
+    echo "✅ ${VENDOR} Cooler Boost: ĐÃ BẬT THÀNH CÔNG (Quạt tản nhiệt đang chạy 100% công suất tối đa)."
 else
     # Disable Cooler Boost (Restore Auto Profile)
     if command -v isw >/dev/null 2>&1; then
@@ -86,5 +106,6 @@ else
     fi
 
     echo "off" > "$STATE_FILE"
-    notify-send -u normal -t 2000 "󰈐 ${VENDOR} Cooler Boost" "DISABLED (Auto Fan Profile)"
+    notify-send -u normal -t 2500 "󰈐 ${VENDOR} Cooler Boost" "DISABLED (Auto Fan Profile)" 2>/dev/null || true
+    echo "✅ ${VENDOR} Cooler Boost: ĐÃ TẮT THÀNH CÔNG (Quạt đã trở về chế độ tự động thông minh)."
 fi

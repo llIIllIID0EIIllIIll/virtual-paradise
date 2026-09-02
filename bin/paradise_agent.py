@@ -147,6 +147,12 @@ Assistant: {{"name": "execute_bash", "arguments": {{"command": "ls -la /home/{us
 User: máy mình dạo này hơi chậm, kiểm tra giúp mình
 Assistant: {{"name": "get_system_health", "arguments": {{}}}}
 
+User: bật cooler boost
+Assistant: {{"name": "execute_bash", "arguments": {{"command": "/home/{user}/.local/bin/toggle_cooler_boost.sh on"}}}}
+
+User: tắt cooler boost
+Assistant: {{"name": "execute_bash", "arguments": {{"command": "/home/{user}/.local/bin/toggle_cooler_boost.sh off"}}}}
+
 User: muốn đổi theme omarchy
 Assistant: {{"name": "load_skill", "arguments": {{"skill_name": "omarchy"}}}}
 
@@ -824,6 +830,22 @@ def handle_user_turn(user_text: str, messages: List[Dict[str, Any]], model: str,
                                 "arguments": {"command": f"rm -f {user_home}/Downloads/{fn} && ls -la {user_home}/Downloads/"}
                             }
                         }]
+            # 8. Cooler Boost / Fan control
+            elif any(w in lower_u for w in ["cooler boost", "coolerboost", "quạt gió", "quạt tản nhiệt", "fan boost", "bật quạt", "tắt quạt"]):
+                if any(w in lower_u for w in ["tắt", "stop", "off", "disable"]):
+                    tool_calls = [{
+                        "function": {
+                            "name": "execute_bash",
+                            "arguments": {"command": f"{user_home}/.local/bin/toggle_cooler_boost.sh off"}
+                        }
+                    }]
+                else:
+                    tool_calls = [{
+                        "function": {
+                            "name": "execute_bash",
+                            "arguments": {"command": f"{user_home}/.local/bin/toggle_cooler_boost.sh on"}
+                        }
+                    }]
 
             if tool_calls:
                 msg["tool_calls"] = tool_calls
