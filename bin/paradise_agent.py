@@ -320,7 +320,11 @@ def render_restored_session(messages: List[Dict[str, Any]]):
         elif role == "user":
             raw_c = m.get("content", "")
             clean_c = raw_c.split("[LANGUAGE MANDATE")[0].strip()
-            console.print(f"\n\033[38;2;0;245;212m\033[1myou ❯\033[0m {clean_c}")
+            attached_match = re.findall(r'\[ATTACHED FILE:\s*(.*?)\]', clean_c)
+            clean_prompt = re.sub(r'\[ATTACHED FILE:.*?\].*?\[END ATTACHED FILE\]', '', clean_c, flags=re.DOTALL).strip()
+            console.print(f"\n\033[38;2;0;245;212m\033[1myou ❯\033[0m {clean_prompt}")
+            for att in attached_match:
+                console.print(f"  [dim {CYAN}]📎 Attached:[/] [bold {PINK}]{att}[/]")
 
         elif role == "assistant":
             tool_calls = m.get("tool_calls", [])
@@ -1374,18 +1378,41 @@ print(f"Successfully replaced {{count}} instance(s) in Word document.")
     try:
         with open(expanded_path, "r", encoding="utf-8") as f:
             content = f.read()
-        if target_text not in content:
+
+        new_content = None
+        if target_text in content:
+            new_content = content.replace(target_text, replacement_text, 1)
+        else:
+            c_lf = content.replace("\r\n", "\n")
+            t_lf = target_text.replace("\r\n", "\n")
+            if t_lf in c_lf:
+                new_content = c_lf.replace(t_lf, replacement_text, 1)
+                if "\r\n" in content:
+                    new_content = new_content.replace("\n", "\r\n")
+
+        if new_content is None:
             return f"[Error: Text '{target_text[:60]}' not found in '{path}']"
-        new_content = content.replace(target_text, replacement_text, 1)
+
         with open(expanded_path, "w", encoding="utf-8") as f:
             f.write(new_content)
         return f"[Success: File '{path}' updated ({len(target_text)} bytes replaced)]"
     except PermissionError:
         try:
             raw = subprocess.check_output(["sudo", "cat", expanded_path], text=True, timeout=5)
-            if target_text not in raw:
+            new_content = None
+            if target_text in raw:
+                new_content = raw.replace(target_text, replacement_text, 1)
+            else:
+                c_lf = raw.replace("\r\n", "\n")
+                t_lf = target_text.replace("\r\n", "\n")
+                if t_lf in c_lf:
+                    new_content = c_lf.replace(t_lf, replacement_text, 1)
+                    if "\r\n" in raw:
+                        new_content = new_content.replace("\n", "\r\n")
+
+            if new_content is None:
                 return f"[Error: Text '{target_text[:60]}' not found in '{path}']"
-            new_content = raw.replace(target_text, replacement_text, 1)
+
             p = subprocess.run(["sudo", "tee", expanded_path], input=new_content, text=True, capture_output=True, timeout=10)
             if p.returncode == 0:
                 return f"[Success: File '{path}' updated with root permissions]"
@@ -2377,15 +2404,22 @@ def agent_loop(initial_prompt: Optional[str] = None, requested_model: Optional[s
         if not user_input:
             continue
 
+        raw_cmd = user_input.strip().lower()
+        if raw_cmd in ("/exit", "/quit", "/q", "exit", "quit", ":q", "q"):
+            console.print(f"[bold {PINK}]Farewell from Virtual☆Paradise! // Sayonara.[/]")
+            break
+        elif raw_cmd in ("/help", "help", "?"):
+            print_help_table()
+            continue
+        elif raw_cmd in ("/clear", "clear"):
+            session_id = f"session_{time.strftime('%Y%m%d_%H%M%S')}"
+            messages = [{"role": "system", "content": build_system_prompt()}]
+            console.print(f"[bold {GREEN}]Active conversation memory cleared (New session started).[/]")
+            continue
+
         if user_input.startswith("/"):
             cmd = user_input.lower().strip()
-            if cmd in ("/exit", "/quit", "/q"):
-                console.print(f"[bold {PINK}]Farewell from Virtual☆Paradise! // Sayonara.[/]")
-                break
-            elif cmd == "/help":
-                print_help_table()
-                continue
-            elif cmd in ("/skills", "/skill"):
+            if cmd in ("/skills", "/skill"):
                 skills_map = discover_skills()
                 table = Table(title=f"Discovered Skills ({len(skills_map)} available)", border_style=CYAN, box=box.ROUNDED)
                 table.add_column("Skill Name", style=f"bold {CYAN}")
