@@ -228,17 +228,19 @@ def tool_write_file(path: str, content: str) -> str:
     except Exception as e:
         return f"[Error writing file: {e}]"
 
-def call_ollama_chat(messages: List[Dict[str, Any]], model: str) -> Dict[str, Any]:
+def call_ollama_chat(messages: List[Dict[str, Any]], model: str, enable_tools: bool = True) -> Dict[str, Any]:
     payload = {
         "model": model,
         "messages": messages,
-        "tools": TOOLS_SPEC,
         "stream": False,
         "options": {
-            "temperature": 0.3,
+            "temperature": 0.2,
             "num_ctx": 8192
         }
     }
+    if enable_tools:
+        payload["tools"] = TOOLS_SPEC
+
     data = json.dumps(payload).encode("utf-8")
     req = urllib.request.Request(
         f"{OLLAMA_HOST}/api/chat",
@@ -387,7 +389,7 @@ def handle_user_turn(user_text: str, messages: List[Dict[str, Any]], model: str,
         step += 1
         print(f"{C_GRAY}Thinking & analyzing locally...{C_RESET}", end="\r", flush=True)
         try:
-            res = call_ollama_chat(messages, model)
+            res = call_ollama_chat(messages, model, enable_tools=(step == 1))
         except Exception as e:
             print(f"\n{C_RED}[Model Error]: {e}{C_RESET}")
             break
@@ -398,6 +400,32 @@ def handle_user_turn(user_text: str, messages: List[Dict[str, Any]], model: str,
 
         # Clear thinking line
         print(" " * 40, end="\r")
+
+        # Fallback: Parse inline JSON tool calls emitted directly in content
+        if not tool_calls and content:
+            trimmed = content.strip()
+            # Also handle markdown ```json ... ``` blocks
+            if "```json" in trimmed:
+                try:
+                    block = trimmed.split("```json")[1].split("```")[0].strip()
+                    parsed = json.loads(block)
+                    if "name" in parsed:
+                        tool_calls = [{"function": {"name": parsed["name"], "arguments": parsed.get("arguments") or parsed.get("parameters", {})}}]
+                        content = ""
+                except Exception:
+                    pass
+            elif trimmed.startswith("{") and "name" in trimmed:
+                try:
+                    parsed = json.loads(trimmed)
+                    if "name" in parsed:
+                        tool_calls = [{"function": {"name": parsed["name"], "arguments": parsed.get("arguments") or parsed.get("parameters", {})}}]
+                        content = ""
+                except Exception:
+                    pass
+
+        if not msg.get("tool_calls") and tool_calls:
+            msg["tool_calls"] = tool_calls
+            msg["content"] = ""
 
         if content:
             print(f"\n{C_PINK}{C_BOLD}paradise-agent ❯{C_RESET} {content}")
@@ -443,6 +471,7 @@ def handle_user_turn(user_text: str, messages: List[Dict[str, Any]], model: str,
             # Append tool result back to messages
             messages.append({
                 "role": "tool",
+                "name": fn_name,
                 "content": tool_output
             })
 
