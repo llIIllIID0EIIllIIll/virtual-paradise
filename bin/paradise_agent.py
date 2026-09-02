@@ -126,48 +126,254 @@ def load_session(session_id_or_number: str) -> Optional[Tuple[str, List[Dict[str
         return matched.get("session_id", ""), matched.get("messages", []), matched.get("model", DEFAULT_MODEL)
     return None
 
+def rename_session(session_id_or_number: str, new_title: str) -> bool:
+    """Renames a saved session's title/summary."""
+    sessions = list_saved_sessions()
+    if not sessions:
+        return False
+
+    matched = None
+    target = session_id_or_number.strip()
+    if target.isdigit():
+        idx = int(target) - 1
+        if 0 <= idx < len(sessions):
+            matched = sessions[idx]
+    else:
+        for s in sessions:
+            sid = s.get("session_id", "")
+            if sid == target or sid.startswith(target):
+                matched = s
+                break
+
+    if not matched:
+        return False
+
+    fp = matched.get("_filepath")
+    if not fp or not os.path.exists(fp):
+        return False
+
+    try:
+        data_to_write = {
+            "session_id": matched.get("session_id"),
+            "updated_at": matched.get("updated_at"),
+            "model": matched.get("model"),
+            "summary": new_title.strip(),
+            "messages": matched.get("messages", [])
+        }
+        with open(fp, "w", encoding="utf-8") as f:
+            json.dump(data_to_write, f, ensure_ascii=False, indent=2)
+        return True
+    except Exception:
+        return False
+
+def delete_session(session_id_or_number: str) -> bool:
+    """Deletes a saved session from disk."""
+    sessions = list_saved_sessions()
+    if not sessions:
+        return False
+
+    matched = None
+    target = session_id_or_number.strip()
+    if target.isdigit():
+        idx = int(target) - 1
+        if 0 <= idx < len(sessions):
+            matched = sessions[idx]
+    else:
+        for s in sessions:
+            sid = s.get("session_id", "")
+            if sid == target or sid.startswith(target):
+                matched = s
+                break
+
+    if not matched:
+        return False
+
+    fp = matched.get("_filepath")
+    if fp and os.path.exists(fp):
+        try:
+            os.remove(fp)
+            return True
+        except Exception:
+            return False
+    return False
+
+def render_restored_session(messages: List[Dict[str, Any]]):
+    """Renders the restored chat transcript into the terminal."""
+    if not messages:
+        return
+
+    user_turns = sum(1 for m in messages if m.get("role") == "user")
+    if user_turns == 0:
+        return
+
+    console.print(Panel(
+        f"[bold {CYAN}]Replaying Previous Chat Transcript ({len(messages)} messages)[/]",
+        border_style=CYAN,
+        box=box.ROUNDED,
+        padding=(0, 1)
+    ))
+
+    for m in messages:
+        role = m.get("role")
+        if role == "system":
+            continue
+
+        elif role == "user":
+            raw_c = m.get("content", "")
+            clean_c = raw_c.split("[LANGUAGE MANDATE")[0].strip()
+            console.print(f"\n\033[38;2;0;245;212m\033[1myou ❯\033[0m {clean_c}")
+
+        elif role == "assistant":
+            tool_calls = m.get("tool_calls", [])
+            for tc in tool_calls:
+                fn = tc.get("function", {})
+                fn_name = fn.get("name", "action")
+                fn_args = fn.get("arguments", {})
+                if isinstance(fn_args, str):
+                    try:
+                        fn_args = json.loads(fn_args)
+                    except Exception:
+                        pass
+                arg_repr = json.dumps(fn_args, ensure_ascii=False) if isinstance(fn_args, dict) else str(fn_args)
+                console.print(Panel(
+                    f"{fn_name}({arg_repr})",
+                    title=f"[bold {YELLOW}]⚙ Tool Execution[/]",
+                    border_style=MUTED,
+                    box=box.ROUNDED,
+                    padding=(0, 1)
+                ))
+
+            content = m.get("content", "")
+            if content:
+                console.print(f"\n[bold {PINK}]paradise-agent ❯[/]")
+                console.print(Markdown(content))
+
+        elif role == "tool":
+            raw_out = m.get("content", "")
+            clean_out = raw_out.split("[SYSTEM MANDATE")[0].strip()
+            lines = clean_out.split("\n")
+            preview = "\n".join(lines[:5])
+            if len(lines) > 5:
+                preview += f"\n... ({len(lines) - 5} more lines)"
+            console.print(Panel(
+                preview,
+                title=f"[bold {GREEN}]📄 Tool Result ({m.get('name', 'tool')})[/]",
+                border_style=MUTED,
+                box=box.ROUNDED,
+                padding=(0, 1)
+            ))
+
+    console.print(Panel(
+        f"[bold {GREEN}]✔ Conversation context restored. Continue typing below:[/]",
+        border_style=GREEN,
+        box=box.ROUNDED,
+        padding=(0, 1)
+    ))
+
 def handle_resume_command(arg: str = "") -> Optional[Tuple[str, List[Dict[str, Any]], str]]:
-    """Interactive /resume handler."""
+    """Interactive /resume handler with resume, rename, and delete operations."""
     sessions = list_saved_sessions()
     if not sessions:
         console.print(f"[bold {YELLOW}]No saved sessions found in {SESSIONS_DIR}[/]")
         return None
 
     if arg:
+        parts = arg.split(maxsplit=2)
+        subcmd = parts[0].lower()
+        if subcmd in ("rename", "r", "mv", "name"):
+            if len(parts) >= 3:
+                target_id = parts[1]
+                new_title = parts[2]
+                if rename_session(target_id, new_title):
+                    console.print(f"[bold {GREEN}]✔ Successfully renamed session '{target_id}' to: '{new_title}'[/]")
+                else:
+                    console.print(f"[bold {RED}]Could not find session '{target_id}' to rename.[/]")
+            else:
+                console.print(f"[bold {YELLOW}]Usage: /resume rename <#|session_id> <new_title>[/]")
+            return None
+
+        elif subcmd in ("delete", "del", "rm", "d"):
+            if len(parts) >= 2:
+                target_id = parts[1]
+                if delete_session(target_id):
+                    console.print(f"[bold {GREEN}]✔ Successfully deleted session '{target_id}'[/]")
+                else:
+                    console.print(f"[bold {RED}]Could not find session '{target_id}' to delete.[/]")
+            else:
+                console.print(f"[bold {YELLOW}]Usage: /resume delete <#|session_id>[/]")
+            return None
+
         res = load_session(arg)
         if res:
             return res
         console.print(f"[bold {RED}]Session '{arg}' not found.[/]")
         return None
 
-    table = Table(title=f"Saved Conversations ({len(sessions)} available)", border_style=CYAN, box=box.ROUNDED)
-    table.add_column("#", style=f"bold {YELLOW}", width=4)
-    table.add_column("Session ID", style=f"bold {CYAN}", width=25)
-    table.add_column("Last Updated", style=f"{MUTED}", width=19)
-    table.add_column("Model", style=f"{GREEN}", width=16)
-    table.add_column("Summary / First Prompt", style=f"{PINK}")
-
-    for idx, s in enumerate(sessions[:12]):
-        sid = s.get("session_id", "")
-        upd = s.get("updated_at", "")
-        mod = s.get("model", "")
-        summ = s.get("summary", "")
-        table.add_row(str(idx + 1), sid, upd, mod, summ)
-
-    console.print(table)
-    console.print(f"[dim]Tip: Press Enter to resume latest (#1), enter a number [1-{min(len(sessions), 12)}], or 'c' to cancel.[/]")
-
-    try:
-        choice = input(f"\033[38;2;255;224;102mSelect session to resume [1-{min(len(sessions), 12)}]: \033[0m").strip()
-        if choice.lower() in ("c", "cancel", "q", "quit"):
-            console.print(f"[dim]Resume cancelled.[/]")
+    while True:
+        sessions = list_saved_sessions()
+        if not sessions:
+            console.print(f"[bold {YELLOW}]No saved sessions remaining.[/]")
             return None
-        if not choice:
-            choice = "1"
-        return load_session(choice)
-    except (KeyboardInterrupt, EOFError):
-        console.print("")
-        return None
+
+        table = Table(title=f"Saved Conversations ({len(sessions)} available)", border_style=CYAN, box=box.ROUNDED)
+        table.add_column("#", style=f"bold {YELLOW}", width=4)
+        table.add_column("Session ID", style=f"bold {CYAN}", width=25)
+        table.add_column("Last Updated", style=f"{MUTED}", width=19)
+        table.add_column("Model", style=f"{GREEN}", width=16)
+        table.add_column("Title / Summary", style=f"{PINK}")
+
+        for idx, s in enumerate(sessions[:15]):
+            sid = s.get("session_id", "")
+            upd = s.get("updated_at", "")
+            mod = s.get("model", "")
+            summ = s.get("summary", "")
+            table.add_row(str(idx + 1), sid, upd, mod, summ)
+
+        console.print(table)
+        console.print(
+            f"[bold {CYAN}]Options:[/] Enter [1-{min(len(sessions), 15)}] to resume  |  "
+            f"[bold {YELLOW}]r <#> <name>[/] to rename  |  "
+            f"[bold {RED}]d <#>[/] to delete  |  "
+            f"[bold {MUTED}]c[/] to cancel"
+        )
+
+        try:
+            choice = input(f"\033[38;2;255;224;102mAction [Enter=1 / r # <name> / d # / c]: \033[0m").strip()
+            if not choice:
+                choice = "1"
+            if choice.lower() in ("c", "cancel", "q", "quit"):
+                console.print(f"[dim]Resume cancelled.[/]")
+                return None
+
+            if choice.lower().startswith("r ") or choice.lower().startswith("rename "):
+                r_parts = choice.split(maxsplit=2)
+                if len(r_parts) >= 3:
+                    if rename_session(r_parts[1], r_parts[2]):
+                        console.print(f"[bold {GREEN}]✔ Renamed session #{r_parts[1]} to: '{r_parts[2]}'[/]")
+                    else:
+                        console.print(f"[bold {RED}]Failed to rename session #{r_parts[1]}[/]")
+                else:
+                    console.print(f"[bold {YELLOW}]Usage: r <#> <new_name>[/]")
+                continue
+
+            if choice.lower().startswith("d ") or choice.lower().startswith("del ") or choice.lower().startswith("rm ") or choice.lower().startswith("delete "):
+                d_parts = choice.split(maxsplit=1)
+                if len(d_parts) >= 2:
+                    if delete_session(d_parts[1]):
+                        console.print(f"[bold {GREEN}]✔ Deleted session #{d_parts[1]}[/]")
+                    else:
+                        console.print(f"[bold {RED}]Failed to delete session #{d_parts[1]}[/]")
+                else:
+                    console.print(f"[bold {YELLOW}]Usage: d <#>[/]")
+                continue
+
+            loaded = load_session(choice)
+            if loaded:
+                return loaded
+            console.print(f"[bold {RED}]Invalid session selection: '{choice}'[/]")
+        except (KeyboardInterrupt, EOFError):
+            console.print("")
+            return None
 
 def get_system_memory_info() -> Dict[str, float]:
     """Returns system memory metrics in GiB from /proc/meminfo."""
@@ -1770,16 +1976,13 @@ def agent_loop(initial_prompt: Optional[str] = None, requested_model: Optional[s
             session_id, messages, s_model = res
             if not requested_model:
                 model = s_model
-            console.print(Panel(
-                f"[bold {GREEN}]✔ Resumed conversation session:[/] [bold {CYAN}]{session_id}[/]\n"
-                f"[bold {MUTED}]Model:[/] [bold {GREEN}]{model}[/] | [bold {MUTED}]History Restored:[/] {len(messages)} messages",
-                border_style=GREEN,
-                box=box.ROUNDED
-            ))
+            print_banner(model, reason)
+            render_restored_session(messages)
         else:
+            print_banner(model, reason)
             console.print(f"[bold {RED}]Session '{resume_session}' not found. Starting fresh session.[/]")
-
-    print_banner(model, reason)
+    else:
+        print_banner(model, reason)
 
     if initial_prompt:
         handle_user_turn(initial_prompt, messages, model, session_id=session_id)
@@ -1827,12 +2030,7 @@ def agent_loop(initial_prompt: Optional[str] = None, requested_model: Optional[s
                 if res:
                     session_id, messages, s_model = res
                     model = s_model
-                    console.print(Panel(
-                        f"[bold {GREEN}]✔ Resumed conversation session:[/] [bold {CYAN}]{session_id}[/]\n"
-                        f"[bold {MUTED}]Model:[/] [bold {GREEN}]{model}[/] | [bold {MUTED}]History Restored:[/] {len(messages)} messages",
-                        border_style=GREEN,
-                        box=box.ROUNDED
-                    ))
+                    render_restored_session(messages)
                 continue
             elif cmd.startswith("/thinking"):
                 SHOW_THINKING = not SHOW_THINKING
