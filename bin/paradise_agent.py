@@ -2480,7 +2480,32 @@ def agent_loop(initial_prompt: Optional[str] = None, requested_model: Optional[s
                 state = f"[bold {GREEN}]ON[/]" if SHOW_THINKING else f"[bold {RED}]OFF[/]"
                 console.print(f"Diagnostic thinking display is now: {state}")
                 continue
-            elif cmd.startswith("/mode"):
+            elif cmd == "/model" or cmd.startswith("/model "):
+                parts = user_input.split()
+                if len(parts) > 1:
+                    req_m = parts[1].strip()
+                    installed = get_installed_models()
+                    matched_model = req_m
+                    for inst in installed:
+                        if req_m.lower() in inst.lower():
+                            matched_model = inst
+                            break
+                    model = matched_model
+                    console.print(f"[bold {GREEN}]Active model switched to:[/] [bold {CYAN}]{model}[/]")
+                else:
+                    installed = get_installed_models()
+                    mem = get_system_memory_info()
+                    table = Table(title="System Memory & Installed Models", border_style=CYAN, box=box.ROUNDED)
+                    table.add_column("Model Name", style=f"bold {CYAN}")
+                    table.add_column("Status", style=f"{GREEN}")
+                    for m in installed:
+                        status = "✔ Active" if m == model else "Available"
+                        table.add_row(m, status)
+                    console.print(f"RAM Available: [bold {CYAN}]{mem['available']} GiB[/] / {mem['total']} GiB Total")
+                    console.print(table)
+                    console.print(f"[dim]Tip: Use '/model <name>' (e.g. '/model 7b' or '/model 3b') to switch models on the fly.[/]")
+                continue
+            elif cmd == "/mode" or cmd.startswith("/mode "):
                 parts = user_input.split()
                 if len(parts) > 1:
                     target = parts[1].lower().strip()
@@ -2500,25 +2525,6 @@ def agent_loop(initial_prompt: Optional[str] = None, requested_model: Optional[s
                     mode_table.add_row("Preview", "Interactive approval prompt before any tool action")
                     mode_table.add_row("Usage", "/mode auto  |  /mode preview  |  /mode toggle")
                     console.print(mode_table)
-                continue
-            elif cmd.startswith("/model"):
-                parts = user_input.split()
-                if len(parts) > 1:
-                    new_m = parts[1].strip()
-                    model = new_m
-                    console.print(f"[bold {GREEN}]Active model switched to:[/] [bold {CYAN}]{model}[/]")
-                else:
-                    installed = get_installed_models()
-                    mem = get_system_memory_info()
-                    table = Table(title="System Memory & Installed Models", border_style=CYAN, box=box.ROUNDED)
-                    table.add_column("Model Name", style=f"bold {CYAN}")
-                    table.add_column("Status", style=f"{GREEN}")
-                    for m in installed:
-                        status = "✔ Active" if m == model else "Available"
-                        table.add_row(m, status)
-                    console.print(f"RAM Available: [bold {CYAN}]{mem['available']} GiB[/] / {mem['total']} GiB Total")
-                    console.print(table)
-                    console.print(f"[dim]Tip: Use '/model <name>' to switch models on the fly.[/]")
                 continue
             elif cmd.startswith("/search"):
                 parts = user_input.split(maxsplit=2)
