@@ -200,6 +200,7 @@ CHECK_AND_INSTALL_PACKAGES() {
     "wl-clipboard"
     "ncurses"
     "ffmpeg"
+    "tela-circle-icon-theme-all"
   )
   local AUR_PKGS=(
     "mpvpaper"
@@ -397,13 +398,16 @@ if [[ -d "$REPO_DIR/micro" ]]; then
   fi
 fi
 
-# GTK4 & GTK3 Styling (Nautilus & Libadwaita)
+# GTK4 & GTK3 Styling (Nautilus & Libadwaita) and Minimal Cybertech Icons
 if [[ -f "$REPO_DIR/gtk.css" ]]; then
   mkdir -p "$CONFIG_DIR/gtk-4.0" "$CONFIG_DIR/gtk-3.0"
   cp "$REPO_DIR/gtk.css" "$CONFIG_DIR/gtk-4.0/gtk.css"
   cp "$REPO_DIR/gtk.css" "$CONFIG_DIR/gtk-3.0/gtk.css"
 fi
-log_sub "Component themes installed (Cava, Btop, Fastfetch, Micro, GTK/Nautilus)"
+if command -v gsettings &>/dev/null; then
+  gsettings set org.gnome.desktop.interface icon-theme "Tela-circle-dracula-dark" 2>/dev/null || true
+fi
+log_sub "Component themes installed (Cava, Btop, Fastfetch, Micro, GTK/Nautilus & Tela-Circle Icons)"
 
 # ------------------------------------------------------------------------------
 # 8. Install Theme Assets & Backgrounds
