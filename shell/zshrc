@@ -1055,10 +1055,9 @@ L_BOT="╰─"                # Bottom-left prompt frame corner
 R_TOP="─╮"                # Top-right prompt frame corner
 R_BOT="─╯"                # Bottom-right prompt frame corner
 
-# Detect JetBrainsMono Nerd Font availability to select appropriate icon set
-_has_jetbrains_nerd_font=0
+_has_jetbrains_nerd_font=1
 if (( $+commands[fc-list] )); then
-  if fc-list : family | grep -qiE "JetBrainsMono.*Nerd|JetBrains.*Mono.*Nerd|JetBrainsMonoNF" >/dev/null 2>&1; then
+  if fc-list : family | command grep -qiE "JetBrainsMono.*Nerd|JetBrains.*Mono.*Nerd|JetBrainsMonoNF" >/dev/null 2>&1; then
     _has_jetbrains_nerd_font=1
   fi
 fi
