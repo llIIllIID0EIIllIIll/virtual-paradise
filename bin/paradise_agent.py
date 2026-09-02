@@ -67,6 +67,8 @@ class SlashCommandCompleter(Completer):
         ("/find", "Find files by glob pattern using fd: /find <pattern> [dir]"),
         ("/health", "Hardware diagnostic health check (RAM, CPU, Cooler Boost, Disk)"),
         ("/thinking", "Toggle real-time diagnostic reasoning visibility (ON / OFF)"),
+        ("/copy", "Copy last assistant response or output to Wayland clipboard"),
+        ("/diff", "View git diff or repository status: /diff [path]"),
         ("/clear", "Reset active conversation memory context and start fresh"),
         ("/help", "Show detailed command reference table"),
         ("/exit", "Exit session (Sayonara)"),
@@ -868,6 +870,100 @@ def unwrap_tool_arg(val: Any) -> Any:
                     return unwrap_tool_arg(val[k])
     return val
 
+ALL_VALID_TOOLS = {
+    "execute_bash",
+    "read_file",
+    "write_file",
+    "edit_file",
+    "delete_file",
+    "copy_file",
+    "move_file",
+    "grep_search",
+    "find_by_name",
+    "list_dir",
+    "load_skill",
+    "delete_skill",
+    "get_system_health",
+}
+
+TOOL_ALIASES = {
+    "bash": "execute_bash",
+    "run_command": "execute_bash",
+    "sh": "execute_bash",
+    "terminal": "execute_bash",
+    "exec": "execute_bash",
+    "shell": "execute_bash",
+    "command": "execute_bash",
+    "readfile": "read_file",
+    "view_file": "read_file",
+    "cat": "read_file",
+    "open_file": "read_file",
+    "writefile": "write_file",
+    "write_to_file": "write_file",
+    "create_file": "write_file",
+    "editfile": "edit_file",
+    "replace_file_content": "edit_file",
+    "update_file": "edit_file",
+    "grep": "grep_search",
+    "ripgrep": "grep_search",
+    "search": "grep_search",
+    "find_text": "grep_search",
+    "find": "find_by_name",
+    "locate": "find_by_name",
+    "search_files": "find_by_name",
+    "ls": "list_dir",
+    "listdir": "list_dir",
+    "dir": "list_dir",
+    "list_directory": "list_dir",
+    "delete": "delete_file",
+    "rm": "delete_file",
+    "remove_file": "delete_file",
+    "copy": "copy_file",
+    "cp": "copy_file",
+    "move": "move_file",
+    "mv": "move_file",
+    "rename": "move_file",
+    "deleteskill": "delete_skill",
+    "remove_skill": "delete_skill",
+    "loadskill": "load_skill",
+    "health": "get_system_health",
+    "system_health": "get_system_health",
+    "check_health": "get_system_health",
+}
+
+def normalize_tool_call(fn_name: str, fn_args: Dict[str, Any]) -> Tuple[str, Dict[str, Any]]:
+    """Normalizes tool name and argument keys to prevent LLM schema hallucinations."""
+    clean_name = fn_name.lower().replace("-", "_").strip()
+    canonical_name = TOOL_ALIASES.get(clean_name, clean_name)
+
+    normalized_args = {}
+    for k, v in fn_args.items():
+        val = unwrap_tool_arg(v)
+        k_norm = k.lower().replace("-", "_").strip()
+        if k_norm in ("file_path", "filename", "filepath", "target_file", "file"):
+            normalized_args["path"] = val
+        elif k_norm in ("cmd", "command_line", "shell_cmd"):
+            normalized_args["command"] = val
+        elif k_norm in ("search_term", "pattern", "text") and canonical_name == "grep_search":
+            normalized_args["query"] = val
+        elif k_norm in ("dir", "directory", "folder", "folder_path") and canonical_name == "list_dir":
+            normalized_args["directory_path"] = val
+        elif k_norm in ("dir", "directory", "folder", "search_dir") and canonical_name in ("find_by_name", "grep_search"):
+            if canonical_name == "find_by_name":
+                normalized_args["search_directory"] = val
+            else:
+                normalized_args["search_path"] = val
+        elif k_norm in ("name", "skill") and canonical_name in ("load_skill", "delete_skill"):
+            normalized_args["skill_name"] = val
+        elif k_norm in ("src", "from"):
+            normalized_args["source"] = val
+        elif k_norm in ("dest", "dst", "to"):
+            normalized_args["destination"] = val
+        else:
+            normalized_args[k] = val
+
+    return canonical_name, normalized_args
+
 def prompt_preview_action(tool_name: str, action_summary: str, details: str = "") -> bool:
     """Prompt user in Preview mode before executing an action."""
     global EXECUTION_MODE
@@ -903,7 +999,7 @@ def prompt_preview_action(tool_name: str, action_summary: str, details: str = ""
         return False
 
 def tool_execute_bash(command: Any) -> str:
-    """Executes a bash command with full root/sudo privileges and auto-elevation."""
+    """Executes a bash command with full root/sudo privileges, auto-elevation, and non-interactive safeguards."""
     command = str(unwrap_tool_arg(command)).strip()
     if not command:
         return "[Error: Empty command]"
@@ -917,8 +1013,17 @@ def tool_execute_bash(command: Any) -> str:
         sk = parts[1] if len(parts) > 1 else "windows"
         return tool_load_skill(sk)
 
+    # Automatically add --noconfirm for pacman package installations/removals to prevent hanging
+    if "pacman" in command and "--noconfirm" not in command:
+        command = re.sub(r'\bpacman\s+(-[SsyuURm]+)\b', r'pacman \1 --noconfirm', command)
+
     if not prompt_preview_action("execute_bash", command):
         return "[Action Cancelled: User declined execution in Preview mode]"
+
+    cmd_env = os.environ.copy()
+    cmd_env["DEBIAN_FRONTEND"] = "noninteractive"
+    cmd_env["PAGER"] = "cat"
+    cmd_env["CI"] = "1"
 
     try:
         p = subprocess.run(
@@ -926,7 +1031,8 @@ def tool_execute_bash(command: Any) -> str:
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
             text=True,
-            timeout=45
+            timeout=60,
+            env=cmd_env
         )
         out = p.stdout.strip()
         err = p.stderr.strip()
@@ -939,26 +1045,36 @@ def tool_execute_bash(command: Any) -> str:
                 stdout=subprocess.PIPE,
                 stderr=subprocess.PIPE,
                 text=True,
-                timeout=45
+                timeout=60,
+                env=cmd_env
             )
             out = p_sudo.stdout.strip()
             err = p_sudo.stderr.strip()
+            p = p_sudo
 
         combined = ""
+        if p.returncode != 0:
+            combined += f"[Exit code: {p.returncode}]\n"
         if out:
             combined += out
         if err:
             combined += ("\n[STDERR]:\n" if combined else "") + err
         if not combined:
             combined = "[Command executed successfully with no output]"
-        return combined[:8000]
+
+        # Intelligent head/tail truncation if output is massive
+        if len(combined) > 6000:
+            omitted = len(combined) - 5500
+            combined = combined[:3000] + f"\n... [Omitted {omitted} characters of verbose output] ...\n" + combined[-2500:]
+
+        return combined
     except subprocess.TimeoutExpired:
-        return "[Error: Command execution timed out after 45 seconds]"
+        return "[Error: Command execution timed out after 60 seconds]"
     except Exception as e:
         return f"[Execution Error: {e}]"
 
 def tool_read_file(path: Any, start_line: Optional[int] = None, end_line: Optional[int] = None, max_lines: int = 200) -> str:
-    """Reads any file or directory with native Word .docx support, line slicing, and root fallback."""
+    """Reads any file or directory with native Word .docx and PDF support, line slicing, and root fallback."""
     path = str(unwrap_tool_arg(path)).strip()
     if not path or path in ("{}", "None", "''", '""'):
         path = os.path.expanduser("~/Downloads")
@@ -983,6 +1099,17 @@ def tool_read_file(path: Any, start_line: Optional[int] = None, end_line: Option
 
     if os.path.isdir(expanded_path):
         return tool_list_dir(expanded_path)
+
+    # Native extraction for PDF documents
+    if expanded_path.lower().endswith(".pdf"):
+        try:
+            cmd = ["pdftotext", "-layout", "-f", "1", "-l", "25", expanded_path, "-"]
+            out = subprocess.check_output(cmd, text=True, timeout=8)
+            if not out.strip():
+                out = subprocess.check_output(["pdftotext", "-f", "1", "-l", "25", expanded_path, "-"] , text=True, timeout=8)
+            return f"[PDF Document Content '{os.path.basename(path)}']:\n{out.strip()[:6000]}"
+        except Exception as e:
+            return f"[Error extracting PDF document: {e}]"
 
     # Native extraction for Word .docx
     if expanded_path.lower().endswith(".docx"):
@@ -1424,14 +1551,29 @@ def tool_delete_skill(skill_name: Any) -> str:
     return f"[Notice: Skill '{skill_name}' was not found in any active skill directories]"
 
 def call_ollama_chat(messages: List[Dict[str, Any]], model: str, enable_tools: bool = True) -> Dict[str, Any]:
-    """Sends chat completion request to local Ollama API."""
+    """Sends chat completion request to local Ollama API with sliding context pruning and error resilience."""
+    active_msgs = messages
+    if len(messages) > 16:
+        # Keep system prompt (index 0), initial user prompt (index 1), and recent conversation turns
+        head = messages[:2]
+        tail = messages[-12:]
+        compacted_tail = []
+        for m in tail:
+            m_copy = dict(m)
+            # Compact verbose tool outputs in historical turns to conserve token budget
+            if m_copy.get("role") == "tool" and len(m_copy.get("content", "")) > 400:
+                c = m_copy["content"]
+                m_copy["content"] = c[:250] + "\n... [Output truncated for context optimization] ...\n" + c[-150:]
+            compacted_tail.append(m_copy)
+        active_msgs = head + compacted_tail
+
     payload: Dict[str, Any] = {
         "model": model,
-        "messages": messages,
+        "messages": active_msgs,
         "stream": False,
         "options": {
             "temperature": 0.1,
-            "num_predict": 384
+            "num_predict": 512
         }
     }
     if enable_tools:
@@ -1443,8 +1585,13 @@ def call_ollama_chat(messages: List[Dict[str, Any]], model: str, enable_tools: b
         data=data,
         headers={"Content-Type": "application/json"}
     )
-    with urllib.request.urlopen(req, timeout=45) as resp:
-        return json.loads(resp.read().decode("utf-8"))
+    try:
+        with urllib.request.urlopen(req, timeout=60) as resp:
+            return json.loads(resp.read().decode("utf-8"))
+    except urllib.error.URLError as e:
+        return {"message": {"role": "assistant", "content": f"[Network Error communicating with Ollama: {e}]"}}
+    except Exception as e:
+        return {"message": {"role": "assistant", "content": f"[Error: {e}]"}}
 
 def check_ollama_alive() -> bool:
     """Checks if Ollama service is reachable."""
@@ -1552,6 +1699,8 @@ def print_help_table():
     table.add_row("/mode", "Inspect or switch execution mode: /mode [auto|preview|toggle]")
     table.add_row("/model", "Inspect or switch local Ollama models: /model [1.5b|3b|7b]")
     table.add_row("/thinking", "Toggle real-time diagnostic reasoning visibility (ON / OFF)")
+    table.add_row("/copy", "Copy last assistant response to clipboard")
+    table.add_row("/diff", "View git diff or repository status: /diff [path]")
     table.add_row("/clear", "Clear active conversation memory context")
     table.add_row("/help", "Show this command reference table")
     table.add_row("/exit", "Exit session (Sayonara)")
@@ -1654,8 +1803,9 @@ def handle_user_turn(user_text: str, messages: List[Dict[str, Any]], model: str,
                         parsed = json.loads(line)
                         raw_name = str(parsed.get("name", "")).strip()
                         raw_args = parsed.get("arguments") or parsed.get("parameters", {})
-                        if raw_name in ("get_system_health", "execute_bash", "read_file", "write_file", "edit_file", "delete_file", "copy_file", "move_file", "load_skill"):
-                            tool_calls.append({"function": {"name": raw_name, "arguments": raw_args}})
+                        c_name, c_args = normalize_tool_call(raw_name, raw_args if isinstance(raw_args, dict) else {})
+                        if c_name in ALL_VALID_TOOLS:
+                            tool_calls.append({"function": {"name": c_name, "arguments": c_args}})
                     except Exception:
                         pass
 
@@ -1664,9 +1814,10 @@ def handle_user_turn(user_text: str, messages: List[Dict[str, Any]], model: str,
                     parsed = json.loads(trimmed)
                     raw_name = str(parsed.get("name", "")).strip()
                     raw_args = parsed.get("arguments") or parsed.get("parameters", {})
-                    if raw_name in ("get_system_health", "execute_bash", "read_file", "write_file", "edit_file", "delete_file", "copy_file", "move_file", "load_skill"):
-                        tool_calls = [{"function": {"name": raw_name, "arguments": raw_args}}]
-                    elif raw_name:
+                    c_name, c_args = normalize_tool_call(raw_name, raw_args if isinstance(raw_args, dict) else {})
+                    if c_name in ALL_VALID_TOOLS:
+                        tool_calls = [{"function": {"name": c_name, "arguments": c_args}}]
+                    elif raw_name and not raw_name.startswith("{"):
                         tool_calls = [{"function": {"name": "execute_bash", "arguments": {"command": raw_name}}}]
                 except Exception:
                     pass
@@ -1885,20 +2036,17 @@ def handle_user_turn(user_text: str, messages: List[Dict[str, Any]], model: str,
         # Execute requested tools
         for tc in tool_calls:
             fn = tc.get("function", {})
-            fn_name = str(fn.get("name", "")).strip()
-            fn_args = fn.get("arguments", {})
-            if isinstance(fn_args, str):
+            raw_fn_name = str(fn.get("name", "")).strip()
+            raw_fn_args = fn.get("arguments", {})
+            if isinstance(raw_fn_args, str):
                 try:
-                    fn_args = json.loads(fn_args)
+                    raw_fn_args = json.loads(raw_fn_args)
                 except Exception:
-                    pass
-            if not isinstance(fn_args, dict):
-                fn_args = {"command": str(fn_args)}
+                    raw_fn_args = {"command": raw_fn_args}
+            if not isinstance(raw_fn_args, dict):
+                raw_fn_args = {"command": str(raw_fn_args)}
 
-            clean_args = {}
-            for k, v in fn_args.items():
-                clean_args[k] = unwrap_tool_arg(v)
-            fn_args = clean_args
+            fn_name, fn_args = normalize_tool_call(raw_fn_name, raw_fn_args)
 
             # Display tool invocation TUI
             console.print(Panel(
@@ -1911,57 +2059,60 @@ def handle_user_turn(user_text: str, messages: List[Dict[str, Any]], model: str,
 
             tool_start = time.time()
             tool_output = ""
-            if fn_name == "execute_bash":
-                cmd = fn_args.get("command", "")
-                tool_output = tool_execute_bash(cmd)
-            elif fn_name == "read_file":
-                p = fn_args.get("path", "")
-                sl = fn_args.get("start_line")
-                el = fn_args.get("end_line")
-                ml = fn_args.get("max_lines", 200)
-                tool_output = tool_read_file(p, start_line=sl, end_line=el, max_lines=ml)
-            elif fn_name == "grep_search":
-                q = fn_args.get("query", "")
-                sp = fn_args.get("search_path", ".")
-                ci = fn_args.get("case_insensitive", True)
-                tool_output = tool_grep_search(q, sp, case_insensitive=ci)
-            elif fn_name == "find_by_name":
-                pat = fn_args.get("pattern", "")
-                sd = fn_args.get("search_directory", ".")
-                tool_output = tool_find_by_name(pat, sd)
-            elif fn_name == "list_dir":
-                dp = fn_args.get("directory_path", ".")
-                tool_output = tool_list_dir(dp)
-            elif fn_name == "write_file":
-                p = fn_args.get("path", "")
-                c = fn_args.get("content", "")
-                tool_output = tool_write_file(p, c)
-            elif fn_name == "edit_file":
-                p = fn_args.get("path", "")
-                t = fn_args.get("target_text", "")
-                r = fn_args.get("replacement_text", "")
-                tool_output = tool_edit_file(p, t, r)
-            elif fn_name == "delete_file":
-                p = fn_args.get("path", "")
-                tool_output = tool_delete_file(p)
-            elif fn_name == "copy_file":
-                s = fn_args.get("source", "")
-                d = fn_args.get("destination", "")
-                tool_output = tool_copy_file(s, d)
-            elif fn_name == "move_file":
-                s = fn_args.get("source", "")
-                d = fn_args.get("destination", "")
-                tool_output = tool_move_file(s, d)
-            elif fn_name == "get_system_health":
-                tool_output = tool_get_system_health()
-            elif fn_name == "load_skill":
-                s_name = fn_args.get("skill_name", "")
-                tool_output = tool_load_skill(s_name)
-            elif fn_name == "delete_skill":
-                s_name = fn_args.get("skill_name", "")
-                tool_output = tool_delete_skill(s_name)
-            else:
-                tool_output = f"[Unknown tool: {fn_name}]"
+            try:
+                if fn_name == "execute_bash":
+                    cmd = fn_args.get("command", "")
+                    tool_output = tool_execute_bash(cmd)
+                elif fn_name == "read_file":
+                    p = fn_args.get("path", "")
+                    sl = fn_args.get("start_line")
+                    el = fn_args.get("end_line")
+                    ml = fn_args.get("max_lines", 200)
+                    tool_output = tool_read_file(p, start_line=sl, end_line=el, max_lines=ml)
+                elif fn_name == "grep_search":
+                    q = fn_args.get("query", "")
+                    sp = fn_args.get("search_path", ".")
+                    ci = fn_args.get("case_insensitive", True)
+                    tool_output = tool_grep_search(q, sp, case_insensitive=ci)
+                elif fn_name == "find_by_name":
+                    pat = fn_args.get("pattern", "")
+                    sd = fn_args.get("search_directory", ".")
+                    tool_output = tool_find_by_name(pat, sd)
+                elif fn_name == "list_dir":
+                    dp = fn_args.get("directory_path", ".")
+                    tool_output = tool_list_dir(dp)
+                elif fn_name == "write_file":
+                    p = fn_args.get("path", "")
+                    c = fn_args.get("content", "")
+                    tool_output = tool_write_file(p, c)
+                elif fn_name == "edit_file":
+                    p = fn_args.get("path", "")
+                    t = fn_args.get("target_text", "")
+                    r = fn_args.get("replacement_text", "")
+                    tool_output = tool_edit_file(p, t, r)
+                elif fn_name == "delete_file":
+                    p = fn_args.get("path", "")
+                    tool_output = tool_delete_file(p)
+                elif fn_name == "copy_file":
+                    s = fn_args.get("source", "")
+                    d = fn_args.get("destination", "")
+                    tool_output = tool_copy_file(s, d)
+                elif fn_name == "move_file":
+                    s = fn_args.get("source", "")
+                    d = fn_args.get("destination", "")
+                    tool_output = tool_move_file(s, d)
+                elif fn_name == "get_system_health":
+                    tool_output = tool_get_system_health()
+                elif fn_name == "load_skill":
+                    s_name = fn_args.get("skill_name", "")
+                    tool_output = tool_load_skill(s_name)
+                elif fn_name == "delete_skill":
+                    s_name = fn_args.get("skill_name", "")
+                    tool_output = tool_delete_skill(s_name)
+                else:
+                    tool_output = f"[Unknown tool: {fn_name}]"
+            except Exception as exc:
+                tool_output = f"[Tool Error in {fn_name}: {exc}]"
 
             tool_time_ms = int((time.time() - tool_start) * 1000)
 
@@ -2104,7 +2255,12 @@ def agent_loop(initial_prompt: Optional[str] = None, requested_model: Optional[s
                 parts = user_input.split(maxsplit=1)
                 task_content = parts[1].strip() if len(parts) > 1 else ""
                 if not task_content:
-                    console.print(f"[bold {YELLOW}]Usage: /plan <task or problem description>[/]")
+                    try:
+                        task_content = input(f"\033[38;2;255;224;102mEnter task/architecture to plan: \033[0m").strip()
+                    except (KeyboardInterrupt, EOFError):
+                        continue
+                if not task_content:
+                    console.print(f"[dim]Planning cancelled.[/]")
                     continue
                 plan_prompt = (
                     f"[PLANNING DIRECTIVE]: You are in deep architectural planning mode. "
@@ -2117,13 +2273,47 @@ def agent_loop(initial_prompt: Optional[str] = None, requested_model: Optional[s
                 parts = user_input.split(maxsplit=1)
                 goal_content = parts[1].strip() if len(parts) > 1 else ""
                 if not goal_content:
-                    console.print(f"[bold {YELLOW}]Usage: /goal <objective to achieve>[/]")
+                    try:
+                        goal_content = input(f"\033[38;2;255;224;102mEnter goal/objective to achieve: \033[0m").strip()
+                    except (KeyboardInterrupt, EOFError):
+                        continue
+                if not goal_content:
+                    console.print(f"[dim]Goal cancelled.[/]")
                     continue
                 goal_prompt = (
                     f"[AUTONOMOUS GOAL DIRECTIVE]: Execute all necessary diagnostic, inspection, and coding steps "
                     f"autonomously without stopping until this goal is fully accomplished and verified: {goal_content}"
                 )
                 handle_user_turn(goal_prompt, messages, model, session_id=session_id)
+                continue
+            elif cmd in ("/copy", "/cp"):
+                last_resp = ""
+                for m in reversed(messages):
+                    if m.get("role") == "assistant" and m.get("content"):
+                        last_resp = m["content"]
+                        break
+                if last_resp:
+                    try:
+                        p = subprocess.Popen(["wl-copy"], stdin=subprocess.PIPE, text=True)
+                        p.communicate(input=last_resp, timeout=3)
+                        console.print(f"[bold {GREEN}]✔ Copied last assistant response to Wayland clipboard.[/]")
+                    except Exception as e:
+                        console.print(f"[bold {RED}]Failed to copy to clipboard: {e}[/]")
+                else:
+                    console.print(f"[bold {YELLOW}]No assistant response to copy yet.[/]")
+                continue
+            elif cmd.startswith("/diff"):
+                parts = user_input.split(maxsplit=1)
+                target_repo = parts[1].strip() if len(parts) > 1 else "."
+                try:
+                    p = subprocess.run(["git", "diff", "--stat", "-p"], cwd=os.path.expanduser(target_repo), capture_output=True, text=True, timeout=5)
+                    out = p.stdout.strip()
+                    if not out:
+                        p_st = subprocess.run(["git", "status", "-s"], cwd=os.path.expanduser(target_repo), capture_output=True, text=True, timeout=5)
+                        out = p_st.stdout.strip() or "No local changes in repository."
+                    console.print(Panel(out[:4000], title=f"[bold {CYAN}]Git Diff / Status ({target_repo})[/]", border_style=CYAN, box=box.ROUNDED))
+                except Exception as e:
+                    console.print(f"[bold {RED}]Git diff error: {e}[/]")
                 continue
             elif cmd.startswith("/thinking"):
                 SHOW_THINKING = not SHOW_THINKING
@@ -2199,6 +2389,8 @@ def main():
     parser.add_argument("--yolo", "-y", "--auto-accept", action="store_true", help="Start in Auto-accept mode (default)")
     parser.add_argument("--model", "-m", help="Override Ollama model name")
     parser.add_argument("--resume", "-r", nargs="?", const="last", help="Resume past conversation session (specify session ID, index number, or 'last')")
+    parser.add_argument("--plan", help="Run planning mode with the specified task")
+    parser.add_argument("--goal", help="Run autonomous goal execution mode with the specified objective")
     parser.add_argument("--diagnose", "-d", action="store_true", help="Run system health diagnosis immediately")
 
     args = parser.parse_args()
@@ -2213,7 +2405,13 @@ def main():
         console.print(Panel(tool_get_system_health(), title=f"[bold {CYAN}]System Health Diagnostics[/]", border_style=CYAN, box=box.ROUNDED))
         sys.exit(0)
 
-    agent_loop(initial_prompt=args.prompt, requested_model=args.model, resume_session=args.resume)
+    initial = args.prompt
+    if args.plan:
+        initial = f"[PLANNING DIRECTIVE]: Formulate a structured step-by-step diagnostic and execution plan with clear numbered phases and verification criteria for: {args.plan}"
+    elif args.goal:
+        initial = f"[AUTONOMOUS GOAL DIRECTIVE]: Execute all necessary diagnostic, inspection, and coding steps autonomously without stopping until this goal is fully accomplished and verified: {args.goal}"
+
+    agent_loop(initial_prompt=initial, requested_model=args.model, resume_session=args.resume)
 
 if __name__ == "__main__":
     main()
