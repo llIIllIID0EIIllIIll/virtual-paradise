@@ -192,10 +192,14 @@ CAPABILITIES & FULL SYSTEM PERMISSIONS:
 LANGUAGE MANDATE:
 - DEFAULT LANGUAGE: ENGLISH. By default, respond, explain, and write diagnostic reports in clear, professional ENGLISH.
 - EXCEPTION: If and only if the user inputs their query in VIETNAMESE, formulate your entire response in natural, fluent VIETNAMESE.
+- STRICT PROHIBITION: NEVER reply in French, German, Spanish, Chinese, or any other language. If user writes Vietnamese, reply ONLY in Vietnamese.
 
 TOOL CALL EXAMPLES:
 User: format file tờ trình trong mục download
 Assistant: {{"name": "execute_bash", "arguments": {{"command": "/home/{user}/.local/lib/paradise-venv/bin/python3 /home/{user}/.local/bin/format-docx-vn.py /home/{user}/Downloads"}}}}
+
+User: xóa skill windows đi
+Assistant: {{"name": "delete_skill", "arguments": {{"skill_name": "windows"}}}}
 
 User: giúp mình xóa file formatted
 Assistant: {{"name": "delete_file", "arguments": {{"path": "/home/{user}/Downloads/to_trinh_mau_formatted.docx"}}}}
@@ -381,6 +385,23 @@ TOOLS_SPEC = [
                 "required": ["skill_name"]
             }
         }
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "delete_skill",
+            "description": "Delete and remove an installed skill from the system by its name (e.g. windows, omarchy, vn-officecli).",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "skill_name": {
+                        "type": "string",
+                        "description": "the exact name of the skill to delete"
+                    }
+                },
+                "required": ["skill_name"]
+            }
+        }
     }
 ]
 
@@ -436,6 +457,15 @@ def tool_execute_bash(command: Any) -> str:
     command = str(unwrap_tool_arg(command)).strip()
     if not command:
         return "[Error: Empty command]"
+
+    if command.startswith("delete_skill"):
+        parts = command.split()
+        sk = parts[1] if len(parts) > 1 else "windows"
+        return tool_delete_skill(sk)
+    elif command.startswith("load_skill"):
+        parts = command.split()
+        sk = parts[1] if len(parts) > 1 else "windows"
+        return tool_load_skill(sk)
 
     if not prompt_preview_action("execute_bash", command):
         return "[Action Cancelled: User declined execution in Preview mode]"
@@ -822,6 +852,44 @@ def tool_load_skill(skill_name: Any) -> str:
     except Exception as e:
         return f"[Error loading skill '{skill_name}': {e}]"
 
+def tool_delete_skill(skill_name: Any) -> str:
+    """Deletes and removes all directories of a specialized skill across all skill locations."""
+    skill_name = str(unwrap_tool_arg(skill_name)).strip()
+    if not skill_name:
+        return "[Error: Missing skill name]"
+
+    normalized = skill_name.lower().replace("_", "-").strip()
+    deleted_paths = []
+
+    for base in SKILL_DIRS:
+        if not os.path.exists(base):
+            continue
+        try:
+            items = os.listdir(base)
+        except Exception:
+            continue
+        for item in items:
+            item_norm = item.lower().replace("_", "-").strip()
+            if item_norm == normalized or (normalized in item_norm and len(normalized) >= 4):
+                full_p = os.path.join(base, item)
+                if not prompt_preview_action("delete_skill", f"Delete skill folder '{full_p}'"):
+                    return "[Action Cancelled: User declined skill deletion]"
+                try:
+                    if os.path.isdir(full_p):
+                        shutil.rmtree(full_p)
+                    else:
+                        os.remove(full_p)
+                    deleted_paths.append(full_p)
+                except PermissionError:
+                    subprocess.run(["sudo", "rm", "-rf", full_p], check=False)
+                    deleted_paths.append(full_p)
+                except Exception as e:
+                    return f"[Error deleting skill '{skill_name}' at '{full_p}': {e}]"
+
+    if deleted_paths:
+        return f"[Success: Skill '{skill_name}' deleted from {len(deleted_paths)} location(s):\n  " + "\n  ".join(deleted_paths) + "]"
+    return f"[Notice: Skill '{skill_name}' was not found in any active skill directories]"
+
 def call_ollama_chat(messages: List[Dict[str, Any]], model: str, enable_tools: bool = True) -> Dict[str, Any]:
     """Sends chat completion request to local Ollama API."""
     payload: Dict[str, Any] = {
@@ -1077,9 +1145,34 @@ def handle_user_turn(user_text: str, messages: List[Dict[str, Any]], model: str)
             tool_calls = msg["tool_calls"]
 
         # Proactive Grounding & Anti-Hallucination Guard on step 1
-        if not tool_calls and step == 1:
-            lower_u = user_text.lower()
-            user_home = os.path.expanduser("~")
+        lower_u = user_text.lower()
+        user_home = os.path.expanduser("~")
+
+        # 0. Delete skill guard (overrides hallucinated load_skill or bash delete_skill)
+        if step == 1 and any(w in lower_u for w in ["xóa", "delete", "remove", "gỡ", "hủy"]) and (any(w in lower_u for w in ["skill", "kỹ năng"]) or any(sk.lower() in lower_u for sk in discover_skills().keys())):
+            m_sk = re.search(r'(?:xóa|gỡ|hủy|remove|delete)\s+(?:skill|kỹ năng)?\s*([\w-]+)', lower_u)
+            if not m_sk:
+                m_sk = re.search(r'skill\s+([\w-]+)\s+(?:xóa|gỡ|hủy|remove|delete)', lower_u)
+            target_sk = m_sk.group(1).strip() if m_sk else None
+            if not target_sk or target_sk in ("đi", "bỏ", "file", "tệp"):
+                for sk in discover_skills().keys():
+                    if sk.lower() in lower_u:
+                        target_sk = sk
+                        break
+            if not target_sk and "windows" in lower_u:
+                target_sk = "windows"
+            if target_sk:
+                tool_calls = [{
+                    "function": {
+                        "name": "delete_skill",
+                        "arguments": {"skill_name": target_sk}
+                    }
+                }]
+                msg["tool_calls"] = tool_calls
+                msg["content"] = ""
+                content = ""
+
+        elif not tool_calls and step == 1:
 
             # 1. Format document
             if any(w in lower_u for w in ["format", "chuẩn hóa", "định dạng"]) and any(w in lower_u for w in ["tờ trình", "to_trinh", "docx", "word", "tài liệu"]):
@@ -1153,9 +1246,28 @@ def handle_user_turn(user_text: str, messages: List[Dict[str, Any]], model: str)
                         "arguments": {}
                     }
                 }]
-            # 8. Delete / remove files
+            # 8. Delete / remove skills or files
             elif any(w in lower_u for w in ["xóa", "delete", "remove", "gỡ", "hủy"]):
-                if any(w in lower_u for w in ["formatted", "chuẩn hóa"]):
+                if any(w in lower_u for w in ["skill", "kỹ năng"]) or any(sk.lower() in lower_u for sk in discover_skills().keys()):
+                    m_sk = re.search(r'(?:xóa|gỡ|hủy|remove|delete)\s+(?:skill|kỹ năng)?\s*([\w-]+)', lower_u)
+                    if not m_sk:
+                        m_sk = re.search(r'skill\s+([\w-]+)\s+(?:xóa|gỡ|hủy|remove|delete)', lower_u)
+                    target_sk = m_sk.group(1).strip() if m_sk else None
+                    if not target_sk or target_sk in ("đi", "bỏ", "file", "tệp"):
+                        for sk in discover_skills().keys():
+                            if sk.lower() in lower_u:
+                                target_sk = sk
+                                break
+                    if not target_sk and "windows" in lower_u:
+                        target_sk = "windows"
+                    if target_sk:
+                        tool_calls = [{
+                            "function": {
+                                "name": "delete_skill",
+                                "arguments": {"skill_name": target_sk}
+                            }
+                        }]
+                elif any(w in lower_u for w in ["formatted", "chuẩn hóa"]):
                     tool_calls = [{
                         "function": {
                             "name": "delete_file",
@@ -1290,6 +1402,9 @@ def handle_user_turn(user_text: str, messages: List[Dict[str, Any]], model: str)
             elif fn_name == "load_skill":
                 s_name = fn_args.get("skill_name", "")
                 tool_output = tool_load_skill(s_name)
+            elif fn_name == "delete_skill":
+                s_name = fn_args.get("skill_name", "")
+                tool_output = tool_delete_skill(s_name)
             else:
                 tool_output = f"[Unknown tool: {fn_name}]"
 
@@ -1309,10 +1424,16 @@ def handle_user_turn(user_text: str, messages: List[Dict[str, Any]], model: str)
                 padding=(0, 1)
             ))
 
+            tool_content_for_model = tool_output
+            if lang == "vi":
+                tool_content_for_model += "\n[SYSTEM MANDATE: You MUST reply to the user completely in natural VIETNAMESE. Do NOT reply in French, English, or any other language.]"
+            else:
+                tool_content_for_model += "\n[SYSTEM MANDATE: You MUST reply to the user completely in ENGLISH.]"
+
             messages.append({
                 "role": "tool",
                 "name": fn_name,
-                "content": tool_output
+                "content": tool_content_for_model
             })
 
 def agent_loop(initial_prompt: Optional[str] = None, requested_model: Optional[str] = None):
