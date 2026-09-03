@@ -4,6 +4,11 @@
 #  Guarantees Ghostty / Foot opens directly into /usr/bin/zsh
 # ==============================================================================
 
+CURRENT_THEME="$(cat "$HOME/.local/state/omarchy/current/theme.name" 2>/dev/null || echo "")"
+if [[ "$CURRENT_THEME" != "virtual-paradise" ]]; then
+  exec /usr/bin/omarchy-launch-terminal "$@"
+fi
+
 cwd="$(omarchy-cmd-terminal-cwd 2>/dev/null || echo "$HOME")"
 [[ ! -d "$cwd" ]] && cwd="$HOME"
 

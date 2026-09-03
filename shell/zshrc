@@ -2923,8 +2923,12 @@ alias up="omarchy-pkg-missing >/dev/null 2>&1 && sudo pacman -Syu || sudo pacman
 alias rice="$HOME/.local/bin/rice_layout.sh"
 alias matrix="$HOME/.local/bin/virtual_matrix.py"
 alias boost="$HOME/.local/bin/toggle_cooler_boost.sh"
-alias theme="omarchy theme switcher"
-alias a="paradise-agent"
-alias agent="paradise-agent"
+# Omarchy Default Coding Agent (Copilot, Claude, etc.)
+alias a="omarchy-agent --inline"
+alias oagent="omarchy-agent"
+
+# Virtual Paradise Local Offline AI Agent (Qwen 2.5 Coder)
+alias pa="paradise-agent"
+alias agy="paradise-agent"
 alias offline-agent="paradise-agent"
 export PATH="$HOME/.local/bin:$PATH"

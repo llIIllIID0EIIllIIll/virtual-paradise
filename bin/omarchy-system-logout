@@ -3,6 +3,11 @@
 #  Virtual☆Paradise — Seamless Fullscreen Outro Logout with Curtain Transition
 # ==============================================================================
 
+CURRENT_THEME="$(cat "$HOME/.local/state/omarchy/current/theme.name" 2>/dev/null || echo "")"
+if [[ "$CURRENT_THEME" != "virtual-paradise" ]]; then
+  exec /usr/bin/omarchy-system-logout "$@"
+fi
+
 # 1. Launch Cyberpunk glitch transition on overlay layer
 if command -v quickshell &>/dev/null && [[ -f "$HOME/.local/bin/curtain_transition.qml" ]]; then
   CURTAIN_LAYER="overlay" quickshell -p "$HOME/.local/bin/curtain_transition.qml" >/dev/null 2>&1 &

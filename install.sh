@@ -333,29 +333,82 @@ cat << 'EOF' > "$CONFIG_DIR/omarchy/extensions/paradise.json"
     "label": "Toggle Cooler Boost",
     "description": "Turn fan cooling on/off",
     "action": "bash -c ~/.local/bin/toggle_cooler_boost.sh"
+  },
+  "paradise.agent": {
+    "icon": "󰚩",
+    "label": "Paradise Local Agent",
+    "description": "Autonomous offline local AI pair-programmer (Qwen 2.5 Coder)",
+    "action": "ghostty -e ~/.local/bin/paradise-agent"
   }
 }
 EOF
 log_sub "Installed Quick Actions menu extensions"
 
 # ------------------------------------------------------------------------------
-# 5. Install Hyprland Look'n'Feel & Keybindings
+# 5. Configure Hyprland Add-on Rules & Keybindings (Non-destructive)
 # ------------------------------------------------------------------------------
-log_step "5" "$TOTAL_STEPS" "Installing Hyprland look'n'feel, bindings, input & autostart configs..."
-if [[ -d "$REPO_DIR/hypr" ]]; then
-  for file in "$REPO_DIR"/hypr/*.lua; do
-    if [[ -f "$file" ]]; then
-      base=$(basename "$file")
-      if [[ -f "$CONFIG_DIR/hypr/$base" ]] && [[ ! -f "$CONFIG_DIR/hypr/$base.bak" ]]; then
-        cp "$CONFIG_DIR/hypr/$base" "$CONFIG_DIR/hypr/$base.bak.$BACKUP_TIMESTAMP"
-      fi
-      cp "$file" "$CONFIG_DIR/hypr/$base"
-    fi
-  done
-  log_sub "Installed Hyprland Lua configurations"
+log_step "5" "$TOTAL_STEPS" "Configuring Hyprland add-on rules, shortcuts & overlays..."
+
+# 5.1 Initialize user hardware configs ONLY if missing (never overwrite existing user hardware settings)
+if [[ ! -f "$CONFIG_DIR/hypr/monitors.lua" && -f "$REPO_DIR/hypr/monitors.lua" ]]; then
+  cp "$REPO_DIR/hypr/monitors.lua" "$CONFIG_DIR/hypr/monitors.lua"
+  log_sub "Initialized default display configuration"
+fi
+if [[ ! -f "$CONFIG_DIR/hypr/input.lua" && -f "$REPO_DIR/hypr/input.lua" ]]; then
+  cp "$REPO_DIR/hypr/input.lua" "$CONFIG_DIR/hypr/input.lua"
+  log_sub "Initialized default input configuration"
 fi
 
-if [[ -f "$REPO_DIR/hypr/hyprland.conf" ]]; then
+# 5.2 Autostart: ensure live wallpaper hook is present without clobbering existing autostart
+if [[ -f "$CONFIG_DIR/hypr/autostart.lua" ]]; then
+  if ! grep -q "toggle_live_wallpaper.sh" "$CONFIG_DIR/hypr/autostart.lua"; then
+    echo 'o.launch_on_start("~/.local/bin/toggle_live_wallpaper.sh init")' >> "$CONFIG_DIR/hypr/autostart.lua"
+    log_sub "Hooked live wallpaper to ~/.config/hypr/autostart.lua"
+  fi
+elif [[ -f "$REPO_DIR/hypr/autostart.lua" ]]; then
+  cp "$REPO_DIR/hypr/autostart.lua" "$CONFIG_DIR/hypr/autostart.lua"
+fi
+
+# 5.3 Keybindings: append Virtual Paradise shortcuts cleanly if missing
+if [[ -f "$CONFIG_DIR/hypr/bindings.lua" ]]; then
+  if ! grep -q "toggle_live_wallpaper" "$CONFIG_DIR/hypr/bindings.lua"; then
+    cat << 'EOF' >> "$CONFIG_DIR/hypr/bindings.lua"
+
+-- ==============================================================================
+--  Virtual☆Paradise Add-on Shortcuts
+-- ==============================================================================
+o.bind("SUPER + Q", "Rice Layout", "~/.local/bin/rice_layout.sh")
+o.bind("SUPER + ALT + UP", "Toggle Live Wallpaper", "~/.local/bin/toggle_live_wallpaper.sh")
+o.bind("SUPER + ALT + RIGHT", "Next Live Wallpaper", "~/.local/bin/toggle_live_wallpaper.sh next")
+o.bind("SUPER + ALT + LEFT", "Prev Live Wallpaper", "~/.local/bin/toggle_live_wallpaper.sh prev")
+o.bind("SUPER + C", "Cooler Boost", "~/.local/bin/toggle_cooler_boost.sh")
+o.bind("SUPER + \\", "Cyber Matrix Rain", "ghostty -e ~/.local/bin/virtual_matrix")
+EOF
+    log_sub "Appended Virtual Paradise shortcuts to ~/.config/hypr/bindings.lua"
+  fi
+elif [[ -f "$REPO_DIR/hypr/bindings.lua" ]]; then
+  cp "$REPO_DIR/hypr/bindings.lua" "$CONFIG_DIR/hypr/bindings.lua"
+fi
+
+# 5.4 Look'n'feel & Window Rules (non-destructive)
+if [[ ! -f "$CONFIG_DIR/hypr/looknfeel.lua" && -f "$REPO_DIR/hypr/looknfeel.lua" ]]; then
+  cp "$REPO_DIR/hypr/looknfeel.lua" "$CONFIG_DIR/hypr/looknfeel.lua"
+fi
+
+if [[ -f "$CONFIG_DIR/hypr/hyprland.lua" ]]; then
+  if ! grep -q "Btop Monitor" "$CONFIG_DIR/hypr/hyprland.lua"; then
+    cat << 'EOF' >> "$CONFIG_DIR/hypr/hyprland.lua"
+
+-- Virtual Paradise Add-on Window Rules
+o.window({ initial_title = "Btop Monitor" }, { float = true, size = { 1050, 650 }, center = true })
+o.window({ title = "Btop Monitor" }, { float = true, size = { 1050, 650 }, center = true })
+o.window({ initial_title = "Voxtype Config" }, { float = true, size = { 880, 580 }, center = true })
+o.window({ title = "Voxtype Config" }, { float = true, size = { 880, 580 }, center = true })
+EOF
+  fi
+fi
+
+if [[ -f "$REPO_DIR/hypr/hyprland.conf" && ! -f "$CONFIG_DIR/hypr/hyprland.conf" ]]; then
   cp "$REPO_DIR/hypr/hyprland.conf" "$CONFIG_DIR/hypr/hyprland.conf" 2>/dev/null || true
 fi
 if [[ -f "$REPO_DIR/hypr/hyprlock.conf" ]]; then
@@ -369,11 +422,16 @@ fi
 # 6. Install Helper Scripts & Binaries
 # ------------------------------------------------------------------------------
 log_step "6" "$TOTAL_STEPS" "Installing binaries & CLI helper tools to $LOCAL_BIN..."
+# Ensure Omarchy default agent is never shadowed
+rm -f "$LOCAL_BIN/omarchy-agent" 2>/dev/null || true
+
 if [[ -d "$REPO_DIR/bin" ]]; then
   cp -r "$REPO_DIR"/bin/* "$LOCAL_BIN/"
   chmod +x "$LOCAL_BIN"/* 2>/dev/null || true
   ln -nsf "$LOCAL_BIN/paradise_agent.py" "$LOCAL_BIN/paradise-agent" 2>/dev/null || true
   ln -nsf "$LOCAL_BIN/paradise_agent.py" "$LOCAL_BIN/offline-agent" 2>/dev/null || true
+  ln -nsf "$LOCAL_BIN/paradise_agent.py" "$LOCAL_BIN/agy-offline" 2>/dev/null || true
+  ln -nsf "$LOCAL_BIN/paradise_agent.py" "$LOCAL_BIN/agy-local" 2>/dev/null || true
   log_sub "Installed helper tools (rice_layout, momoisay, toggle_live_wallpaper, logout_splash, paradise-agent, etc.)"
 fi
 
@@ -468,6 +526,9 @@ if [[ "$THEME_NAME" == "virtual-paradise" ]]; then
   if [[ -x "$HOME/.local/bin/toggle_live_wallpaper.sh" ]]; then
     (sleep 0.3; "$HOME/.local/bin/toggle_live_wallpaper.sh" init >/dev/null 2>&1 &)
   fi
+else
+  # Cleanly deactivate Virtual Paradise live video wallpaper when another theme is selected
+  pkill -f mpvpaper 2>/dev/null || true
 fi
 EOF
 chmod +x "$CONFIG_DIR/omarchy/hooks/theme-set.d/virtual-paradise.sh"
@@ -487,13 +548,28 @@ fi
 # ------------------------------------------------------------------------------
 log_step "10" "$TOTAL_STEPS" "Configuring shell environment, Search☆Hub, aliases & error shake hooks..."
 
-# Synchronize curated zshrc if available
+# Synchronize curated zshrc non-destructively
 if [[ -f "$REPO_DIR/shell/zshrc" ]]; then
-  if [[ -f "$HOME/.zshrc" ]] && [[ ! -f "$HOME/.zshrc.bak" ]]; then
-    cp "$HOME/.zshrc" "$HOME/.zshrc.bak.$BACKUP_TIMESTAMP"
+  if [[ ! -f "$HOME/.zshrc" ]]; then
+    cp "$REPO_DIR/shell/zshrc" "$HOME/.zshrc"
+    log_sub "Initialized ~/.zshrc with Virtual☆Paradise shell configuration"
+  else
+    if ! grep -q "paradise-agent" "$HOME/.zshrc"; then
+      cat << 'EOF' >> "$HOME/.zshrc"
+
+# ==============================================================================
+#  Virtual☆Paradise Add-on Aliases & Integration
+# ==============================================================================
+alias pa="paradise-agent"
+alias agy="paradise-agent"
+alias offline-agent="paradise-agent"
+alias rice="$HOME/.local/bin/rice_layout.sh"
+alias matrix="$HOME/.local/bin/virtual_matrix.py"
+alias boost="$HOME/.local/bin/toggle_cooler_boost.sh"
+EOF
+      log_sub "Appended Virtual Paradise aliases to existing ~/.zshrc"
+    fi
   fi
-  cp "$REPO_DIR/shell/zshrc" "$HOME/.zshrc"
-  log_sub "Installed Virtual☆Paradise Cyberpunk ~/.zshrc with Search☆Hub"
 fi
 
 configure_shell_file() {

@@ -77,7 +77,7 @@ Unified terminal omnisearch with adaptive live preview:
 - **Auto-escalating model tiers:** starts on the smallest installed model (1.5B), automatically upgrades to 3B → 7B when tasks become too complex.
 - **Full tool belt:** read/write/edit files, run bash, grep/find codebase, system health diagnostics, session persistence, expert skills (Hyprland config, crash diagnosis).
 - **Local Intent Analysis panel:** shows the agent's decision reasoning, planned tool call, and telemetry inline before every action.
-- Accessible via: `paradise-agent` · `agy-offline` · `agy-local` · alias `a`
+- **Add-on coexistence:** Coexists seamlessly with Omarchy's official agent system. `omarchy agent` (or alias `a`) continues running your chosen default (Copilot, Claude, etc.), while Paradise Agent is instantly accessible via `paradise-agent` · `agy-offline` · alias `pa` / `agy`.
 
 ---
 
@@ -106,7 +106,8 @@ One-key fan cooling toggle with on-screen OSD notification.
 | `SUPER + CTRL + L` | Lock Screen |
 | `f` *(terminal)* | Search☆Hub |
 | `ffa` *(terminal)* | Fastfetch with Anime Braille logo |
-| `a` *(terminal)* | Offline AI Agent |
+| `a` *(terminal)* | Omarchy Default Agent (`copilot`, `claude`, etc.) |
+| `pa` *(terminal)* | Paradise Local Offline AI Agent (`paradise-agent`) |
 
 ---
 
@@ -166,7 +167,6 @@ omarchy-virtual-paradise/
 │   ├── memory_detail_notify.sh   RAM desktop notification
 │   ├── hypr_window_error_shake.sh    Error shake hook
 │   ├── hypr_window_error_restore.sh  Error border restore
-│   ├── omarchy-agent             Agent router entry point
 │   ├── omarchy-launch-terminal   Terminal launcher
 │   ├── omarchy-system-logout     Animated logout wrapper
 │   ├── omarchy-system-reboot     Animated reboot wrapper
