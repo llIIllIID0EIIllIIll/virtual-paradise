@@ -34,14 +34,110 @@ DEFAULT_MODEL = os.environ.get("PARADISE_AGENT_MODEL", "qwen2.5-coder:3b")
 EXECUTION_MODE = "Auto-accept"
 SHOW_THINKING = True
 
-# Cyberpunk Palette Constants
-CYAN = "#00f5d4"    # Neon Miku Cyan
-GREEN = "#00ff88"   # Matrix Green
-PINK = "#ffb7d5"    # Sakura Pink
-PURPLE = "#b464ff"  # Neon Violet
-YELLOW = "#ffe066"  # Cyberpunk Amber
-RED = "#ff5287"     # Glitch Crimson
-MUTED = "#708090"   # Terminal Slate
+# --- Dynamic Omarchy Theme Engine ---
+def hex_to_rgb(hex_str: str) -> Tuple[int, int, int]:
+    hex_str = hex_str.lstrip("#")
+    if len(hex_str) == 3:
+        hex_str = "".join([c*2 for c in hex_str])
+    r = int(hex_str[0:2], 16)
+    g = int(hex_str[2:4], 16)
+    b = int(hex_str[4:6], 16)
+    return (r, g, b)
+
+class AgentTheme:
+    def __init__(self):
+        self.theme_name = "virtual-paradise"
+        self.CYAN = "#00f5d4"
+        self.GREEN = "#00ff88"
+        self.PINK = "#ffb7d5"
+        self.PURPLE = "#b464ff"
+        self.YELLOW = "#ffe066"
+        self.RED = "#ff5287"
+        self.MUTED = "#708090"
+        self.BG = "#0f111a"
+        self.BG_LIGHT = "#12151e"
+        self.FG = "#eafbfa"
+        self.RGB_START = (0, 245, 212)
+        self.RGB_MID = (0, 255, 136)
+        self.RGB_END = (255, 183, 213)
+        self.refresh()
+
+    def refresh(self):
+        theme_file = os.path.expanduser("~/.local/state/omarchy/current/theme.name")
+        active = ""
+        if os.path.exists(theme_file):
+            try:
+                with open(theme_file, "r") as f:
+                    active = f.read().strip()
+            except Exception:
+                pass
+
+        self.theme_name = active or "virtual-paradise"
+
+        if self.theme_name == "virtual-paradise" or not active:
+            self.CYAN = "#00f5d4"
+            self.GREEN = "#00ff88"
+            self.PINK = "#ffb7d5"
+            self.PURPLE = "#b464ff"
+            self.YELLOW = "#ffe066"
+            self.RED = "#ff5287"
+            self.MUTED = "#708090"
+            self.BG = "#0f111a"
+            self.BG_LIGHT = "#12151e"
+            self.FG = "#eafbfa"
+            self.RGB_START = (0, 245, 212)
+            self.RGB_MID = (0, 255, 136)
+            self.RGB_END = (255, 183, 213)
+            return
+
+        colors_file = os.path.expanduser("~/.local/state/omarchy/current/theme/colors.toml")
+        colors = {}
+        if os.path.exists(colors_file):
+            try:
+                with open(colors_file, "r") as f:
+                    for line in f:
+                        m = re.match(r'^\s*([a-zA-Z0-9_]+)\s*=\s*"([^"]+)"', line)
+                        if m:
+                            colors[m.group(1)] = m.group(2)
+            except Exception:
+                pass
+
+        self.CYAN = colors.get("accent", "#89b4fa")
+        self.GREEN = colors.get("green", colors.get("cyan", self.CYAN))
+        self.PINK = colors.get("magenta", colors.get("yellow", self.CYAN))
+        self.PURPLE = colors.get("blue", self.CYAN)
+        self.YELLOW = colors.get("yellow", "#f9e2af")
+        self.RED = colors.get("red", "#ff5287")
+        self.BG = colors.get("background", "#1e1e2e")
+        self.FG = colors.get("foreground", "#cdd6f4")
+        self.MUTED = colors.get("comment", "#6c7086")
+        self.BG_LIGHT = colors.get("selection", "#2a2b3c")
+
+        self.RGB_START = hex_to_rgb(self.CYAN)
+        self.RGB_MID = hex_to_rgb(self.GREEN)
+        self.RGB_END = hex_to_rgb(self.PINK)
+
+THEME = AgentTheme()
+
+# Global Color Bindings
+CYAN = THEME.CYAN
+GREEN = THEME.GREEN
+PINK = THEME.PINK
+PURPLE = THEME.PURPLE
+YELLOW = THEME.YELLOW
+RED = THEME.RED
+MUTED = THEME.MUTED
+
+def sync_theme_globals():
+    global CYAN, GREEN, PINK, PURPLE, YELLOW, RED, MUTED
+    THEME.refresh()
+    CYAN = THEME.CYAN
+    GREEN = THEME.GREEN
+    PINK = THEME.PINK
+    PURPLE = THEME.PURPLE
+    YELLOW = THEME.YELLOW
+    RED = THEME.RED
+    MUTED = THEME.MUTED
 
 # Prompt Toolkit Interactive Engine (Dropdown Autocomplete, TUI Grid Menu, Mouse & Status)
 try:
@@ -333,8 +429,8 @@ def render_restored_session(messages: List[Dict[str, Any]]):
             raw_c = m.get("content", "")
             clean_c = raw_c.split("[LANGUAGE MANDATE")[0].strip()
             attached_match = re.findall(r'\[ATTACHED FILE:\s*(.*?)\]', clean_c)
-            clean_prompt = re.sub(r'\[ATTACHED FILE:.*?\].*?\[END ATTACHED FILE\]', '', clean_c, flags=re.DOTALL).strip()
-            console.print(f"\n\033[38;2;0;245;212m\033[1myou ❯\033[0m {clean_prompt}")
+            r, g, b = THEME.RGB_START
+            console.print(f"\n\033[38;2;{r};{g};{b}m\033[1myou ❯\033[0m {clean_prompt}")
             for att in attached_match:
                 console.print(f"  [dim {CYAN}]📎 Attached:[/] [bold {PINK}]{att}[/]")
 
@@ -499,11 +595,11 @@ def run_tui_resume_picker() -> Optional[Tuple[str, List[Dict[str, Any]], str]]:
         ]
 
         picker_style = Style.from_dict({
-            'frame.border': '#00f5d4 bold',
-            'frame.label': '#00f5d4 bold',
-            'button': 'bg:#12151e fg:#ffffff',
-            'button.focused': 'bg:#00f5d4 fg:#0f111a bold',
-            'label': 'fg:#ffb7d5',
+            'frame.border': f'{THEME.CYAN} bold',
+            'frame.label': f'{THEME.CYAN} bold',
+            'button': f'bg:{THEME.BG_LIGHT} fg:{THEME.FG}',
+            'button.focused': f'bg:{THEME.CYAN} fg:{THEME.BG} bold',
+            'label': f'fg:{THEME.PINK}',
         })
 
         container = Frame(
@@ -650,11 +746,11 @@ def run_tui_model_picker(installed: List[str], current_model: str) -> Optional[s
     buttons.append(Button(text="❌ Cancel", handler=on_cancel, width=36))
 
     tui_style = Style.from_dict({
-        'frame.border': '#00f5d4 bold',
-        'frame.label': '#00f5d4 bold',
-        'button': 'bg:#12151e fg:#ffffff',
-        'button.focused': 'bg:#00f5d4 fg:#0f111a bold',
-        'label': 'fg:#ffb7d5',
+        'frame.border': f'{THEME.CYAN} bold',
+        'frame.label': f'{THEME.CYAN} bold',
+        'button': f'bg:{THEME.BG_LIGHT} fg:{THEME.FG}',
+        'button.focused': f'bg:{THEME.CYAN} fg:{THEME.BG} bold',
+        'label': f'fg:{THEME.PINK}',
     })
 
     container = Frame(
@@ -738,11 +834,11 @@ def run_tui_mode_picker(current_mode: str) -> Optional[str]:
     ]
 
     tui_style = Style.from_dict({
-        'frame.border': '#ffe066 bold',
-        'frame.label': '#ffe066 bold',
-        'button': 'bg:#12151e fg:#ffffff',
-        'button.focused': 'bg:#ffe066 fg:#0f111a bold',
-        'label': 'fg:#ffb7d5',
+        'frame.border': f'{THEME.YELLOW} bold',
+        'frame.label': f'{THEME.YELLOW} bold',
+        'button': f'bg:{THEME.BG_LIGHT} fg:{THEME.FG}',
+        'button.focused': f'bg:{THEME.YELLOW} fg:{THEME.BG} bold',
+        'label': f'fg:{THEME.PINK}',
     })
 
     container = Frame(
@@ -870,11 +966,11 @@ def run_tui_command_menu() -> Optional[str]:
     grid_rows = [VSplit(row, padding=1) for row in grid]
 
     menu_style = Style.from_dict({
-        'frame.border': '#00f5d4 bold',
-        'frame.label': '#00f5d4 bold',
-        'button': 'bg:#12151e fg:#ffffff',
-        'button.focused': 'bg:#00f5d4 fg:#0f111a bold',
-        'label': 'fg:#ffb7d5',
+        'frame.border': f'{THEME.CYAN} bold',
+        'frame.label': f'{THEME.CYAN} bold',
+        'button': f'bg:{THEME.BG_LIGHT} fg:{THEME.FG}',
+        'button.focused': f'bg:{THEME.CYAN} fg:{THEME.BG} bold',
+        'label': f'fg:{THEME.PINK}',
     })
 
     container = Frame(
@@ -2308,11 +2404,10 @@ def get_banner_art() -> str:
         " ╚████╔╝ ██║██║  ██║   ██║   ╚██████╔╝██║  ██║███████╗    ██║     ██║  ██║██║  ██║██║  ██║██████╔╝██║███████║███████╗",
         "  ╚═══╝  ╚═╝╚═╝  ╚═╝   ╚═╝    ╚═════╝ ╚═╝  ╚═╝╚══════╝    ╚═╝     ╚═╝  ╚═╝╚═╝  ╚═╝╚═╝  ╚═╝╚═════╝ ╚═╝╚══════╝╚══════╝"
     ]
-    # Signature Virtual☆Paradise 40/20/40 Palette:
-    # 40% Miku Cyan (#00f5d4) -> 20% Cyber Green (#00ff88) -> 40% Sakura Pink (#ffb7d5)
-    c_cyan  = (0, 245, 212)
-    c_green = (0, 255, 136)
-    c_pink  = (255, 183, 213)
+    sync_theme_globals()
+    c_cyan  = THEME.RGB_START
+    c_green = THEME.RGB_MID
+    c_pink  = THEME.RGB_END
 
     h = len(raw_lines)
     w = max(len(l) for l in raw_lines)
@@ -2353,9 +2448,11 @@ def get_banner_art() -> str:
     return "\n".join(formatted_banner)
 
 def print_banner(model_name: str = "", reason: str = ""):
-    """Renders Cyberpunk Authentic Diagonal Gradient Banner."""
+    """Renders Authentic Diagonal Gradient Banner adapted to current theme."""
     art_text = get_banner_art()
-    print(f"\n{art_text}\n")
+    theme_sub = f" [dim]•[/] [bold {PINK}]{THEME.theme_name.capitalize()} Theme[/]" if THEME.theme_name != "virtual-paradise" else ""
+    print(f"\n{art_text}")
+    console.print(f"  [bold {CYAN}]Offline Autonomous Diagnostic & Coding Assistant[/]{theme_sub}\n")
 
 def print_intent_analysis(
     step: int,
@@ -2427,7 +2524,7 @@ def print_intent_analysis(
 
     console.print(Panel(
         "\n".join(body_lines),
-        title=f"[bold #00f5d4]⚡ Local Intent Analysis (Step {step})[/]",
+        title=f"[bold {CYAN}]⚡ Local Intent Analysis (Step {step})[/]",
         border_style=CYAN,
         box=box.ROUNDED,
         padding=(0, 1)
@@ -2564,7 +2661,7 @@ def _handle_user_turn_inner(user_text: str, messages: List[Dict[str, Any]], mode
                     f"[bold {YELLOW}]Model execution error on current tier:[/] [bold {RED}]{model}[/]\n"
                     f"[bold {CYAN}]Auto-Escalating to higher tier:[/] [bold {GREEN}]{higher}[/]\n"
                     f"[dim]Continuing task execution with enhanced reasoning capacity...[/]",
-                    title="🚀 [bold #00f5d4]Autonomous Model Tier Escalation[/]",
+                    title=f"🚀 [bold {CYAN}]Autonomous Model Tier Escalation[/]",
                     border_style=CYAN,
                     box=box.ROUNDED,
                     padding=(0, 1)
@@ -2947,7 +3044,7 @@ def _handle_user_turn_inner(user_text: str, messages: List[Dict[str, Any]], mode
                         f"[bold {YELLOW}]Task encountered repeated errors on tier:[/] [bold {RED}]{model}[/]\n"
                         f"[bold {CYAN}]Auto-Escalating to higher tier:[/] [bold {GREEN}]{higher}[/]\n"
                         f"[dim]Upgrading model intelligence to diagnose and resolve errors...[/]",
-                        title="🚀 [bold #00f5d4]Autonomous Model Tier Escalation[/]",
+                        title=f"🚀 [bold {CYAN}]Autonomous Model Tier Escalation[/]",
                         border_style=CYAN,
                         box=box.ROUNDED,
                         padding=(0, 1)
@@ -3003,7 +3100,7 @@ def _handle_user_turn_inner(user_text: str, messages: List[Dict[str, Any]], mode
                     f"[bold {YELLOW}]Model admitted difficulty solving task on tier:[/] [bold {RED}]{model}[/]\n"
                     f"[bold {CYAN}]Auto-Escalating to higher tier:[/] [bold {GREEN}]{higher}[/]\n"
                     f"[dim]Re-evaluating with higher capability model...[/]",
-                    title="🚀 [bold #00f5d4]Autonomous Model Tier Escalation[/]",
+                    title=f"🚀 [bold {CYAN}]Autonomous Model Tier Escalation[/]",
                     border_style=CYAN,
                     box=box.ROUNDED,
                     padding=(0, 1)
@@ -3080,13 +3177,13 @@ def agent_loop(initial_prompt: Optional[str] = None, requested_model: Optional[s
     prompt_session = None
     if HAS_PROMPT_TOOLKIT:
         prompt_style = Style.from_dict({
-            'bottom-toolbar': 'bg:#0f111a fg:#708090',
-            'completion-menu.completion': 'bg:#12151e #00f5d4',
-            'completion-menu.completion.current': 'bg:#00f5d4 #0f111a bold',
-            'completion-menu.meta.completion': 'bg:#1a1c26 #ffb7d5',
-            'completion-menu.meta.completion.current': 'bg:#00f5d4 #1a1c26 bold',
-            'scrollbar.background': 'bg:#0f111a',
-            'scrollbar.button': 'bg:#00ff88',
+            'bottom-toolbar': f'bg:{THEME.BG} fg:{THEME.MUTED}',
+            'completion-menu.completion': f'bg:{THEME.BG_LIGHT} {THEME.CYAN}',
+            'completion-menu.completion.current': f'bg:{THEME.CYAN} {THEME.BG} bold',
+            'completion-menu.meta.completion': f'bg:{THEME.BG} {THEME.PINK}',
+            'completion-menu.meta.completion.current': f'bg:{THEME.CYAN} {THEME.BG} bold',
+            'scrollbar.background': f'bg:{THEME.BG}',
+            'scrollbar.button': f'bg:{THEME.GREEN}',
         })
         history_file = os.path.expanduser("~/.local/share/paradise-agent/history")
         os.makedirs(os.path.dirname(history_file), exist_ok=True)
@@ -3156,11 +3253,14 @@ def agent_loop(initial_prompt: Optional[str] = None, requested_model: Optional[s
 
     while True:
         try:
+            sync_theme_globals()
             print_prompt_status(model)
+            r, g, b = THEME.RGB_START
+            prompt_tag = f"\033[38;2;{r};{g};{b}m\033[1myou ❯\033[0m "
             if prompt_session:
-                user_input = prompt_session.prompt(ANSI("\033[38;2;0;245;212m\033[1myou ❯\033[0m ")).strip()
+                user_input = prompt_session.prompt(ANSI(prompt_tag)).strip()
             else:
-                user_input = input(f"\n\033[38;2;0;245;212m\033[1myou ❯\033[0m ").strip()
+                user_input = input(f"\n{prompt_tag}").strip()
             last_sigint_time["time"] = 0.0
         except KeyboardInterrupt:
             now = time.time()
