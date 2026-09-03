@@ -291,15 +291,18 @@ fi
 # ------------------------------------------------------------------------------
 # 4. Install Status Bar Layout (shell.json) & Menu Extensions
 # ------------------------------------------------------------------------------
-log_step "4" "$TOTAL_STEPS" "Installing status bar layout (transparency off) & menu extensions..."
-if [[ -f "$CONFIG_DIR/omarchy/shell.json" ]] && [[ ! -f "$CONFIG_DIR/omarchy/shell.json.bak" ]]; then
-  cp "$CONFIG_DIR/omarchy/shell.json" "$CONFIG_DIR/omarchy/shell.json.bak.$BACKUP_TIMESTAMP"
+log_step "4" "$TOTAL_STEPS" "Installing status bar layout & menu extensions..."
+
+# Preserve canonical default Omarchy shell layout as shell-default.json
+if [[ -f "/usr/share/omarchy/config/omarchy/shell.json" && ! -f "$CONFIG_DIR/omarchy/shell-default.json" ]]; then
+  cp "/usr/share/omarchy/config/omarchy/shell.json" "$CONFIG_DIR/omarchy/shell-default.json"
 fi
 
 if [[ -f "$REPO_DIR/shell/shell.json" ]]; then
-  # Inject calibrated username
-  sed "s/__USER__/${CURRENT_USER}/g" "$REPO_DIR/shell/shell.json" > "$CONFIG_DIR/omarchy/shell.json"
-  log_sub "Synchronized ~/.config/omarchy/shell.json with calibrated user IDs"
+  # Save Virtual Paradise bar layout as shell-paradise.json
+  sed "s/__USER__/${CURRENT_USER}/g" "$REPO_DIR/shell/shell.json" > "$CONFIG_DIR/omarchy/shell-paradise.json"
+  cp "$CONFIG_DIR/omarchy/shell-paradise.json" "$CONFIG_DIR/omarchy/shell.json"
+  log_sub "Synchronized ~/.config/omarchy/shell-paradise.json with calibrated user IDs"
 fi
 
 cat << 'EOF' > "$CONFIG_DIR/omarchy/extensions/paradise.json"
@@ -520,6 +523,12 @@ cat << 'EOF' > "$CONFIG_DIR/omarchy/hooks/theme-set.d/virtual-paradise.sh"
 #!/bin/bash
 THEME_NAME="$1"
 if [[ "$THEME_NAME" == "virtual-paradise" ]]; then
+  # 1. Restore Virtual Paradise custom bar layout (with live indicators & Miku lock)
+  if [[ -f "$HOME/.config/omarchy/shell-paradise.json" ]]; then
+    cp "$HOME/.config/omarchy/shell-paradise.json" "$HOME/.config/omarchy/shell.json"
+    omarchy restart shell >/dev/null 2>&1 &
+  fi
+
   if [[ -f "$HOME/.config/omarchy/themes/virtual-paradise/install.sh" ]]; then
     bash "$HOME/.config/omarchy/themes/virtual-paradise/install.sh" --hook >/dev/null 2>&1 &
   fi
@@ -527,8 +536,14 @@ if [[ "$THEME_NAME" == "virtual-paradise" ]]; then
     (sleep 0.3; "$HOME/.local/bin/toggle_live_wallpaper.sh" init >/dev/null 2>&1 &)
   fi
 else
-  # Cleanly deactivate Virtual Paradise live video wallpaper when another theme is selected
+  # 1. Cleanly stop live video wallpaper so new theme background displays properly
   pkill -f mpvpaper 2>/dev/null || true
+
+  # 2. RESTORE CANONICAL DEFAULT OMARCHY BAR LAYOUT (pure stock plugins & active theme styling)
+  if [[ -f "$HOME/.config/omarchy/shell-default.json" ]]; then
+    cp "$HOME/.config/omarchy/shell-default.json" "$HOME/.config/omarchy/shell.json"
+    omarchy restart shell >/dev/null 2>&1 &
+  fi
 fi
 EOF
 chmod +x "$CONFIG_DIR/omarchy/hooks/theme-set.d/virtual-paradise.sh"

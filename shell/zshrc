@@ -1006,9 +1006,89 @@ _RESIZE_TIMER_PID=""              # PID of debounce timer process
 _RESIZE_DELAY_PID=""              # PID of recovery delay timer process
 export ZLE_RPROMPT_INDENT=1       # Right prompt indentation margin from screen border
 
-# --- 2. Core Palette Tokens (Virtual☆Paradise) ---
-C_ACCENT="%F{#00f5d4}"    # Miku Cyan: Primary accents, arrows, active halos
-C_DATA="%F{#eafbfa}"      # Mint / Crisp White: High-contrast data text
+# --- 2. Dynamic Omarchy Theme Palette Tokens ---
+_CURRENT_LOADED_THEME=""
+
+_update_omarchy_theme_palette() {
+  local theme_file="$HOME/.local/state/omarchy/current/theme.name"
+  local current_theme=""
+  [[ -f "$theme_file" ]] && current_theme="$(<"$theme_file")"
+  [[ -z "$current_theme" ]] && current_theme="virtual-paradise"
+
+  if [[ "$current_theme" == "$_CURRENT_LOADED_THEME" ]]; then
+    return 0
+  fi
+  _CURRENT_LOADED_THEME="$current_theme"
+
+  local colors_file="$HOME/.local/state/omarchy/current/theme/colors.toml"
+  if [[ "$current_theme" == "virtual-paradise" ]]; then
+    THEME_ACCENT="#00f5d4"
+    THEME_BG="#07080d"
+    THEME_FG="#eafbfa"
+    THEME_GREEN="#00ff88"
+    THEME_CYAN="#00f5d4"
+    THEME_MAGENTA="#ffb7d5"
+    THEME_PILL_START="#ffb7d5"
+    THEME_PILL_END="#00f5d4"
+    THEME_PILL_TEXT="#07080d"
+    THEME_DIR_START="#00ff88"
+    THEME_DIR_END="#00f5d4"
+    THEME_DIR_TEXT="#07080d"
+  elif [[ -f "$colors_file" ]]; then
+    THEME_ACCENT=$(command grep -E '^\s*accent\s*=' "$colors_file" | head -1 | sed -E 's/.*"([^"]+)".*/\1/')
+    THEME_BG=$(command grep -E '^\s*background\s*=' "$colors_file" | head -1 | sed -E 's/.*"([^"]+)".*/\1/')
+    THEME_FG=$(command grep -E '^\s*foreground\s*=' "$colors_file" | head -1 | sed -E 's/.*"([^"]+)".*/\1/')
+    THEME_GREEN=$(command grep -E '^\s*green\s*=' "$colors_file" | head -1 | sed -E 's/.*"([^"]+)".*/\1/')
+    THEME_CYAN=$(command grep -E '^\s*cyan\s*=' "$colors_file" | head -1 | sed -E 's/.*"([^"]+)".*/\1/')
+    THEME_MAGENTA=$(command grep -E '^\s*magenta\s*=' "$colors_file" | head -1 | sed -E 's/.*"([^"]+)".*/\1/')
+
+    : "${THEME_ACCENT:=#89b4fa}"
+    : "${THEME_BG:=#1e1e2e}"
+    : "${THEME_FG:=#cdd6f4}"
+    : "${THEME_GREEN:=#a6e3a1}"
+    : "${THEME_CYAN:=#94e2d5}"
+    : "${THEME_MAGENTA:=#f5c2e7}"
+
+    THEME_PILL_START="${THEME_MAGENTA}"
+    THEME_PILL_END="${THEME_ACCENT}"
+    THEME_PILL_TEXT="${THEME_BG}"
+    THEME_DIR_START="${THEME_GREEN}"
+    THEME_DIR_END="${THEME_ACCENT}"
+    THEME_DIR_TEXT="${THEME_BG}"
+  else
+    THEME_ACCENT="#89b4fa"
+    THEME_BG="#1e1e2e"
+    THEME_FG="#cdd6f4"
+    THEME_GREEN="#a6e3a1"
+    THEME_CYAN="#94e2d5"
+    THEME_MAGENTA="#f5c2e7"
+    THEME_PILL_START="#f5c2e7"
+    THEME_PILL_END="#89b4fa"
+    THEME_PILL_TEXT="#1e1e2e"
+    THEME_DIR_START="#a6e3a1"
+    THEME_DIR_END="#89b4fa"
+    THEME_DIR_TEXT="#1e1e2e"
+  fi
+
+  C_ACCENT="%F{${THEME_ACCENT}}"
+  C_DATA="%F{${THEME_FG}}"
+
+  if (( $+commands[fzf] )); then
+    export FZF_DEFAULT_OPTS="--height 40% --layout=reverse --border --color=\"fg:${THEME_FG},bg:-1,hl:${THEME_ACCENT},fg+:${THEME_GREEN},bg+:${THEME_BG},hl+:${THEME_GREEN},info:${THEME_CYAN},prompt:${THEME_ACCENT},pointer:${THEME_GREEN},marker:${THEME_MAGENTA},spinner:${THEME_GREEN},header:${THEME_MAGENTA},border:${THEME_ACCENT}\""
+  fi
+
+  if [[ -n "$ZSH_VERSION" ]]; then
+    ZSH_HIGHLIGHT_STYLES[command]="fg=${THEME_GREEN},bold"
+    ZSH_HIGHLIGHT_STYLES[alias]="fg=${THEME_ACCENT},bold"
+    ZSH_HIGHLIGHT_STYLES[function]="fg=${THEME_ACCENT},bold"
+    ZSH_HIGHLIGHT_STYLES[path]="fg=${THEME_CYAN},underline"
+    ZSH_HIGHLIGHT_STYLES[path_prefix]="fg=${THEME_CYAN}"
+    ZSH_HIGHLIGHT_STYLES[cursor]="bg=${THEME_ACCENT}"
+  fi
+}
+
+_update_omarchy_theme_palette
+
 C_ALERT="%F{#ff0055}"     # Neon Warning Red: Errors, root alerts, critical warnings
 C_DIM="%F{#7091a4}"       # Muted Slate: Subtle frame borders and separators
 C_RESET="%f%k"            # Reset ANSI foreground and background colors
@@ -1411,6 +1491,7 @@ function precmd() {
   # Preserves accurate exit code for error badge rendering
   exit_status=$?
   _omarchy_error_border_hook "$exit_status"
+  _update_omarchy_theme_palette
 
   # If command execution timer is active
   if [ -n "$cmd_start" ]; then
@@ -1628,7 +1709,7 @@ function zsh_user_info() {
     elif [[ -n $SSH_CONNECTION ]]; then
       zsh_make_gradient_pill "#8b5cf6" "#06b6d4" "#ffffff" "${icon} ${expanded_name}"
     else
-      zsh_make_gradient_pill "#ffb7d5" "#00f5d4" "#07080d" "${icon} ${expanded_name}"
+      zsh_make_gradient_pill "${THEME_PILL_START:-#ffb7d5}" "${THEME_PILL_END:-#00f5d4}" "${THEME_PILL_TEXT:-#07080d}" "${icon} ${expanded_name}"
     fi
   else
     # Classic style
@@ -1659,7 +1740,7 @@ function zsh_dir_info() {
     if [[ ! -w . ]]; then
       zsh_make_gradient_pill "#ff0055" "#ff79a8" "#ffffff" "${I_DIR} ${expanded_path}${lock_str}"
     else
-      zsh_make_gradient_pill "#00ff88" "#00f5d4" "#07080d" "${I_DIR} ${expanded_path}${lock_str}"
+      zsh_make_gradient_pill "${THEME_DIR_START:-#00ff88}" "${THEME_DIR_END:-#00f5d4}" "${THEME_DIR_TEXT:-#07080d}" "${I_DIR} ${expanded_path}${lock_str}"
     fi
   else
     # Classic style
