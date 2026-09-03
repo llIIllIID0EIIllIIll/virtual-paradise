@@ -1,0 +1,225 @@
+{
+  "$schema": "https://github.com/fastfetch-cli/fastfetch/raw/dev/doc/json_schema.json",
+  "logo": {
+    "type": "file",
+    "source": "~/.config/fastfetch/logo.txt",
+    "padding": {
+      "top": 1,
+      "right": 4,
+      "left": 1
+    }
+  },
+  "display": {
+    "separator": ": ",
+    "color": {
+      "separator": "#00f5d4"
+    },
+    "showErrors": false,
+    "brightColor": true,
+    "disableLinewrap": true,
+    "stat": false,
+    "size": {
+      "binaryPrefix": "iec",
+      "ndigits": 2
+    },
+    "percent": {
+      "type": 3,
+      "ndigits": 0
+    },
+    "bar": {
+      "width": 8,
+      "char": {
+        "total": "-",
+        "elapsed": "\u25a0"
+      }
+    }
+  },
+  "modules": [
+    "break",
+    {
+      "type": "custom",
+      "format": "\u001b[38;2;112;145;164m\u250c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500Hardware\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2510\u001b[0m"
+    },
+    {
+      "type": "host",
+      "key": "\uf109 PC",
+      "keyColor": "#00f5d4",
+      "outputColor": "#eafbfa",
+      "format": "{name} ({version})"
+    },
+    {
+      "type": "cpu",
+      "key": "\u2502 \u251c\uf4bc",
+      "keyColor": "#00f5d4",
+      "outputColor": "#eafbfa",
+      "format": "{name} ({cores-logical}) @ {freq-max}"
+    },
+    {
+      "type": "gpu",
+      "key": "\u2502 \u251c\ue266",
+      "keyColor": "#00f5d4",
+      "outputColor": "#eafbfa",
+      "format": "{name}"
+    },
+    {
+      "type": "display",
+      "key": "\u2502 \u251c\udb84\udd04",
+      "keyColor": "#00f5d4",
+      "outputColor": "#eafbfa",
+      "compactType": "original-with-refresh-rate",
+      "preciseRefreshRate": false
+    },
+    {
+      "type": "disk",
+      "key": "\u2502 \u251c\udb80\udeca",
+      "keyColor": "#00f5d4",
+      "outputColor": "#eafbfa",
+      "folders": "/"
+    },
+    {
+      "type": "memory",
+      "key": "\u2502 \u251c\uefc5",
+      "keyColor": "#00f5d4",
+      "outputColor": "#eafbfa"
+    },
+    {
+      "type": "swap",
+      "key": "\u2502 \u251c\udb81\udce1",
+      "keyColor": "#00f5d4",
+      "outputColor": "#eafbfa"
+    },
+    {
+      "type": "battery",
+      "key": "\u2514 \u2514\uf240",
+      "keyColor": "#00f5d4",
+      "outputColor": "#eafbfa"
+    },
+    {
+      "type": "custom",
+      "format": "\u001b[38;2;112;145;164m\u2514\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2518\u001b[0m"
+    },
+    "break",
+    {
+      "type": "custom",
+      "format": "\u001b[38;2;112;145;164m\u250c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500Software\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2510\u001b[0m"
+    },
+    {
+      "type": "command",
+      "key": "\ue900 OS",
+      "keyColor": "#00ff88",
+      "outputColor": "#eafbfa",
+      "text": "version=$(omarchy-version 2>/dev/null || echo \"4.0\") && echo \"Omarchy $version (x86_64)\""
+    },
+    {
+      "type": "command",
+      "key": "\u2502 \u251c\udb81\udd2b",
+      "keyColor": "#00ff88",
+      "outputColor": "#eafbfa",
+      "text": "channel=$(omarchy-version-channel 2>/dev/null || echo \"stable\"); echo \"$channel\""
+    },
+    {
+      "type": "kernel",
+      "key": "\u2502 \u251c\uf013",
+      "keyColor": "#00ff88",
+      "outputColor": "#eafbfa"
+    },
+    {
+      "type": "wm",
+      "key": "\u2502 \u251c\uf488",
+      "keyColor": "#00ff88",
+      "outputColor": "#eafbfa"
+    },
+    {
+      "type": "terminal",
+      "key": "\u2502 \u251c\uf489",
+      "keyColor": "#00ff88",
+      "outputColor": "#eafbfa"
+    },
+    {
+      "type": "packages",
+      "key": "\u2502 \u251c\udb80\udfd6",
+      "keyColor": "#00ff88",
+      "outputColor": "#eafbfa"
+    },
+    {
+      "type": "command",
+      "key": "\u2502 \u251c\uf108",
+      "keyColor": "#00ff88",
+      "outputColor": "#eafbfa",
+      "text": "echo \"${SHELL##*/} $($SHELL --version 2>/dev/null | awk '{print $2}')\""
+    },
+    {
+      "type": "command",
+      "key": "\u2502 \u251c\udb83\ude0c",
+      "keyColor": "#00ff88",
+      "outputColor": "#eafbfa",
+      "text": "echo -e \"Virtual\u2606Paradise \u001b[38;2;0;245;212m\u25cf\u001b[38;2;0;255;136m\u25cf\u001b[38;2;255;183;213m\u25cf\u001b[38;2;255;0;85m\u25cf\u001b[38;2;139;92;246m\u25cf\u001b[38;2;6;182;212m\u25cf\u001b[38;2;255;212;59m\u25cf\u001b[38;2;234;251;250m\u25cf\""
+    },
+    {
+      "type": "terminalfont",
+      "key": "\u2514 \u2514\uf031",
+      "keyColor": "#00ff88",
+      "outputColor": "#eafbfa"
+    },
+    {
+      "type": "custom",
+      "format": "\u001b[38;2;112;145;164m\u2514\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2518\u001b[0m"
+    },
+    "break",
+    {
+      "type": "custom",
+      "format": "\u001b[38;2;112;145;164m\u250c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500Network & Telemetry\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2510\u001b[0m"
+    },
+    {
+      "type": "wifi",
+      "key": "\udb82\udd28 Wi-Fi",
+      "keyColor": "#ffb7d5",
+      "outputColor": "#eafbfa",
+      "format": "{ssid} ({signal-quality})"
+    },
+    {
+      "type": "localip",
+      "key": "\u2502 \u251c\uf1eb",
+      "keyColor": "#ffb7d5",
+      "outputColor": "#eafbfa",
+      "compact": true
+    },
+    {
+      "type": "publicip",
+      "key": "\u2502 \u251c\uf0ac",
+      "keyColor": "#ffb7d5",
+      "outputColor": "#eafbfa",
+      "timeout": 2000
+    },
+    {
+      "type": "media",
+      "key": "\u2502 \u251c\udb80\udf86",
+      "keyColor": "#ffb7d5",
+      "outputColor": "#eafbfa"
+    },
+    {
+      "type": "command",
+      "key": "\u2502 \u251c\udb86\udd9f",
+      "keyColor": "#ffb7d5",
+      "outputColor": "#eafbfa",
+      "text": "echo \"$(( ($(date +%s) - $(stat -c %W / 2>/dev/null || stat -c %Y /)) / 86400 )) days (Installed)\""
+    },
+    {
+      "type": "uptime",
+      "key": "\u2502 \u251c\udb86\uded0",
+      "keyColor": "#ffb7d5",
+      "outputColor": "#eafbfa"
+    },
+    {
+      "type": "datetime",
+      "key": "\u2514 \u2514\uf017",
+      "keyColor": "#ffb7d5",
+      "outputColor": "#eafbfa",
+      "format": "{hour-pretty}:{minute-pretty}:{second-pretty}  \u00b7  {day-pretty}/{month-pretty}/{year}"
+    },
+    {
+      "type": "custom",
+      "format": "\u001b[38;2;112;145;164m\u2514\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2518\u001b[0m"
+    }
+  ]
+}

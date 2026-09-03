@@ -435,6 +435,8 @@ if [[ -d "$REPO_DIR/bin" ]]; then
   ln -nsf "$LOCAL_BIN/paradise_agent.py" "$LOCAL_BIN/offline-agent" 2>/dev/null || true
   ln -nsf "$LOCAL_BIN/paradise_agent.py" "$LOCAL_BIN/agy-offline" 2>/dev/null || true
   ln -nsf "$LOCAL_BIN/paradise_agent.py" "$LOCAL_BIN/agy-local" 2>/dev/null || true
+  ln -nsf "$LOCAL_BIN/virtual_matrix.py" "$LOCAL_BIN/virtual_matrix" 2>/dev/null || true
+  chmod +x "$LOCAL_BIN/sync_cava_theme.py" "$LOCAL_BIN/virtual_matrix.py" 2>/dev/null || true
   log_sub "Installed helper tools (rice_layout, momoisay, toggle_live_wallpaper, logout_splash, paradise-agent, etc.)"
 fi
 
@@ -522,6 +524,12 @@ log_sub "Flattened hypr/ Omarchy-required files to theme root"
 cat << 'EOF' > "$CONFIG_DIR/omarchy/hooks/theme-set.d/virtual-paradise.sh"
 #!/bin/bash
 THEME_NAME="$1"
+
+# Sync Cava visualizer colors to the newly selected theme
+if [[ -x "$HOME/.local/bin/sync_cava_theme.py" ]]; then
+  python3 "$HOME/.local/bin/sync_cava_theme.py" "$THEME_NAME" >/dev/null 2>&1 &
+fi
+
 if [[ "$THEME_NAME" == "virtual-paradise" ]]; then
   # 1. Restore Virtual Paradise custom bar layout (with live indicators & Miku lock)
   if [[ -f "$HOME/.config/omarchy/shell-paradise.json" ]]; then
@@ -529,9 +537,17 @@ if [[ "$THEME_NAME" == "virtual-paradise" ]]; then
     omarchy restart shell >/dev/null 2>&1 &
   fi
 
+  # 2. Activate Virtual Paradise Fastfetch config
+  if [[ -f "$HOME/.config/fastfetch/virtual-paradise.jsonc" ]]; then
+    cp "$HOME/.config/fastfetch/virtual-paradise.jsonc" "$HOME/.config/fastfetch/config.jsonc"
+  fi
+
+  # 3. Re-trigger hook if installer is present
   if [[ -f "$HOME/.config/omarchy/themes/virtual-paradise/install.sh" ]]; then
     bash "$HOME/.config/omarchy/themes/virtual-paradise/install.sh" --hook >/dev/null 2>&1 &
   fi
+
+  # 4. Start live video wallpaper
   if [[ -x "$HOME/.local/bin/toggle_live_wallpaper.sh" ]]; then
     (sleep 0.3; "$HOME/.local/bin/toggle_live_wallpaper.sh" init >/dev/null 2>&1 &)
   fi
@@ -544,7 +560,13 @@ else
     cp "$HOME/.config/omarchy/shell-default.json" "$HOME/.config/omarchy/shell.json"
     omarchy restart shell >/dev/null 2>&1 &
   fi
+
+  # 3. Restore default Omarchy Fastfetch (Arch/Omarchy logo with native terminal colors)
+  rm -f "$HOME/.config/fastfetch/config.jsonc" 2>/dev/null || true
 fi
+
+# Reload compositor to apply the new active border and theme rules
+hyprctl reload >/dev/null 2>&1 &
 EOF
 chmod +x "$CONFIG_DIR/omarchy/hooks/theme-set.d/virtual-paradise.sh"
 log_sub "Theme assets & automatic synchronization hooks ready"

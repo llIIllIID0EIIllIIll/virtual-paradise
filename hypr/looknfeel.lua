@@ -5,16 +5,7 @@
 --                 https://wiki.hypr.land/Configuring/Advanced-and-Cool/Animations/
 -- ==============================================================================
 
-local activeBorderGradient = {
-  colors = { "rgba(00f5d4ee)", "rgba(00f5d4ee)", "rgba(00ff88dd)", "rgba(ffb7d5ee)", "rgba(ffb7d5ee)" },
-  angle = 45,
-}
-local inactiveBorderColor = "rgba(182833aa)"
-local activeNeonGlow = {
-  colors = { "rgba(00f5d448)", "rgba(00f5d448)", "rgba(00ff8838)", "rgba(ffb7d548)", "rgba(ffb7d548)" },
-  angle = 45,
-}
-local inactiveShadow = "rgba(00000099)"
+
 
 hl.config({
   -- 1. GENERAL WINDOW GEOMETRY & BORDERS
@@ -28,10 +19,6 @@ hl.config({
 
     -- Multi-stop neon border
     border_size = 2,
-    col = {
-      active_border = activeBorderGradient,
-      inactive_border = inactiveBorderColor,
-    },
 
     -- Easy window edge grabbing & resizing
     resize_on_border = true,
@@ -72,13 +59,13 @@ hl.config({
       popups_ignorealpha = 0.6,
     },
 
-    -- 3D Neon Glow Shadows
+    -- 3D Shadows
     shadow = {
       enabled = true,
-      range = 22,
+      range = 20,
       render_power = 3,
-      color = activeNeonGlow,
-      color_inactive = inactiveShadow,
+      color = "rgba(00000066)",
+      color_inactive = "rgba(00000044)",
       offset = "0 2",
     },
 
@@ -92,10 +79,6 @@ hl.config({
   -- 3. TABBED / GROUPED WINDOWS STYLING
   ------------------------------------------------------------------------------
   group = {
-    col = {
-      border_active = activeBorderGradient,
-      border_inactive = inactiveBorderColor,
-    },
     groupbar = {
       enabled = true,
       font_family = "sans-serif",

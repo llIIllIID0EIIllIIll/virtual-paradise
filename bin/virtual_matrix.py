@@ -8,6 +8,8 @@ Based on Unimatrix by William Mannard.
 
 import argparse
 import curses
+import os
+import re
 import sys
 import time
 from random import choice, randint
@@ -93,11 +95,59 @@ GRADIENT_STEPS = 32
 def lerp(c1, c2, t):
     return int(c1 + (c2 - c1) * t)
 
+def hex_to_curses_rgb(hex_str):
+    hex_str = hex_str.lstrip('#')
+    r = int(hex_str[0:2], 16)
+    g = int(hex_str[2:4], 16)
+    b = int(hex_str[4:6], 16)
+    return (int(r / 255.0 * 1000), int(g / 255.0 * 1000), int(b / 255.0 * 1000))
+
+def load_theme_gradient_colors():
+    theme_file = os.path.expanduser("~/.local/state/omarchy/current/theme.name")
+    active_theme = ""
+    if os.path.exists(theme_file):
+        try:
+            with open(theme_file, "r") as f:
+                active_theme = f.read().strip()
+        except Exception:
+            pass
+
+    if active_theme == "virtual-paradise" or not active_theme:
+        return (
+            (0, 960, 831),     # Miku Cyan (#00f5d4)
+            (0, 1000, 533),    # Hacker Green (#00ff88)
+            (1000, 717, 835),  # Sakura Pink (#ffb7d5)
+        )
+
+    colors_file = os.path.expanduser("~/.local/state/omarchy/current/theme/colors.toml")
+    colors = {}
+    if os.path.exists(colors_file):
+        try:
+            import re
+            with open(colors_file, "r") as f:
+                for line in f:
+                    m = re.match(r'^\s*([a-zA-Z0-9_]+)\s*=\s*"([^"]+)"', line)
+                    if m:
+                        colors[m.group(1)] = m.group(2)
+        except Exception:
+            pass
+
+    accent = colors.get("accent", "#89b4fa")
+    green = colors.get("green", colors.get("cyan", accent))
+    magenta = colors.get("magenta", colors.get("yellow", accent))
+
+    return (
+        hex_to_curses_rgb(accent),
+        hex_to_curses_rgb(green),
+        hex_to_curses_rgb(magenta),
+    )
+
+THEME_RGB1, THEME_RGB2, THEME_RGB3 = load_theme_gradient_colors()
+
 def get_gradient_rgb(ratio):
-    # 40% Miku Cyan -> 20% Hacker Green -> 40% Sakura Pink
-    r1, g1, b1 = (0, 960, 831)      # Miku Cyan (#00f5d4)
-    r2, g2, b2 = (0, 1000, 533)     # Hacker Green (#00ff88)
-    r3, g3, b3 = (1000, 717, 835)   # Sakura Pink (#ffb7d5)
+    r1, g1, b1 = THEME_RGB1
+    r2, g2, b2 = THEME_RGB2
+    r3, g3, b3 = THEME_RGB3
 
     if ratio <= 0.40:
         t = ratio / 0.40
