@@ -525,48 +525,47 @@ cat << 'EOF' > "$CONFIG_DIR/omarchy/hooks/theme-set.d/virtual-paradise.sh"
 #!/bin/bash
 THEME_NAME="$1"
 
-# Sync Cava visualizer colors to the newly selected theme
+# 1. Sync Cava visualizer colors to the newly selected theme
 if [[ -x "$HOME/.local/bin/sync_cava_theme.py" ]]; then
-  python3 "$HOME/.local/bin/sync_cava_theme.py" "$THEME_NAME" >/dev/null 2>&1 &
+  python3 "$HOME/.local/bin/sync_cava_theme.py" "$THEME_NAME" >/dev/null 2>&1 || true
 fi
 
+# 2. Theme-specific setup
 if [[ "$THEME_NAME" == "virtual-paradise" ]]; then
-  # 1. Restore Virtual Paradise custom bar layout (with live indicators & Miku lock)
-  if [[ -f "$HOME/.config/omarchy/shell-paradise.json" ]]; then
-    cp "$HOME/.config/omarchy/shell-paradise.json" "$HOME/.config/omarchy/shell.json"
-    omarchy restart shell >/dev/null 2>&1 &
-  fi
-
-  # 2. Activate Virtual Paradise Fastfetch config
+  # Activate Virtual Paradise Fastfetch config
   if [[ -f "$HOME/.config/fastfetch/virtual-paradise.jsonc" ]]; then
-    cp "$HOME/.config/fastfetch/virtual-paradise.jsonc" "$HOME/.config/fastfetch/config.jsonc"
+    cp "$HOME/.config/fastfetch/virtual-paradise.jsonc" "$HOME/.config/fastfetch/config.jsonc" 2>/dev/null || true
   fi
 
-  # 3. Re-trigger hook if installer is present
-  if [[ -f "$HOME/.config/omarchy/themes/virtual-paradise/install.sh" ]]; then
-    bash "$HOME/.config/omarchy/themes/virtual-paradise/install.sh" --hook >/dev/null 2>&1 &
+  # Apply Virtual Paradise Bar Layout only if it changed
+  if [[ -f "$HOME/.config/omarchy/shell-paradise.json" ]]; then
+    if ! cmp -s "$HOME/.config/omarchy/shell-paradise.json" "$HOME/.config/omarchy/shell.json" 2>/dev/null; then
+      cp "$HOME/.config/omarchy/shell-paradise.json" "$HOME/.config/omarchy/shell.json"
+      omarchy-restart-shell >/dev/null 2>&1 || true
+    fi
   fi
 
-  # 4. Start live video wallpaper
+  # Start live video wallpaper (only if not already running)
   if [[ -x "$HOME/.local/bin/toggle_live_wallpaper.sh" ]]; then
-    (sleep 0.3; "$HOME/.local/bin/toggle_live_wallpaper.sh" init >/dev/null 2>&1 &)
+    if ! pgrep -f mpvpaper >/dev/null 2>&1; then
+      "$HOME/.local/bin/toggle_live_wallpaper.sh" init >/dev/null 2>&1 || true
+    fi
   fi
 else
-  # 1. Cleanly stop live video wallpaper so new theme background displays properly
+  # Cleanly stop live video wallpaper so new theme background displays properly
   pkill -f mpvpaper 2>/dev/null || true
 
-  # 2. RESTORE CANONICAL DEFAULT OMARCHY BAR LAYOUT (pure stock plugins & active theme styling)
-  if [[ -f "$HOME/.config/omarchy/shell-default.json" ]]; then
-    cp "$HOME/.config/omarchy/shell-default.json" "$HOME/.config/omarchy/shell.json"
-    omarchy restart shell >/dev/null 2>&1 &
-  fi
-
-  # 3. Restore default Omarchy Fastfetch (Arch/Omarchy logo with native terminal colors)
+  # Restore default Fastfetch (Arch/Omarchy logo with native terminal colors)
   rm -f "$HOME/.config/fastfetch/config.jsonc" 2>/dev/null || true
-fi
 
-# Reload compositor to apply the new active border and theme rules
-hyprctl reload >/dev/null 2>&1 &
+  # Restore canonical default Omarchy Bar Layout only if it changed
+  if [[ -f "$HOME/.config/omarchy/shell-default.json" ]]; then
+    if ! cmp -s "$HOME/.config/omarchy/shell-default.json" "$HOME/.config/omarchy/shell.json" 2>/dev/null; then
+      cp "$HOME/.config/omarchy/shell-default.json" "$HOME/.config/omarchy/shell.json"
+      omarchy-restart-shell >/dev/null 2>&1 || true
+    fi
+  fi
+fi
 EOF
 chmod +x "$CONFIG_DIR/omarchy/hooks/theme-set.d/virtual-paradise.sh"
 log_sub "Theme assets & automatic synchronization hooks ready"
