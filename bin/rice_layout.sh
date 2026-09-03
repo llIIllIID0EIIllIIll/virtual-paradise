@@ -77,8 +77,8 @@ sleep 0.10
 LAUNCH_TERM btop
 sleep 0.10
 
-# 3. momoisay (Cute Mascot Animation only, no speech bubbles)
-LAUNCH_TERM /usr/local/bin/momoisay -c cyan -f
+# 3. momoisay (Cute Mascot Animation - dynamic theme color, no speech bubbles)
+LAUNCH_TERM "$HOME/.local/bin/momoisay" -f
 sleep 0.10
 
 # 4. cava (Audio Spectrum Visualizer)
