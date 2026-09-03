@@ -17,7 +17,8 @@
 
 ---
 
-![Virtual Paradise Desktop Preview](assets/preview.png)
+![Virtual Paradise Desktop Rice & Paradise Agent Preview](assets/preview.png)
+*5-Terminal Development Rice featuring Live Video Wallpaper, Quickshell Status Bar, System Telemetry & Paradise Agent*
 
 ---
 
