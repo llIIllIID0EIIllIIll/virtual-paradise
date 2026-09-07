@@ -7,8 +7,10 @@
 REAL_BIN=""
 if [[ -x "$HOME/.local/bin/momoisay.real" ]]; then
   REAL_BIN="$HOME/.local/bin/momoisay.real"
-elif [[ -x "/home/doe/omarchy-virtual-paradise/bin/momoisay.real" ]]; then
-  REAL_BIN="/home/doe/omarchy-virtual-paradise/bin/momoisay.real"
+elif [[ -x "$(dirname "$0")/momoisay.real" ]]; then
+  REAL_BIN="$(dirname "$0")/momoisay.real"
+elif [[ -x "/usr/local/bin/momoisay.real" ]]; then
+  REAL_BIN="/usr/local/bin/momoisay.real"
 elif [[ -x "/usr/local/bin/momoisay" ]]; then
   REAL_BIN="/usr/local/bin/momoisay"
 fi

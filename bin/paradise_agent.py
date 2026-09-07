@@ -154,6 +154,10 @@ try:
     HAS_PROMPT_TOOLKIT = True
 except ImportError:
     HAS_PROMPT_TOOLKIT = False
+    class Completer:
+        pass
+    class Completion:
+        pass
 
 class SlashAndFileCompleter(Completer):
     """Provides dropdown autocomplete suggestions for '/' slash commands and '@' file tags."""

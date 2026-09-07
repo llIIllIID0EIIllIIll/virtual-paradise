@@ -285,6 +285,18 @@ CHECK_AND_INSTALL_PACKAGES() {
     "gst-rtsp-server"
     "protobuf-c"
     "dnsmasq"
+    "python-rich"
+    "python-docx"
+    "python-prompt_toolkit"
+    "fzf"
+    "bat"
+    "eza"
+    "zoxide"
+    "yazi"
+    "duf"
+    "dust"
+    "gping"
+    "lm_sensors"
   )
   local AUR_PKGS=(
     "mpvpaper"
@@ -402,9 +414,39 @@ CONFIGURE_HARDWARE_DRIVERS() {
   esac
 }
 
+CONFIGURE_AI_AGENT_ENGINE() {
+  if command -v ollama &>/dev/null; then
+    log_sub "Configuring Ollama AI service for Paradise Agent..."
+    if command -v sudo &>/dev/null && sudo -n true 2>/dev/null; then
+      sudo systemctl enable --now ollama.service 2>/dev/null || true
+    elif command -v systemctl &>/dev/null; then
+      systemctl --user enable --now ollama.service 2>/dev/null || true
+    fi
+
+    local ollama_ready=0
+    for ((i=0; i<6; i++)); do
+      if ollama list >/dev/null 2>&1; then
+        ollama_ready=1
+        break
+      fi
+      sleep 0.5
+    done
+
+    if [[ $ollama_ready -eq 1 ]]; then
+      if ! ollama list 2>/dev/null | grep -qi "qwen2.5-coder"; then
+        log_sub "Pulling lightweight local model (qwen2.5-coder:1.5b) in background..."
+        (ollama pull qwen2.5-coder:1.5b >/dev/null 2>&1 &)
+      else
+        log_sub "Local Qwen 2.5 Coder model is ready"
+      fi
+    fi
+  fi
+}
+
 if [[ $IS_HOOK -eq 0 ]]; then
   CHECK_AND_INSTALL_PACKAGES
   CONFIGURE_HARDWARE_DRIVERS
+  CONFIGURE_AI_AGENT_ENGINE
 fi
 
 # ------------------------------------------------------------------------------
@@ -708,7 +750,9 @@ if [[ -d "$REPO_DIR/bin" ]]; then
   ln -nsf "$LOCAL_BIN/paradise_agent.py" "$LOCAL_BIN/agy-local" 2>/dev/null || true
   ln -nsf "$LOCAL_BIN/virtual_matrix.py" "$LOCAL_BIN/virtual_matrix" 2>/dev/null || true
   ln -nsf "$LOCAL_BIN/cast_screen.sh" "$LOCAL_BIN/omarchy-cast" 2>/dev/null || true
-  chmod +x "$LOCAL_BIN/sync_cava_theme.py" "$LOCAL_BIN/virtual_matrix.py" "$LOCAL_BIN/cast_screen.sh" 2>/dev/null || true
+  ln -nsf "$LOCAL_BIN/format-docx-vn.py" "$LOCAL_BIN/format-docx" 2>/dev/null || true
+  ln -nsf "$LOCAL_BIN/format-docx-vn.py" "$LOCAL_BIN/vn-docx" 2>/dev/null || true
+  chmod +x "$LOCAL_BIN/sync_cava_theme.py" "$LOCAL_BIN/virtual_matrix.py" "$LOCAL_BIN/cast_screen.sh" "$LOCAL_BIN/format-docx-vn.py" 2>/dev/null || true
   log_sub "Installed helper tools (rice_layout, momoisay, toggle_live_wallpaper, logout_splash, paradise-agent, etc.)"
 fi
 
@@ -791,6 +835,14 @@ for f in hyprland.lua hyprland-preview-share-picker.css hyprlock.conf; do
   fi
 done
 log_sub "Flattened hypr/ Omarchy-required files to theme root"
+
+# Flatten assets (preview.png, unlock.png) into theme root for Omarchy theme picker & Plymouth switcher
+if [[ -d "$THEME_DEST/assets" ]]; then
+  cp -f "$THEME_DEST/assets/preview.png" "$THEME_DEST/preview.png" 2>/dev/null || true
+  cp -f "$THEME_DEST/assets/unlock.png" "$THEME_DEST/unlock.png" 2>/dev/null || true
+  cp -f "$THEME_DEST/assets/unlock.png" "$THEME_DEST/preview-unlock.png" 2>/dev/null || true
+  log_sub "Flattened assets/ (preview.png, unlock.png) to Omarchy theme root"
+fi
 
 # Post-theme-set hook
 cat << 'EOF' > "$CONFIG_DIR/omarchy/hooks/theme-set.d/virtual-paradise.sh"
@@ -878,6 +930,21 @@ alias cast="$HOME/.local/bin/cast_screen.sh"
 EOF
       log_sub "Appended Virtual Paradise aliases to existing ~/.zshrc"
     fi
+
+    # Ensure Search☆Hub (f) & Cyberpunk FZF theme are integrated if missing
+    if ! grep -q "function f()" "$HOME/.zshrc"; then
+      cat << 'EOF' >> "$HOME/.zshrc"
+
+# ==============================================================================
+#  Virtual☆Paradise Search☆Hub (f) & Cyberpunk FZF Palette
+# ==============================================================================
+if (( $+commands[fzf] )); then
+  export FZF_DEFAULT_OPTS='--height 40% --layout=reverse --border --color="fg:#eafbfa,bg:-1,hl:#00f5d4,fg+:#00ff88,bg+:#0e141d,hl+:#00ff88,info:#7091a4,prompt:#00f5d4,pointer:#00ff88,marker:#ffb7d5,spinner:#ffe066,header:#7091a4,border:#00f5d4"'
+fi
+EOF
+      awk '/# \[11\] f: Ultimate Interactive Search Hub/{p=1} p; /^# ===/{if(p && !/# \[11\]/) exit}' "$REPO_DIR/shell/zshrc" | sed '$d' >> "$HOME/.zshrc" 2>/dev/null || true
+      log_sub "Integrated Search☆Hub (f) & FZF Cyberpunk styling into existing ~/.zshrc"
+    fi
   fi
 fi
 
@@ -947,6 +1014,7 @@ if [[ $IS_HOOK -eq 0 ]]; then
 
   if command -v omarchy &>/dev/null; then
     omarchy theme set "$THEME_NAME" 2>/dev/null || true
+    omarchy theme bg cache 2>/dev/null || true
     omarchy restart shell 2>/dev/null || true
   fi
 

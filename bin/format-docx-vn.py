@@ -9,7 +9,7 @@ import sys
 import os
 import shutil
 
-TEMPLATE_SRC = "/home/doe/Windows/skills/vn-officecli/templates/to_trinh_mau.docx"
+TEMPLATE_SRC = os.path.expanduser("~/Windows/skills/vn-officecli/templates/to_trinh_mau.docx")
 
 def resolve_target_file(target: str) -> str:
     target = os.path.expanduser(target)
@@ -40,10 +40,10 @@ def format_docx(input_path: str = None, output_path: str = None) -> str:
         from docx.shared import Pt, Cm
         from docx.enum.text import WD_ALIGN_PARAGRAPH
     except ImportError:
-        return "[Lỗi: python-docx chưa được cài đặt. Chạy: /home/doe/.local/lib/paradise-venv/bin/pip install python-docx]"
+        return "[Lỗi: python-docx chưa được cài đặt. Chạy: sudo pacman -S python-docx hoặc pip install python-docx]"
 
     if not input_path:
-        input_path = "/home/doe/Downloads"
+        input_path = os.path.expanduser("~/Downloads")
 
     resolved = resolve_target_file(input_path)
     if not os.path.exists(resolved):

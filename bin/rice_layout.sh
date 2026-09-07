@@ -65,10 +65,10 @@ LAUNCH_TERM() {
 # 1. Fastfetch + Paradise Agent (Master Left Panel)
 case "$TERM_BIN" in
   ghostty|foot|alacritty|kitty)
-    "$TERM_BIN" --title="fastfetch-agent" -e "$USER_SHELL" -c "printf '\033]0;fastfetch-agent\007'; fastfetch; /home/doe/.local/bin/paradise-agent; exec $USER_SHELL" &
+    "$TERM_BIN" --title="fastfetch-agent" -e "$USER_SHELL" -c "printf '\033]0;fastfetch-agent\007'; fastfetch; \"$HOME/.local/bin/paradise-agent\"; exec $USER_SHELL" &
     ;;
   *)
-    LAUNCH_TERM "$USER_SHELL" -c "printf '\033]0;fastfetch-agent\007'; fastfetch; /home/doe/.local/bin/paradise-agent; exec $USER_SHELL"
+    LAUNCH_TERM "$USER_SHELL" -c "printf '\033]0;fastfetch-agent\007'; fastfetch; \"$HOME/.local/bin/paradise-agent\"; exec $USER_SHELL"
     ;;
 esac
 sleep 0.10
