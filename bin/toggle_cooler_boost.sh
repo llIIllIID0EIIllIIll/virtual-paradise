@@ -68,9 +68,13 @@ PRODUCT=$(detect_product)
 # Find acer-nitro-ec hwmon path if driver is loaded
 find_acer_nitro_hwmon() {
     for h in /sys/class/hwmon/hwmon*; do
-        if [[ -r "$h/name" && "$(< "$h/name")" == "acer-nitro-ec" ]]; then
-            echo "$h"
-            return 0
+        if [[ -r "$h/name" ]]; then
+            local n
+            n=$(< "$h/name")
+            if [[ "$n" == "acer_nitro_ec" || "$n" == "acer-nitro-ec" ]]; then
+                echo "$h"
+                return 0
+            fi
         fi
     done
     return 1
