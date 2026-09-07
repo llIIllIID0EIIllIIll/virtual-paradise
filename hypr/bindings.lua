@@ -7,9 +7,7 @@
 
 -- 1. HARDWARE CONTROLS
 --------------------------------------------------------------------------------
--- Unbind default Universal Copy on SUPER+C before binding Cooler Boost
-hl.unbind("SUPER + C")
-o.bind("SUPER + C", "Toggle Cooler Boost", "~/.local/bin/toggle_cooler_boost.sh")
+o.bind("SUPER + ALT + C", "Toggle Cooler Boost", "~/.local/bin/toggle_cooler_boost.sh")
 
 -- 2. RICE & THEME CONTROLS
 --------------------------------------------------------------------------------

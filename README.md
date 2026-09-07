@@ -84,7 +84,7 @@ Unified terminal omnisearch with adaptive live preview:
 ### 🚨 Window Error Shake & Neon Red Border
 Any terminal command returning a non-zero exit code automatically shakes the active window and turns its border glowing neon red.
 
-### ❄️ Hardware Cooler Boost (`SUPER + C`)
+### ❄️ Hardware Cooler Boost (`SUPER + ALT + C`)
 One-key fan cooling toggle with on-screen OSD notification.
 
 ---
@@ -97,7 +97,7 @@ One-key fan cooling toggle with on-screen OSD notification.
 | `SUPER + ALT + UP` | Toggle Live Wallpaper |
 | `SUPER + ALT + RIGHT/LEFT` | Next / Prev Live Wallpaper |
 | `SUPER + N` | Next theme background |
-| `SUPER + C` | Toggle Cooler Boost |
+| `SUPER + ALT + C` | Toggle Cooler Boost |
 | `SUPER + E` | File Manager |
 | `SUPER + B` | Web Browser |
 | `SUPER + SHIFT + T` | Theme Switcher |

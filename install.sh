@@ -383,10 +383,9 @@ if [[ -f "$CONFIG_DIR/hypr/bindings.lua" ]]; then
   sed -i 's/SUPER + \\\\"/SUPER + backslash"/g' "$CONFIG_DIR/hypr/bindings.lua" 2>/dev/null || true
   sed -i 's/SUPER + \\"/SUPER + backslash"/g' "$CONFIG_DIR/hypr/bindings.lua" 2>/dev/null || true
 
-  # Ensure SUPER + C has hl.unbind before o.bind to prevent collision with Universal Copy
-  if ! grep -q 'hl.unbind("SUPER + C")' "$CONFIG_DIR/hypr/bindings.lua" && grep -q 'o.bind("SUPER + C"' "$CONFIG_DIR/hypr/bindings.lua"; then
-    sed -i '/o\.bind("SUPER + C"/i hl.unbind("SUPER + C")' "$CONFIG_DIR/hypr/bindings.lua" 2>/dev/null || true
-  fi
+  # Migrate legacy SUPER + C binding to SUPER + ALT + C to restore Universal Copy
+  sed -i 's/hl\.unbind("SUPER + C")//g' "$CONFIG_DIR/hypr/bindings.lua" 2>/dev/null || true
+  sed -i 's/o\.bind("SUPER + C", "Cooler Boost"/o.bind("SUPER + ALT + C", "Cooler Boost"/g' "$CONFIG_DIR/hypr/bindings.lua" 2>/dev/null || true
 
   if ! grep -q "toggle_live_wallpaper" "$CONFIG_DIR/hypr/bindings.lua"; then
     cat << 'EOF' >> "$CONFIG_DIR/hypr/bindings.lua"
@@ -398,8 +397,7 @@ o.bind("SUPER + Q", "Rice Layout", "~/.local/bin/rice_layout.sh")
 o.bind("SUPER + ALT + UP", "Toggle Live Wallpaper", "~/.local/bin/toggle_live_wallpaper.sh")
 o.bind("SUPER + ALT + RIGHT", "Next Live Wallpaper", "~/.local/bin/toggle_live_wallpaper.sh next")
 o.bind("SUPER + ALT + LEFT", "Prev Live Wallpaper", "~/.local/bin/toggle_live_wallpaper.sh prev")
-hl.unbind("SUPER + C")
-o.bind("SUPER + C", "Cooler Boost", "~/.local/bin/toggle_cooler_boost.sh")
+o.bind("SUPER + ALT + C", "Cooler Boost", "~/.local/bin/toggle_cooler_boost.sh")
 o.bind("SUPER + backslash", "Cyber Matrix Rain", "ghostty -e ~/.local/bin/virtual_matrix")
 EOF
     log_sub "Appended Virtual Paradise shortcuts to ~/.config/hypr/bindings.lua"
@@ -757,7 +755,7 @@ if [[ $IS_HOOK -eq 0 ]]; then
   echo -e "   ${C_GREEN}SUPER + ALT + RIGHT${C_RESET}   ➔ Next Live Wallpaper (Cyberpunk Glitch Transition)"
   echo -e "   ${C_GREEN}SUPER + ALT + LEFT${C_RESET}    ➔ Prev Live Wallpaper (Cyberpunk Glitch Transition)"
   echo -e "   ${C_GREEN}SUPER + N${C_RESET}             ➔ Cycle next wallpaper"
-  echo -e "   ${C_GREEN}SUPER + C${C_RESET}             ➔ Toggle Cooler Boost fan cooling"
+  echo -e "   ${C_GREEN}SUPER + ALT + C${C_RESET}       ➔ Toggle Cooler Boost fan cooling"
   echo -e "   ${C_GREEN}ffa${C_RESET}                   ➔ Launch Fastfetch with high-res Anime Braille logo"
   echo -e "   ${C_GREEN}f${C_RESET}                     ➔ Search☆Hub (Explorer, History, Process)"
   echo -e "${C_CYAN}───────────────────────────────────────────────────────────────────${C_RESET}\n"

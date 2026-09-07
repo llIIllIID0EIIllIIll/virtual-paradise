@@ -54,7 +54,27 @@ detect_vendor() {
     esac
 }
 
+detect_product() {
+    if [[ -r /sys/class/dmi/id/product_name ]]; then
+        cat /sys/class/dmi/id/product_name
+    elif [[ -r /sys/devices/virtual/dmi/id/product_name ]]; then
+        cat /sys/devices/virtual/dmi/id/product_name
+    fi
+}
+
 VENDOR=$(detect_vendor)
+PRODUCT=$(detect_product)
+
+# Find acer-nitro-ec hwmon path if driver is loaded
+find_acer_nitro_hwmon() {
+    for h in /sys/class/hwmon/hwmon*; do
+        if [[ -r "$h/name" && "$(< "$h/name")" == "acer-nitro-ec" ]]; then
+            echo "$h"
+            return 0
+        fi
+    done
+    return 1
+}
 
 # --- 2. Read State ---
 if [ ! -f "$STATE_FILE" ]; then
@@ -69,7 +89,7 @@ case "$ACTION" in
     off|disable|stop)
         TARGET_ACTION="disable" ;;
     status)
-        echo "Cooler Boost hiện tại: ${CURRENT_STATE^^}"
+        echo "Cooler Boost hiện tại: ${CURRENT_STATE^^} (${VENDOR} ${PRODUCT})"
         exit 0
         ;;
     *)
@@ -82,30 +102,73 @@ case "$ACTION" in
 esac
 
 # --- 3. Execute Fan Profile ---
+APPLIED=0
+ACER_HWMON=$(find_acer_nitro_hwmon || true)
+
 if [ "$TARGET_ACTION" == "enable" ]; then
     # Enable Cooler Boost (100% Maximum Fan Speed)
-    if command -v isw >/dev/null 2>&1; then
+    if [[ -n "$ACER_HWMON" ]]; then
+        # acer-nitro-ec driver: 0 = Turbo mode (100% full speed)
+        if [[ -w "$ACER_HWMON/pwm1_enable" ]]; then
+            echo 0 > "$ACER_HWMON/pwm1_enable" 2>/dev/null && \
+            echo 0 > "$ACER_HWMON/pwm2_enable" 2>/dev/null && APPLIED=1
+        else
+            sudo tee "$ACER_HWMON/pwm1_enable" "$ACER_HWMON/pwm2_enable" <<< "0" >/dev/null 2>&1 && APPLIED=1
+        fi
+    elif command -v nbfc >/dev/null 2>&1; then
+        nbfc set -f 100 >/dev/null 2>&1 || nbfc set -s 100 >/dev/null 2>&1
+        APPLIED=1
+    elif command -v isw >/dev/null 2>&1; then
         sudo /usr/bin/isw -b on >/dev/null 2>&1 || sudo isw -b on >/dev/null 2>&1
+        APPLIED=1
     elif command -v asusctl >/dev/null 2>&1; then
         asusctl profile -P Turbo >/dev/null 2>&1 || true
-    elif command -v nbfc >/dev/null 2>&1; then
-        nbfc set -f 100 >/dev/null 2>&1 || true
+        APPLIED=1
     fi
 
-    echo "on" > "$STATE_FILE"
-    notify-send -u normal -t 2500 "󰈐 ${VENDOR} Cooler Boost" "ENABLED (100% Maximum Fan Speed)" 2>/dev/null || true
-    echo "✅ ${VENDOR} Cooler Boost: ĐÃ BẬT THÀNH CÔNG (Quạt tản nhiệt đang chạy 100% công suất tối đa)."
+    if [ $APPLIED -eq 1 ]; then
+        echo "on" > "$STATE_FILE"
+        notify-send -u normal -t 2500 "󰈐 ${VENDOR} Cooler Boost" "ENABLED (100% Maximum Fan Speed)" 2>/dev/null || true
+        echo "✅ ${VENDOR} Cooler Boost: ĐÃ BẬT THÀNH CÔNG (Quạt tản nhiệt đang chạy 100% công suất tối đa)."
+    else
+        notify-send -u critical -t 5000 "󰈐 ${VENDOR} Cooler Boost" "Chưa cài driver điều khiển quạt!\nCần nbfc-linux hoặc acer-nitro-ec-dkms" 2>/dev/null || true
+        echo "❌ Lỗi: Không thể bật Cooler Boost cho ${VENDOR} ${PRODUCT}!"
+        echo "  Hệ thống chưa có driver/công cụ điều khiển quạt phần cứng."
+        echo "  Hãy chọn 1 trong 2 cách cài đặt sau:"
+        echo "    Cách 1 (Khuyên dùng): yay -S nbfc-linux"
+        echo "                          sudo systemctl enable --now nbfc_service"
+        echo "                          nbfc config -a \"Acer Nitro AN515-54\""
+        echo "    Cách 2:               yay -S acer-nitro-ec-dkms"
+        exit 1
+    fi
 else
     # Disable Cooler Boost (Restore Auto Profile)
-    if command -v isw >/dev/null 2>&1; then
+    if [[ -n "$ACER_HWMON" ]]; then
+        # acer-nitro-ec driver: 2 = Auto mode
+        if [[ -w "$ACER_HWMON/pwm1_enable" ]]; then
+            echo 2 > "$ACER_HWMON/pwm1_enable" 2>/dev/null && \
+            echo 2 > "$ACER_HWMON/pwm2_enable" 2>/dev/null && APPLIED=1
+        else
+            sudo tee "$ACER_HWMON/pwm1_enable" "$ACER_HWMON/pwm2_enable" <<< "2" >/dev/null 2>&1 && APPLIED=1
+        fi
+    elif command -v nbfc >/dev/null 2>&1; then
+        nbfc set -a >/dev/null 2>&1
+        APPLIED=1
+    elif command -v isw >/dev/null 2>&1; then
         sudo /usr/bin/isw -b off >/dev/null 2>&1 || sudo isw -b off >/dev/null 2>&1
+        APPLIED=1
     elif command -v asusctl >/dev/null 2>&1; then
         asusctl profile -P Balanced >/dev/null 2>&1 || true
-    elif command -v nbfc >/dev/null 2>&1; then
-        nbfc set -a >/dev/null 2>&1 || true
+        APPLIED=1
     fi
 
-    echo "off" > "$STATE_FILE"
-    notify-send -u normal -t 2500 "󰈐 ${VENDOR} Cooler Boost" "DISABLED (Auto Fan Profile)" 2>/dev/null || true
-    echo "✅ ${VENDOR} Cooler Boost: ĐÃ TẮT THÀNH CÔNG (Quạt đã trở về chế độ tự động thông minh)."
+    if [ $APPLIED -eq 1 ]; then
+        echo "off" > "$STATE_FILE"
+        notify-send -u normal -t 2500 "󰈐 ${VENDOR} Cooler Boost" "DISABLED (Auto Fan Profile)" 2>/dev/null || true
+        echo "✅ ${VENDOR} Cooler Boost: ĐÃ TẮT THÀNH CÔNG (Quạt đã trở về chế độ tự động thông minh)."
+    else
+        notify-send -u critical -t 5000 "󰈐 ${VENDOR} Cooler Boost" "Chưa cài driver điều khiển quạt!\nCần nbfc-linux hoặc acer-nitro-ec-dkms" 2>/dev/null || true
+        echo "❌ Lỗi: Không thể tắt Cooler Boost cho ${VENDOR} ${PRODUCT} (chưa có driver)."
+        exit 1
+    fi
 fi
