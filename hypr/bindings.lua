@@ -42,3 +42,9 @@ o.bind("SUPER + SHIFT + C", "Color Picker", "omarchy-capture-color")
 -- Explicit Default Terminal Launcher (Guarantees Ghostty always opens into /usr/bin/zsh)
 hl.unbind("SUPER + RETURN")
 o.bind("SUPER + RETURN", "Terminal", "~/.local/bin/omarchy-launch-terminal")
+
+-- 4. WIRELESS PROJECTION / CAST SCREEN (Like Win+K on Windows)
+--------------------------------------------------------------------------------
+hl.unbind("SUPER + K")
+o.bind("SUPER + K", "Cast Screen (Wireless Display)", "~/.local/bin/cast_screen.sh")
+o.bind("SUPER + SHIFT + K", "Keybindings", "omarchy menu keybindings")

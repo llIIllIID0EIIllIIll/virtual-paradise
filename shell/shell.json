@@ -51,6 +51,10 @@
           "id": "omarchy.tray"
         },
         {
+          "id": "io.github.kristoferlund.webcam",
+          "device": "/dev/video0"
+        },
+        {
           "id": "omarchy.agents"
         },
         {

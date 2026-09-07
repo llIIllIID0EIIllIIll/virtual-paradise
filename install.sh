@@ -278,9 +278,17 @@ CHECK_AND_INSTALL_PACKAGES() {
     "fcitx5-qt"
     "fcitx5-configtool"
     "fcitx5-unikey"
+    "v4l-utils"
+    "gst-plugins-good"
+    "gst-plugins-bad"
+    "gst-plugins-ugly"
+    "gst-rtsp-server"
+    "protobuf-c"
+    "dnsmasq"
   )
   local AUR_PKGS=(
     "mpvpaper"
+    "gnome-network-displays"
   )
 
   local HW_VENDOR=$(detect_hardware_vendor)
@@ -459,6 +467,14 @@ INSTALL_AND_ENABLE_PLUGINS() {
         fi
       done
       log_sub "Enabled all ${enabled_count} Virtual Paradise plugins in Omarchy shell"
+
+      # Install & enable external Omarchy webcam plugin
+      if [[ ! -d "$CONFIG_DIR/omarchy/plugins/io.github.kristoferlund.webcam" ]] && ! omarchy plugin list --json 2>/dev/null | jq -e 'any(.[]; .id == "io.github.kristoferlund.webcam")' >/dev/null; then
+        log_sub "Adding external Omarchy webcam plugin from git..."
+        omarchy plugin add https://github.com/kristoferlund/omarchy-webcam.git --enable --yes 2>/dev/null || true
+      else
+        omarchy plugin enable "io.github.kristoferlund.webcam" 2>/dev/null || true
+      fi
     fi
   fi
 }
@@ -512,6 +528,12 @@ cat << 'EOF' > "$CONFIG_DIR/omarchy/extensions/paradise.json"
     "label": "Toggle Cooler Boost",
     "description": "Turn fan cooling on/off",
     "action": "bash -c ~/.local/bin/toggle_cooler_boost.sh"
+  },
+  "paradise.cast": {
+    "icon": "󰍹",
+    "label": "Cast Screen (Win+K)",
+    "description": "Wireless Display / Miracast & Chromecast projection",
+    "action": "bash -c ~/.local/bin/cast_screen.sh"
   },
   "paradise.agent": {
     "icon": "󰚩",
@@ -573,6 +595,15 @@ o.bind("SUPER + backslash", "Cyber Matrix Rain", "ghostty -e ~/.local/bin/virtua
 EOF
     log_sub "Appended Virtual Paradise shortcuts to ~/.config/hypr/bindings.lua"
   fi
+
+  if ! grep -q "cast_screen" "$CONFIG_DIR/hypr/bindings.lua"; then
+    cat << 'EOF' >> "$CONFIG_DIR/hypr/bindings.lua"
+hl.unbind("SUPER + K")
+o.bind("SUPER + K", "Cast Screen (Wireless Display)", "~/.local/bin/cast_screen.sh")
+o.bind("SUPER + SHIFT + K", "Keybindings", "omarchy menu keybindings")
+EOF
+    log_sub "Appended Cast Screen (SUPER + K) shortcut to ~/.config/hypr/bindings.lua"
+  fi
 elif [[ -f "$REPO_DIR/hypr/bindings.lua" ]]; then
   cp "$REPO_DIR/hypr/bindings.lua" "$CONFIG_DIR/hypr/bindings.lua"
 fi
@@ -591,6 +622,15 @@ o.window({ initial_title = "Btop Monitor" }, { float = true, size = { 1050, 650 
 o.window({ title = "Btop Monitor" }, { float = true, size = { 1050, 650 }, center = true })
 o.window({ initial_title = "Voxtype Config" }, { float = true, size = { 880, 580 }, center = true })
 o.window({ title = "Voxtype Config" }, { float = true, size = { 880, 580 }, center = true })
+o.window({ initial_title = "GNOME Network Displays" }, { float = true, size = { 720, 560 }, center = true })
+o.window({ title = "GNOME Network Displays" }, { float = true, size = { 720, 560 }, center = true })
+o.window({ class = "org.gnome.NetworkDisplays" }, { float = true, size = { 720, 560 }, center = true })
+EOF
+  elif ! grep -q "GNOME Network Displays" "$CONFIG_DIR/hypr/hyprland.lua"; then
+    cat << 'EOF' >> "$CONFIG_DIR/hypr/hyprland.lua"
+o.window({ initial_title = "GNOME Network Displays" }, { float = true, size = { 720, 560 }, center = true })
+o.window({ title = "GNOME Network Displays" }, { float = true, size = { 720, 560 }, center = true })
+o.window({ class = "org.gnome.NetworkDisplays" }, { float = true, size = { 720, 560 }, center = true })
 EOF
   fi
 fi
@@ -667,7 +707,8 @@ if [[ -d "$REPO_DIR/bin" ]]; then
   ln -nsf "$LOCAL_BIN/paradise_agent.py" "$LOCAL_BIN/agy-offline" 2>/dev/null || true
   ln -nsf "$LOCAL_BIN/paradise_agent.py" "$LOCAL_BIN/agy-local" 2>/dev/null || true
   ln -nsf "$LOCAL_BIN/virtual_matrix.py" "$LOCAL_BIN/virtual_matrix" 2>/dev/null || true
-  chmod +x "$LOCAL_BIN/sync_cava_theme.py" "$LOCAL_BIN/virtual_matrix.py" 2>/dev/null || true
+  ln -nsf "$LOCAL_BIN/cast_screen.sh" "$LOCAL_BIN/omarchy-cast" 2>/dev/null || true
+  chmod +x "$LOCAL_BIN/sync_cava_theme.py" "$LOCAL_BIN/virtual_matrix.py" "$LOCAL_BIN/cast_screen.sh" 2>/dev/null || true
   log_sub "Installed helper tools (rice_layout, momoisay, toggle_live_wallpaper, logout_splash, paradise-agent, etc.)"
 fi
 
@@ -833,6 +874,7 @@ alias offline-agent="paradise-agent"
 alias rice="$HOME/.local/bin/rice_layout.sh"
 alias matrix="$HOME/.local/bin/virtual_matrix.py"
 alias boost="$HOME/.local/bin/toggle_cooler_boost.sh"
+alias cast="$HOME/.local/bin/cast_screen.sh"
 EOF
       log_sub "Appended Virtual Paradise aliases to existing ~/.zshrc"
     fi
@@ -927,6 +969,7 @@ if [[ $IS_HOOK -eq 0 ]]; then
   echo -e "   ${C_GREEN}SUPER + ALT + LEFT${C_RESET}    ➔ Prev Live Wallpaper (Cyberpunk Glitch Transition)"
   echo -e "   ${C_GREEN}SUPER + N${C_RESET}             ➔ Cycle next wallpaper"
   echo -e "   ${C_GREEN}SUPER + ALT + C${C_RESET}       ➔ Toggle Cooler Boost fan cooling"
+  echo -e "   ${C_GREEN}SUPER + K${C_RESET}             ➔ Cast Screen (Wireless Display / Win+K)"
   echo -e "   ${C_GREEN}ffa${C_RESET}                   ➔ Launch Fastfetch with high-res Anime Braille logo"
   echo -e "   ${C_GREEN}f${C_RESET}                     ➔ Search☆Hub (Explorer, History, Process)"
   echo -e "${C_CYAN}───────────────────────────────────────────────────────────────────${C_RESET}\n"
