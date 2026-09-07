@@ -205,6 +205,11 @@ CHECK_AND_INSTALL_PACKAGES() {
     "ffmpeg"
     "tela-circle-icon-theme-all"
     "ollama"
+    "fcitx5"
+    "fcitx5-gtk"
+    "fcitx5-qt"
+    "fcitx5-configtool"
+    "fcitx5-unikey"
   )
   local AUR_PKGS=(
     "mpvpaper"
@@ -374,6 +379,15 @@ fi
 
 # 5.3 Keybindings: append Virtual Paradise shortcuts cleanly if missing
 if [[ -f "$CONFIG_DIR/hypr/bindings.lua" ]]; then
+  # Sanitize any legacy backslash bindings that cause Hyprland parsing errors
+  sed -i 's/SUPER + \\\\"/SUPER + backslash"/g' "$CONFIG_DIR/hypr/bindings.lua" 2>/dev/null || true
+  sed -i 's/SUPER + \\"/SUPER + backslash"/g' "$CONFIG_DIR/hypr/bindings.lua" 2>/dev/null || true
+
+  # Ensure SUPER + C has hl.unbind before o.bind to prevent collision with Universal Copy
+  if ! grep -q 'hl.unbind("SUPER + C")' "$CONFIG_DIR/hypr/bindings.lua" && grep -q 'o.bind("SUPER + C"' "$CONFIG_DIR/hypr/bindings.lua"; then
+    sed -i '/o\.bind("SUPER + C"/i hl.unbind("SUPER + C")' "$CONFIG_DIR/hypr/bindings.lua" 2>/dev/null || true
+  fi
+
   if ! grep -q "toggle_live_wallpaper" "$CONFIG_DIR/hypr/bindings.lua"; then
     cat << 'EOF' >> "$CONFIG_DIR/hypr/bindings.lua"
 
@@ -384,8 +398,9 @@ o.bind("SUPER + Q", "Rice Layout", "~/.local/bin/rice_layout.sh")
 o.bind("SUPER + ALT + UP", "Toggle Live Wallpaper", "~/.local/bin/toggle_live_wallpaper.sh")
 o.bind("SUPER + ALT + RIGHT", "Next Live Wallpaper", "~/.local/bin/toggle_live_wallpaper.sh next")
 o.bind("SUPER + ALT + LEFT", "Prev Live Wallpaper", "~/.local/bin/toggle_live_wallpaper.sh prev")
+hl.unbind("SUPER + C")
 o.bind("SUPER + C", "Cooler Boost", "~/.local/bin/toggle_cooler_boost.sh")
-o.bind("SUPER + \\", "Cyber Matrix Rain", "ghostty -e ~/.local/bin/virtual_matrix")
+o.bind("SUPER + backslash", "Cyber Matrix Rain", "ghostty -e ~/.local/bin/virtual_matrix")
 EOF
     log_sub "Appended Virtual Paradise shortcuts to ~/.config/hypr/bindings.lua"
   fi
@@ -420,6 +435,53 @@ fi
 if [[ -f "$REPO_DIR/hypr/hyprland-preview-share-picker.css" ]]; then
   cp "$REPO_DIR/hypr/hyprland-preview-share-picker.css" "$CONFIG_DIR/hypr/hyprland-preview-share-picker.css" 2>/dev/null || true
 fi
+
+# 5.5 Fcitx5 Vietnamese Input Method (Unikey) Configuration
+CONFIGURE_FCITX_UNIKEY() {
+  command -v fcitx5 &>/dev/null || return 0
+
+  local fcitx_dir="$CONFIG_DIR/fcitx5"
+  local fcitx_profile="$fcitx_dir/profile"
+  mkdir -p "$fcitx_dir"
+
+  if [[ ! -f "$fcitx_profile" ]]; then
+    cat << 'EOF' > "$fcitx_profile"
+[Groups/0]
+Name=Default
+Default Layout=us
+DefaultIM=keyboard-us
+
+[Groups/0/Items/0]
+Name=keyboard-us
+Layout=
+
+[Groups/0/Items/1]
+Name=unikey
+Layout=
+
+[GroupOrder]
+0=Default
+EOF
+    log_sub "Initialized Fcitx5 profile with US Keyboard and Unikey"
+  elif ! grep -q "Name=unikey" "$fcitx_profile"; then
+    local next_idx=0
+    while grep -q "^\[Groups/0/Items/${next_idx}\]" "$fcitx_profile"; do
+      ((next_idx++))
+    done
+    cat << EOF >> "$fcitx_profile"
+
+[Groups/0/Items/${next_idx}]
+Name=unikey
+Layout=
+EOF
+    log_sub "Added Unikey input method to existing Fcitx5 profile (slot ${next_idx})"
+  fi
+
+  if pgrep -x fcitx5 &>/dev/null; then
+    fcitx5-remote -r 2>/dev/null || systemctl --user restart omarchy-fcitx5.service 2>/dev/null || true
+  fi
+}
+CONFIGURE_FCITX_UNIKEY
 
 # ------------------------------------------------------------------------------
 # 6. Install Helper Scripts & Binaries

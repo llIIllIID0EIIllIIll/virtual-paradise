@@ -28,7 +28,7 @@ o.bind("SUPER + ALT + LEFT", "Prev Live Wallpaper", "~/.local/bin/toggle_live_wa
 o.bind("SUPER + SHIFT + T", "Theme Switcher", "omarchy-menu toggle theme")
 
 -- Launch Matrix screensaver in terminal
-o.bind("SUPER + BACKSLASH", "Matrix Screensaver", "omarchy launch screensaver")
+o.bind("SUPER + backslash", "Matrix Screensaver", "omarchy launch screensaver")
 
 -- 3. ERGONOMIC APP LAUNCHERS
 --------------------------------------------------------------------------------
