@@ -183,7 +183,75 @@ fi
 # ------------------------------------------------------------------------------
 # 1. Check & Install Missing System Dependencies
 # ------------------------------------------------------------------------------
-log_step "1" "$TOTAL_STEPS" "Checking and installing required system packages..."
+# 1. Hardware Detection & Dependency Installation
+# ------------------------------------------------------------------------------
+log_step "1" "$TOTAL_STEPS" "Detecting hardware & installing required system packages..."
+
+detect_hardware_vendor() {
+  local raw_vendor=""
+  if [[ -r /sys/devices/virtual/dmi/id/sys_vendor ]]; then
+    raw_vendor=$(< /sys/devices/virtual/dmi/id/sys_vendor)
+  elif [[ -r /sys/class/dmi/id/sys_vendor ]]; then
+    raw_vendor=$(< /sys/class/dmi/id/sys_vendor)
+  elif command -v hostnamectl >/dev/null 2>&1; then
+    raw_vendor=$(hostnamectl 2>/dev/null | awk -F": " '/Hardware Vendor/ {print $2}')
+  fi
+
+  case "${raw_vendor,,}" in
+    *micro-star*|*msi*)
+      echo "MSI" ;;
+    *asustek*|*asus*)
+      echo "ASUS" ;;
+    *lenovo*)
+      echo "Lenovo" ;;
+    *alienware*)
+      echo "Alienware" ;;
+    *dell*)
+      echo "Dell" ;;
+    *hp*|*hewlett-packard*)
+      echo "HP" ;;
+    *acer*)
+      echo "Acer" ;;
+    *gigabyte*)
+      echo "Gigabyte" ;;
+    *razer*)
+      echo "Razer" ;;
+    *apple*)
+      echo "Apple" ;;
+    *framework*)
+      echo "Framework" ;;
+    *)
+      if [[ -n "$raw_vendor" ]]; then
+        local clean
+        clean=$(echo "$raw_vendor" | sed -E "s/,? (Inc\.|Co\.,? Ltd\.|Corporation|Technology).*//gi" | awk '{print $1}')
+        echo "${clean:-Generic}"
+      else
+        echo "Generic"
+      fi
+      ;;
+  esac
+}
+
+detect_product_name() {
+  if [[ -r /sys/class/dmi/id/product_name ]]; then
+    cat /sys/class/dmi/id/product_name
+  elif [[ -r /sys/devices/virtual/dmi/id/product_name ]]; then
+    cat /sys/devices/virtual/dmi/id/product_name
+  fi
+}
+
+detect_chassis_type() {
+  if [[ -r /sys/class/dmi/id/chassis_type ]]; then
+    local c
+    c=$(< /sys/class/dmi/id/chassis_type)
+    case "$c" in
+      8|9|10|11|14|30|31|32) echo "laptop" ;;
+      *) echo "desktop" ;;
+    esac
+  else
+    echo "laptop"
+  fi
+}
 
 CHECK_AND_INSTALL_PACKAGES() {
   local REQUIRED_PKGS=(
@@ -215,6 +283,40 @@ CHECK_AND_INSTALL_PACKAGES() {
     "mpvpaper"
   )
 
+  local HW_VENDOR=$(detect_hardware_vendor)
+  local HW_PRODUCT=$(detect_product_name)
+  local HW_CHASSIS=$(detect_chassis_type)
+
+  log_sub "Detected Hardware: ${HW_VENDOR} ${HW_PRODUCT} (${HW_CHASSIS})"
+
+  case "${HW_VENDOR,,}" in
+    *acer*)
+      log_sub "Acer hardware detected: adding fan control packages (nbfc-linux)..."
+      AUR_PKGS+=("nbfc-linux")
+      if pacman -Qs linux-headers &>/dev/null; then
+        AUR_PKGS+=("acer-nitro-ec-dkms")
+      fi
+      ;;
+    *micro-star*|*msi*)
+      log_sub "MSI hardware detected: adding ISW fan control tool..."
+      AUR_PKGS+=("isw")
+      ;;
+    *asustek*|*asus*)
+      log_sub "ASUS ROG/TUF hardware detected: adding asusctl..."
+      REQUIRED_PKGS+=("asusctl")
+      ;;
+    *lenovo*|*dell*|*alienware*|*hp*|*gigabyte*|*razer*)
+      log_sub "${HW_VENDOR} laptop detected: adding universal fan control (nbfc-linux)..."
+      AUR_PKGS+=("nbfc-linux")
+      ;;
+    *)
+      if [[ "$HW_CHASSIS" == "laptop" ]]; then
+        log_sub "Laptop detected: adding universal fan control (nbfc-linux)..."
+        AUR_PKGS+=("nbfc-linux")
+      fi
+      ;;
+  esac
+
   local TO_INSTALL=()
   for pkg in "${REQUIRED_PKGS[@]}"; do
     if command -v pacman &>/dev/null; then
@@ -235,11 +337,11 @@ CHECK_AND_INSTALL_PACKAGES() {
   if [[ ${#TO_INSTALL[@]} -gt 0 ]]; then
     log_sub "Installing missing dependencies: ${TO_INSTALL[*]}"
     if command -v yay &>/dev/null; then
-      yay -S --needed --noconfirm "${TO_INSTALL[@]}" 2>/dev/null || true
+      yay -S --needed --noconfirm "${TO_INSTALL[@]}" || true
     elif command -v paru &>/dev/null; then
-      paru -S --needed --noconfirm "${TO_INSTALL[@]}" 2>/dev/null || true
+      paru -S --needed --noconfirm "${TO_INSTALL[@]}" || true
     elif command -v sudo &>/dev/null && command -v pacman &>/dev/null; then
-      sudo pacman -S --needed --noconfirm "${TO_INSTALL[@]}" 2>/dev/null || true
+      sudo pacman -S --needed --noconfirm "${TO_INSTALL[@]}" || true
     else
       log_warn "Please install missing packages manually: ${TO_INSTALL[*]}"
     fi
@@ -248,8 +350,53 @@ CHECK_AND_INSTALL_PACKAGES() {
   fi
 }
 
+CONFIGURE_HARDWARE_DRIVERS() {
+  local HW_VENDOR=$(detect_hardware_vendor)
+  local HW_PRODUCT=$(detect_product_name)
+
+  case "${HW_VENDOR,,}" in
+    *acer*)
+      if command -v nbfc &>/dev/null; then
+        log_sub "Activating NoteBook FanControl service for Acer..."
+        sudo systemctl enable --now nbfc_service 2>/dev/null || true
+        if [[ "$HW_PRODUCT" =~ AN515-54 ]]; then
+          nbfc config -a "Acer Nitro AN515-54" 2>/dev/null || nbfc config -a "Acer Nitro AN515-51" 2>/dev/null || true
+        elif [[ "$HW_PRODUCT" =~ AN515-51 ]]; then
+          nbfc config -a "Acer Nitro AN515-51" 2>/dev/null || true
+        else
+          nbfc config --recommend --apply 2>/dev/null || true
+        fi
+        nbfc start 2>/dev/null || true
+      fi
+
+      if pacman -Qs acer-nitro-ec-dkms &>/dev/null; then
+        sudo modprobe acer-nitro-ec 2>/dev/null || true
+        if [[ -w "/etc/udev/rules.d" ]] || command -v sudo &>/dev/null; then
+          echo 'ACTION=="add", SUBSYSTEM=="hwmon", ATTR{name}=="acer-nitro-ec", RUN+="/bin/chmod 0666 /sys%p/pwm1_enable /sys%p/pwm2_enable /sys%p/pwm1 /sys%p/pwm2"' | sudo tee /etc/udev/rules.d/99-acer-nitro-fan.rules >/dev/null 2>&1 || true
+          sudo udevadm control --reload-rules 2>/dev/null || true
+        fi
+      fi
+      ;;
+    *asustek*|*asus*)
+      if command -v asusctl &>/dev/null; then
+        log_sub "Activating asusd service for ASUS..."
+        sudo systemctl enable --now asusd.service 2>/dev/null || true
+      fi
+      ;;
+    *)
+      if command -v nbfc &>/dev/null; then
+        log_sub "Activating NoteBook FanControl service for ${HW_VENDOR}..."
+        sudo systemctl enable --now nbfc_service 2>/dev/null || true
+        nbfc config --recommend --apply 2>/dev/null || true
+        nbfc start 2>/dev/null || true
+      fi
+      ;;
+  esac
+}
+
 if [[ $IS_HOOK -eq 0 ]]; then
   CHECK_AND_INSTALL_PACKAGES
+  CONFIGURE_HARDWARE_DRIVERS
 fi
 
 # ------------------------------------------------------------------------------
@@ -270,28 +417,52 @@ mkdir -p "$HOME/.local/state/virtual-paradise"
 log_sub "Directories verified under $CONFIG_DIR and $LOCAL_BIN"
 
 # ------------------------------------------------------------------------------
-# 3. Install Custom Omarchy Bar Plugins with dynamic user detection
+# 3. Install & Enable Custom Omarchy Bar Plugins
 # ------------------------------------------------------------------------------
-log_step "3" "$TOTAL_STEPS" "Installing custom Quickshell plugins for user '$CURRENT_USER'..."
-if [[ -d "$REPO_DIR/plugins" ]]; then
-  for pdir in "$REPO_DIR"/plugins/*; do
-    if [[ -d "$pdir" ]]; then
-      plugin_name=$(basename "$pdir")
-      target_plugin_id="${CURRENT_USER}.${plugin_name}"
-      target_dir="$CONFIG_DIR/omarchy/plugins/$target_plugin_id"
-      
-      mkdir -p "$target_dir"
-      cp -r "$pdir"/* "$target_dir/"
-      
-      # Dynamically update __USER__. to active username (${CURRENT_USER}.)
-      find "$target_dir" -type f \( -name "*.json" -o -name "*.qml" -o -name "*.js" \) -exec sed -i \
-        -e "s/__USER__\./${CURRENT_USER}./g" \
-        -e "s/\"id\": \"[^\"]*\.${plugin_name}\"/\"id\": \"${target_plugin_id}\"/g" \
-        -e "s/moduleName: \"[^\"]*\.${plugin_name}\"/moduleName: \"${target_plugin_id}\"/g" {} +
+INSTALL_AND_ENABLE_PLUGINS() {
+  log_step "3" "$TOTAL_STEPS" "Installing and enabling custom Quickshell plugins for user '$CURRENT_USER'..."
+  if [[ -d "$REPO_DIR/plugins" ]]; then
+    local count=0
+    for pdir in "$REPO_DIR"/plugins/*; do
+      if [[ -d "$pdir" ]]; then
+        local plugin_name=$(basename "$pdir")
+        local target_plugin_id="${CURRENT_USER}.${plugin_name}"
+        local target_dir="$CONFIG_DIR/omarchy/plugins/$target_plugin_id"
+        
+        mkdir -p "$target_dir"
+        cp -r "$pdir"/* "$target_dir/"
+        
+        # Dynamically update __USER__. to active username (${CURRENT_USER}.)
+        find "$target_dir" -type f \( -name "*.json" -o -name "*.qml" -o -name "*.js" \) -exec sed -i \
+          -e "s/__USER__\./${CURRENT_USER}./g" \
+          -e "s/\"id\": \"[^\"]*\.${plugin_name}\"/\"id\": \"${target_plugin_id}\"/g" \
+          -e "s/moduleName: \"[^\"]*\.${plugin_name}\"/moduleName: \"${target_plugin_id}\"/g" {} +
+        ((count++))
+      fi
+    done
+    log_sub "Synchronized and calibrated ${count} plugins for '${CURRENT_USER}'"
+
+    # Trigger Quickshell plugin rescan
+    if command -v omarchy-shell &>/dev/null; then
+      omarchy-shell shell rescanPlugins 2>/dev/null || true
     fi
-  done
-  log_sub "Synchronized and calibrated $(ls -d "$REPO_DIR"/plugins/* | wc -l) plugins for '${CURRENT_USER}'"
-fi
+
+    # Explicitly activate and register each plugin in Omarchy
+    if command -v omarchy &>/dev/null; then
+      local enabled_count=0
+      for pdir in "$REPO_DIR"/plugins/*; do
+        if [[ -d "$pdir" ]]; then
+          local pname=$(basename "$pdir")
+          local pid="${CURRENT_USER}.${pname}"
+          omarchy plugin enable "$pid" 2>/dev/null || true
+          ((enabled_count++))
+        fi
+      done
+      log_sub "Enabled all ${enabled_count} Virtual Paradise plugins in Omarchy shell"
+    fi
+  fi
+}
+INSTALL_AND_ENABLE_PLUGINS
 
 # ------------------------------------------------------------------------------
 # 4. Install Status Bar Layout (shell.json) & Menu Extensions
