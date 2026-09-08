@@ -8,6 +8,7 @@
 
 -- 1. TOOLKIT & WAYLAND ENVIRONMENT VARIABLES (Crisp HiDPI & Zero Blurriness)
 --------------------------------------------------------------------------------
+hl.env("SHELL", "/usr/bin/zsh")
 hl.env("GDK_SCALE", "1")
 hl.env("GDK_BACKEND", "wayland,x11,*")
 hl.env("QT_QPA_PLATFORM", "wayland;xcb")

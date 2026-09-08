@@ -966,6 +966,11 @@ if command -v zsh &>/dev/null; then
     log_sub "Setting default login shell to Zsh for '${CURRENT_USER}'..."
     $SUDO_CMD chsh -s "$(command -v zsh)" "$CURRENT_USER" 2>/dev/null || chsh -s "$(command -v zsh)" 2>/dev/null || true
   fi
+  systemctl --user set-environment SHELL="$(command -v zsh)" 2>/dev/null || true
+  hyprctl eval "hl.env('SHELL', '$(command -v zsh)')" 2>/dev/null || true
+  if [[ -f "$CONFIG_DIR/ghostty/config" ]] && ! grep -q "^command = " "$CONFIG_DIR/ghostty/config"; then
+    sed -i '/^# Window/a command = /usr/bin/zsh' "$CONFIG_DIR/ghostty/config" 2>/dev/null || true
+  fi
 fi
 
 configure_shell_file() {
