@@ -10,11 +10,6 @@ set -eo pipefail
 
 REPO_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 THEME_NAME="virtual-paradise"
-CONFIG_DIR="${XDG_CONFIG_HOME:-$HOME/.config}"
-LOCAL_BIN="$HOME/.local/bin"
-CACHE_DIR="${XDG_CACHE_HOME:-$HOME/.cache}"
-BACKUP_TIMESTAMP="$(date +%Y%m%d_%H%M%S)"
-CURRENT_USER="${USER:-$(id -un)}"
 IS_HOOK=0
 ENABLE_BOOT=1
 BOOT_ONLY=0
@@ -33,6 +28,49 @@ for arg in "$@"; do
       ;;
   esac
 done
+
+# Detect real user & home directory even when executed via sudo
+if (( EUID == 0 )); then
+  if [[ -n "${SUDO_USER:-}" && "$SUDO_USER" != "root" ]]; then
+    CURRENT_USER="$SUDO_USER"
+    USER_HOME="$(getent passwd "$CURRENT_USER" | cut -d: -f6)"
+    export HOME="$USER_HOME"
+  else
+    CURRENT_USER="${USER:-$(id -un)}"
+  fi
+  SUDO_CMD=""
+else
+  CURRENT_USER="${USER:-$(id -un)}"
+  SUDO_CMD="sudo"
+  if [[ $IS_HOOK -eq 0 ]] && command -v sudo &>/dev/null; then
+    if ! sudo -n true 2>/dev/null; then
+      echo -e "\033[38;2;0;245;212m🔑 Virtual☆Paradise requires sudo privileges for hardware drivers & boot setup.\033[0m"
+      echo -e "\033[2m   Please enter your sudo password:\033[0m"
+      sudo -v || { echo -e "\033[38;2;255;0;85m❌ Sudo authentication failed. Aborting.\033[0m"; exit 1; }
+    fi
+    # Keep sudo timestamp alive in background until install completes
+    ( while true; do sudo -n true; sleep 50; kill -0 "$$" || exit; done 2>/dev/null & )
+    SUDO_KEEP_ALIVE_PID=$!
+  fi
+fi
+
+cleanup_install() {
+  local ec=$?
+  if [[ -n "${SUDO_KEEP_ALIVE_PID:-}" ]]; then
+    kill "$SUDO_KEEP_ALIVE_PID" 2>/dev/null || true
+  fi
+  if (( EUID == 0 )) && [[ -n "${SUDO_USER:-}" && "$SUDO_USER" != "root" ]]; then
+    chown -R "$CURRENT_USER:$CURRENT_USER" "$CONFIG_DIR" "$LOCAL_BIN" "$CACHE_DIR" "$HOME/.local" "$HOME/.zshrc"* "$HOME/.oh-my-zsh" 2>/dev/null || true
+  fi
+  exit $ec
+}
+trap cleanup_install EXIT INT TERM
+
+CONFIG_DIR="${XDG_CONFIG_HOME:-$HOME/.config}"
+LOCAL_BIN="$HOME/.local/bin"
+CACHE_DIR="${XDG_CACHE_HOME:-$HOME/.cache}"
+BACKUP_TIMESTAMP="$(date +%Y%m%d_%H%M%S)"
+
 
 # Color helpers
 C_CYAN="\033[38;2;0;245;212m"
@@ -92,19 +130,12 @@ INSTALL_BOOT_ANIMATIONS() {
   log_step "9" "$TOTAL_STEPS" "Configuring Plymouth Boot Animation, SDDM Display Manager & UKI Kernel..."
 
   local can_sudo=0
-  local SUDO_CMD=""
-
-  if (( EUID == 0 )); then
+  if (( EUID == 0 )) || ( command -v sudo &>/dev/null && sudo -n true 2>/dev/null ); then
     can_sudo=1
-    SUDO_CMD=""
-  elif command -v sudo &>/dev/null && sudo -n true 2>/dev/null; then
-    can_sudo=1
-    SUDO_CMD="sudo"
-  elif [[ $BOOT_ONLY -eq 1 ]] && command -v sudo &>/dev/null; then
+  elif command -v sudo &>/dev/null; then
     log_info "  ${C_PINK}🔑 Requesting sudo permission for system-wide Plymouth and SDDM setup...${C_RESET}"
     if sudo -v; then
       can_sudo=1
-      SUDO_CMD="sudo"
     fi
   fi
 
@@ -301,6 +332,10 @@ CHECK_AND_INSTALL_PACKAGES() {
     "zsh-completions"
     "zsh-autosuggestions"
     "zsh-syntax-highlighting"
+    "jq"
+    "socat"
+    "git"
+    "psmisc"
   )
   local AUR_PKGS=(
     "mpvpaper"
@@ -364,15 +399,16 @@ CHECK_AND_INSTALL_PACKAGES() {
       ;;
   esac
 
-  local TO_INSTALL=()
+  local OFFICIAL_TO_INSTALL=()
   for pkg in "${REQUIRED_PKGS[@]}"; do
     if command -v pacman &>/dev/null; then
       if ! pacman -Qi "$pkg" &>/dev/null; then
-        TO_INSTALL+=("$pkg")
+        OFFICIAL_TO_INSTALL+=("$pkg")
       fi
     fi
   done
 
+  local AUR_TO_INSTALL=()
   for pkg in "${AUR_PKGS[@]}"; do
     local already_installed=0
     if pacman -Qs "^${pkg}$" &>/dev/null || pacman -Qi "$pkg" &>/dev/null; then
@@ -388,22 +424,37 @@ CHECK_AND_INSTALL_PACKAGES() {
     fi
 
     if [[ $already_installed -eq 0 ]]; then
-      TO_INSTALL+=("$pkg")
+      AUR_TO_INSTALL+=("$pkg")
     fi
   done
 
-  if [[ ${#TO_INSTALL[@]} -gt 0 ]]; then
-    log_sub "Installing missing dependencies: ${TO_INSTALL[*]}"
-    if command -v yay &>/dev/null; then
-      yay -S --needed --noconfirm "${TO_INSTALL[@]}" || true
-    elif command -v paru &>/dev/null; then
-      paru -S --needed --noconfirm "${TO_INSTALL[@]}" || true
-    elif command -v sudo &>/dev/null && command -v pacman &>/dev/null; then
-      sudo pacman -S --needed --noconfirm "${TO_INSTALL[@]}" || true
-    else
-      log_warn "Please install missing packages manually: ${TO_INSTALL[*]}"
+  if [[ ${#OFFICIAL_TO_INSTALL[@]} -gt 0 ]]; then
+    log_sub "Installing official packages: ${OFFICIAL_TO_INSTALL[*]}"
+    if command -v pacman &>/dev/null; then
+      $SUDO_CMD pacman -S --needed --noconfirm "${OFFICIAL_TO_INSTALL[@]}" || true
     fi
-  else
+  fi
+
+  if [[ ${#AUR_TO_INSTALL[@]} -gt 0 ]]; then
+    log_sub "Installing AUR packages: ${AUR_TO_INSTALL[*]}"
+    if command -v yay &>/dev/null; then
+      if (( EUID == 0 )) && [[ -n "${SUDO_USER:-}" && "$SUDO_USER" != "root" ]]; then
+        sudo -u "$CURRENT_USER" yay -S --needed --noconfirm "${AUR_TO_INSTALL[@]}" || true
+      else
+        yay -S --needed --noconfirm "${AUR_TO_INSTALL[@]}" || true
+      fi
+    elif command -v paru &>/dev/null; then
+      if (( EUID == 0 )) && [[ -n "${SUDO_USER:-}" && "$SUDO_USER" != "root" ]]; then
+        sudo -u "$CURRENT_USER" paru -S --needed --noconfirm "${AUR_TO_INSTALL[@]}" || true
+      else
+        paru -S --needed --noconfirm "${AUR_TO_INSTALL[@]}" || true
+      fi
+    else
+      log_warn "AUR helper (yay/paru) not found. Please install manually: ${AUR_TO_INSTALL[*]}"
+    fi
+  fi
+
+  if [[ ${#OFFICIAL_TO_INSTALL[@]} -eq 0 && ${#AUR_TO_INSTALL[@]} -eq 0 ]]; then
     log_sub "All required packages are satisfied"
   fi
 }
@@ -414,9 +465,34 @@ CONFIGURE_HARDWARE_DRIVERS() {
 
   case "${HW_VENDOR,,}" in
     *acer*)
+      if [[ -d "/sys/module/acer_nitro_ec" ]] || pacman -Qs acer-nitro-ec &>/dev/null; then
+        if [[ ! -d "/sys/module/acer_nitro_ec" ]]; then
+          $SUDO_CMD modprobe acer-nitro-ec 2>/dev/null || true
+        fi
+        log_sub "Configuring Acer Nitro EC fan driver & udev permissions..."
+        $SUDO_CMD bash -c 'cat << "EOF" > /etc/udev/rules.d/99-acer-nitro-fan.rules
+ACTION=="add|change", SUBSYSTEM=="hwmon", ATTR{name}=="acer_nitro_ec|acer-nitro-ec|acer[-_]nitro[-_]ec", RUN+="/usr/bin/chmod 0666 /sys%p/pwm1_enable /sys%p/pwm2_enable /sys%p/pwm1 /sys%p/pwm2"
+ACTION=="add|change", SUBSYSTEM=="hwmon", KERNEL=="hwmon*", DEVPATH=="*/acer-nitro-ec/hwmon/*", RUN+="/usr/bin/chmod 0666 /sys%p/pwm1_enable /sys%p/pwm2_enable /sys%p/pwm1 /sys%p/pwm2"
+EOF'
+        $SUDO_CMD udevadm control --reload-rules 2>/dev/null || true
+        $SUDO_CMD udevadm trigger --subsystem-match=hwmon 2>/dev/null || true
+
+        # Immediately apply 0666 permissions to any active hwmon fan nodes
+        for h in /sys/class/hwmon/hwmon*; do
+          if [[ -r "$h/name" ]]; then
+            local n
+            n=$(< "$h/name")
+            if [[ "$n" == "acer_nitro_ec" || "$n" == "acer-nitro-ec" ]]; then
+              $SUDO_CMD chmod 0666 "$h"/pwm* 2>/dev/null || true
+              log_sub "Granted direct user control to fan sysfs at $h"
+            fi
+          fi
+        done
+      fi
+
       if command -v nbfc &>/dev/null; then
         log_sub "Activating NoteBook FanControl service for Acer..."
-        sudo systemctl enable --now nbfc_service 2>/dev/null || true
+        $SUDO_CMD systemctl enable --now nbfc_service 2>/dev/null || true
         if [[ "$HW_PRODUCT" =~ AN515-54 ]]; then
           nbfc config -a "Acer Nitro AN515-54" 2>/dev/null || nbfc config -a "Acer Nitro AN515-51" 2>/dev/null || true
         elif [[ "$HW_PRODUCT" =~ AN515-51 ]]; then
@@ -426,31 +502,17 @@ CONFIGURE_HARDWARE_DRIVERS() {
         fi
         nbfc start 2>/dev/null || true
       fi
-
-      if pacman -Qs acer-nitro-ec-dkms &>/dev/null || [[ -d "/sys/module/acer_nitro_ec" ]]; then
-        if [[ ! -d "/sys/module/acer_nitro_ec" ]]; then
-          if command -v sudo &>/dev/null && sudo -n true 2>/dev/null; then
-            sudo modprobe acer-nitro-ec 2>/dev/null || true
-          fi
-        fi
-        if [[ ! -f "/etc/udev/rules.d/99-acer-nitro-fan.rules" ]]; then
-          if command -v sudo &>/dev/null && sudo -n true 2>/dev/null; then
-            echo 'ACTION=="add", SUBSYSTEM=="hwmon", ATTR{name}=="acer-nitro-ec", RUN+="/bin/chmod 0666 /sys%p/pwm1_enable /sys%p/pwm2_enable /sys%p/pwm1 /sys%p/pwm2"' | sudo tee /etc/udev/rules.d/99-acer-nitro-fan.rules >/dev/null 2>&1 || true
-            sudo udevadm control --reload-rules 2>/dev/null || true
-          fi
-        fi
-      fi
       ;;
     *asustek*|*asus*)
       if command -v asusctl &>/dev/null; then
         log_sub "Activating asusd service for ASUS..."
-        sudo systemctl enable --now asusd.service 2>/dev/null || true
+        $SUDO_CMD systemctl enable --now asusd.service 2>/dev/null || true
       fi
       ;;
     *)
       if command -v nbfc &>/dev/null; then
         log_sub "Activating NoteBook FanControl service for ${HW_VENDOR}..."
-        sudo systemctl enable --now nbfc_service 2>/dev/null || true
+        $SUDO_CMD systemctl enable --now nbfc_service 2>/dev/null || true
         nbfc config --recommend --apply 2>/dev/null || true
         nbfc start 2>/dev/null || true
       fi
@@ -461,8 +523,10 @@ CONFIGURE_HARDWARE_DRIVERS() {
 CONFIGURE_AI_AGENT_ENGINE() {
   if command -v ollama &>/dev/null; then
     log_sub "Configuring Ollama AI service for Paradise Agent..."
-    if command -v sudo &>/dev/null && sudo -n true 2>/dev/null; then
+    if [[ -n "$SUDO_CMD" ]] && command -v sudo &>/dev/null && sudo -n true 2>/dev/null; then
       sudo systemctl enable --now ollama.service 2>/dev/null || true
+    elif (( EUID == 0 )); then
+      systemctl enable --now ollama.service 2>/dev/null || true
     elif command -v systemctl &>/dev/null; then
       systemctl --user enable --now ollama.service 2>/dev/null || true
     fi
@@ -572,8 +636,12 @@ INSTALL_AND_ENABLE_PLUGINS
 log_step "4" "$TOTAL_STEPS" "Installing status bar layout & menu extensions..."
 
 # Preserve canonical default Omarchy shell layout as shell-default.json
-if [[ -f "/usr/share/omarchy/config/omarchy/shell.json" && ! -f "$CONFIG_DIR/omarchy/shell-default.json" ]]; then
-  cp "/usr/share/omarchy/config/omarchy/shell.json" "$CONFIG_DIR/omarchy/shell-default.json"
+if [[ ! -f "$CONFIG_DIR/omarchy/shell-default.json" ]]; then
+  if [[ -f "/usr/share/omarchy/config/omarchy/shell.json" ]]; then
+    cp "/usr/share/omarchy/config/omarchy/shell.json" "$CONFIG_DIR/omarchy/shell-default.json"
+  elif [[ -f "$CONFIG_DIR/omarchy/shell.json" ]]; then
+    cp "$CONFIG_DIR/omarchy/shell.json" "$CONFIG_DIR/omarchy/shell-default.json"
+  fi
 fi
 
 if [[ -f "$REPO_DIR/shell/shell.json" ]]; then
@@ -595,7 +663,7 @@ cat << 'EOF' > "$CONFIG_DIR/omarchy/extensions/paradise.json"
     "icon": "󰘧",
     "label": "Tri-Color Gradient Matrix",
     "description": "Miku Cyan -> Hacker Green -> Sakura Pink",
-    "action": "ghostty -e ~/.local/bin/virtual_matrix"
+    "action": "bash -c 'for t in ghostty alacritty foot kitty xdg-terminal-exec; do if command -v \"$t\" &>/dev/null; then if [ \"$t\" = \"foot\" ]; then exec foot ~/.local/bin/virtual_matrix; else exec \"$t\" -e ~/.local/bin/virtual_matrix; fi; fi; done'"
   },
   "paradise.wallpaper": {
     "icon": "",
@@ -625,7 +693,7 @@ cat << 'EOF' > "$CONFIG_DIR/omarchy/extensions/paradise.json"
     "icon": "󰚩",
     "label": "Paradise Local Agent",
     "description": "Autonomous offline local AI pair-programmer (Qwen 2.5 Coder)",
-    "action": "ghostty -e ~/.local/bin/paradise-agent"
+    "action": "bash -c 'for t in ghostty alacritty foot kitty xdg-terminal-exec; do if command -v \"$t\" &>/dev/null; then if [ \"$t\" = \"foot\" ]; then exec foot ~/.local/bin/paradise-agent; else exec \"$t\" -e ~/.local/bin/paradise-agent; fi; fi; done'"
   }
 }
 EOF
@@ -679,7 +747,7 @@ fi
 # 5.5 Autostart: ensure live wallpaper hook is present
 if [[ -f "$CONFIG_DIR/hypr/autostart.lua" ]]; then
   if ! grep -q "toggle_live_wallpaper.sh" "$CONFIG_DIR/hypr/autostart.lua"; then
-    echo 'o.launch_on_start("~/.local/bin/toggle_live_wallpaper.sh init")' >> "$CONFIG_DIR/hypr/autostart.lua"
+    echo 'o.launch_on_start("toggle_live_wallpaper.sh init")' >> "$CONFIG_DIR/hypr/autostart.lua"
     log_sub "Hooked live wallpaper to ~/.config/hypr/autostart.lua"
   fi
 elif [[ -f "$REPO_DIR/hypr/autostart.lua" ]]; then
@@ -777,8 +845,9 @@ rm -f "$LOCAL_BIN/omarchy-agent" \
       "$LOCAL_BIN/agy-local" 2>/dev/null || true
 
 if [[ -d "$REPO_DIR/bin" ]]; then
-  cp -r "$REPO_DIR"/bin/* "$LOCAL_BIN/"
-  chmod +x "$LOCAL_BIN"/* 2>/dev/null || true
+  rm -rf "$LOCAL_BIN/__pycache__" 2>/dev/null || true
+  rsync -a --exclude='__pycache__' "$REPO_DIR"/bin/ "$LOCAL_BIN/"
+  chmod +x "$LOCAL_BIN"/*.sh "$LOCAL_BIN"/*.py "$LOCAL_BIN"/momoisay "$LOCAL_BIN"/momoisay.real 2>/dev/null || true
   ln -nsf "$LOCAL_BIN/paradise_agent.py" "$LOCAL_BIN/paradise-agent" 2>/dev/null || true
   ln -nsf "$LOCAL_BIN/paradise_agent.py" "$LOCAL_BIN/offline-agent" 2>/dev/null || true
   ln -nsf "$LOCAL_BIN/virtual_matrix.py" "$LOCAL_BIN/virtual_matrix" 2>/dev/null || true
@@ -825,6 +894,8 @@ fi
 # GTK4 & GTK3 Styling (Nautilus & Libadwaita) and Minimal Cybertech Icons
 if [[ -f "$REPO_DIR/config/gtk.css" ]]; then
   mkdir -p "$CONFIG_DIR/gtk-4.0" "$CONFIG_DIR/gtk-3.0"
+  [[ -f "$CONFIG_DIR/gtk-4.0/gtk.css" && ! -f "$CONFIG_DIR/gtk-4.0/gtk.css.bak_default" ]] && cp "$CONFIG_DIR/gtk-4.0/gtk.css" "$CONFIG_DIR/gtk-4.0/gtk.css.bak_default" 2>/dev/null || true
+  [[ -f "$CONFIG_DIR/gtk-3.0/gtk.css" && ! -f "$CONFIG_DIR/gtk-3.0/gtk.css.bak_default" ]] && cp "$CONFIG_DIR/gtk-3.0/gtk.css" "$CONFIG_DIR/gtk-3.0/gtk.css.bak_default" 2>/dev/null || true
   cp "$REPO_DIR/config/gtk.css" "$CONFIG_DIR/gtk-4.0/gtk.css"
   cp "$REPO_DIR/config/gtk.css" "$CONFIG_DIR/gtk-3.0/gtk.css"
 fi
@@ -904,6 +975,13 @@ if [[ "$THEME_NAME" == "virtual-paradise" ]]; then
     fi
   fi
 
+  # Apply Virtual Paradise GTK styling
+  if [[ -f "$HOME/.config/omarchy/themes/virtual-paradise/config/gtk.css" ]]; then
+    mkdir -p "$HOME/.config/gtk-4.0" "$HOME/.config/gtk-3.0"
+    cp "$HOME/.config/omarchy/themes/virtual-paradise/config/gtk.css" "$HOME/.config/gtk-4.0/gtk.css" 2>/dev/null || true
+    cp "$HOME/.config/omarchy/themes/virtual-paradise/config/gtk.css" "$HOME/.config/gtk-3.0/gtk.css" 2>/dev/null || true
+  fi
+
   # Start live video wallpaper (only if not already running)
   if [[ -x "$HOME/.local/bin/toggle_live_wallpaper.sh" ]]; then
     if ! pgrep -f mpvpaper >/dev/null 2>&1; then
@@ -916,6 +994,18 @@ else
 
   # Restore default Fastfetch (Arch/Omarchy logo with native terminal colors)
   rm -f "$HOME/.config/fastfetch/config.jsonc" 2>/dev/null || true
+
+  # Restore default GTK CSS so other themes keep their native look
+  if [[ -f "$HOME/.config/gtk-4.0/gtk.css.bak_default" ]]; then
+    cp "$HOME/.config/gtk-4.0/gtk.css.bak_default" "$HOME/.config/gtk-4.0/gtk.css" 2>/dev/null || true
+  else
+    rm -f "$HOME/.config/gtk-4.0/gtk.css" 2>/dev/null || true
+  fi
+  if [[ -f "$HOME/.config/gtk-3.0/gtk.css.bak_default" ]]; then
+    cp "$HOME/.config/gtk-3.0/gtk.css.bak_default" "$HOME/.config/gtk-3.0/gtk.css" 2>/dev/null || true
+  else
+    rm -f "$HOME/.config/gtk-3.0/gtk.css" 2>/dev/null || true
+  fi
 
   # Restore canonical default Omarchy Bar Layout only if it changed
   if [[ -f "$HOME/.config/omarchy/shell-default.json" ]]; then
@@ -1014,11 +1104,12 @@ EOF
   fi
 
   # Add cyberpunk error border hook
-  if ! grep -q "__omarchy_error_border_hook" "$file"; then
-    cat << 'EOF' >> "$file"
+  if ! grep -q "__omarchy_error_border_hook" "$file" && ! grep -q "_omarchy_error_border_hook" "$file"; then
+    if [[ "$file" == *".bashrc"* ]]; then
+      cat << 'EOF' >> "$file"
 
 # ==============================================================================
-#  CYBERPUNK WINDOW ERROR SHAKE & BLAZING NEON RED GLOW HOOK
+#  CYBERPUNK WINDOW ERROR SHAKE & BLAZING NEON RED GLOW HOOK (BASH)
 # ==============================================================================
 __omarchy_last_err_state=0
 
@@ -1028,7 +1119,7 @@ __omarchy_error_border_hook() {
     if [[ $exit_code -ne 0 && $__omarchy_last_err_state -eq 0 ]]; then
       __omarchy_last_err_state=1
       (~/.local/bin/hypr_window_error_shake.sh &>/dev/null &)
-    elif [[ $exit_code -ne 0 && $__omarchy_last_err_state -ne 0 ]]; then
+    elif [[ $exit_code -eq 0 && $__omarchy_last_err_state -ne 0 ]]; then
       __omarchy_last_err_state=0
       (~/.local/bin/hypr_window_error_restore.sh &>/dev/null &)
     fi
@@ -1040,6 +1131,32 @@ if [[ "$PROMPT_COMMAND" != *"__omarchy_error_border_hook"* ]]; then
   PROMPT_COMMAND="__omarchy_error_border_hook${PROMPT_COMMAND:+; $PROMPT_COMMAND}"
 fi
 EOF
+    elif [[ "$file" == *".zshrc"* ]]; then
+      cat << 'EOF' >> "$file"
+
+# ==============================================================================
+#  CYBERPUNK WINDOW ERROR SHAKE & BLAZING NEON RED GLOW HOOK (ZSH)
+# ==============================================================================
+typeset -g __omarchy_last_err_state=0
+
+__omarchy_error_border_hook() {
+  local exit_code=$?
+  if [[ -n "$HYPRLAND_INSTANCE_SIGNATURE" ]]; then
+    if [[ $exit_code -ne 0 && $__omarchy_last_err_state -eq 0 ]]; then
+      __omarchy_last_err_state=1
+      (~/.local/bin/hypr_window_error_shake.sh &>/dev/null &!)
+    elif [[ $exit_code -eq 0 && $__omarchy_last_err_state -ne 0 ]]; then
+      __omarchy_last_err_state=0
+      (~/.local/bin/hypr_window_error_restore.sh &>/dev/null &!)
+    fi
+  fi
+  return $exit_code
+}
+
+autoload -Uz add-zsh-hook 2>/dev/null || true
+add-zsh-hook precmd __omarchy_error_border_hook 2>/dev/null || precmd_functions+=(__omarchy_error_border_hook)
+EOF
+    fi
   fi
 }
 
@@ -1061,13 +1178,23 @@ if [[ $IS_HOOK -eq 0 ]]; then
   rm -rf "$CACHE_DIR/omarchy/theme-selector" 2>/dev/null || true
 
   if command -v omarchy &>/dev/null; then
-    omarchy theme set "$THEME_NAME" 2>/dev/null || true
-    omarchy theme bg cache 2>/dev/null || true
-    omarchy restart shell 2>/dev/null || true
+    if (( EUID == 0 )) && [[ -n "${SUDO_USER:-}" && "$SUDO_USER" != "root" ]]; then
+      sudo -u "$CURRENT_USER" WAYLAND_DISPLAY="$WAYLAND_DISPLAY" HYPRLAND_INSTANCE_SIGNATURE="$HYPRLAND_INSTANCE_SIGNATURE" XDG_RUNTIME_DIR="${XDG_RUNTIME_DIR:-/run/user/$(id -u "$CURRENT_USER")}" DBUS_SESSION_BUS_ADDRESS="$DBUS_SESSION_BUS_ADDRESS" omarchy theme set "$THEME_NAME" 2>/dev/null || true
+      sudo -u "$CURRENT_USER" WAYLAND_DISPLAY="$WAYLAND_DISPLAY" HYPRLAND_INSTANCE_SIGNATURE="$HYPRLAND_INSTANCE_SIGNATURE" XDG_RUNTIME_DIR="${XDG_RUNTIME_DIR:-/run/user/$(id -u "$CURRENT_USER")}" DBUS_SESSION_BUS_ADDRESS="$DBUS_SESSION_BUS_ADDRESS" omarchy theme bg cache 2>/dev/null || true
+      sudo -u "$CURRENT_USER" WAYLAND_DISPLAY="$WAYLAND_DISPLAY" HYPRLAND_INSTANCE_SIGNATURE="$HYPRLAND_INSTANCE_SIGNATURE" XDG_RUNTIME_DIR="${XDG_RUNTIME_DIR:-/run/user/$(id -u "$CURRENT_USER")}" DBUS_SESSION_BUS_ADDRESS="$DBUS_SESSION_BUS_ADDRESS" omarchy restart shell 2>/dev/null || true
+    else
+      omarchy theme set "$THEME_NAME" 2>/dev/null || true
+      omarchy theme bg cache 2>/dev/null || true
+      omarchy restart shell 2>/dev/null || true
+    fi
   fi
 
   if command -v hyprctl &>/dev/null; then
-    hyprctl reload 2>/dev/null || true
+    if (( EUID == 0 )) && [[ -n "${SUDO_USER:-}" && "$SUDO_USER" != "root" ]]; then
+      sudo -u "$CURRENT_USER" WAYLAND_DISPLAY="$WAYLAND_DISPLAY" HYPRLAND_INSTANCE_SIGNATURE="$HYPRLAND_INSTANCE_SIGNATURE" XDG_RUNTIME_DIR="${XDG_RUNTIME_DIR:-/run/user/$(id -u "$CURRENT_USER")}" hyprctl reload 2>/dev/null || true
+    else
+      hyprctl reload 2>/dev/null || true
+    fi
   fi
 
   # Auto-trigger SUPER + ALT + UP: Initialize and launch live video wallpaper immediately

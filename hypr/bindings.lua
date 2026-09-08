@@ -37,6 +37,7 @@ o.bind("SUPER + E", "File Manager", "setsid uwsm-app -- xdg-open ~")
 o.bind("SUPER + B", "Web Browser", "omarchy launch browser")
 
 -- Color Picker (Magnifier + Hex Copy)
+hl.unbind("SUPER + SHIFT + C")
 o.bind("SUPER + SHIFT + C", "Color Picker", "omarchy-capture-color")
 
 -- 4. WIRELESS PROJECTION / CAST SCREEN (Cast Screen)

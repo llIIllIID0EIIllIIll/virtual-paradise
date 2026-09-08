@@ -82,10 +82,17 @@ Unified terminal omnisearch with adaptive live preview:
 ---
 
 ### 🚨 Window Error Shake & Neon Red Border
-Any terminal command returning a non-zero exit code automatically shakes the active window and turns its border glowing neon red.
+Any terminal command returning a non-zero exit code automatically shakes the active window and turns its border glowing neon red. Works across both Bash (`PROMPT_COMMAND`) and Zsh (`precmd`).
 
 ### ❄️ Hardware Cooler Boost (`SUPER + ALT + C`)
-One-key fan cooling toggle with on-screen OSD notification.
+One-key fan cooling toggle with on-screen OSD notification:
+- **Intelligent Vendor Support:** Auto-detects Acer Nitro series (`acer-nitro-ec-dkms`), universal laptops (`nbfc-linux`), ASUS ROG/TUF (`asusctl`), and MSI gaming laptops (`isw`).
+- **Non-blocking & Zero-hang:** Automated udev rules (`/etc/udev/rules.d/99-acer-nitro-fan.rules`) ensure `0666` sysfs permissions on fan nodes so toggling is instant and never hangs when triggered outside an interactive terminal.
+
+### 🛡️ Omarchy Integrity & Clean Isolation
+Virtual☆Paradise is built to coexist harmlessly with your default Omarchy setup:
+- **Preserved Defaults:** Backs up your initial status bar layout to `~/.config/omarchy/shell-default.json` and your default GTK CSS stylesheets.
+- **Clean Theme Lifecycle Hook:** When switching away from Virtual Paradise via `omarchy theme set <other>`, the post-theme hook (`~/.config/omarchy/hooks/theme-set.d/virtual-paradise.sh`) cleanly terminates `mpvpaper` live video wallpaper, restores standard Omarchy bar layout, and reverts GTK styles so other themes maintain their original design without residue.
 
 ---
 
@@ -94,15 +101,15 @@ One-key fan cooling toggle with on-screen OSD notification.
 | Shortcut | Action |
 | :--- | :--- |
 | `SUPER + Q` | 5-Terminal Rice Layout |
-| `SUPER + ALT + UP` | Toggle Live Wallpaper |
-| `SUPER + ALT + RIGHT/LEFT` | Next / Prev Live Wallpaper |
-| `SUPER + N` | Next theme background |
-| `SUPER + ALT + C` | Toggle Cooler Boost |
-| `SUPER + SHIFT + K` | Cast Screen (Wireless Display) |
-| `SUPER + E` | File Manager |
+| `SUPER + ALT + UP` | Toggle Live Video / Static Wallpaper |
+| `SUPER + ALT + RIGHT/LEFT` | Next / Prev Live Wallpaper (Glitch Transition) |
+| `SUPER + N` | Next static theme background |
+| `SUPER + ALT + C` | Toggle Cooler Boost (100% Fan Turbo / Auto) |
+| `SUPER + SHIFT + K` | Cast Screen (Wireless Display / Miracast) |
+| `SUPER + E` | File Manager (xdg-open default) |
 | `SUPER + B` | Web Browser |
 | `SUPER + SHIFT + T` | Theme Switcher |
-| `SUPER + SHIFT + C` | Color Picker |
+| `SUPER + SHIFT + C` | Color Picker (Magnifier + Hex Copy) |
 | `SUPER + \` | Matrix Screensaver |
 | `SUPER + CTRL + L` | Lock Screen |
 | `f` *(terminal)* | Search☆Hub |
@@ -139,8 +146,7 @@ omarchy-virtual-paradise/
 │   ├── shell.toml          Shell environment color tokens
 │   ├── icons.theme         Icon theme definition
 │   ├── keyboard.rgb        RGB backlight profile
-│   ├── vscode.json         VS Code extension config
-│   └── vscode-theme.json   VS Code color token definitions
+│   └── vscode-theme.json   VS Code color token definitions (packaged by omarchy-theme-set-vscode)
 │
 ├── hypr/
 │   ├── hyprland.conf       Hyprland top-level config
@@ -218,29 +224,34 @@ cd virtual-paradise
 ./install.sh
 ```
 
+> [!TIP]
+> **Privilege & Sudo Handling:**
+> - Running `./install.sh` requests sudo once upfront and automatically maintains a background keep-alive loop so commands never stall or prompt mid-installation.
+> - Running `sudo ./install.sh` is also fully supported: the installer automatically detects `$SUDO_USER`, installs AUR dependencies cleanly as the regular user (avoiding `yay`/`paru` root restrictions), preserves non-root file ownership under `$HOME`, and connects cleanly to the active Wayland/Hyprland session.
+
 The installer runs **10 automated steps**:
 
-1. Verify & install required packages (`mpvpaper`, `btop`, `cava`, `fastfetch`, `micro`, `fortune-mod`, `ripgrep`, `fd`, `ffmpeg`, `ollama`, …)
-2. Create runtime directories & back up existing configs
-3. Calibrate & install all 18 Quickshell plugins for your `$USER`
-4. Deploy status bar layout & quick-action menu extensions
-5. Install Hyprland keybindings, look'n'feel & autostart configs
-6. Install CLI tools & scripts to `~/.local/bin/`
-7. Install component themes (Cava, Btop, Fastfetch, Micro, GTK)
-8. Sync theme assets, wallpapers & automation hooks
-9. Configure Plymouth boot animation, SDDM login & rebuild UKI *(requires sudo)*
-10. Configure `~/.zshrc` / `~/.bashrc` with Search☆Hub & error shake hooks
+1. **Verify & install required packages:** Installs official dependencies (`mpvpaper`, `btop`, `cava`, `fastfetch`, `micro`, `fortune-mod`, `ripgrep`, `fd`, `ffmpeg`, `ollama`, `jq`, `socat`, …) and hardware-specific fan drivers (`acer-nitro-ec-dkms`, `nbfc-linux`, `asusctl`, or `isw`).
+2. **Prepare directories:** Initializes runtime paths and creates timestamped backups of existing configurations.
+3. **Calibrate Quickshell plugins:** Customizes all 18 Quickshell status bar widgets to your active `$USER` namespace and registers them in Omarchy.
+4. **Deploy status bar layout:** Synchronizes `shell.json` while safely archiving the canonical default to `shell-default.json`.
+5. **Install Hyprland ecosystem:** Configures golden ratio gaps, squircle rounding, acrylic blur, cyberSpring animations, gestures, and non-conflicting keybindings.
+6. **Deploy CLI tools & scripts:** Copies helper scripts to `~/.local/bin/` with correct executable permissions and hardware udev rules for fan control.
+7. **Install component themes:** Deploys matching color palettes for Cava, Btop, Fastfetch, Micro, GTK 3/4, and VS Code.
+8. **Sync theme assets & automation hooks:** Prepares wallpapers, videos, and Omarchy post-theme-set hooks for zero-pollution theme switching.
+9. **Configure boot & login animations:** Plymouth boot animation, SDDM login screen, and UKI kernel image rebuilding *(optional, skipped with `--no-boot`)*.
+10. **Configure shell environment:** Harmonizes `~/.zshrc` and `~/.bashrc` with Search☆Hub omnisearch, aliases, and per-shell error shake hooks.
 
 ### Flags
 
 | Flag | Effect |
 | :--- | :--- |
 | *(none)* | Full installation |
-| `--no-boot` | Skip Plymouth / SDDM / UKI — no sudo required |
+| `--no-boot` | Skip Plymouth / SDDM / UKI — no boot animation changes |
 | `--boot-only` | Boot & shutdown animations only |
 
 ```bash
-# User-space only, no sudo needed
+# Skip boot animations
 ./install.sh --no-boot
 
 # Boot animations only

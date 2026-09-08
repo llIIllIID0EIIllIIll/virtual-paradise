@@ -8,8 +8,11 @@ Usage:
 import sys
 import os
 import shutil
-
-TEMPLATE_SRC = os.path.expanduser("~/Windows/skills/vn-officecli/templates/to_trinh_mau.docx")
+TEMPLATE_CANDIDATES = [
+    os.path.expanduser("~/.local/share/virtual-paradise/templates/to_trinh_mau.docx"),
+    os.path.join(os.path.dirname(__file__), "templates", "to_trinh_mau.docx"),
+]
+TEMPLATE_SRC = next((p for p in TEMPLATE_CANDIDATES if os.path.exists(p)), "")
 
 def resolve_target_file(target: str) -> str:
     target = os.path.expanduser(target)
