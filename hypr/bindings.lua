@@ -39,6 +39,6 @@ o.bind("SUPER + B", "Web Browser", "omarchy launch browser")
 -- Color Picker (Magnifier + Hex Copy)
 o.bind("SUPER + SHIFT + C", "Color Picker", "omarchy-capture-color")
 
--- 4. WIRELESS PROJECTION / CAST SCREEN (Like Win+K on Windows)
+-- 4. WIRELESS PROJECTION / CAST SCREEN (Cast Screen)
 --------------------------------------------------------------------------------
-o.bind("SUPER + K", "Cast Screen (Wireless Display)", "~/.local/bin/cast_screen.sh")
+o.bind("SUPER + SHIFT + K", "Cast Screen (Wireless Display)", "~/.local/bin/cast_screen.sh")

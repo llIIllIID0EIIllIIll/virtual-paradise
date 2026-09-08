@@ -98,6 +98,7 @@ One-key fan cooling toggle with on-screen OSD notification.
 | `SUPER + ALT + RIGHT/LEFT` | Next / Prev Live Wallpaper |
 | `SUPER + N` | Next theme background |
 | `SUPER + ALT + C` | Toggle Cooler Boost |
+| `SUPER + SHIFT + K` | Cast Screen (Wireless Display) |
 | `SUPER + E` | File Manager |
 | `SUPER + B` | Web Browser |
 | `SUPER + SHIFT + T` | Theme Switcher |

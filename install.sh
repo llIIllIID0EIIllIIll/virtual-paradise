@@ -617,7 +617,7 @@ cat << 'EOF' > "$CONFIG_DIR/omarchy/extensions/paradise.json"
   },
   "paradise.cast": {
     "icon": "󰍹",
-    "label": "Cast Screen (Win+K)",
+    "label": "Cast Screen (SUPER+SHIFT+K)",
     "description": "Wireless Display / Miracast & Chromecast projection",
     "action": "bash -c ~/.local/bin/cast_screen.sh"
   },
@@ -653,11 +653,11 @@ if [[ -f "$REPO_DIR/hypr/input.lua" ]]; then
   log_sub "Applied full-topping input & gestures (3-finger workspace swipe, pinch zoom, fast repeat)"
 fi
 
-# 5.3 Keybindings (SUPER+E file manager, SUPER+RETURN terminal, SUPER+ALT+C cooler boost, SUPER+K cast)
+# 5.3 Keybindings (SUPER+E file manager, SUPER+B browser, SUPER+ALT+C cooler boost, SUPER+SHIFT+K cast)
 if [[ -f "$REPO_DIR/hypr/bindings.lua" ]]; then
   [[ -f "$CONFIG_DIR/hypr/bindings.lua" ]] && cp "$CONFIG_DIR/hypr/bindings.lua" "$HYPR_BAK_DIR/" 2>/dev/null || true
   cp "$REPO_DIR/hypr/bindings.lua" "$CONFIG_DIR/hypr/bindings.lua"
-  log_sub "Applied full-topping keybindings (SUPER+E, SUPER+B, SUPER+RETURN, SUPER+ALT+C, SUPER+K)"
+  log_sub "Applied full-topping keybindings (SUPER+E, SUPER+B, SUPER+ALT+C, SUPER+SHIFT+K)"
 fi
 
 # 5.4 Display / Monitors
@@ -1085,7 +1085,7 @@ if [[ $IS_HOOK -eq 0 ]]; then
   echo -e "   ${C_GREEN}SUPER + ALT + LEFT${C_RESET}    ➔ Prev Live Wallpaper (Cyberpunk Glitch Transition)"
   echo -e "   ${C_GREEN}SUPER + N${C_RESET}             ➔ Cycle next wallpaper"
   echo -e "   ${C_GREEN}SUPER + ALT + C${C_RESET}       ➔ Toggle Cooler Boost fan cooling"
-  echo -e "   ${C_GREEN}SUPER + K${C_RESET}             ➔ Cast Screen (Wireless Display / Win+K)"
+  echo -e "   ${C_GREEN}SUPER + SHIFT + K${C_RESET}     ➔ Cast Screen (Wireless Display)"
   echo -e "   ${C_GREEN}ffa${C_RESET}                   ➔ Launch Fastfetch with high-res Anime Braille logo"
   echo -e "   ${C_GREEN}f${C_RESET}                     ➔ Search☆Hub (Explorer, History, Process)"
   echo -e "${C_CYAN}───────────────────────────────────────────────────────────────────${C_RESET}\n"
