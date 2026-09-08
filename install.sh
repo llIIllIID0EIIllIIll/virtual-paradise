@@ -97,10 +97,10 @@ INSTALL_BOOT_ANIMATIONS() {
   if (( EUID == 0 )); then
     can_sudo=1
     SUDO_CMD=""
-  elif command -v sudo &>/dev/null && sudo -v 2>/dev/null; then
+  elif command -v sudo &>/dev/null && sudo -n true 2>/dev/null; then
     can_sudo=1
     SUDO_CMD="sudo"
-  elif command -v sudo &>/dev/null; then
+  elif [[ $BOOT_ONLY -eq 1 ]] && command -v sudo &>/dev/null; then
     log_info "  ${C_PINK}🔑 Requesting sudo permission for system-wide Plymouth and SDDM setup...${C_RESET}"
     if sudo -v; then
       can_sudo=1
@@ -297,6 +297,10 @@ CHECK_AND_INSTALL_PACKAGES() {
     "dust"
     "gping"
     "lm_sensors"
+    "zsh"
+    "zsh-completions"
+    "zsh-autosuggestions"
+    "zsh-syntax-highlighting"
   )
   local AUR_PKGS=(
     "mpvpaper"
@@ -311,28 +315,51 @@ CHECK_AND_INSTALL_PACKAGES() {
 
   case "${HW_VENDOR,,}" in
     *acer*)
-      log_sub "Acer hardware detected: adding fan control packages (nbfc-linux)..."
-      AUR_PKGS+=("nbfc-linux")
-      if pacman -Qs linux-headers &>/dev/null; then
-        AUR_PKGS+=("acer-nitro-ec-dkms")
+      if [[ -d "/sys/module/acer_nitro_ec" ]] || pacman -Qs acer-nitro-ec &>/dev/null; then
+        log_sub "Acer Nitro EC fan driver is active"
+      elif command -v nbfc &>/dev/null || pacman -Qs nbfc &>/dev/null; then
+        log_sub "NoteBook FanControl is active"
+      else
+        log_sub "Acer hardware detected: checking fan control packages..."
+        if pacman -Qs linux-headers &>/dev/null; then
+          AUR_PKGS+=("acer-nitro-ec-dkms")
+        else
+          AUR_PKGS+=("nbfc-linux")
+        fi
       fi
       ;;
     *micro-star*|*msi*)
-      log_sub "MSI hardware detected: adding ISW fan control tool..."
-      AUR_PKGS+=("isw")
+      if command -v isw &>/dev/null || pacman -Qs isw &>/dev/null; then
+        log_sub "MSI ISW fan control tool is active"
+      else
+        log_sub "MSI hardware detected: adding ISW fan control tool..."
+        AUR_PKGS+=("isw")
+      fi
       ;;
     *asustek*|*asus*)
-      log_sub "ASUS ROG/TUF hardware detected: adding asusctl..."
-      REQUIRED_PKGS+=("asusctl")
+      if command -v asusctl &>/dev/null || pacman -Qs asusctl &>/dev/null; then
+        log_sub "ASUS asusctl tool is active"
+      else
+        log_sub "ASUS ROG/TUF hardware detected: adding asusctl..."
+        REQUIRED_PKGS+=("asusctl")
+      fi
       ;;
     *lenovo*|*dell*|*alienware*|*hp*|*gigabyte*|*razer*)
-      log_sub "${HW_VENDOR} laptop detected: adding universal fan control (nbfc-linux)..."
-      AUR_PKGS+=("nbfc-linux")
+      if command -v nbfc &>/dev/null || pacman -Qs nbfc &>/dev/null; then
+        log_sub "NoteBook FanControl is active"
+      else
+        log_sub "${HW_VENDOR} laptop detected: adding universal fan control (nbfc-linux)..."
+        AUR_PKGS+=("nbfc-linux")
+      fi
       ;;
     *)
       if [[ "$HW_CHASSIS" == "laptop" ]]; then
-        log_sub "Laptop detected: adding universal fan control (nbfc-linux)..."
-        AUR_PKGS+=("nbfc-linux")
+        if command -v nbfc &>/dev/null || pacman -Qs nbfc &>/dev/null; then
+          log_sub "NoteBook FanControl is active"
+        else
+          log_sub "Laptop detected: adding universal fan control (nbfc-linux)..."
+          AUR_PKGS+=("nbfc-linux")
+        fi
       fi
       ;;
   esac
@@ -347,10 +374,21 @@ CHECK_AND_INSTALL_PACKAGES() {
   done
 
   for pkg in "${AUR_PKGS[@]}"; do
-    if ! command -v "$pkg" &>/dev/null; then
-      if command -v pacman &>/dev/null && ! pacman -Qi "$pkg" &>/dev/null; then
-        TO_INSTALL+=("$pkg")
-      fi
+    local already_installed=0
+    if pacman -Qs "^${pkg}$" &>/dev/null || pacman -Qi "$pkg" &>/dev/null; then
+      already_installed=1
+    elif [[ "$pkg" == "nbfc-linux" ]] && command -v nbfc &>/dev/null; then
+      already_installed=1
+    elif [[ "$pkg" == "gnome-network-displays" ]] && command -v gnome-network-displays &>/dev/null; then
+      already_installed=1
+    elif [[ "$pkg" == "mpvpaper" ]] && command -v mpvpaper &>/dev/null; then
+      already_installed=1
+    elif [[ "$pkg" == "isw" ]] && command -v isw &>/dev/null; then
+      already_installed=1
+    fi
+
+    if [[ $already_installed -eq 0 ]]; then
+      TO_INSTALL+=("$pkg")
     fi
   done
 
@@ -389,11 +427,17 @@ CONFIGURE_HARDWARE_DRIVERS() {
         nbfc start 2>/dev/null || true
       fi
 
-      if pacman -Qs acer-nitro-ec-dkms &>/dev/null; then
-        sudo modprobe acer-nitro-ec 2>/dev/null || true
-        if [[ -w "/etc/udev/rules.d" ]] || command -v sudo &>/dev/null; then
-          echo 'ACTION=="add", SUBSYSTEM=="hwmon", ATTR{name}=="acer-nitro-ec", RUN+="/bin/chmod 0666 /sys%p/pwm1_enable /sys%p/pwm2_enable /sys%p/pwm1 /sys%p/pwm2"' | sudo tee /etc/udev/rules.d/99-acer-nitro-fan.rules >/dev/null 2>&1 || true
-          sudo udevadm control --reload-rules 2>/dev/null || true
+      if pacman -Qs acer-nitro-ec-dkms &>/dev/null || [[ -d "/sys/module/acer_nitro_ec" ]]; then
+        if [[ ! -d "/sys/module/acer_nitro_ec" ]]; then
+          if command -v sudo &>/dev/null && sudo -n true 2>/dev/null; then
+            sudo modprobe acer-nitro-ec 2>/dev/null || true
+          fi
+        fi
+        if [[ ! -f "/etc/udev/rules.d/99-acer-nitro-fan.rules" ]]; then
+          if command -v sudo &>/dev/null && sudo -n true 2>/dev/null; then
+            echo 'ACTION=="add", SUBSYSTEM=="hwmon", ATTR{name}=="acer-nitro-ec", RUN+="/bin/chmod 0666 /sys%p/pwm1_enable /sys%p/pwm2_enable /sys%p/pwm1 /sys%p/pwm2"' | sudo tee /etc/udev/rules.d/99-acer-nitro-fan.rules >/dev/null 2>&1 || true
+            sudo udevadm control --reload-rules 2>/dev/null || true
+          fi
         fi
       fi
       ;;
@@ -487,7 +531,7 @@ INSTALL_AND_ENABLE_PLUGINS() {
           -e "s/__USER__\./${CURRENT_USER}./g" \
           -e "s/\"id\": \"[^\"]*\.${plugin_name}\"/\"id\": \"${target_plugin_id}\"/g" \
           -e "s/moduleName: \"[^\"]*\.${plugin_name}\"/moduleName: \"${target_plugin_id}\"/g" {} +
-        ((count++))
+        count=$((count + 1))
       fi
     done
     log_sub "Synchronized and calibrated ${count} plugins for '${CURRENT_USER}'"
@@ -505,7 +549,7 @@ INSTALL_AND_ENABLE_PLUGINS() {
           local pname=$(basename "$pdir")
           local pid="${CURRENT_USER}.${pname}"
           omarchy plugin enable "$pid" 2>/dev/null || true
-          ((enabled_count++))
+          enabled_count=$((enabled_count + 1))
         fi
       done
       log_sub "Enabled all ${enabled_count} Virtual Paradise plugins in Omarchy shell"
@@ -588,21 +632,51 @@ EOF
 log_sub "Installed Quick Actions menu extensions"
 
 # ------------------------------------------------------------------------------
-# 5. Configure Hyprland Add-on Rules & Keybindings (Non-destructive)
+# 5. Configure Hyprland Add-on Rules, Styling & Keybindings
 # ------------------------------------------------------------------------------
-log_step "5" "$TOTAL_STEPS" "Configuring Hyprland add-on rules, shortcuts & overlays..."
+log_step "5" "$TOTAL_STEPS" "Deploying Hyprland look'n'feel, gestures, rules & shortcuts..."
 
-# 5.1 Initialize user hardware configs ONLY if missing (never overwrite existing user hardware settings)
+HYPR_BAK_DIR="$CONFIG_DIR/hypr/backup_$(date +%s)"
+mkdir -p "$HYPR_BAK_DIR"
+
+# 5.1 Look'n'feel (Golden ratio gaps, squircle rounding, acrylic blur, cyberSpring animations)
+if [[ -f "$REPO_DIR/hypr/looknfeel.lua" ]]; then
+  [[ -f "$CONFIG_DIR/hypr/looknfeel.lua" ]] && cp "$CONFIG_DIR/hypr/looknfeel.lua" "$HYPR_BAK_DIR/" 2>/dev/null || true
+  cp "$REPO_DIR/hypr/looknfeel.lua" "$CONFIG_DIR/hypr/looknfeel.lua"
+  log_sub "Applied Virtual Paradise look'n'feel (acrylic blur, cyberSpring animations, neon borders)"
+fi
+
+# 5.2 Input Tuning (macOS-level touchpad gestures, 50 chars/s repeat rate, cursor auto-hide)
+if [[ -f "$REPO_DIR/hypr/input.lua" ]]; then
+  [[ -f "$CONFIG_DIR/hypr/input.lua" ]] && cp "$CONFIG_DIR/hypr/input.lua" "$HYPR_BAK_DIR/" 2>/dev/null || true
+  cp "$REPO_DIR/hypr/input.lua" "$CONFIG_DIR/hypr/input.lua"
+  log_sub "Applied full-topping input & gestures (3-finger workspace swipe, pinch zoom, fast repeat)"
+fi
+
+# 5.3 Keybindings (SUPER+E file manager, SUPER+RETURN terminal, SUPER+ALT+C cooler boost, SUPER+K cast)
+if [[ -f "$REPO_DIR/hypr/bindings.lua" ]]; then
+  [[ -f "$CONFIG_DIR/hypr/bindings.lua" ]] && cp "$CONFIG_DIR/hypr/bindings.lua" "$HYPR_BAK_DIR/" 2>/dev/null || true
+  cp "$REPO_DIR/hypr/bindings.lua" "$CONFIG_DIR/hypr/bindings.lua"
+  log_sub "Applied full-topping keybindings (SUPER+E, SUPER+B, SUPER+RETURN, SUPER+ALT+C, SUPER+K)"
+fi
+
+# 5.4 Display / Monitors
 if [[ ! -f "$CONFIG_DIR/hypr/monitors.lua" && -f "$REPO_DIR/hypr/monitors.lua" ]]; then
   cp "$REPO_DIR/hypr/monitors.lua" "$CONFIG_DIR/hypr/monitors.lua"
   log_sub "Initialized default display configuration"
-fi
-if [[ ! -f "$CONFIG_DIR/hypr/input.lua" && -f "$REPO_DIR/hypr/input.lua" ]]; then
-  cp "$REPO_DIR/hypr/input.lua" "$CONFIG_DIR/hypr/input.lua"
-  log_sub "Initialized default input configuration"
+elif [[ -f "$CONFIG_DIR/hypr/monitors.lua" ]] && ! grep -q "ELECTRON_OZONE_PLATFORM_HINT" "$CONFIG_DIR/hypr/monitors.lua"; then
+  # Preserve user custom monitor positions but ensure crisp Wayland toolkit variables
+  cat << 'EOF' >> "$CONFIG_DIR/hypr/monitors.lua"
+
+-- Virtual☆Paradise Toolkit & Wayland Envs
+hl.env("ELECTRON_OZONE_PLATFORM_HINT", "auto")
+hl.env("QT_WAYLAND_DISABLE_WINDOWDECORATION", "1")
+hl.env("XCURSOR_SIZE", "24")
+EOF
+  log_sub "Injected Wayland toolkit environment variables into ~/.config/hypr/monitors.lua"
 fi
 
-# 5.2 Autostart: ensure live wallpaper hook is present without clobbering existing autostart
+# 5.5 Autostart: ensure live wallpaper hook is present
 if [[ -f "$CONFIG_DIR/hypr/autostart.lua" ]]; then
   if ! grep -q "toggle_live_wallpaper.sh" "$CONFIG_DIR/hypr/autostart.lua"; then
     echo 'o.launch_on_start("~/.local/bin/toggle_live_wallpaper.sh init")' >> "$CONFIG_DIR/hypr/autostart.lua"
@@ -612,51 +686,9 @@ elif [[ -f "$REPO_DIR/hypr/autostart.lua" ]]; then
   cp "$REPO_DIR/hypr/autostart.lua" "$CONFIG_DIR/hypr/autostart.lua"
 fi
 
-# 5.3 Keybindings: append Virtual Paradise shortcuts cleanly if missing
-if [[ -f "$CONFIG_DIR/hypr/bindings.lua" ]]; then
-  # Sanitize any legacy backslash bindings that cause Hyprland parsing errors
-  sed -i 's/SUPER + \\\\"/SUPER + backslash"/g' "$CONFIG_DIR/hypr/bindings.lua" 2>/dev/null || true
-  sed -i 's/SUPER + \\"/SUPER + backslash"/g' "$CONFIG_DIR/hypr/bindings.lua" 2>/dev/null || true
-
-  # Migrate legacy SUPER + C binding to SUPER + ALT + C to restore Universal Copy
-  sed -i 's/hl\.unbind("SUPER + C")//g' "$CONFIG_DIR/hypr/bindings.lua" 2>/dev/null || true
-  sed -i 's/o\.bind("SUPER + C", "Cooler Boost"/o.bind("SUPER + ALT + C", "Cooler Boost"/g' "$CONFIG_DIR/hypr/bindings.lua" 2>/dev/null || true
-
-  if ! grep -q "toggle_live_wallpaper" "$CONFIG_DIR/hypr/bindings.lua"; then
-    cat << 'EOF' >> "$CONFIG_DIR/hypr/bindings.lua"
-
--- ==============================================================================
---  Virtual☆Paradise Add-on Shortcuts
--- ==============================================================================
-o.bind("SUPER + Q", "Rice Layout", "~/.local/bin/rice_layout.sh")
-o.bind("SUPER + ALT + UP", "Toggle Live Wallpaper", "~/.local/bin/toggle_live_wallpaper.sh")
-o.bind("SUPER + ALT + RIGHT", "Next Live Wallpaper", "~/.local/bin/toggle_live_wallpaper.sh next")
-o.bind("SUPER + ALT + LEFT", "Prev Live Wallpaper", "~/.local/bin/toggle_live_wallpaper.sh prev")
-o.bind("SUPER + ALT + C", "Cooler Boost", "~/.local/bin/toggle_cooler_boost.sh")
-o.bind("SUPER + backslash", "Cyber Matrix Rain", "ghostty -e ~/.local/bin/virtual_matrix")
-EOF
-    log_sub "Appended Virtual Paradise shortcuts to ~/.config/hypr/bindings.lua"
-  fi
-
-  if ! grep -q "cast_screen" "$CONFIG_DIR/hypr/bindings.lua"; then
-    cat << 'EOF' >> "$CONFIG_DIR/hypr/bindings.lua"
-hl.unbind("SUPER + K")
-o.bind("SUPER + K", "Cast Screen (Wireless Display)", "~/.local/bin/cast_screen.sh")
-o.bind("SUPER + SHIFT + K", "Keybindings", "omarchy menu keybindings")
-EOF
-    log_sub "Appended Cast Screen (SUPER + K) shortcut to ~/.config/hypr/bindings.lua"
-  fi
-elif [[ -f "$REPO_DIR/hypr/bindings.lua" ]]; then
-  cp "$REPO_DIR/hypr/bindings.lua" "$CONFIG_DIR/hypr/bindings.lua"
-fi
-
-# 5.4 Look'n'feel & Window Rules (non-destructive)
-if [[ ! -f "$CONFIG_DIR/hypr/looknfeel.lua" && -f "$REPO_DIR/hypr/looknfeel.lua" ]]; then
-  cp "$REPO_DIR/hypr/looknfeel.lua" "$CONFIG_DIR/hypr/looknfeel.lua"
-fi
-
+# 5.6 Window Rules (Btop, Voxtype, Cast Screen, Nautilus)
 if [[ -f "$CONFIG_DIR/hypr/hyprland.lua" ]]; then
-  if ! grep -q "Btop Monitor" "$CONFIG_DIR/hypr/hyprland.lua"; then
+  if ! grep -q "GNOME Network Displays" "$CONFIG_DIR/hypr/hyprland.lua"; then
     cat << 'EOF' >> "$CONFIG_DIR/hypr/hyprland.lua"
 
 -- Virtual Paradise Add-on Window Rules
@@ -667,13 +699,10 @@ o.window({ title = "Voxtype Config" }, { float = true, size = { 880, 580 }, cent
 o.window({ initial_title = "GNOME Network Displays" }, { float = true, size = { 720, 560 }, center = true })
 o.window({ title = "GNOME Network Displays" }, { float = true, size = { 720, 560 }, center = true })
 o.window({ class = "org.gnome.NetworkDisplays" }, { float = true, size = { 720, 560 }, center = true })
+o.window({ class = "org.gnome.Nautilus", title = "File Operation Progress" }, { float = true })
+o.window({ class = "org.gnome.Nautilus", title = ".*Properties.*" }, { float = true })
 EOF
-  elif ! grep -q "GNOME Network Displays" "$CONFIG_DIR/hypr/hyprland.lua"; then
-    cat << 'EOF' >> "$CONFIG_DIR/hypr/hyprland.lua"
-o.window({ initial_title = "GNOME Network Displays" }, { float = true, size = { 720, 560 }, center = true })
-o.window({ title = "GNOME Network Displays" }, { float = true, size = { 720, 560 }, center = true })
-o.window({ class = "org.gnome.NetworkDisplays" }, { float = true, size = { 720, 560 }, center = true })
-EOF
+    log_sub "Configured floating window rules for Btop, Voxtype, Cast Screen & Nautilus"
   fi
 fi
 
@@ -717,7 +746,7 @@ EOF
   elif ! grep -q "Name=unikey" "$fcitx_profile"; then
     local next_idx=0
     while grep -q "^\[Groups/0/Items/${next_idx}\]" "$fcitx_profile"; do
-      ((next_idx++))
+      next_idx=$((next_idx + 1))
     done
     cat << EOF >> "$fcitx_profile"
 
@@ -797,6 +826,8 @@ if [[ -f "$REPO_DIR/config/gtk.css" ]]; then
 fi
 if command -v gsettings &>/dev/null; then
   gsettings set org.gnome.desktop.interface icon-theme "Tela-circle-dracula-dark" 2>/dev/null || true
+  gsettings set org.gnome.desktop.interface color-scheme "prefer-dark" 2>/dev/null || true
+  gsettings set org.gnome.desktop.interface gtk-theme "Adwaita-dark" 2>/dev/null || true
 fi
 log_sub "Component themes installed (Cava, Btop, Fastfetch, Micro, GTK/Nautilus & Tela-Circle Icons)"
 
@@ -908,14 +939,47 @@ fi
 # ------------------------------------------------------------------------------
 log_step "10" "$TOTAL_STEPS" "Configuring shell environment, Search☆Hub, aliases & error shake hooks..."
 
-# Synchronize curated zshrc non-destructively
+# 10.1 Install Oh My Zsh framework & plugins if missing
+if [[ ! -d "$HOME/.oh-my-zsh" ]]; then
+  log_sub "Installing Oh My Zsh framework..."
+  git clone --depth=1 https://github.com/ohmyzsh/ohmyzsh.git "$HOME/.oh-my-zsh" >/dev/null 2>&1 || true
+fi
+
+mkdir -p "$HOME/.oh-my-zsh/custom/plugins"
+[[ -d /usr/share/zsh/plugins/zsh-autosuggestions ]] && ln -nsf /usr/share/zsh/plugins/zsh-autosuggestions "$HOME/.oh-my-zsh/custom/plugins/zsh-autosuggestions" 2>/dev/null || true
+[[ -d /usr/share/zsh/plugins/zsh-syntax-highlighting ]] && ln -nsf /usr/share/zsh/plugins/zsh-syntax-highlighting "$HOME/.oh-my-zsh/custom/plugins/zsh-syntax-highlighting" 2>/dev/null || true
+if [[ ! -d "$HOME/.oh-my-zsh/custom/plugins/zsh-completions" ]]; then
+  git clone --depth=1 https://github.com/zsh-users/zsh-completions.git "$HOME/.oh-my-zsh/custom/plugins/zsh-completions" >/dev/null 2>&1 || true
+fi
+
+# 10.2 Synchronize full-topping zshrc
 if [[ -f "$REPO_DIR/shell/zshrc" ]]; then
-  if [[ ! -f "$HOME/.zshrc" ]]; then
-    cp "$REPO_DIR/shell/zshrc" "$HOME/.zshrc"
-    log_sub "Initialized ~/.zshrc with Virtual☆Paradise shell configuration"
-  else
-    if ! grep -q "paradise-agent" "$HOME/.zshrc"; then
-      cat << 'EOF' >> "$HOME/.zshrc"
+  [[ -f "$HOME/.zshrc" ]] && cp "$HOME/.zshrc" "$HOME/.zshrc.bak.$(date +%s)" 2>/dev/null || true
+  cp "$REPO_DIR/shell/zshrc" "$HOME/.zshrc"
+  log_sub "Synchronized full-topping ~/.zshrc shell configuration"
+fi
+
+# 10.3 Ensure default shell is Zsh
+if command -v zsh &>/dev/null; then
+  CURRENT_LOGIN_SHELL=$(getent passwd "$CURRENT_USER" | cut -d: -f7)
+  if [[ "$CURRENT_LOGIN_SHELL" != "$(command -v zsh)" ]]; then
+    log_sub "Setting default login shell to Zsh for '${CURRENT_USER}'..."
+    $SUDO_CMD chsh -s "$(command -v zsh)" "$CURRENT_USER" 2>/dev/null || chsh -s "$(command -v zsh)" 2>/dev/null || true
+  fi
+fi
+
+configure_shell_file() {
+  local file="$1"
+  [[ -f "$file" ]] || return 0
+
+  # Ensure $LOCAL_BIN is in PATH
+  if ! grep -q 'export PATH="$HOME/.local/bin:$PATH"' "$file" && ! grep -q 'PATH=.*/\.local/bin' "$file"; then
+    echo 'export PATH="$HOME/.local/bin:$PATH"' >> "$file"
+  fi
+
+  # Add Virtual Paradise aliases
+  if ! grep -q "paradise-agent" "$file"; then
+    cat << 'EOF' >> "$file"
 
 # ==============================================================================
 #  Virtual☆Paradise Add-on Aliases & Integration
@@ -928,33 +992,6 @@ alias matrix="$HOME/.local/bin/virtual_matrix.py"
 alias boost="$HOME/.local/bin/toggle_cooler_boost.sh"
 alias cast="$HOME/.local/bin/cast_screen.sh"
 EOF
-      log_sub "Appended Virtual Paradise aliases to existing ~/.zshrc"
-    fi
-
-    # Ensure Search☆Hub (f) & Cyberpunk FZF theme are integrated if missing
-    if ! grep -q "function f()" "$HOME/.zshrc"; then
-      cat << 'EOF' >> "$HOME/.zshrc"
-
-# ==============================================================================
-#  Virtual☆Paradise Search☆Hub (f) & Cyberpunk FZF Palette
-# ==============================================================================
-if (( $+commands[fzf] )); then
-  export FZF_DEFAULT_OPTS='--height 40% --layout=reverse --border --color="fg:#eafbfa,bg:-1,hl:#00f5d4,fg+:#00ff88,bg+:#0e141d,hl+:#00ff88,info:#7091a4,prompt:#00f5d4,pointer:#00ff88,marker:#ffb7d5,spinner:#ffe066,header:#7091a4,border:#00f5d4"'
-fi
-EOF
-      awk '/# \[11\] f: Ultimate Interactive Search Hub/{p=1} p; /^# ===/{if(p && !/# \[11\]/) exit}' "$REPO_DIR/shell/zshrc" | sed '$d' >> "$HOME/.zshrc" 2>/dev/null || true
-      log_sub "Integrated Search☆Hub (f) & FZF Cyberpunk styling into existing ~/.zshrc"
-    fi
-  fi
-fi
-
-configure_shell_file() {
-  local file="$1"
-  [[ -f "$file" ]] || return 0
-
-  # Ensure $LOCAL_BIN is in PATH
-  if ! grep -q 'export PATH="$HOME/.local/bin:$PATH"' "$file" && ! grep -q 'PATH=.*/\.local/bin' "$file"; then
-    echo 'export PATH="$HOME/.local/bin:$PATH"' >> "$file"
   fi
 
   # Add fastfetch aliases

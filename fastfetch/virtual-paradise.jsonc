@@ -74,7 +74,8 @@
       "key": "\u2502 \u251c\udb80\udeca",
       "keyColor": "#00f5d4",
       "outputColor": "#eafbfa",
-      "folders": "/"
+      "folders": "/",
+      "format": "{size-percentage-bar} {size-used} / {size-total} ({size-percentage})"
     },
     {
       "type": "memory",
@@ -146,7 +147,7 @@
       "key": "\u2502 \u251c\uf108",
       "keyColor": "#00ff88",
       "outputColor": "#eafbfa",
-      "text": "echo \"${SHELL##*/} $($SHELL --version 2>/dev/null | awk '{print $2}')\""
+      "text": "sh_name=\"${SHELL##*/}\"; sh_ver=$(\"$SHELL\" --version 2>/dev/null | head -n1 | grep -oE '[0-9]+(\\.[0-9]+)+' | head -n1); echo \"$sh_name ${sh_ver:-}\""
     },
     {
       "type": "command",
@@ -171,11 +172,11 @@
       "format": "\u001b[38;2;112;145;164m\u250c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500Network & Telemetry\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2510\u001b[0m"
     },
     {
-      "type": "wifi",
+      "type": "command",
       "key": "\udb82\udd28 Wi-Fi",
       "keyColor": "#ffb7d5",
       "outputColor": "#eafbfa",
-      "format": "{ssid} ({signal-quality})"
+      "text": "w=$(nmcli -t -f active,ssid,signal dev wifi list --rescan no 2>/dev/null | awk -F: '$1==\"yes\"{print $2 \" (\" $3 \"%)\"}'); echo \"${w:-Connected}\""
     },
     {
       "type": "localip",
@@ -195,7 +196,8 @@
       "type": "media",
       "key": "\u2502 \u251c\udb80\udf86",
       "keyColor": "#ffb7d5",
-      "outputColor": "#eafbfa"
+      "outputColor": "#eafbfa",
+      "format": "{combined} ({status})"
     },
     {
       "type": "command",

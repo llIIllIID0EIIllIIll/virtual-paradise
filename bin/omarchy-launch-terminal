@@ -12,11 +12,16 @@ fi
 cwd="$(omarchy-cmd-terminal-cwd 2>/dev/null || echo "$HOME")"
 [[ ! -d "$cwd" ]] && cwd="$HOME"
 
+TARGET_SHELL="/usr/bin/zsh"
+if ! command -v "$TARGET_SHELL" &>/dev/null; then
+  TARGET_SHELL="${SHELL:-/bin/bash}"
+fi
+
 # Prefer Ghostty, fallback to Foot or xdg-terminal-exec
 if command -v ghostty &>/dev/null; then
-  exec setsid uwsm-app -- ghostty --working-directory="$cwd" -e /usr/bin/zsh "$@"
+  exec setsid uwsm-app -- ghostty --working-directory="$cwd" -e "$TARGET_SHELL" "$@"
 elif command -v foot &>/dev/null; then
-  exec setsid uwsm-app -- foot --working-directory="$cwd" /usr/bin/zsh "$@"
+  exec setsid uwsm-app -- foot --working-directory="$cwd" "$TARGET_SHELL" "$@"
 else
-  exec setsid uwsm-app -- xdg-terminal-exec --dir="$cwd" -e /usr/bin/zsh "$@"
+  exec setsid uwsm-app -- xdg-terminal-exec --dir="$cwd" -e "$TARGET_SHELL" "$@"
 fi
