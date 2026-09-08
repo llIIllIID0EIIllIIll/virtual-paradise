@@ -3,6 +3,9 @@
 #  GRADUAL CYBERPUNK COLOR FADE: RED -> MAGENTA -> PURPLE -> BLUE -> MIKU CYAN
 # ==============================================================================
 
+CURRENT_THEME="$(cat "$HOME/.local/state/omarchy/current/theme.name" 2>/dev/null || echo "")"
+[[ "$CURRENT_THEME" != "virtual-paradise" ]] && exit 0
+
 addr=""
 if command -v hyprctl >/dev/null 2>&1; then
   if command -v jq >/dev/null 2>&1; then

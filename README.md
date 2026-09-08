@@ -77,7 +77,7 @@ Unified terminal omnisearch with adaptive live preview:
 - **Auto-escalating model tiers:** starts on the smallest installed model (1.5B), automatically upgrades to 3B → 7B when tasks become too complex.
 - **Full tool belt:** read/write/edit files, run bash, grep/find codebase, system health diagnostics, session persistence, expert skills (Hyprland config, crash diagnosis).
 - **Local Intent Analysis panel:** shows the agent's decision reasoning, planned tool call, and telemetry inline before every action.
-- **Add-on coexistence:** Coexists seamlessly with Omarchy's official agent system. `omarchy agent` (or alias `a`) continues running your chosen default (Copilot, Claude, etc.), while Paradise Agent is instantly accessible via `paradise-agent` · `agy-offline` · alias `pa` / `agy`.
+- **Add-on coexistence:** Coexists seamlessly with Omarchy's official agent system and Google Antigravity CLI. `omarchy agent` (or alias `a`) continues running your chosen default (Copilot, Claude, etc.), `agy` remains exclusively for the official Google Antigravity CLI, while Paradise Agent is accessible via `paradise-agent` · alias `pa` / `offline-agent`.
 
 ---
 
@@ -167,10 +167,7 @@ omarchy-virtual-paradise/
 │   ├── memory_detail_notify.sh   RAM desktop notification
 │   ├── hypr_window_error_shake.sh    Error shake hook
 │   ├── hypr_window_error_restore.sh  Error border restore
-│   ├── omarchy-launch-terminal   Terminal launcher
-│   ├── omarchy-system-logout     Animated logout wrapper
-│   ├── omarchy-system-reboot     Animated reboot wrapper
-│   ├── omarchy-system-shutdown   Animated shutdown wrapper
+│   ├── cast_screen.sh            Screen cast / projection tool
 │   └── toggle_voxtype_config.sh  Voice-to-text config toggle
 │
 ├── backgrounds/

@@ -767,18 +767,22 @@ CONFIGURE_FCITX_UNIKEY
 # 6. Install Helper Scripts & Binaries
 # ------------------------------------------------------------------------------
 log_step "6" "$TOTAL_STEPS" "Installing binaries & CLI helper tools to $LOCAL_BIN..."
-# Ensure Omarchy default agent is never shadowed
-rm -f "$LOCAL_BIN/omarchy-agent" 2>/dev/null || true
+# Ensure Omarchy default commands and official Antigravity CLI (agy) are never shadowed
+rm -f "$LOCAL_BIN/omarchy-agent" \
+      "$LOCAL_BIN/omarchy-launch-terminal" \
+      "$LOCAL_BIN/omarchy-system-logout" \
+      "$LOCAL_BIN/omarchy-system-reboot" \
+      "$LOCAL_BIN/omarchy-system-shutdown" \
+      "$LOCAL_BIN/agy-offline" \
+      "$LOCAL_BIN/agy-local" 2>/dev/null || true
 
 if [[ -d "$REPO_DIR/bin" ]]; then
   cp -r "$REPO_DIR"/bin/* "$LOCAL_BIN/"
   chmod +x "$LOCAL_BIN"/* 2>/dev/null || true
   ln -nsf "$LOCAL_BIN/paradise_agent.py" "$LOCAL_BIN/paradise-agent" 2>/dev/null || true
   ln -nsf "$LOCAL_BIN/paradise_agent.py" "$LOCAL_BIN/offline-agent" 2>/dev/null || true
-  ln -nsf "$LOCAL_BIN/paradise_agent.py" "$LOCAL_BIN/agy-offline" 2>/dev/null || true
-  ln -nsf "$LOCAL_BIN/paradise_agent.py" "$LOCAL_BIN/agy-local" 2>/dev/null || true
   ln -nsf "$LOCAL_BIN/virtual_matrix.py" "$LOCAL_BIN/virtual_matrix" 2>/dev/null || true
-  ln -nsf "$LOCAL_BIN/cast_screen.sh" "$LOCAL_BIN/omarchy-cast" 2>/dev/null || true
+  ln -nsf "$LOCAL_BIN/cast_screen.sh" "$LOCAL_BIN/cast-screen" 2>/dev/null || true
   ln -nsf "$LOCAL_BIN/format-docx-vn.py" "$LOCAL_BIN/format-docx" 2>/dev/null || true
   ln -nsf "$LOCAL_BIN/format-docx-vn.py" "$LOCAL_BIN/vn-docx" 2>/dev/null || true
   chmod +x "$LOCAL_BIN/sync_cava_theme.py" "$LOCAL_BIN/virtual_matrix.py" "$LOCAL_BIN/cast_screen.sh" "$LOCAL_BIN/format-docx-vn.py" 2>/dev/null || true
@@ -982,6 +986,9 @@ configure_shell_file() {
     echo 'export PATH="$HOME/.local/bin:$PATH"' >> "$file"
   fi
 
+  # Purge any legacy agy alias that shadows official Antigravity CLI
+  sed -i '/alias agy=/d' "$file" 2>/dev/null || true
+
   # Add Virtual Paradise aliases
   if ! grep -q "paradise-agent" "$file"; then
     cat << 'EOF' >> "$file"
@@ -990,7 +997,6 @@ configure_shell_file() {
 #  Virtual☆Paradise Add-on Aliases & Integration
 # ==============================================================================
 alias pa="paradise-agent"
-alias agy="paradise-agent"
 alias offline-agent="paradise-agent"
 alias rice="$HOME/.local/bin/rice_layout.sh"
 alias matrix="$HOME/.local/bin/virtual_matrix.py"

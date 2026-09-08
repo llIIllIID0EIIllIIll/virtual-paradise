@@ -17,6 +17,11 @@ STATE_DIR="$HOME/.local/state/virtual-paradise"
 STATE_FILE="$STATE_DIR/current_live_wallpaper"
 STATIC_BG="$BG_DIR/Miku_missing.jpg"
 
+CURRENT_THEME="$(cat "$HOME/.local/state/omarchy/current/theme.name" 2>/dev/null || echo "")"
+if [[ "$CURRENT_THEME" != "virtual-paradise" && "$1" != "--force" ]]; then
+  exit 0
+fi
+
 mkdir -p "$STATE_DIR"
 
 get_live_items() {

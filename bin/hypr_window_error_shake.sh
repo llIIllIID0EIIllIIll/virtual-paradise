@@ -3,6 +3,9 @@
 #  PER-WINDOW ERROR BORDER (NEON RED + NO SHADOW/GLOW)
 # ==============================================================================
 
+CURRENT_THEME="$(cat "$HOME/.local/state/omarchy/current/theme.name" 2>/dev/null || echo "")"
+[[ "$CURRENT_THEME" != "virtual-paradise" ]] && exit 0
+
 # Extract active window address robustly (works with jq, grep, or awk)
 addr=""
 if command -v hyprctl >/dev/null 2>&1; then

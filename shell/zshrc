@@ -2895,7 +2895,6 @@ esac
 
 # AI Coding Assistant Shortcuts
 alias gemini='$HOME/.local/share/pnpm/gemini' # gemini: Launch Google Gemini CLI
-alias agy='$HOME/.local/bin/agy'              # agy: Launch Antigravity CLI
 
 # =========================================================================
 # ⚙️ SNAP BINARY PATH INTEGRATION
@@ -3010,6 +3009,5 @@ alias oagent="omarchy-agent"
 
 # Virtual Paradise Local Offline AI Agent (Qwen 2.5 Coder)
 alias pa="paradise-agent"
-alias agy="paradise-agent"
 alias offline-agent="paradise-agent"
 export PATH="$HOME/.local/bin:$PATH"
