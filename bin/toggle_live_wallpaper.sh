@@ -16,6 +16,8 @@ BG_DIR="$HOME/.config/omarchy/themes/virtual-paradise/backgrounds"
 STATE_DIR="$HOME/.local/state/virtual-paradise"
 STATE_FILE="$STATE_DIR/current_live_wallpaper"
 STATIC_BG="$BG_DIR/Miku_missing.jpg"
+READY_FILE="/tmp/virtual_paradise_wallpaper_ready"
+SOCKET_FILE="/tmp/mpv-live.sock"
 
 CURRENT_THEME="$(cat "$HOME/.local/state/omarchy/current/theme.name" 2>/dev/null || echo "")"
 if [[ "$CURRENT_THEME" != "virtual-paradise" && "$1" != "--force" ]]; then
@@ -51,6 +53,8 @@ play_curtain_transition() {
   local qml_script="$HOME/.local/bin/glitch_transition.qml"
   [[ ! -f "$qml_script" ]] && qml_script="$HOME/.local/bin/curtain_transition.qml"
   if [[ -f "$qml_script" ]] && command -v quickshell &>/dev/null; then
+    rm -f "$READY_FILE"
+    export CURTAIN_LAYER="${CURTAIN_LAYER:-overlay}"
     quickshell -p "$qml_script" >/dev/null 2>&1 &
     # Wait until glitch layer surface is physically rendered on screen by Hyprland
     for ((i=0; i<35; i++)); do
@@ -60,8 +64,23 @@ play_curtain_transition() {
       sleep 0.015
     done
     # Allow the violent Phase 1 glitch to hit full swing before swapping wallpaper
-    sleep 0.14
+    sleep 0.12
   fi
+}
+
+wait_for_mpv_ready() {
+  local max_checks=60 # 60 * 0.05s = 3.0s maximum
+  for ((i=0; i<max_checks; i++)); do
+    if [[ -S "$SOCKET_FILE" ]] && command -v socat &>/dev/null; then
+      local resp
+      resp=$(echo '{ "command": ["get_property", "playback-time"] }' | socat - "$SOCKET_FILE" 2>/dev/null || true)
+      if [[ "$resp" == *"\"data\":"* ]]; then
+        break
+      fi
+    fi
+    sleep 0.05
+  done
+  touch "$READY_FILE"
 }
 
 set_live() {
@@ -75,6 +94,7 @@ set_live() {
   fi
 
   if [[ -n "$target" && -f "$target" ]]; then
+    rm -f "$READY_FILE" "$SOCKET_FILE"
     if [[ "$transition" == "true" ]]; then
       play_curtain_transition
     fi
@@ -86,16 +106,24 @@ set_live() {
     # Launch mpvpaper hardware accelerated on all monitors (screen is already covered by Glitch)
     killall -9 mpvpaper 2>/dev/null || true
     if command -v mpvpaper &>/dev/null; then
-      setsid -f mpvpaper -vs -o "no-audio loop hwdec=auto-safe" '*' "$target" >/dev/null 2>&1
+      setsid -f mpvpaper -vs -o "no-audio loop hwdec=auto-safe --input-ipc-server=$SOCKET_FILE" '*' "$target" >/dev/null 2>&1
+      if [[ "$transition" == "true" ]]; then
+        wait_for_mpv_ready &
+      else
+        touch "$READY_FILE"
+      fi
+    else
+      touch "$READY_FILE"
     fi
     echo "$target" > "$STATE_FILE"
   else
-    set_static
+    set_static "$transition"
   fi
 }
 
 set_static() {
   local transition="${1:-true}"
+  rm -f "$READY_FILE" "$SOCKET_FILE"
   if [[ "$transition" == "true" ]]; then
     play_curtain_transition
   fi
@@ -103,6 +131,7 @@ set_static() {
   if [[ -f "$STATIC_BG" ]]; then
     omarchy theme bg set "$STATIC_BG" 2>/dev/null || true
   fi
+  touch "$READY_FILE"
 }
 
 cycle_live() {
@@ -142,9 +171,9 @@ case "$1" in
     # Brief delay on fresh login to ensure Wayland layer-shell is fully mapped
     sleep 0.35
     if [[ -f "$STATE_FILE" ]] && [[ -f "$(cat "$STATE_FILE" 2>/dev/null)" ]]; then
-      set_live "$(cat "$STATE_FILE")" true
+      set_live "$(cat "$STATE_FILE")" false
     else
-      set_live "" true
+      set_live "" false
     fi
     ;;
   stop)
@@ -179,7 +208,7 @@ case "$1" in
     ;;
   *)
     if [[ -f "$1" ]]; then
-      set_live "$1"
+      set_live "$1" true
     else
       echo "File not found: $1" >&2
       exit 1

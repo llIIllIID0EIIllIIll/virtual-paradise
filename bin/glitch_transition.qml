@@ -1,8 +1,46 @@
 import QtQuick
 import Quickshell
 import Quickshell.Wayland
+import Quickshell.Io
 
 ShellRoot {
+  id: root
+
+  property bool isReady: false
+  property bool exiting: false
+
+  // Process checking if the wallpaper has finished decoding and rendering
+  Process {
+    id: readyChecker
+    command: ["test", "-f", "/tmp/virtual_paradise_wallpaper_ready"]
+    onExited: exitCode => {
+      if (exitCode === 0) {
+        root.isReady = true
+      }
+    }
+  }
+
+  // Poll ready file every 30ms while waiting
+  Timer {
+    interval: 30
+    repeat: true
+    running: !root.isReady && !root.exiting
+    onTriggered: {
+      if (!readyChecker.running) {
+        readyChecker.running = true
+      }
+    }
+  }
+
+  // Safety fallback timeout: maximum 4.5s so glitch screen NEVER gets stuck
+  Timer {
+    interval: 4500
+    running: true
+    onTriggered: {
+      root.isReady = true
+    }
+  }
+
   Variants {
     model: Quickshell.screens
 
@@ -20,8 +58,25 @@ ShellRoot {
 
       color: "transparent"
       WlrLayershell.namespace: "curtain-transition"
-      WlrLayershell.layer: (Quickshell.env("CURTAIN_LAYER") === "overlay") ? WlrLayer.Overlay : WlrLayer.Bottom
+      WlrLayershell.layer: (Quickshell.env("CURTAIN_LAYER") === "bottom") ? WlrLayer.Bottom : WlrLayer.Overlay
+      WlrLayershell.keyboardFocus: WlrKeyboardFocus.None
       exclusionMode: ExclusionMode.Ignore
+      mask: Region {}
+
+      property bool entryFinished: false
+      property bool hasStartedExit: false
+
+      Connections {
+        target: root
+        function onIsReadyChanged() {
+          if (root.isReady && win.entryFinished && !win.hasStartedExit) {
+            win.hasStartedExit = true
+            loadingLoopAnim.stop()
+            loadingHud.opacity = 0
+            exitAnim.start()
+          }
+        }
+      }
 
       Item {
         id: glitchRoot
@@ -136,6 +191,109 @@ ShellRoot {
           width: parent.width; height: 8; y: win.height * 0.78; color: "#ffee00"; opacity: 0
         }
 
+        // -------------------------------------------------------------
+        // CYBERPUNK LOADING HUD (Active while wallpaper is synchronizing)
+        // -------------------------------------------------------------
+        Item {
+          id: loadingHud
+          anchors.centerIn: parent
+          width: 500
+          height: 125
+          opacity: 0.0
+
+          Behavior on opacity { NumberAnimation { duration: 160 } }
+
+          Rectangle {
+            anchors.fill: parent
+            color: "#05070a"
+            opacity: 0.88
+            radius: 10
+            border.color: "#00f5d4"
+            border.width: 1.5
+          }
+
+          // Cyber Corner Accents
+          Rectangle { anchors.top: parent.top; anchors.left: parent.left; width: 16; height: 3; color: "#ff007f" }
+          Rectangle { anchors.top: parent.top; anchors.left: parent.left; width: 3; height: 16; color: "#ff007f" }
+          Rectangle { anchors.top: parent.top; anchors.right: parent.right; width: 16; height: 3; color: "#00f5d4" }
+          Rectangle { anchors.top: parent.top; anchors.right: parent.right; width: 3; height: 16; color: "#00f5d4" }
+          Rectangle { anchors.bottom: parent.bottom; anchors.left: parent.left; width: 16; height: 3; color: "#00f5d4" }
+          Rectangle { anchors.bottom: parent.bottom; anchors.left: parent.left; width: 3; height: 16; color: "#00f5d4" }
+          Rectangle { anchors.bottom: parent.bottom; anchors.right: parent.right; width: 16; height: 3; color: "#ff007f" }
+          Rectangle { anchors.bottom: parent.bottom; anchors.right: parent.right; width: 3; height: 16; color: "#ff007f" }
+
+          Column {
+            anchors.centerIn: parent
+            spacing: 12
+
+            Row {
+              anchors.horizontalCenter: parent.horizontalCenter
+              spacing: 8
+              Text {
+                text: "⚡"
+                color: "#ffee00"
+                font.pixelSize: 15
+              }
+              Text {
+                text: "VIRTUAL☆PARADISE // SYNCHRONIZING STREAM"
+                color: "#00f5d4"
+                font.pixelSize: 13
+                font.bold: true
+                font.family: "JetBrainsMono Nerd Font, monospace"
+              }
+            }
+
+            // Neon Scanning Progress Track
+            Rectangle {
+              id: track
+              width: 380
+              height: 4
+              color: "#161e2e"
+              radius: 2
+              clip: true
+              anchors.horizontalCenter: parent.horizontalCenter
+
+              Rectangle {
+                id: scanBar
+                width: 100
+                height: 4
+                radius: 2
+                gradient: Gradient {
+                  orientation: Gradient.Horizontal
+                  GradientStop { position: 0.0; color: "transparent" }
+                  GradientStop { position: 0.5; color: "#00f5d4" }
+                  GradientStop { position: 1.0; color: "#ff007f" }
+                }
+
+                SequentialAnimation on x {
+                  loops: Animation.Infinite
+                  running: loadingHud.opacity > 0
+                  NumberAnimation { from: -100; to: 380; duration: 650; easing.type: Easing.InOutQuad }
+                  NumberAnimation { from: 380; to: -100; duration: 650; easing.type: Easing.InOutQuad }
+                }
+              }
+            }
+
+            Text {
+              id: loadingSubtext
+              text: "BUFFERING NEURAL FRAMES..."
+              color: "#ff007f"
+              font.pixelSize: 10
+              font.bold: true
+              font.family: "JetBrainsMono Nerd Font, monospace"
+              anchors.horizontalCenter: parent.horizontalCenter
+              opacity: 0.9
+
+              SequentialAnimation on opacity {
+                loops: Animation.Infinite
+                running: loadingHud.opacity > 0
+                NumberAnimation { from: 0.9; to: 0.3; duration: 400 }
+                NumberAnimation { from: 0.3; to: 0.9; duration: 400 }
+              }
+            }
+          }
+        }
+
         // Fullscreen white strobe
         Rectangle {
           id: whiteStrobe
@@ -145,12 +303,13 @@ ShellRoot {
         }
       }
 
+      // -------------------------------------------------------------
+      // PHASE 1: VIOLENT SIGNAL CRASH (0ms -> ~200ms)
+      // -------------------------------------------------------------
       SequentialAnimation {
+        id: entryAnim
         running: true
 
-        // -------------------------------------------------------------
-        // PHASE 1: VIOLENT SIGNAL CRASH (0ms -> 200ms)
-        // -------------------------------------------------------------
         ParallelAnimation {
           NumberAnimation { target: slice1; property: "x"; to: -140; duration: 30 }
           NumberAnimation { target: slice2; property: "x"; to: 180; duration: 30 }
@@ -181,7 +340,6 @@ ShellRoot {
           NumberAnimation { target: slice5; property: "x"; to: -40; duration: 30 }
         }
 
-        // Snap into solid glitch hold
         ParallelAnimation {
           NumberAnimation { target: slice1; property: "x"; to: 0; duration: 30 }
           NumberAnimation { target: slice2; property: "x"; to: 0; duration: 30 }
@@ -195,23 +353,40 @@ ShellRoot {
           NumberAnimation { target: blackBlock2; property: "opacity"; to: 0; duration: 30 }
         }
 
-        // -------------------------------------------------------------
-        // PHASE 2: HEAVY GLITCH HOLD (200ms -> 560ms = 360ms)
-        // Wallpaper swaps cleanly behind this solid Glitch screen!
-        // -------------------------------------------------------------
-        PauseAnimation { duration: 130 }
+        ScriptAction {
+          script: {
+            win.entryFinished = true
+            if (root.isReady) {
+              win.hasStartedExit = true
+              exitAnim.start()
+            } else {
+              loadingHud.opacity = 1.0
+              loadingLoopAnim.start()
+            }
+          }
+        }
+      }
 
-        // Mid-hold heavy jitter twitch
+      // -------------------------------------------------------------
+      // PHASE 2: GLITCH LOADING LOOP (Active until wallpaper is ready)
+      // -------------------------------------------------------------
+      SequentialAnimation {
+        id: loadingLoopAnim
+        loops: Animation.Infinite
+
+        PauseAnimation { duration: 180 }
+
+        // Cyber slice jitter pulse
         ParallelAnimation {
-          NumberAnimation { target: slice2; property: "x"; to: 120; duration: 25 }
-          NumberAnimation { target: slice4; property: "x"; to: -90; duration: 25 }
-          NumberAnimation { target: cyanBar1; property: "opacity"; to: 0.8; duration: 25 }
-          NumberAnimation { target: cyanBar1; property: "y"; to: win.height * 0.38; duration: 25 }
-          NumberAnimation { target: blackBlock1; property: "opacity"; to: 0.8; duration: 25 }
+          NumberAnimation { target: slice2; property: "x"; to: 90; duration: 25 }
+          NumberAnimation { target: slice4; property: "x"; to: -70; duration: 25 }
+          NumberAnimation { target: cyanBar1; property: "opacity"; to: 0.7; duration: 25 }
+          NumberAnimation { target: cyanBar1; property: "y"; to: win.height * 0.36; duration: 25 }
+          NumberAnimation { target: blackBlock1; property: "opacity"; to: 0.75; duration: 25 }
         }
         ParallelAnimation {
-          NumberAnimation { target: slice2; property: "x"; to: -60; duration: 25 }
-          NumberAnimation { target: slice4; property: "x"; to: 50; duration: 25 }
+          NumberAnimation { target: slice2; property: "x"; to: -40; duration: 25 }
+          NumberAnimation { target: slice4; property: "x"; to: 35; duration: 25 }
         }
         ParallelAnimation {
           NumberAnimation { target: slice2; property: "x"; to: 0; duration: 25 }
@@ -220,11 +395,34 @@ ShellRoot {
           NumberAnimation { target: blackBlock1; property: "opacity"; to: 0; duration: 25 }
         }
 
-        PauseAnimation { duration: 130 }
+        PauseAnimation { duration: 180 }
 
-        // -------------------------------------------------------------
-        // PHASE 3: FINAL VIOLENT SIGNAL TEAR & REVEAL (560ms -> 720ms)
-        // -------------------------------------------------------------
+        // Secondary slice jitter pulse
+        ParallelAnimation {
+          NumberAnimation { target: slice1; property: "x"; to: -80; duration: 25 }
+          NumberAnimation { target: slice3; property: "x"; to: 100; duration: 25 }
+          NumberAnimation { target: pinkBar1; property: "opacity"; to: 0.75; duration: 25 }
+          NumberAnimation { target: pinkBar1; property: "y"; to: win.height * 0.58; duration: 25 }
+          NumberAnimation { target: blackBlock2; property: "opacity"; to: 0.8; duration: 25 }
+        }
+        ParallelAnimation {
+          NumberAnimation { target: slice1; property: "x"; to: 40; duration: 25 }
+          NumberAnimation { target: slice3; property: "x"; to: -50; duration: 25 }
+        }
+        ParallelAnimation {
+          NumberAnimation { target: slice1; property: "x"; to: 0; duration: 25 }
+          NumberAnimation { target: slice3; property: "x"; to: 0; duration: 25 }
+          NumberAnimation { target: pinkBar1; property: "opacity"; to: 0; duration: 25 }
+          NumberAnimation { target: blackBlock2; property: "opacity"; to: 0.8; duration: 25 }
+        }
+      }
+
+      // -------------------------------------------------------------
+      // PHASE 3: FINAL VIOLENT SIGNAL TEAR & REVEAL (Exits smoothly)
+      // -------------------------------------------------------------
+      SequentialAnimation {
+        id: exitAnim
+
         ParallelAnimation {
           NumberAnimation { target: slice1; property: "x"; to: 160; duration: 30 }
           NumberAnimation { target: slice2; property: "x"; to: -210; duration: 30 }
@@ -253,13 +451,16 @@ ShellRoot {
           NumberAnimation { target: slice3; property: "x"; to: 0; duration: 35 }
           NumberAnimation { target: slice4; property: "x"; to: 0; duration: 35 }
           NumberAnimation { target: slice5; property: "x"; to: 0; duration: 35 }
-          NumberAnimation { target: cyanBar1; property: "opacity"; to: 0; duration: 35 }
+          NumberAnimation { target: cyanBar1; property: "opacity"; to: 0.35; duration: 35 }
           NumberAnimation { target: pinkBar1; property: "opacity"; to: 0; duration: 35 }
           NumberAnimation { target: yellowBar1; property: "opacity"; to: 0; duration: 35 }
         }
 
         ScriptAction {
-          script: Qt.quit()
+          script: {
+            root.exiting = true
+            Qt.quit()
+          }
         }
       }
     }
