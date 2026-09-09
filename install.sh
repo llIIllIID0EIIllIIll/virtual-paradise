@@ -13,6 +13,7 @@ THEME_NAME="virtual-paradise"
 IS_HOOK=0
 ENABLE_BOOT=1
 BOOT_ONLY=0
+USER_ONLY=0
 
 for arg in "$@"; do
   case "$arg" in
@@ -25,6 +26,10 @@ for arg in "$@"; do
       ;;
     --boot-only)
       BOOT_ONLY=1
+      ;;
+    --no-sudo|--user-only)
+      USER_ONLY=1
+      ENABLE_BOOT=0
       ;;
   esac
 done
@@ -39,18 +44,36 @@ if (( EUID == 0 )); then
     CURRENT_USER="${USER:-$(id -un)}"
   fi
   SUDO_CMD=""
+  HAVE_SUDO=1
 else
   CURRENT_USER="${USER:-$(id -un)}"
-  SUDO_CMD="sudo"
-  if [[ $IS_HOOK -eq 0 ]] && command -v sudo &>/dev/null; then
-    if ! sudo -n true 2>/dev/null; then
+  HAVE_SUDO=0
+  if [[ $USER_ONLY -eq 0 ]] && command -v sudo &>/dev/null; then
+    if sudo -n true 2>/dev/null; then
+      HAVE_SUDO=1
+      SUDO_CMD="sudo"
+    elif [[ -t 0 && $IS_HOOK -eq 0 ]]; then
       echo -e "\033[38;2;0;245;212m🔑 Virtual☆Paradise requires sudo privileges for hardware drivers & boot setup.\033[0m"
       echo -e "\033[2m   Please enter your sudo password:\033[0m"
-      sudo -v || { echo -e "\033[38;2;255;0;85m❌ Sudo authentication failed. Aborting.\033[0m"; exit 1; }
+      if sudo -v; then
+        HAVE_SUDO=1
+        SUDO_CMD="sudo"
+      else
+        echo -e "\033[38;2;255;0;85m❌ Sudo authentication failed. Aborting.\033[0m"; exit 1;
+      fi
+    else
+      SUDO_CMD=""
+      if [[ $IS_HOOK -eq 0 ]]; then
+        echo -e "\033[38;2;255;183;213mℹ️ Sudo credentials not cached in non-interactive session; running in user-space mode.\033[0m"
+      fi
     fi
-    # Keep sudo timestamp alive in background until install completes
-    ( while true; do sudo -n true; sleep 50; kill -0 "$$" || exit; done 2>/dev/null & )
-    SUDO_KEEP_ALIVE_PID=$!
+    if [[ $HAVE_SUDO -eq 1 && $IS_HOOK -eq 0 ]]; then
+      # Keep sudo timestamp alive in background until install completes
+      ( while true; do sudo -n true; sleep 50; kill -0 "$$" || exit; done 2>/dev/null & )
+      SUDO_KEEP_ALIVE_PID=$!
+    fi
+  else
+    SUDO_CMD=""
   fi
 fi
 
@@ -448,9 +471,13 @@ CHECK_AND_INSTALL_PACKAGES() {
   done
 
   if [[ ${#OFFICIAL_TO_INSTALL[@]} -gt 0 ]]; then
-    log_sub "Installing official packages: ${OFFICIAL_TO_INSTALL[*]}"
-    if command -v pacman &>/dev/null; then
-      $SUDO_CMD pacman -S --needed --noconfirm "${OFFICIAL_TO_INSTALL[@]}" || true
+    if [[ $HAVE_SUDO -eq 1 ]]; then
+      log_sub "Installing official packages: ${OFFICIAL_TO_INSTALL[*]}"
+      if command -v pacman &>/dev/null; then
+        $SUDO_CMD pacman -S --needed --noconfirm "${OFFICIAL_TO_INSTALL[@]}" || true
+      fi
+    else
+      log_warn "Sudo privileges unavailable. Missing official packages must be installed manually: ${OFFICIAL_TO_INSTALL[*]}"
     fi
   fi
 
@@ -515,23 +542,32 @@ CONFIGURE_GPU_ACCELERATION() {
     return 0
   fi
 
-  log_sub "Optimizing NVIDIA GPU persistence and compute startup..."
-  if (( EUID == 0 )); then
-    systemctl enable --now nvidia-persistenced.service 2>/dev/null || \
-      log_warn "Could not enable nvidia-persistenced.service."
-    nvidia-smi -pm 1 >/dev/null 2>&1 || \
-      log_warn "Could not enable NVIDIA persistence mode."
+  if [[ $HAVE_SUDO -eq 1 ]]; then
+    log_sub "Optimizing NVIDIA GPU persistence and compute startup..."
+    if (( EUID == 0 )); then
+      systemctl enable --now nvidia-persistenced.service 2>/dev/null || \
+        log_warn "Could not enable nvidia-persistenced.service."
+      nvidia-smi -pm 1 >/dev/null 2>&1 || \
+        log_warn "Could not enable NVIDIA persistence mode."
+    else
+      $SUDO_CMD systemctl enable --now nvidia-persistenced.service 2>/dev/null || \
+        log_warn "Could not enable nvidia-persistenced.service."
+      $SUDO_CMD nvidia-smi -pm 1 >/dev/null 2>&1 || \
+        log_warn "Could not enable NVIDIA persistence mode."
+    fi
   else
-    $SUDO_CMD systemctl enable --now nvidia-persistenced.service 2>/dev/null || \
-      log_warn "Could not enable nvidia-persistenced.service."
-    $SUDO_CMD nvidia-smi -pm 1 >/dev/null 2>&1 || \
-      log_warn "Could not enable NVIDIA persistence mode."
+    log_sub "NVIDIA GPU detected (persistence service requires sudo; skipped)"
   fi
 }
 
 CONFIGURE_HARDWARE_DRIVERS() {
   local HW_VENDOR=$(detect_hardware_vendor)
   local HW_PRODUCT=$(detect_product_name)
+
+  if [[ $HAVE_SUDO -eq 0 ]]; then
+    log_sub "Hardware driver udev rules require sudo; skipping hardware sysfs modifications"
+    return 0
+  fi
 
   case "${HW_VENDOR,,}" in
     *acer*)
@@ -1154,10 +1190,10 @@ log_sub "Theme assets & automatic synchronization hooks ready"
 # ------------------------------------------------------------------------------
 # 9. Install Boot & Shutdown Animations (Plymouth, SDDM & UKI)
 # ------------------------------------------------------------------------------
-if [[ $ENABLE_BOOT -eq 1 ]]; then
+if [[ $ENABLE_BOOT -eq 1 && $HAVE_SUDO -eq 1 ]]; then
   INSTALL_BOOT_ANIMATIONS
 else
-  log_step "9" "$TOTAL_STEPS" "Boot & shutdown animation setup skipped (--no-boot)"
+  log_step "9" "$TOTAL_STEPS" "Boot & shutdown animation setup skipped (requires sudo / --no-boot)"
 fi
 
 # ------------------------------------------------------------------------------
@@ -1190,7 +1226,11 @@ if [[ $IS_HOOK -eq 0 ]] && command -v zsh &>/dev/null; then
   CURRENT_LOGIN_SHELL=$(getent passwd "$CURRENT_USER" | cut -d: -f7)
   if [[ "$CURRENT_LOGIN_SHELL" != "$(command -v zsh)" ]]; then
     log_sub "Setting default login shell to Zsh for '${CURRENT_USER}'..."
-    $SUDO_CMD chsh -s "$(command -v zsh)" "$CURRENT_USER" 2>/dev/null || chsh -s "$(command -v zsh)" 2>/dev/null || true
+    if [[ $HAVE_SUDO -eq 1 ]]; then
+      $SUDO_CMD chsh -s "$(command -v zsh)" "$CURRENT_USER" 2>/dev/null || chsh -s "$(command -v zsh)" 2>/dev/null || true
+    else
+      chsh -s "$(command -v zsh)" 2>/dev/null || true
+    fi
   fi
   systemctl --user set-environment SHELL="$(command -v zsh)" 2>/dev/null || true
   hyprctl eval "hl.env('SHELL', '$(command -v zsh)')" 2>/dev/null || true
