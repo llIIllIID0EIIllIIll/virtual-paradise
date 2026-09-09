@@ -111,23 +111,7 @@ else
   TARGET_WS=$(hyprctl activeworkspace -j 2>/dev/null | jq -r '.id' 2>/dev/null || echo 1)
 fi
 
-# 6. Window Poller & Split Focus Dispatcher
-wait_for_window() {
-  local title_pattern="$1"
-  local target_ws="${2:-$TARGET_WS}"
-  local addr=""
-  for ((i=0; i<30; i++)); do
-    addr=$(hyprctl clients -j 2>/dev/null | jq -r ".[] | select(.workspace.id == $target_ws and ((.title | test(\"$title_pattern\")) or (.initialTitle | test(\"$title_pattern\")))) | .address" | head -n 1)
-    if [[ -n "$addr" && "$addr" != "null" ]]; then
-      hyprctl dispatch "hl.dsp.focus({ window = \"address:$addr\" })" >/dev/null 2>&1 || true
-      return 0
-    fi
-    sleep 0.02
-  done
-  return 1
-}
-
-# 7. Terminal Launcher Dispatcher with Title Support (setsid detached)
+# 6. Terminal Launcher Dispatcher with Title Support (setsid detached)
 LAUNCH_RICE_TERM() {
   local title="$1"
   shift
@@ -157,9 +141,9 @@ LAUNCH_RICE_TERM() {
   esac
 }
 
-# 8. Deterministic Dwindle Cascade Execution
-# Wait briefly for each terminal to map before launching the next one. This
-# keeps the dwindle tree deterministic without making Super+Q feel sluggish.
+# 7. Sequential Launch with Optimized Micro-Delay for Instant Tiling Layout
+# In Hyprland's dwindle tree, sequential launch with a micro-delay (0.08s)
+# creates the exact target 5-pane layout near-instantaneously (~0.35s total).
 # Window 1: Fastfetch + Paradise Agent (Master Left Panel)
 case "$TERM_BIN" in
   ghostty)
@@ -178,24 +162,23 @@ case "$TERM_BIN" in
     LAUNCH_RICE_TERM "fastfetch-agent" "$USER_SHELL" -i -c "trap '' INT; printf '\033]0;fastfetch-agent\007'; fastfetch; \"$HOME/.local/bin/paradise-agent\" || true; exec $USER_SHELL -l"
     ;;
 esac
-wait_for_window "fastfetch-agent" "$TARGET_WS" || true
+sleep 0.08
 
 # Window 2: btop (Top Right)
 LAUNCH_RICE_TERM "rice-btop" btop
-wait_for_window "rice-btop" "$TARGET_WS" || true
+sleep 0.08
 
 # Window 3: momoisay (Bottom Right Left - Cute Mascot)
 LAUNCH_RICE_TERM "rice-momoi" "$HOME/.local/bin/momoisay" -f
-wait_for_window "rice-momoi" "$TARGET_WS" || true
+sleep 0.08
 
 # Window 4: cava (Bottom Right Right Top - Audio Visualizer)
 LAUNCH_RICE_TERM "rice-cava" cava
-wait_for_window "rice-cava" "$TARGET_WS" || true
+sleep 0.08
 
 # Window 5: unimatrix / virtual_matrix (Bottom Right Right Bottom - Tri-color Cyber Matrix)
 LAUNCH_RICE_TERM "rice-matrix" "$HOME/.local/bin/virtual_matrix" -a -f -s 50 -l k -u "☆★✦✧"
-wait_for_window "rice-matrix" "$TARGET_WS" || true
 
-# 9. Return Focus to Master Terminal (Paradise Agent)
-sleep 0.02
+# 8. Return Focus to Master Terminal (Paradise Agent)
+sleep 0.15
 hyprctl dispatch "hl.dsp.focus({ window = \"title:fastfetch-agent\" })" 2>/dev/null || true
