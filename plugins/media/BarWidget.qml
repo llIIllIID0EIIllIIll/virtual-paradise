@@ -11,12 +11,25 @@ BarWidget {
 
   readonly property var mediaService: bar?.shell?.firstPartyServiceFor("__USER__.media") || bar?.shell?.firstPartyServiceFor("omarchy.media")
   readonly property var activePlayer: mediaService ? mediaService.activePlayer : null
-  readonly property var sourcePlayers: mediaService ? mediaService.sourcePlayers : []
 
-  readonly property bool hasMedia: activePlayer !== null && (activePlayer.trackTitle || activePlayer.trackArtist)
-  readonly property bool isPlaying: hasMedia && activePlayer.isPlaying
-  readonly property string title: activePlayer ? (activePlayer.trackTitle || "") : ""
-  readonly property string artist: activePlayer ? (activePlayer.trackArtist || "") : ""
+  function isWallpaperPlayer(player) {
+    var identity = String(player && (player.identity || player.desktopEntry || player.dbusName) || "").toLowerCase()
+    return identity.indexOf("mpvpaper") !== -1
+  }
+
+  function isAudioPlayer(player) {
+    return !!player && !isWallpaperPlayer(player)
+      && (!mediaService || mediaService.playerHasPlaybackStream(player))
+  }
+
+  readonly property var sourcePlayers: mediaService
+    ? mediaService.sourcePlayers.filter(function(player) { return root.isAudioPlayer(player) })
+    : []
+  readonly property var audioPlayer: isAudioPlayer(activePlayer) ? activePlayer : null
+  readonly property bool hasMedia: audioPlayer !== null && (audioPlayer.trackTitle || audioPlayer.trackArtist)
+  readonly property bool isPlaying: hasMedia && audioPlayer.isPlaying
+  readonly property string title: audioPlayer ? (audioPlayer.trackTitle || "") : ""
+  readonly property string artist: audioPlayer ? (audioPlayer.trackArtist || "") : ""
   readonly property real maxLabelWidth: Style.spaceReal(180)
 
   property bool popupOpen: false
@@ -241,13 +254,13 @@ BarWidget {
             anchors.margins: Style.space(2)
             fillMode: Image.PreserveAspectCrop
             asynchronous: true
-            source: root.activePlayer && root.activePlayer.trackArtUrl ? root.activePlayer.trackArtUrl : ""
+            source: root.audioPlayer && root.audioPlayer.trackArtUrl ? root.audioPlayer.trackArtUrl : ""
             visible: source !== ""
           }
 
           Text {
             anchors.centerIn: parent
-            visible: !root.activePlayer || !root.activePlayer.trackArtUrl
+            visible: !root.audioPlayer || !root.audioPlayer.trackArtUrl
             text: "󰝚"
             color: "#00f5d4"
             font.family: root.bar.fontFamily
@@ -279,7 +292,7 @@ BarWidget {
           }
 
           Text {
-            text: root.activePlayer && root.activePlayer.trackAlbum ? root.activePlayer.trackAlbum : ""
+            text: root.audioPlayer && root.audioPlayer.trackAlbum ? root.audioPlayer.trackAlbum : ""
             color: Qt.darker(root.bar.foreground, 1.6)
             font.family: root.bar.fontFamily
             font.pixelSize: Style.font.caption
@@ -299,9 +312,9 @@ BarWidget {
           foreground: root.bar.foreground
           horizontalPadding: Style.spacing.controlPaddingX
           verticalPadding: Style.spacing.controlPaddingY
-          enabled: root.activePlayer && root.activePlayer.canGoPrevious
+          enabled: root.audioPlayer && root.audioPlayer.canGoPrevious
           opacity: enabled ? 1.0 : 0.4
-          onClicked: if (root.mediaService) root.mediaService.runAction("previous", false, root.mediaService.playerKey(root.activePlayer))
+          onClicked: if (root.mediaService) root.mediaService.runAction("previous", false, root.mediaService.playerKey(root.audioPlayer))
         }
 
         Button {
@@ -310,9 +323,9 @@ BarWidget {
           horizontalPadding: Style.spacing.panelGap
           verticalPadding: Style.spacing.controlPaddingY
           iconSize: Style.font.iconLarge
-          enabled: root.activePlayer && (root.activePlayer.canTogglePlaying || root.activePlayer.canPlay || root.activePlayer.canPause)
+          enabled: root.audioPlayer && (root.audioPlayer.canTogglePlaying || root.audioPlayer.canPlay || root.audioPlayer.canPause)
           opacity: enabled ? 1.0 : 0.4
-          onClicked: if (root.mediaService) root.mediaService.runAction("playPause", false, root.mediaService.playerKey(root.activePlayer))
+          onClicked: if (root.mediaService) root.mediaService.runAction("playPause", false, root.mediaService.playerKey(root.audioPlayer))
         }
 
         Button {
@@ -320,9 +333,9 @@ BarWidget {
           foreground: root.bar.foreground
           horizontalPadding: Style.spacing.controlPaddingX
           verticalPadding: Style.spacing.controlPaddingY
-          enabled: root.activePlayer && root.activePlayer.canGoNext
+          enabled: root.audioPlayer && root.audioPlayer.canGoNext
           opacity: enabled ? 1.0 : 0.4
-          onClicked: if (root.mediaService) root.mediaService.runAction("next", false, root.mediaService.playerKey(root.activePlayer))
+          onClicked: if (root.mediaService) root.mediaService.runAction("next", false, root.mediaService.playerKey(root.audioPlayer))
         }
       }
 
@@ -345,8 +358,8 @@ BarWidget {
             required property var modelData
 
             readonly property var player: modelData
-            readonly property bool selected: root.activePlayer && player
-              && root.mediaService.playerKey(root.activePlayer) === root.mediaService.playerKey(player)
+            readonly property bool selected: root.audioPlayer && player
+              && root.mediaService.playerKey(root.audioPlayer) === root.mediaService.playerKey(player)
             readonly property string sourceTitle: player ? (player.trackTitle || player.identity || player.desktopEntry || "Media source") : "Media source"
             readonly property string sourceDetail: player && player.trackArtist ? player.trackArtist : (player && player.identity ? player.identity : "")
 

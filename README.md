@@ -17,6 +17,11 @@ cyan, green and sakura-pink palette. It installs the theme, Quickshell widgets,
 live wallpapers, development tools, local AI assistant and hardware helpers
 without editing Omarchy's packaged files under `/usr/share/omarchy`.
 
+![Virtual Paradise desktop preview](assets/preview.png)
+
+*Five-terminal development rice with live wallpaper, system telemetry, Cava and
+Paradise Agent.*
+
 ## Highlights
 
 ### Workspace and wallpaper
@@ -137,6 +142,17 @@ The installer is designed to be safely re-run. It backs up important existing
 configuration, checks packages before installing, avoids duplicate plugin
 clones, and reapplies the intended plugin state after shell/theme reloads.
 
+### Uninstall
+
+```bash
+~/.local/bin/uninstall-virtual-paradise
+```
+
+The uninstaller stops only Virtual Paradise wallpaper/helper processes, restores
+the saved Omarchy shell and GTK files when available, removes generated theme
+files, and disables the theme-specific external plugins. It does not remove
+system packages, NVIDIA configuration, or unrelated user plugins.
+
 ## Theme lifecycle
 
 When `virtual-paradise` is selected, the hook:
@@ -166,6 +182,7 @@ theme/        Shared colors and application themes
 plymouth/     Boot/shutdown animation files
 sddm/         Login screen theme
 install.sh    Idempotent installer and lifecycle setup
+uninstall.sh  Conservative cleanup and configuration restore
 ```
 
 ## Requirements

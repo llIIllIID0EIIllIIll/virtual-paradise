@@ -116,12 +116,12 @@ wait_for_window() {
   local title_pattern="$1"
   local target_ws="$2"
   local addr=""
-  for ((i=0; i<35; i++)); do
+  for ((i=0; i<20; i++)); do
     addr=$(hyprctl clients -j 2>/dev/null | jq -r ".[] | select(.workspace.id == $target_ws and ((.title | test(\"$title_pattern\")) or (.initialTitle | test(\"$title_pattern\")))) | .address" | head -n 1)
     if [[ -n "$addr" && "$addr" != "null" ]]; then
       return 0
     fi
-    sleep 0.04
+    sleep 0.015
   done
   return 1
 }
@@ -157,8 +157,8 @@ LAUNCH_RICE_TERM() {
 }
 
 # 8. Deterministic Dwindle Cascade Execution
-# Wait only for each terminal to map before launching the next one. This keeps
-# the dwindle tree deterministic without the old focus-and-sleep overhead.
+# Wait briefly for each terminal to map before launching the next one. This
+# keeps the dwindle tree deterministic without making Super+Q feel sluggish.
 # Window 1: Fastfetch + Paradise Agent (Master Left Panel)
 case "$TERM_BIN" in
   ghostty)
