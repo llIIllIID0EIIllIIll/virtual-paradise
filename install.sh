@@ -375,12 +375,9 @@ CHECK_AND_INSTALL_PACKAGES() {
       elif command -v nbfc &>/dev/null || pacman -Qs nbfc &>/dev/null; then
         log_sub "NoteBook FanControl is active"
       else
-        log_sub "Acer hardware detected: checking fan control packages..."
-        if pacman -Qs linux-headers &>/dev/null; then
-          AUR_PKGS+=("acer-nitro-ec-dkms")
-        else
-          AUR_PKGS+=("nbfc-linux")
-        fi
+        log_sub "Acer hardware detected: adding Acer Nitro EC fan driver (acer-nitro-ec-dkms)..."
+        REQUIRED_PKGS+=("linux-headers")
+        AUR_PKGS+=("acer-nitro-ec-dkms")
       fi
       ;;
     *micro-star*|*msi*)
