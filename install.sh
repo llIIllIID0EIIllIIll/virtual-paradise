@@ -489,7 +489,7 @@ CONFIGURE_DEFAULT_APPS() {
       RUN_AS_INSTALL_USER omarchy default terminal ghostty 2>/dev/null || \
         log_warn "Could not set Ghostty as the Omarchy default terminal."
     fi
-    if command -v copilot &>/dev/null || pacman -Qi github-copilot-cli &>/dev/null; then
+    if command -v copilot &>/dev/null || RUN_AS_INSTALL_USER command -v copilot &>/dev/null || pacman -Qi github-copilot-cli &>/dev/null; then
       RUN_AS_INSTALL_USER omarchy default agent copilot 2>/dev/null || \
         log_warn "Could not set GitHub Copilot as the Omarchy default agent."
     fi
@@ -724,7 +724,7 @@ INSTALL_AND_ENABLE_PLUGINS() {
       # installed DND plugin when present, but keep Omarchy's notification
       # service enabled because the new plugin uses it as its backend.
       local dnd_plugin_id
-      for dnd_plugin_id in omarchy.dnd omarchy.do-not-disturb doe.dnd; do
+      for dnd_plugin_id in omarchy.dnd omarchy.do-not-disturb "${CURRENT_USER}.dnd"; do
         if omarchy plugin list --json 2>/dev/null | jq -e --arg id "$dnd_plugin_id" \
           'any(.[]; .id == $id)' >/dev/null; then
           omarchy plugin disable "$dnd_plugin_id" 2>/dev/null || \
@@ -1083,8 +1083,9 @@ fi
 if [[ "$THEME_NAME" == "virtual-paradise" ]]; then
 # Use hyprmoncfg in place of the cloned Display & Scaling widget.
 if command -v omarchy >/dev/null 2>&1; then
+  local u="${USER:-$(id -un)}"
   omarchy plugin enable "crmne.hyprmoncfg" >/dev/null 2>&1 || true
-  omarchy plugin disable "${USER}.monitor" >/dev/null 2>&1 || true
+  omarchy plugin disable "${u}.monitor" >/dev/null 2>&1 || true
   omarchy plugin disable "omarchy.monitor" >/dev/null 2>&1 || true
 fi
 
@@ -1115,10 +1116,11 @@ fi
     fi
   fi
 else
-  # Restore the cloned Display & Scaling widget outside this theme.
+  # Restore the Display & Scaling widget outside this theme.
   if command -v omarchy >/dev/null 2>&1; then
+    local u="${USER:-$(id -un)}"
     omarchy plugin disable "crmne.hyprmoncfg" >/dev/null 2>&1 || true
-    omarchy plugin enable "${USER}.monitor" >/dev/null 2>&1 || true
+    omarchy plugin enable "${u}.monitor" >/dev/null 2>&1 || omarchy plugin enable "omarchy.monitor" >/dev/null 2>&1 || true
   fi
 
   # Cleanly stop live video wallpaper so new theme background displays properly
@@ -1186,7 +1188,7 @@ if [[ -f "$REPO_DIR/shell/zshrc" ]]; then
 fi
 
 # 10.3 Ensure default shell is Zsh
-if command -v zsh &>/dev/null; then
+if [[ $IS_HOOK -eq 0 ]] && command -v zsh &>/dev/null; then
   CURRENT_LOGIN_SHELL=$(getent passwd "$CURRENT_USER" | cut -d: -f7)
   if [[ "$CURRENT_LOGIN_SHELL" != "$(command -v zsh)" ]]; then
     log_sub "Setting default login shell to Zsh for '${CURRENT_USER}'..."

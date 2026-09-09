@@ -120,6 +120,6 @@ def format_docx(input_path: str = None, output_path: str = None) -> str:
 
 
 if __name__ == "__main__":
-    in_arg = sys.argv[1] if len(sys.argv) > 1 else "/home/doe/Downloads"
+    in_arg = sys.argv[1] if len(sys.argv) > 1 else str(Path.home() / "Downloads")
     out_arg = sys.argv[2] if len(sys.argv) > 2 else None
     print(format_docx(in_arg, out_arg))

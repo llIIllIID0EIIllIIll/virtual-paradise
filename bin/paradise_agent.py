@@ -1187,7 +1187,7 @@ def build_system_prompt() -> str:
     except Exception:
         pass
 
-    user = os.environ.get("USER", "doe")
+    user = os.environ.get("USER", os.environ.get("LOGNAME", "user"))
     shell = os.environ.get("SHELL", "/usr/bin/zsh")
 
     skills_map = discover_skills()

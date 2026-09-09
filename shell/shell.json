@@ -58,6 +58,9 @@
           "id": "omarchy.tray"
         },
         {
+          "id": "jankeesvw.notification-center"
+        },
+        {
           "id": "io.github.kristoferlund.webcam",
           "device": "/dev/video0"
         },

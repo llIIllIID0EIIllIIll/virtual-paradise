@@ -108,20 +108,21 @@ if [[ "$active_windows" -gt 0 ]]; then
   hyprctl dispatch "hl.dsp.focus({ workspace = \"$TARGET_WS\" })" 2>/dev/null || true
   sleep 0.05
 else
-  TARGET_WS=$(hyprctl activeworkspace -j 2>/dev/null | jq -r '.id')
+  TARGET_WS=$(hyprctl activeworkspace -j 2>/dev/null | jq -r '.id' 2>/dev/null || echo 1)
 fi
 
-# 6. Window Poller
+# 6. Window Poller & Split Focus Dispatcher
 wait_for_window() {
   local title_pattern="$1"
-  local target_ws="$2"
+  local target_ws="${2:-$TARGET_WS}"
   local addr=""
-  for ((i=0; i<20; i++)); do
+  for ((i=0; i<30; i++)); do
     addr=$(hyprctl clients -j 2>/dev/null | jq -r ".[] | select(.workspace.id == $target_ws and ((.title | test(\"$title_pattern\")) or (.initialTitle | test(\"$title_pattern\")))) | .address" | head -n 1)
     if [[ -n "$addr" && "$addr" != "null" ]]; then
+      hyprctl dispatch "hl.dsp.focus({ window = \"address:$addr\" })" >/dev/null 2>&1 || true
       return 0
     fi
-    sleep 0.015
+    sleep 0.02
   done
   return 1
 }

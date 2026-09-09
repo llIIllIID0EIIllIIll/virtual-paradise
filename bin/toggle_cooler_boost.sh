@@ -140,6 +140,9 @@ if [ "$TARGET_ACTION" == "enable" ]; then
 
     if [ $APPLIED -eq 1 ]; then
         echo "on" > "$STATE_FILE"
+        if [[ ! -t 1 ]]; then
+            notify-send -u normal -t 2000 -h string:x-canonical-private-synchronous:cooler_boost "󰈐 ${VENDOR} Cooler Boost" "ENABLED (100% Maximum Fan Speed)" 2>/dev/null || true
+        fi
         echo "✅ ${VENDOR} Cooler Boost: ĐÃ BẬT THÀNH CÔNG (Quạt tản nhiệt đang chạy 100% công suất tối đa)."
     else
         if [[ -n "$ACER_HWMON" ]]; then
@@ -189,6 +192,9 @@ else
 
     if [ $APPLIED -eq 1 ]; then
         echo "off" > "$STATE_FILE"
+        if [[ ! -t 1 ]]; then
+            notify-send -u normal -t 2000 -h string:x-canonical-private-synchronous:cooler_boost "󰈐 ${VENDOR} Cooler Boost" "DISABLED (Auto Fan Profile)" 2>/dev/null || true
+        fi
         echo "✅ ${VENDOR} Cooler Boost: ĐÃ TẮT THÀNH CÔNG (Quạt đã trở về chế độ tự động thông minh)."
     else
         if [[ -n "$ACER_HWMON" ]]; then
