@@ -29,7 +29,14 @@
         },
         {
           "alwaysShow": true,
-          "id": "__USER__.indicators"
+          "id": "__USER__.indicators",
+          "items": [
+            "Dictation",
+            "ScreenRecording",
+            "Reminder",
+            "NightLight",
+            "StayAwake"
+          ]
         },
         {
           "id": "omarchy.keyboard-layout"
@@ -58,7 +65,7 @@
           "id": "omarchy.agents"
         },
         {
-          "id": "__USER__.monitor"
+          "id": "crmne.hyprmoncfg"
         },
         {
           "id": "__USER__.bluetooth"

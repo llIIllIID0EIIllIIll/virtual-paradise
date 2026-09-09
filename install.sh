@@ -336,10 +336,15 @@ CHECK_AND_INSTALL_PACKAGES() {
     "socat"
     "git"
     "psmisc"
+    "ghostty"
+    "nautilus"
+    "github-copilot-cli"
+    "visual-studio-code-bin"
   )
   local AUR_PKGS=(
     "mpvpaper"
     "gnome-network-displays"
+    "hyprmoncfg"
   )
 
   local HW_VENDOR=$(detect_hardware_vendor)
@@ -421,6 +426,8 @@ CHECK_AND_INSTALL_PACKAGES() {
       already_installed=1
     elif [[ "$pkg" == "isw" ]] && command -v isw &>/dev/null; then
       already_installed=1
+    elif [[ "$pkg" == "hyprmoncfg" ]] && command -v hyprmoncfg &>/dev/null; then
+      already_installed=1
     fi
 
     if [[ $already_installed -eq 0 ]]; then
@@ -456,6 +463,71 @@ CHECK_AND_INSTALL_PACKAGES() {
 
   if [[ ${#OFFICIAL_TO_INSTALL[@]} -eq 0 && ${#AUR_TO_INSTALL[@]} -eq 0 ]]; then
     log_sub "All required packages are satisfied"
+  fi
+}
+
+RUN_AS_INSTALL_USER() {
+  if (( EUID == 0 )) && [[ -n "${SUDO_USER:-}" && "$SUDO_USER" != "root" ]]; then
+    sudo -u "$CURRENT_USER" \
+      HOME="$HOME" \
+      XDG_CONFIG_HOME="$CONFIG_DIR" \
+      XDG_RUNTIME_DIR="${XDG_RUNTIME_DIR:-/run/user/$(id -u "$CURRENT_USER")}" \
+      WAYLAND_DISPLAY="${WAYLAND_DISPLAY:-}" \
+      HYPRLAND_INSTANCE_SIGNATURE="${HYPRLAND_INSTANCE_SIGNATURE:-}" \
+      DBUS_SESSION_BUS_ADDRESS="${DBUS_SESSION_BUS_ADDRESS:-}" \
+      "$@"
+  else
+    "$@"
+  fi
+}
+
+CONFIGURE_DEFAULT_APPS() {
+  log_sub "Configuring Omarchy defaults: Ghostty, Nautilus, VS Code & GitHub Copilot..."
+
+  if command -v omarchy &>/dev/null; then
+    if command -v ghostty &>/dev/null; then
+      RUN_AS_INSTALL_USER omarchy default terminal ghostty 2>/dev/null || \
+        log_warn "Could not set Ghostty as the Omarchy default terminal."
+    fi
+    if command -v copilot &>/dev/null || pacman -Qi github-copilot-cli &>/dev/null; then
+      RUN_AS_INSTALL_USER omarchy default agent copilot 2>/dev/null || \
+        log_warn "Could not set GitHub Copilot as the Omarchy default agent."
+    fi
+  fi
+
+  if command -v xdg-mime &>/dev/null && command -v nautilus &>/dev/null; then
+    RUN_AS_INSTALL_USER xdg-mime default org.gnome.Nautilus.desktop inode/directory 2>/dev/null || \
+      log_warn "Could not set Nautilus as the default file manager."
+  fi
+
+  if command -v xdg-mime &>/dev/null && command -v code &>/dev/null; then
+    for mime_type in text/plain text/markdown application/json application/x-shellscript; do
+      RUN_AS_INSTALL_USER xdg-mime default code.desktop "$mime_type" 2>/dev/null || true
+    done
+  fi
+
+  if command -v code &>/dev/null; then
+    log_sub "VS Code is available as the default editor (code --wait)"
+  fi
+}
+
+CONFIGURE_GPU_ACCELERATION() {
+  if ! command -v nvidia-smi &>/dev/null; then
+    log_sub "NVIDIA GPU utilities not detected; leaving GPU configuration unchanged"
+    return 0
+  fi
+
+  log_sub "Optimizing NVIDIA GPU persistence and compute startup..."
+  if (( EUID == 0 )); then
+    systemctl enable --now nvidia-persistenced.service 2>/dev/null || \
+      log_warn "Could not enable nvidia-persistenced.service."
+    nvidia-smi -pm 1 >/dev/null 2>&1 || \
+      log_warn "Could not enable NVIDIA persistence mode."
+  else
+    $SUDO_CMD systemctl enable --now nvidia-persistenced.service 2>/dev/null || \
+      log_warn "Could not enable nvidia-persistenced.service."
+    $SUDO_CMD nvidia-smi -pm 1 >/dev/null 2>&1 || \
+      log_warn "Could not enable NVIDIA persistence mode."
   fi
 }
 
@@ -553,6 +625,8 @@ CONFIGURE_AI_AGENT_ENGINE() {
 
 if [[ $IS_HOOK -eq 0 ]]; then
   CHECK_AND_INSTALL_PACKAGES
+  CONFIGURE_DEFAULT_APPS
+  CONFIGURE_GPU_ACCELERATION
   CONFIGURE_HARDWARE_DRIVERS
   CONFIGURE_AI_AGENT_ENGINE
 fi
@@ -625,6 +699,38 @@ INSTALL_AND_ENABLE_PLUGINS() {
       else
         omarchy plugin enable "io.github.kristoferlund.webcam" 2>/dev/null || true
       fi
+
+      # Install the notification center once, then ensure it stays enabled on
+      # subsequent theme installations.
+      if ! omarchy plugin list --json 2>/dev/null | jq -e 'any(.[]; .id == "jankeesvw.notification-center")' >/dev/null; then
+        log_sub "Adding external Omarchy notification center plugin from git..."
+        omarchy plugin add https://github.com/jankeesvw/omarchy-notification-center.git --enable --yes 2>/dev/null || true
+      else
+        omarchy plugin enable "jankeesvw.notification-center" 2>/dev/null || true
+      fi
+
+      # hyprmoncfg replaces the cloned Display & Scaling widget in this
+      # theme. Keep the old widget disabled to avoid duplicate controls.
+      if ! omarchy plugin list --json 2>/dev/null | jq -e 'any(.[]; .id == "crmne.hyprmoncfg")' >/dev/null; then
+        log_sub "Adding external Omarchy monitor manager plugin from git..."
+        omarchy plugin add https://github.com/crmne/omarchy-hyprmoncfg.git --enable --yes 2>/dev/null || true
+      else
+        omarchy plugin enable "crmne.hyprmoncfg" 2>/dev/null || true
+      fi
+      omarchy plugin disable "${CURRENT_USER}.monitor" 2>/dev/null || true
+      omarchy plugin disable "omarchy.monitor" 2>/dev/null || true
+
+      # The notification center owns the DND control. Disable a separately
+      # installed DND plugin when present, but keep Omarchy's notification
+      # service enabled because the new plugin uses it as its backend.
+      local dnd_plugin_id
+      for dnd_plugin_id in omarchy.dnd omarchy.do-not-disturb doe.dnd; do
+        if omarchy plugin list --json 2>/dev/null | jq -e --arg id "$dnd_plugin_id" \
+          'any(.[]; .id == $id)' >/dev/null; then
+          omarchy plugin disable "$dnd_plugin_id" 2>/dev/null || \
+            log_warn "Could not disable legacy DND plugin '$dnd_plugin_id'."
+        fi
+      done
     fi
   fi
 }
@@ -649,6 +755,17 @@ if [[ -f "$REPO_DIR/shell/shell.json" ]]; then
   sed "s/__USER__/${CURRENT_USER}/g" "$REPO_DIR/shell/shell.json" > "$CONFIG_DIR/omarchy/shell-paradise.json"
   cp "$CONFIG_DIR/omarchy/shell-paradise.json" "$CONFIG_DIR/omarchy/shell.json"
   log_sub "Synchronized ~/.config/omarchy/shell-paradise.json with calibrated user IDs"
+
+  # The shell layout copy above can reset plugin enablement. Restore the
+  # external notification center after the layout is installed.
+  if command -v omarchy &>/dev/null; then
+    omarchy plugin enable "jankeesvw.notification-center" 2>/dev/null || \
+      log_warn "Notification center could not be enabled after shell layout sync."
+    omarchy plugin enable "crmne.hyprmoncfg" 2>/dev/null || \
+      log_warn "hyprmoncfg could not be enabled after shell layout sync."
+    omarchy plugin disable "${CURRENT_USER}.monitor" 2>/dev/null || true
+    omarchy plugin disable "omarchy.monitor" 2>/dev/null || true
+  fi
 fi
 
 cat << 'EOF' > "$CONFIG_DIR/omarchy/extensions/paradise.json"
@@ -962,6 +1079,13 @@ fi
 
 # 2. Theme-specific setup
 if [[ "$THEME_NAME" == "virtual-paradise" ]]; then
+# Use hyprmoncfg in place of the cloned Display & Scaling widget.
+if command -v omarchy >/dev/null 2>&1; then
+  omarchy plugin enable "crmne.hyprmoncfg" >/dev/null 2>&1 || true
+  omarchy plugin disable "${USER}.monitor" >/dev/null 2>&1 || true
+  omarchy plugin disable "omarchy.monitor" >/dev/null 2>&1 || true
+fi
+
   # Activate Virtual Paradise Fastfetch config
   if [[ -f "$HOME/.config/fastfetch/virtual-paradise.jsonc" ]]; then
     cp "$HOME/.config/fastfetch/virtual-paradise.jsonc" "$HOME/.config/fastfetch/config.jsonc" 2>/dev/null || true
@@ -989,6 +1113,12 @@ if [[ "$THEME_NAME" == "virtual-paradise" ]]; then
     fi
   fi
 else
+  # Restore the cloned Display & Scaling widget outside this theme.
+  if command -v omarchy >/dev/null 2>&1; then
+    omarchy plugin disable "crmne.hyprmoncfg" >/dev/null 2>&1 || true
+    omarchy plugin enable "${USER}.monitor" >/dev/null 2>&1 || true
+  fi
+
   # Cleanly stop live video wallpaper so new theme background displays properly
   pkill -f mpvpaper 2>/dev/null || true
 
@@ -1186,6 +1316,23 @@ if [[ $IS_HOOK -eq 0 ]]; then
       omarchy theme set "$THEME_NAME" 2>/dev/null || true
       omarchy theme bg cache 2>/dev/null || true
       omarchy restart shell 2>/dev/null || true
+    fi
+
+    # Theme activation can restart the shell and briefly race plugin
+    # discovery, so enforce the notification center state last.
+    if command -v omarchy &>/dev/null; then
+      if (( EUID == 0 )) && [[ -n "${SUDO_USER:-}" && "$SUDO_USER" != "root" ]]; then
+        sudo -u "$CURRENT_USER" \
+          WAYLAND_DISPLAY="$WAYLAND_DISPLAY" \
+          HYPRLAND_INSTANCE_SIGNATURE="$HYPRLAND_INSTANCE_SIGNATURE" \
+          XDG_RUNTIME_DIR="${XDG_RUNTIME_DIR:-/run/user/$(id -u "$CURRENT_USER")}" \
+          DBUS_SESSION_BUS_ADDRESS="$DBUS_SESSION_BUS_ADDRESS" \
+          omarchy plugin enable "jankeesvw.notification-center" 2>/dev/null || \
+          log_warn "Notification center could not be enabled after theme activation."
+      else
+        omarchy plugin enable "jankeesvw.notification-center" 2>/dev/null || \
+          log_warn "Notification center could not be enabled after theme activation."
+      fi
     fi
   fi
 

@@ -8,6 +8,8 @@ ShellRoot {
 
   property bool isReady: false
   property bool exiting: false
+  property string targetName: Quickshell.env("WALLPAPER_TARGET") || "LIVE STREAM"
+  property int loadingPhase: 0
 
   // Process checking if the wallpaper has finished decoding and rendering
   Process {
@@ -30,6 +32,13 @@ ShellRoot {
         readyChecker.running = true
       }
     }
+  }
+
+  Timer {
+    interval: 350
+    repeat: true
+    running: !root.isReady && !root.exiting
+    onTriggered: root.loadingPhase = (root.loadingPhase + 1) % 4
   }
 
   // Safety fallback timeout: maximum 4.5s so glitch screen NEVER gets stuck
@@ -197,19 +206,29 @@ ShellRoot {
         Item {
           id: loadingHud
           anchors.centerIn: parent
-          width: 500
-          height: 125
+          width: Math.min(parent.width - 64, 620)
+          height: 164
           opacity: 0.0
 
           Behavior on opacity { NumberAnimation { duration: 160 } }
 
           Rectangle {
             anchors.fill: parent
-            color: "#05070a"
-            opacity: 0.88
-            radius: 10
+            color: "#07080d"
+            opacity: 0.94
+            radius: 14
             border.color: "#00f5d4"
-            border.width: 1.5
+            border.width: 2
+          }
+
+          Rectangle {
+            anchors.fill: parent
+            anchors.margins: 6
+            color: "transparent"
+            radius: 10
+            border.color: "#ff007f"
+            border.width: 1
+            opacity: 0.35
           }
 
           // Cyber Corner Accents
@@ -224,40 +243,54 @@ ShellRoot {
 
           Column {
             anchors.centerIn: parent
-            spacing: 12
+            width: parent.width - 56
+            spacing: 10
 
             Row {
               anchors.horizontalCenter: parent.horizontalCenter
-              spacing: 8
+              spacing: 10
               Text {
-                text: "⚡"
+                text: "◈"
                 color: "#ffee00"
-                font.pixelSize: 15
+                font.pixelSize: 18
               }
               Text {
-                text: "VIRTUAL☆PARADISE // SYNCHRONIZING STREAM"
+                text: "VIRTUAL☆PARADISE // WALLPAPER LINK"
                 color: "#00f5d4"
-                font.pixelSize: 13
+                font.pixelSize: 14
                 font.bold: true
                 font.family: "JetBrainsMono Nerd Font, monospace"
+                elide: Text.ElideRight
+                maximumLineCount: 1
               }
+            }
+
+            Text {
+              text: "LOADING  " + root.targetName
+              color: "#eafbfa"
+              font.pixelSize: 11
+              font.family: "JetBrainsMono Nerd Font, monospace"
+              anchors.horizontalCenter: parent.horizontalCenter
+              elide: Text.ElideMiddle
+              width: parent.width
+              horizontalAlignment: Text.AlignHCenter
             }
 
             // Neon Scanning Progress Track
             Rectangle {
               id: track
-              width: 380
-              height: 4
+              width: parent.width
+              height: 6
               color: "#161e2e"
-              radius: 2
+              radius: 3
               clip: true
               anchors.horizontalCenter: parent.horizontalCenter
 
               Rectangle {
                 id: scanBar
-                width: 100
-                height: 4
-                radius: 2
+                width: Math.max(90, track.width * 0.25)
+                height: 6
+                radius: 3
                 gradient: Gradient {
                   orientation: Gradient.Horizontal
                   GradientStop { position: 0.0; color: "transparent" }
@@ -276,7 +309,7 @@ ShellRoot {
 
             Text {
               id: loadingSubtext
-              text: "BUFFERING NEURAL FRAMES..."
+              text: "BUFFERING NEURAL FRAMES" + ".".repeat(root.loadingPhase)
               color: "#ff007f"
               font.pixelSize: 10
               font.bold: true
@@ -290,6 +323,7 @@ ShellRoot {
                 NumberAnimation { from: 0.9; to: 0.3; duration: 400 }
                 NumberAnimation { from: 0.3; to: 0.9; duration: 400 }
               }
+
             }
           }
         }

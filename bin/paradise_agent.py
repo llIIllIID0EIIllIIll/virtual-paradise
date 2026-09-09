@@ -29,10 +29,14 @@ console = Console()
 
 OLLAMA_HOST = os.environ.get("OLLAMA_HOST", "http://127.0.0.1:11434")
 DEFAULT_MODEL = os.environ.get("PARADISE_AGENT_MODEL", "qwen2.5-coder:3b")
+OLLAMA_NUM_CTX = int(os.environ.get("PARADISE_AGENT_NUM_CTX", "4096"))
+OLLAMA_NUM_THREADS = min(int(os.environ.get("PARADISE_AGENT_NUM_THREADS", "8")), os.cpu_count() or 8)
+OLLAMA_NUM_GPU = int(os.environ.get("PARADISE_AGENT_NUM_GPU", "99"))
+OLLAMA_NUM_BATCH = int(os.environ.get("PARADISE_AGENT_NUM_BATCH", "512"))
 
 # Execution Modes: "Auto-accept" (Default) or "Preview"
 EXECUTION_MODE = "Auto-accept"
-SHOW_THINKING = True
+SHOW_THINKING = os.environ.get("PARADISE_AGENT_SHOW_THINKING", "0").lower() in ("1", "true", "yes", "on")
 
 # --- Dynamic Omarchy Theme Engine ---
 def hex_to_rgb(hex_str: str) -> Tuple[int, int, int]:
@@ -2276,8 +2280,10 @@ def call_ollama_chat(messages: List[Dict[str, Any]], model: str, enable_tools: b
         "stream": False,
         "options": {
             "temperature": 0.1,
-            "num_thread": min(12, os.cpu_count() or 8),
-            "num_ctx": 4096,
+            "num_thread": OLLAMA_NUM_THREADS,
+            "num_ctx": OLLAMA_NUM_CTX,
+            "num_gpu": OLLAMA_NUM_GPU,
+            "num_batch": OLLAMA_NUM_BATCH,
             "num_predict": 128 if enable_tools else 384
         }
     }
@@ -2336,8 +2342,10 @@ def stream_ollama_synthesis(messages: List[Dict[str, Any]], model: str, lang: st
         "stream": True,
         "options": {
             "temperature": 0.1,
-            "num_thread": min(12, os.cpu_count() or 8),
-            "num_ctx": 4096,
+            "num_thread": OLLAMA_NUM_THREADS,
+            "num_ctx": OLLAMA_NUM_CTX,
+            "num_gpu": OLLAMA_NUM_GPU,
+            "num_batch": OLLAMA_NUM_BATCH,
             "num_predict": 512
         }
     }

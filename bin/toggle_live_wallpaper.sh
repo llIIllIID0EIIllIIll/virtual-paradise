@@ -50,11 +50,13 @@ is_live_running() {
 }
 
 play_curtain_transition() {
+  local target="${1:-LIVE STREAM}"
   local qml_script="$HOME/.local/bin/glitch_transition.qml"
   [[ ! -f "$qml_script" ]] && qml_script="$HOME/.local/bin/curtain_transition.qml"
   if [[ -f "$qml_script" ]] && command -v quickshell &>/dev/null; then
     rm -f "$READY_FILE"
     export CURTAIN_LAYER="${CURTAIN_LAYER:-overlay}"
+    export WALLPAPER_TARGET="$(basename "$target" 2>/dev/null || echo "LIVE STREAM")"
     quickshell -p "$qml_script" >/dev/null 2>&1 &
     # Wait until glitch layer surface is physically rendered on screen by Hyprland
     for ((i=0; i<35; i++)); do
@@ -96,7 +98,7 @@ set_live() {
   if [[ -n "$target" && -f "$target" ]]; then
     rm -f "$READY_FILE" "$SOCKET_FILE"
     if [[ "$transition" == "true" ]]; then
-      play_curtain_transition
+      play_curtain_transition "$target"
     fi
 
     # Update static background symlink quietly without triggering duplicate compositor animation
