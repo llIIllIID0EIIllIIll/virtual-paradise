@@ -3,9 +3,6 @@ set -euo pipefail
 
 REPO_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 THEME_NAME="virtual-paradise"
-CONFIG_DIR="${XDG_CONFIG_HOME:-$HOME/.config}"
-LOCAL_BIN="$HOME/.local/bin"
-BACKUP_DIR="$HOME/.local/state/virtual-paradise/uninstall-backup-$(date +%Y%m%d_%H%M%S)"
 
 if (( EUID == 0 )) && [[ -n "${SUDO_USER:-}" && "${SUDO_USER}" != "root" ]]; then
   CURRENT_USER="$SUDO_USER"
@@ -15,19 +12,38 @@ else
   CURRENT_USER="${USER:-$(id -un)}"
 fi
 
+CONFIG_DIR="${XDG_CONFIG_HOME:-$HOME/.config}"
+LOCAL_BIN="$HOME/.local/bin"
+BACKUP_DIR="$HOME/.local/state/virtual-paradise/uninstall-backup-$(date +%Y%m%d_%H%M%S)"
+
+RUN_AS_INSTALL_USER() {
+  if (( EUID == 0 )) && [[ -n "${SUDO_USER:-}" && "$SUDO_USER" != "root" ]]; then
+    sudo -u "$CURRENT_USER" \
+      HOME="$HOME" \
+      XDG_CONFIG_HOME="$CONFIG_DIR" \
+      XDG_RUNTIME_DIR="${XDG_RUNTIME_DIR:-/run/user/$(id -u "$CURRENT_USER")}" \
+      WAYLAND_DISPLAY="${WAYLAND_DISPLAY:-}" \
+      HYPRLAND_INSTANCE_SIGNATURE="${HYPRLAND_INSTANCE_SIGNATURE:-}" \
+      DBUS_SESSION_BUS_ADDRESS="${DBUS_SESSION_BUS_ADDRESS:-}" \
+      "$@"
+  else
+    "$@"
+  fi
+}
+
 if [[ "${1:-}" == "--help" || "${1:-}" == "-h" ]]; then
-  printf 'Usage: %s [--keep-backups]\\n' "$0"
-  printf 'Remove Virtual Paradise files and restore backed-up Omarchy defaults.\\n'
+  printf 'Usage: %s [--keep-backups]\n' "$0"
+  printf 'Remove Virtual Paradise files and restore backed-up Omarchy defaults.\n'
   exit 0
 fi
 
 if [[ "${1:-}" != "" && "${1:-}" != "--keep-backups" ]]; then
-  printf 'Unknown option: %s\\n' "$1" >&2
+  printf 'Unknown option: %s\n' "$1" >&2
   exit 2
 fi
 
 mkdir -p "$BACKUP_DIR"
-printf 'Removing Virtual☆Paradise for %s...\\n' "$CURRENT_USER"
+printf 'Removing Virtual☆Paradise for %s...\n' "$CURRENT_USER"
 
 restore_or_remove() {
   local current="$1"
@@ -37,7 +53,7 @@ restore_or_remove() {
     mkdir -p "$(dirname "$current")"
     cp -a "$backup" "$current"
   else
-    printf 'Preserving %s because no installer backup was found.\\n' "$current"
+    printf 'Preserving %s because no installer backup was found.\n' "$current"
   fi
 }
 
@@ -75,15 +91,19 @@ if [[ -f "$HOME/.config/gtk-3.0/gtk.css.bak_default" ]]; then
 fi
 
 if command -v omarchy &>/dev/null; then
-  omarchy plugin disable "crmne.hyprmoncfg" 2>/dev/null || true
-  omarchy plugin disable "jankeesvw.notification-center" 2>/dev/null || true
-  omarchy plugin enable "${CURRENT_USER}.monitor" 2>/dev/null || true
-  omarchy plugin enable "omarchy.monitor" 2>/dev/null || true
-  omarchy restart shell 2>/dev/null || true
+  RUN_AS_INSTALL_USER omarchy plugin disable "crmne.hyprmoncfg" 2>/dev/null || true
+  RUN_AS_INSTALL_USER omarchy plugin disable "jankeesvw.notification-center" 2>/dev/null || true
+  RUN_AS_INSTALL_USER omarchy plugin enable "${CURRENT_USER}.monitor" 2>/dev/null || true
+  RUN_AS_INSTALL_USER omarchy plugin enable "omarchy.monitor" 2>/dev/null || true
+  RUN_AS_INSTALL_USER omarchy restart shell 2>/dev/null || true
 fi
 
 if [[ "${1:-}" != "--keep-backups" ]]; then
-  rm -f "$CONFIG_DIR/omarchy/shell-default.json"
+  rm -f "$CONFIG_DIR/omarchy/shell-default.json" 2>/dev/null || true
 fi
 
-printf 'Uninstalled Virtual☆Paradise. Backup snapshot: %s\\n' "$BACKUP_DIR"
+if (( EUID == 0 )) && [[ -n "${SUDO_USER:-}" && "$SUDO_USER" != "root" ]]; then
+  chown -R "$CURRENT_USER:$CURRENT_USER" "$BACKUP_DIR" "$CONFIG_DIR" "$LOCAL_BIN" "$HOME/.local" 2>/dev/null || true
+fi
+
+printf 'Uninstalled Virtual☆Paradise. Backup snapshot: %s\n' "$BACKUP_DIR"

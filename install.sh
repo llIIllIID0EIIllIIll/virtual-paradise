@@ -71,6 +71,21 @@ LOCAL_BIN="$HOME/.local/bin"
 CACHE_DIR="${XDG_CACHE_HOME:-$HOME/.cache}"
 BACKUP_TIMESTAMP="$(date +%Y%m%d_%H%M%S)"
 
+RUN_AS_INSTALL_USER() {
+  if (( EUID == 0 )) && [[ -n "${SUDO_USER:-}" && "$SUDO_USER" != "root" ]]; then
+    sudo -u "$CURRENT_USER" \
+      HOME="$HOME" \
+      XDG_CONFIG_HOME="$CONFIG_DIR" \
+      XDG_RUNTIME_DIR="${XDG_RUNTIME_DIR:-/run/user/$(id -u "$CURRENT_USER")}" \
+      WAYLAND_DISPLAY="${WAYLAND_DISPLAY:-}" \
+      HYPRLAND_INSTANCE_SIGNATURE="${HYPRLAND_INSTANCE_SIGNATURE:-}" \
+      DBUS_SESSION_BUS_ADDRESS="${DBUS_SESSION_BUS_ADDRESS:-}" \
+      "$@"
+  else
+    "$@"
+  fi
+}
+
 
 # Color helpers
 C_CYAN="\033[38;2;0;245;212m"
@@ -445,17 +460,9 @@ CHECK_AND_INSTALL_PACKAGES() {
   if [[ ${#AUR_TO_INSTALL[@]} -gt 0 ]]; then
     log_sub "Installing AUR packages: ${AUR_TO_INSTALL[*]}"
     if command -v yay &>/dev/null; then
-      if (( EUID == 0 )) && [[ -n "${SUDO_USER:-}" && "$SUDO_USER" != "root" ]]; then
-        sudo -u "$CURRENT_USER" yay -S --needed --noconfirm "${AUR_TO_INSTALL[@]}" || true
-      else
-        yay -S --needed --noconfirm "${AUR_TO_INSTALL[@]}" || true
-      fi
+      RUN_AS_INSTALL_USER yay -S --needed --noconfirm "${AUR_TO_INSTALL[@]}" || true
     elif command -v paru &>/dev/null; then
-      if (( EUID == 0 )) && [[ -n "${SUDO_USER:-}" && "$SUDO_USER" != "root" ]]; then
-        sudo -u "$CURRENT_USER" paru -S --needed --noconfirm "${AUR_TO_INSTALL[@]}" || true
-      else
-        paru -S --needed --noconfirm "${AUR_TO_INSTALL[@]}" || true
-      fi
+      RUN_AS_INSTALL_USER paru -S --needed --noconfirm "${AUR_TO_INSTALL[@]}" || true
     else
       log_warn "AUR helper (yay/paru) not found. Please install manually: ${AUR_TO_INSTALL[*]}"
     fi
@@ -463,21 +470,6 @@ CHECK_AND_INSTALL_PACKAGES() {
 
   if [[ ${#OFFICIAL_TO_INSTALL[@]} -eq 0 && ${#AUR_TO_INSTALL[@]} -eq 0 ]]; then
     log_sub "All required packages are satisfied"
-  fi
-}
-
-RUN_AS_INSTALL_USER() {
-  if (( EUID == 0 )) && [[ -n "${SUDO_USER:-}" && "$SUDO_USER" != "root" ]]; then
-    sudo -u "$CURRENT_USER" \
-      HOME="$HOME" \
-      XDG_CONFIG_HOME="$CONFIG_DIR" \
-      XDG_RUNTIME_DIR="${XDG_RUNTIME_DIR:-/run/user/$(id -u "$CURRENT_USER")}" \
-      WAYLAND_DISPLAY="${WAYLAND_DISPLAY:-}" \
-      HYPRLAND_INSTANCE_SIGNATURE="${HYPRLAND_INSTANCE_SIGNATURE:-}" \
-      DBUS_SESSION_BUS_ADDRESS="${DBUS_SESSION_BUS_ADDRESS:-}" \
-      "$@"
-  else
-    "$@"
   fi
 }
 
@@ -489,9 +481,18 @@ CONFIGURE_DEFAULT_APPS() {
       RUN_AS_INSTALL_USER omarchy default terminal ghostty 2>/dev/null || \
         log_warn "Could not set Ghostty as the Omarchy default terminal."
     fi
-    if command -v copilot &>/dev/null || RUN_AS_INSTALL_USER command -v copilot &>/dev/null || pacman -Qi github-copilot-cli &>/dev/null; then
-      RUN_AS_INSTALL_USER omarchy default agent copilot 2>/dev/null || \
-        log_warn "Could not set GitHub Copilot as the Omarchy default agent."
+    # Configure default agent safely without triggering interactive agent launch
+    if [[ ! -s "$CONFIG_DIR/omarchy/defaults/agent" ]]; then
+      if command -v copilot &>/dev/null || RUN_AS_INSTALL_USER command -v copilot &>/dev/null || pacman -Qi github-copilot-cli &>/dev/null || (command -v mise &>/dev/null && RUN_AS_INSTALL_USER mise where copilot &>/dev/null); then
+        mkdir -p "$CONFIG_DIR/omarchy/defaults"
+        printf '%s\n' "copilot" > "$CONFIG_DIR/omarchy/defaults/agent"
+        if command -v mise &>/dev/null; then
+          RUN_AS_INSTALL_USER mise use -g copilot >/dev/null 2>&1 || true
+        fi
+        log_sub "Configured GitHub Copilot as the Omarchy default agent"
+      fi
+    else
+      log_sub "Preserving existing Omarchy default agent ($(cat "$CONFIG_DIR/omarchy/defaults/agent" 2>/dev/null))"
     fi
   fi
 
@@ -676,7 +677,7 @@ INSTALL_AND_ENABLE_PLUGINS() {
 
     # Trigger Quickshell plugin rescan
     if command -v omarchy-shell &>/dev/null; then
-      omarchy-shell shell rescanPlugins 2>/dev/null || true
+      RUN_AS_INSTALL_USER omarchy-shell shell rescanPlugins 2>/dev/null || true
     fi
 
     # Explicitly activate and register each plugin in Omarchy
@@ -686,48 +687,48 @@ INSTALL_AND_ENABLE_PLUGINS() {
         if [[ -d "$pdir" ]]; then
           local pname=$(basename "$pdir")
           local pid="${CURRENT_USER}.${pname}"
-          omarchy plugin enable "$pid" 2>/dev/null || true
+          RUN_AS_INSTALL_USER omarchy plugin enable "$pid" 2>/dev/null || true
           enabled_count=$((enabled_count + 1))
         fi
       done
       log_sub "Enabled all ${enabled_count} Virtual Paradise plugins in Omarchy shell"
 
       # Install & enable external Omarchy webcam plugin
-      if [[ ! -d "$CONFIG_DIR/omarchy/plugins/io.github.kristoferlund.webcam" ]] && ! omarchy plugin list --json 2>/dev/null | jq -e 'any(.[]; .id == "io.github.kristoferlund.webcam")' >/dev/null; then
+      if [[ ! -d "$CONFIG_DIR/omarchy/plugins/io.github.kristoferlund.webcam" ]] && ! RUN_AS_INSTALL_USER omarchy plugin list --json 2>/dev/null | jq -e 'any(.[]; .id == "io.github.kristoferlund.webcam")' >/dev/null; then
         log_sub "Adding external Omarchy webcam plugin from git..."
-        omarchy plugin add https://github.com/kristoferlund/omarchy-webcam.git --enable --yes 2>/dev/null || true
+        RUN_AS_INSTALL_USER omarchy plugin add https://github.com/kristoferlund/omarchy-webcam.git --enable --yes 2>/dev/null || true
       else
-        omarchy plugin enable "io.github.kristoferlund.webcam" 2>/dev/null || true
+        RUN_AS_INSTALL_USER omarchy plugin enable "io.github.kristoferlund.webcam" 2>/dev/null || true
       fi
 
       # Install the notification center once, then ensure it stays enabled on
       # subsequent theme installations.
-      if ! omarchy plugin list --json 2>/dev/null | jq -e 'any(.[]; .id == "jankeesvw.notification-center")' >/dev/null; then
+      if ! RUN_AS_INSTALL_USER omarchy plugin list --json 2>/dev/null | jq -e 'any(.[]; .id == "jankeesvw.notification-center")' >/dev/null; then
         log_sub "Adding external Omarchy notification center plugin from git..."
-        omarchy plugin add https://github.com/jankeesvw/omarchy-notification-center.git --enable --yes 2>/dev/null || true
+        RUN_AS_INSTALL_USER omarchy plugin add https://github.com/jankeesvw/omarchy-notification-center.git --enable --yes 2>/dev/null || true
       else
-        omarchy plugin enable "jankeesvw.notification-center" 2>/dev/null || true
+        RUN_AS_INSTALL_USER omarchy plugin enable "jankeesvw.notification-center" 2>/dev/null || true
       fi
 
       # hyprmoncfg replaces the cloned Display & Scaling widget in this
       # theme. Keep the old widget disabled to avoid duplicate controls.
-      if ! omarchy plugin list --json 2>/dev/null | jq -e 'any(.[]; .id == "crmne.hyprmoncfg")' >/dev/null; then
+      if ! RUN_AS_INSTALL_USER omarchy plugin list --json 2>/dev/null | jq -e 'any(.[]; .id == "crmne.hyprmoncfg")' >/dev/null; then
         log_sub "Adding external Omarchy monitor manager plugin from git..."
-        omarchy plugin add https://github.com/crmne/omarchy-hyprmoncfg.git --enable --yes 2>/dev/null || true
+        RUN_AS_INSTALL_USER omarchy plugin add https://github.com/crmne/omarchy-hyprmoncfg.git --enable --yes 2>/dev/null || true
       else
-        omarchy plugin enable "crmne.hyprmoncfg" 2>/dev/null || true
+        RUN_AS_INSTALL_USER omarchy plugin enable "crmne.hyprmoncfg" 2>/dev/null || true
       fi
-      omarchy plugin disable "${CURRENT_USER}.monitor" 2>/dev/null || true
-      omarchy plugin disable "omarchy.monitor" 2>/dev/null || true
+      RUN_AS_INSTALL_USER omarchy plugin disable "${CURRENT_USER}.monitor" 2>/dev/null || true
+      RUN_AS_INSTALL_USER omarchy plugin disable "omarchy.monitor" 2>/dev/null || true
 
       # The notification center owns the DND control. Disable a separately
       # installed DND plugin when present, but keep Omarchy's notification
       # service enabled because the new plugin uses it as its backend.
       local dnd_plugin_id
       for dnd_plugin_id in omarchy.dnd omarchy.do-not-disturb "${CURRENT_USER}.dnd"; do
-        if omarchy plugin list --json 2>/dev/null | jq -e --arg id "$dnd_plugin_id" \
+        if RUN_AS_INSTALL_USER omarchy plugin list --json 2>/dev/null | jq -e --arg id "$dnd_plugin_id" \
           'any(.[]; .id == $id)' >/dev/null; then
-          omarchy plugin disable "$dnd_plugin_id" 2>/dev/null || \
+          RUN_AS_INSTALL_USER omarchy plugin disable "$dnd_plugin_id" 2>/dev/null || \
             log_warn "Could not disable legacy DND plugin '$dnd_plugin_id'."
         fi
       done
@@ -759,12 +760,12 @@ if [[ -f "$REPO_DIR/shell/shell.json" ]]; then
   # The shell layout copy above can reset plugin enablement. Restore the
   # external notification center after the layout is installed.
   if command -v omarchy &>/dev/null; then
-    omarchy plugin enable "jankeesvw.notification-center" 2>/dev/null || \
+    RUN_AS_INSTALL_USER omarchy plugin enable "jankeesvw.notification-center" 2>/dev/null || \
       log_warn "Notification center could not be enabled after shell layout sync."
-    omarchy plugin enable "crmne.hyprmoncfg" 2>/dev/null || \
+    RUN_AS_INSTALL_USER omarchy plugin enable "crmne.hyprmoncfg" 2>/dev/null || \
       log_warn "hyprmoncfg could not be enabled after shell layout sync."
-    omarchy plugin disable "${CURRENT_USER}.monitor" 2>/dev/null || true
-    omarchy plugin disable "omarchy.monitor" 2>/dev/null || true
+    RUN_AS_INSTALL_USER omarchy plugin disable "${CURRENT_USER}.monitor" 2>/dev/null || true
+    RUN_AS_INSTALL_USER omarchy plugin disable "omarchy.monitor" 2>/dev/null || true
   fi
 fi
 
@@ -1083,7 +1084,7 @@ fi
 if [[ "$THEME_NAME" == "virtual-paradise" ]]; then
 # Use hyprmoncfg in place of the cloned Display & Scaling widget.
 if command -v omarchy >/dev/null 2>&1; then
-  local u="${USER:-$(id -un)}"
+  u="${USER:-$(id -un)}"
   omarchy plugin enable "crmne.hyprmoncfg" >/dev/null 2>&1 || true
   omarchy plugin disable "${u}.monitor" >/dev/null 2>&1 || true
   omarchy plugin disable "omarchy.monitor" >/dev/null 2>&1 || true
@@ -1112,13 +1113,13 @@ fi
   # Start live video wallpaper (only if not already running)
   if [[ -x "$HOME/.local/bin/toggle_live_wallpaper.sh" ]]; then
     if ! pgrep -f mpvpaper >/dev/null 2>&1; then
-      "$HOME/.local/bin/toggle_live_wallpaper.sh" init >/dev/null 2>&1 || true
+      ("$HOME/.local/bin/toggle_live_wallpaper.sh" init >/dev/null 2>&1 &)
     fi
   fi
 else
   # Restore the Display & Scaling widget outside this theme.
   if command -v omarchy >/dev/null 2>&1; then
-    local u="${USER:-$(id -un)}"
+    u="${USER:-$(id -un)}"
     omarchy plugin disable "crmne.hyprmoncfg" >/dev/null 2>&1 || true
     omarchy plugin enable "${u}.monitor" >/dev/null 2>&1 || omarchy plugin enable "omarchy.monitor" >/dev/null 2>&1 || true
   fi
@@ -1312,46 +1313,24 @@ if [[ $IS_HOOK -eq 0 ]]; then
   rm -rf "$CACHE_DIR/omarchy/theme-selector" 2>/dev/null || true
 
   if command -v omarchy &>/dev/null; then
-    if (( EUID == 0 )) && [[ -n "${SUDO_USER:-}" && "$SUDO_USER" != "root" ]]; then
-      sudo -u "$CURRENT_USER" WAYLAND_DISPLAY="$WAYLAND_DISPLAY" HYPRLAND_INSTANCE_SIGNATURE="$HYPRLAND_INSTANCE_SIGNATURE" XDG_RUNTIME_DIR="${XDG_RUNTIME_DIR:-/run/user/$(id -u "$CURRENT_USER")}" DBUS_SESSION_BUS_ADDRESS="$DBUS_SESSION_BUS_ADDRESS" omarchy theme set "$THEME_NAME" 2>/dev/null || true
-      sudo -u "$CURRENT_USER" WAYLAND_DISPLAY="$WAYLAND_DISPLAY" HYPRLAND_INSTANCE_SIGNATURE="$HYPRLAND_INSTANCE_SIGNATURE" XDG_RUNTIME_DIR="${XDG_RUNTIME_DIR:-/run/user/$(id -u "$CURRENT_USER")}" DBUS_SESSION_BUS_ADDRESS="$DBUS_SESSION_BUS_ADDRESS" omarchy theme bg cache 2>/dev/null || true
-      sudo -u "$CURRENT_USER" WAYLAND_DISPLAY="$WAYLAND_DISPLAY" HYPRLAND_INSTANCE_SIGNATURE="$HYPRLAND_INSTANCE_SIGNATURE" XDG_RUNTIME_DIR="${XDG_RUNTIME_DIR:-/run/user/$(id -u "$CURRENT_USER")}" DBUS_SESSION_BUS_ADDRESS="$DBUS_SESSION_BUS_ADDRESS" omarchy restart shell 2>/dev/null || true
-    else
-      omarchy theme set "$THEME_NAME" 2>/dev/null || true
-      omarchy theme bg cache 2>/dev/null || true
-      omarchy restart shell 2>/dev/null || true
-    fi
+    RUN_AS_INSTALL_USER omarchy theme set "$THEME_NAME" 2>/dev/null || true
+    RUN_AS_INSTALL_USER omarchy theme bg cache 2>/dev/null || true
+    RUN_AS_INSTALL_USER omarchy restart shell 2>/dev/null || true
 
     # Theme activation can restart the shell and briefly race plugin
     # discovery, so enforce the notification center state last.
-    if command -v omarchy &>/dev/null; then
-      if (( EUID == 0 )) && [[ -n "${SUDO_USER:-}" && "$SUDO_USER" != "root" ]]; then
-        sudo -u "$CURRENT_USER" \
-          WAYLAND_DISPLAY="$WAYLAND_DISPLAY" \
-          HYPRLAND_INSTANCE_SIGNATURE="$HYPRLAND_INSTANCE_SIGNATURE" \
-          XDG_RUNTIME_DIR="${XDG_RUNTIME_DIR:-/run/user/$(id -u "$CURRENT_USER")}" \
-          DBUS_SESSION_BUS_ADDRESS="$DBUS_SESSION_BUS_ADDRESS" \
-          omarchy plugin enable "jankeesvw.notification-center" 2>/dev/null || \
-          log_warn "Notification center could not be enabled after theme activation."
-      else
-        omarchy plugin enable "jankeesvw.notification-center" 2>/dev/null || \
-          log_warn "Notification center could not be enabled after theme activation."
-      fi
-    fi
+    RUN_AS_INSTALL_USER omarchy plugin enable "jankeesvw.notification-center" 2>/dev/null || \
+      log_warn "Notification center could not be enabled after theme activation."
   fi
 
   if command -v hyprctl &>/dev/null; then
-    if (( EUID == 0 )) && [[ -n "${SUDO_USER:-}" && "$SUDO_USER" != "root" ]]; then
-      sudo -u "$CURRENT_USER" WAYLAND_DISPLAY="$WAYLAND_DISPLAY" HYPRLAND_INSTANCE_SIGNATURE="$HYPRLAND_INSTANCE_SIGNATURE" XDG_RUNTIME_DIR="${XDG_RUNTIME_DIR:-/run/user/$(id -u "$CURRENT_USER")}" hyprctl reload 2>/dev/null || true
-    else
-      hyprctl reload 2>/dev/null || true
-    fi
+    RUN_AS_INSTALL_USER hyprctl reload 2>/dev/null || true
   fi
 
   # Auto-trigger SUPER + ALT + UP: Initialize and launch live video wallpaper immediately
   if [[ -x "$LOCAL_BIN/toggle_live_wallpaper.sh" ]]; then
     log_sub "Triggering SUPER + ALT + UP: Initializing Live Video Wallpaper..."
-    (sleep 0.4; "$LOCAL_BIN/toggle_live_wallpaper.sh" init >/dev/null 2>&1 &)
+    (sleep 0.4; RUN_AS_INSTALL_USER "$LOCAL_BIN/toggle_live_wallpaper.sh" init >/dev/null 2>&1 &)
   fi
 
   echo -e "\n${C_BOLD}${C_GREEN}✨ Virtual☆Paradise Theme & Rice successfully installed for '${CURRENT_USER}'!${C_RESET}"
