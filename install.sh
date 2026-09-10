@@ -751,6 +751,14 @@ APPLY_VOXTYPE_AURA_RICE() {
   fi
 }
 
+APPLY_WAVEBAR_RICE() {
+  local source="$REPO_DIR/overrides/io.github.erikburdett.wavebar/BarWidget.qml"
+  local target="$CONFIG_DIR/omarchy/plugins/io.github.erikburdett.wavebar/BarWidget.qml"
+  if [[ -f "$source" && -d "$(dirname "$target")" ]]; then
+    cp "$source" "$target"
+  fi
+}
+
 # ------------------------------------------------------------------------------
 # 3. Install & Enable Custom Omarchy Bar Plugins
 # ------------------------------------------------------------------------------
@@ -844,6 +852,16 @@ INSTALL_AND_ENABLE_PLUGINS() {
       RUN_AS_INSTALL_USER omarchy plugin disable "${CURRENT_USER}.audio" 2>/dev/null || true
       RUN_AS_INSTALL_USER omarchy plugin disable "omarchy.audio" 2>/dev/null || true
 
+      # Wavebar replaces the Cava/audio widget in the Virtual Paradise bar.
+      if ! RUN_AS_INSTALL_USER omarchy plugin list --json 2>/dev/null | jq -e 'any(.[]; .id == "io.github.erikburdett.wavebar")' >/dev/null; then
+        log_sub "Adding Omarchy Wavebar media widget from git..."
+        RUN_AS_INSTALL_USER omarchy plugin add https://github.com/ErikBurdett/omarchy-wavebar.git --enable --yes 2>/dev/null || true
+      else
+        RUN_AS_INSTALL_USER omarchy plugin enable "io.github.erikburdett.wavebar" 2>/dev/null || true
+      fi
+      APPLY_WAVEBAR_RICE
+      RUN_AS_INSTALL_USER omarchy plugin disable "ssupt.audio-control" 2>/dev/null || true
+
       # Workspaces (JAP) replaces the cloned Omarchy workspace widget.
       if ! RUN_AS_INSTALL_USER omarchy plugin list --json 2>/dev/null | jq -e 'any(.[]; .id == "io.github.tyrichards.workspaces-jap")' >/dev/null; then
         log_sub "Adding external Japanese workspace plugin from git..."
@@ -906,6 +924,7 @@ if [[ -f "$REPO_DIR/shell/shell.json" ]]; then
     APPLY_EXTERNAL_PLUGIN_THEME_COLORS
     APPLY_WORKSPACE_JAP_RICE
     APPLY_VOXTYPE_AURA_RICE
+    APPLY_WAVEBAR_RICE
     RUN_AS_INSTALL_USER omarchy plugin enable "jankeesvw.notification-center" 2>/dev/null || \
       log_warn "Notification center could not be enabled after shell layout sync."
     RUN_AS_INSTALL_USER omarchy plugin enable "crmne.hyprmoncfg" 2>/dev/null || \
@@ -916,8 +935,9 @@ if [[ -f "$REPO_DIR/shell/shell.json" ]]; then
     RUN_AS_INSTALL_USER omarchy plugin disable "omarchy.monitor" 2>/dev/null || true
     RUN_AS_INSTALL_USER omarchy plugin disable "${CURRENT_USER}.power" 2>/dev/null || true
     RUN_AS_INSTALL_USER omarchy plugin disable "omarchy.power" 2>/dev/null || true
-    RUN_AS_INSTALL_USER omarchy plugin enable "ssupt.audio-control" 2>/dev/null || \
-      log_warn "audio control could not be enabled after shell layout sync."
+    RUN_AS_INSTALL_USER omarchy plugin enable "io.github.erikburdett.wavebar" 2>/dev/null || \
+      log_warn "Wavebar could not be enabled after shell layout sync."
+    RUN_AS_INSTALL_USER omarchy plugin disable "ssupt.audio-control" 2>/dev/null || true
     RUN_AS_INSTALL_USER omarchy plugin disable "${CURRENT_USER}.audio" 2>/dev/null || true
     RUN_AS_INSTALL_USER omarchy plugin disable "omarchy.audio" 2>/dev/null || true
     RUN_AS_INSTALL_USER omarchy plugin enable "io.github.tyrichards.workspaces-jap" 2>/dev/null || \
@@ -1250,6 +1270,11 @@ if [[ -f "$HOME/.config/omarchy/themes/virtual-paradise/overrides/io.github.adam
   cp "$HOME/.config/omarchy/themes/virtual-paradise/overrides/io.github.adamcbrewer.voxtype-aura/Service.qml" \
     "$HOME/.config/omarchy/plugins/io.github.adamcbrewer.voxtype-aura/Service.qml"
 fi
+if [[ -f "$HOME/.config/omarchy/themes/virtual-paradise/overrides/io.github.erikburdett.wavebar/BarWidget.qml" \
+  && -d "$HOME/.config/omarchy/plugins/io.github.erikburdett.wavebar" ]]; then
+  cp "$HOME/.config/omarchy/themes/virtual-paradise/overrides/io.github.erikburdett.wavebar/BarWidget.qml" \
+    "$HOME/.config/omarchy/plugins/io.github.erikburdett.wavebar/BarWidget.qml"
+fi
 # Use hyprmoncfg in place of the cloned Display & Scaling widget.
 if command -v omarchy >/dev/null 2>&1; then
   u="${USER:-$(id -un)}"
@@ -1259,7 +1284,8 @@ if command -v omarchy >/dev/null 2>&1; then
   omarchy plugin enable "onlyvishesh.power-manager" >/dev/null 2>&1 || true
   omarchy plugin disable "${u}.power" >/dev/null 2>&1 || true
   omarchy plugin disable "omarchy.power" >/dev/null 2>&1 || true
-  omarchy plugin enable "ssupt.audio-control" >/dev/null 2>&1 || true
+  omarchy plugin enable "io.github.erikburdett.wavebar" >/dev/null 2>&1 || true
+  omarchy plugin disable "ssupt.audio-control" >/dev/null 2>&1 || true
   omarchy plugin disable "${u}.audio" >/dev/null 2>&1 || true
   omarchy plugin disable "omarchy.audio" >/dev/null 2>&1 || true
   omarchy plugin enable "io.github.tyrichards.workspaces-jap" >/dev/null 2>&1 || true
@@ -1307,8 +1333,10 @@ else
     omarchy plugin enable "${u}.monitor" >/dev/null 2>&1 || omarchy plugin enable "omarchy.monitor" >/dev/null 2>&1 || true
     omarchy plugin disable "onlyvishesh.power-manager" >/dev/null 2>&1 || true
     omarchy plugin enable "${u}.power" >/dev/null 2>&1 || omarchy plugin enable "omarchy.power" >/dev/null 2>&1 || true
-    omarchy plugin disable "ssupt.audio-control" >/dev/null 2>&1 || true
-    omarchy plugin enable "${u}.audio" >/dev/null 2>&1 || omarchy plugin enable "omarchy.audio" >/dev/null 2>&1 || true
+    omarchy plugin disable "io.github.erikburdett.wavebar" >/dev/null 2>&1 || true
+    omarchy plugin enable "ssupt.audio-control" >/dev/null 2>&1 || \
+      omarchy plugin enable "${u}.audio" >/dev/null 2>&1 || \
+      omarchy plugin enable "omarchy.audio" >/dev/null 2>&1 || true
     omarchy plugin disable "io.github.tyrichards.workspaces-jap" >/dev/null 2>&1 || true
     omarchy plugin enable "${u}.workspaces" >/dev/null 2>&1 || omarchy plugin enable "omarchy.workspaces" >/dev/null 2>&1 || true
     omarchy plugin disable "io.github.adamcbrewer.voxtype-aura" >/dev/null 2>&1 || true

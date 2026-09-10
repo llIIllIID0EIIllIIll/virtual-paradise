@@ -77,7 +77,7 @@
           "id": "__USER__.network"
         },
         {
-          "id": "ssupt.audio-control"
+          "id": "io.github.erikburdett.wavebar"
         },
         {
           "id": "onlyvishesh.power-manager",
