@@ -369,20 +369,22 @@ Panel {
       radius: height / 2
       color: root.critical ? Qt.rgba(root.urgent.r, root.urgent.g, root.urgent.b, 0.28)
         : root.warning ? Qt.rgba(root.warningColor.r, root.warningColor.g, root.warningColor.b, 0.22)
+        : root.opened ? Qt.rgba(root.accent.r, root.accent.g, root.accent.b, 0.24)
         : (button.tooltipHovered ? Qt.rgba(root.accent.r, root.accent.g, root.accent.b, 0.18)
           : Qt.rgba(root.accent.r, root.accent.g, root.accent.b, 0.09))
       border.color: root.critical ? root.urgent
         : root.warning ? root.warningColor
-        : button.tooltipHovered ? root.accent
+        : (root.opened || button.tooltipHovered) ? root.accent
         : Qt.rgba(root.accent.r, root.accent.g, root.accent.b, 0.38)
-      border.width: root.warning || root.critical || button.tooltipHovered ? 2 : 1
+      border.width: root.warning || root.critical || root.opened || button.tooltipHovered ? 2 : 1
 
       Behavior on color { ColorAnimation { duration: 180 } }
       Behavior on border.color { ColorAnimation { duration: 180 } }
       Behavior on border.width { NumberAnimation { duration: 140 } }
       Behavior on scale { NumberAnimation { duration: 140; easing.type: Easing.OutCubic } }
-      scale: button.tooltipHovered ? 1.04 : 1
+      scale: (button.tooltipHovered || root.opened) ? 1.04 : 1
 
+      // Halo Ring 1 — pulses when panel open, warning, or critical
       Rectangle {
         anchors.fill: parent
         anchors.margins: -3
@@ -390,17 +392,18 @@ Panel {
         color: "transparent"
         border.color: root.critical ? root.urgent : root.accent
         border.width: 2
-        opacity: button.tooltipHovered || root.warning || root.critical ? 0.72 : 0
+        opacity: button.tooltipHovered || root.opened || root.warning || root.critical ? 0.72 : 0
 
         Behavior on opacity { NumberAnimation { duration: 180 } }
         SequentialAnimation on opacity {
-          running: root.warning || root.critical
+          running: root.opened || root.warning || root.critical
           loops: Animation.Infinite
           NumberAnimation { to: 0.30; duration: 850; easing.type: Easing.InOutQuad }
           NumberAnimation { to: 0.78; duration: 850; easing.type: Easing.InOutQuad }
         }
       }
 
+      // Halo Ring 2 — diffuse aura when panel open, hovered, warning, or critical
       Rectangle {
         anchors.fill: parent
         anchors.margins: -6
@@ -408,11 +411,11 @@ Panel {
         color: "transparent"
         border.color: root.critical ? root.urgent : root.warning ? root.warningColor : root.accent
         border.width: 1.5
-        opacity: button.tooltipHovered || root.warning || root.critical ? 0.60 : 0
-        visible: button.tooltipHovered || root.warning || root.critical
+        opacity: button.tooltipHovered || root.opened || root.warning || root.critical ? 0.60 : 0
+        visible: button.tooltipHovered || root.opened || root.warning || root.critical
 
         SequentialAnimation on opacity {
-          running: button.tooltipHovered || root.warning || root.critical
+          running: button.tooltipHovered || root.opened || root.warning || root.critical
           loops: Animation.Infinite
           NumberAnimation { to: 0.20; duration: 800; easing.type: Easing.InOutQuad }
           NumberAnimation { to: 0.75; duration: 800; easing.type: Easing.InOutQuad }
@@ -467,14 +470,15 @@ Panel {
       radius: height / 2
       color: root.critical ? Qt.rgba(root.urgent.r, root.urgent.g, root.urgent.b, 0.28)
         : root.warning ? Qt.rgba(root.warningColor.r, root.warningColor.g, root.warningColor.b, 0.22)
+        : root.opened ? Qt.rgba(root.accent.r, root.accent.g, root.accent.b, 0.24)
         : (iconButton.tooltipHovered ? Qt.rgba(root.accent.r, root.accent.g, root.accent.b, 0.18)
           : Qt.rgba(root.accent.r, root.accent.g, root.accent.b, 0.09))
       border.color: root.critical ? root.urgent
         : root.warning ? root.warningColor
-        : iconButton.tooltipHovered ? root.accent
+        : (root.opened || iconButton.tooltipHovered) ? root.accent
         : Qt.rgba(root.accent.r, root.accent.g, root.accent.b, 0.38)
-      border.width: root.warning || root.critical || iconButton.tooltipHovered ? 2 : 1
-      scale: iconButton.tooltipHovered ? 1.08 : 1
+      border.width: root.warning || root.critical || root.opened || iconButton.tooltipHovered ? 2 : 1
+      scale: (iconButton.tooltipHovered || root.opened) ? 1.08 : 1
 
       Behavior on color { ColorAnimation { duration: 180 } }
       Behavior on border.color { ColorAnimation { duration: 180 } }
@@ -489,11 +493,11 @@ Panel {
         border.color: root.critical ? root.urgent
           : root.warning ? root.warningColor : root.accent
         border.width: 2
-        opacity: iconButton.tooltipHovered || root.warning || root.critical ? 0.72 : 0
+        opacity: iconButton.tooltipHovered || root.opened || root.warning || root.critical ? 0.72 : 0
 
         Behavior on opacity { NumberAnimation { duration: 180 } }
         SequentialAnimation on opacity {
-          running: root.warning || root.critical
+          running: root.opened || root.warning || root.critical
           loops: Animation.Infinite
           NumberAnimation { to: 0.30; duration: 850; easing.type: Easing.InOutQuad }
           NumberAnimation { to: 0.78; duration: 850; easing.type: Easing.InOutQuad }
@@ -507,11 +511,11 @@ Panel {
         color: "transparent"
         border.color: root.critical ? root.urgent : root.warning ? root.warningColor : root.accent
         border.width: 1.5
-        opacity: iconButton.tooltipHovered || root.warning || root.critical ? 0.60 : 0
-        visible: iconButton.tooltipHovered || root.warning || root.critical
+        opacity: iconButton.tooltipHovered || root.opened || root.warning || root.critical ? 0.60 : 0
+        visible: iconButton.tooltipHovered || root.opened || root.warning || root.critical
 
         SequentialAnimation on opacity {
-          running: iconButton.tooltipHovered || root.warning || root.critical
+          running: iconButton.tooltipHovered || root.opened || root.warning || root.critical
           loops: Animation.Infinite
           NumberAnimation { to: 0.20; duration: 800; easing.type: Easing.InOutQuad }
           NumberAnimation { to: 0.75; duration: 800; easing.type: Easing.InOutQuad }
@@ -528,6 +532,7 @@ Panel {
       }
     }
   }
+
 
   KeyboardPanel {
     id: panel
