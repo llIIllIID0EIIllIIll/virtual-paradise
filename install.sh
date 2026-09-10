@@ -871,6 +871,7 @@ INSTALL_AND_ENABLE_PLUGINS() {
       fi
       RUN_AS_INSTALL_USER omarchy plugin disable "${CURRENT_USER}.workspaces" 2>/dev/null || true
       RUN_AS_INSTALL_USER omarchy plugin disable "omarchy.workspaces" 2>/dev/null || true
+      RUN_AS_INSTALL_USER omarchy plugin remove "${CURRENT_USER}.media" --yes 2>/dev/null || true
       APPLY_WORKSPACE_JAP_RICE
 
       # Voxtype Aura provides the themed dictation overlay.
@@ -1216,6 +1217,9 @@ if [[ "$REPO_DIR" != "$CONFIG_DIR/omarchy/themes/$THEME_NAME" ]]; then
     --exclude='preview_rotated.jpg' \
     "$REPO_DIR"/ "$CONFIG_DIR/omarchy/themes/$THEME_NAME/" 2>/dev/null || true
 fi
+# Wavebar replaced the legacy media/Cava bar plugin. Remove any copy left in
+# the theme runtime from older Virtual Paradise installations.
+rm -rf "$CONFIG_DIR/omarchy/themes/$THEME_NAME/plugins/media"
 
 # Flatten theme/ color/appearance files into theme root (Omarchy reads them directly)
 THEME_DEST="$CONFIG_DIR/omarchy/themes/$THEME_NAME"

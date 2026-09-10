@@ -160,7 +160,7 @@ omarchy plugin add https://github.com/ErikBurdett/omarchy-wavebar.git --enable -
 
 Its waveform and controls are rice-styled with an accent neon capsule,
 accent-colored waveform/actions and a translucent Virtual Paradise background
-through `overrides/io.github.erikburdett.wavebar/BarWidget.qml`. It occupies the former `__USER__.media` slot. The separate
+through `overrides/io.github.erikburdett.wavebar/BarWidget.qml`. It occupies the former media/Cava slot. The separate
 `ssupt.audio-control` mixer remains in the right-side audio slot, so waveform
 visualization and volume/device controls are both available. Outside this
 theme, the hook disables Wavebar and restores the cloned/default media widget
