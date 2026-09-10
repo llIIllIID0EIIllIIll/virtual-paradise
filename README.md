@@ -98,6 +98,7 @@ The installer configures these applications when available:
 | VS Code | Default text/code MIME handlers and `EDITOR=code --wait` |
 | GitHub Copilot CLI | Omarchy default coding agent |
 | `crmne.hyprmoncfg` | Display & Scaling replacement |
+| `onlyvishesh.power-manager` | Power & Battery replacement |
 | `jankeesvw.notification-center` | Notification center and DND control |
 
 `hyprmoncfg` is installed from AUR as `hyprmoncfg` and the shell plugin is
@@ -110,6 +111,21 @@ omarchy plugin add https://github.com/crmne/omarchy-hyprmoncfg.git --enable --ye
 The theme disables the cloned `${USER}.monitor` and `omarchy.monitor` widgets
 to prevent duplicate display controls. When another theme is selected, the
 post-theme hook disables `crmne.hyprmoncfg` and restores `${USER}.monitor`.
+
+`onlyvishesh.power-manager` replaces the cloned `${USER}.power` widget in the
+same way. It is installed and enabled idempotently from:
+
+```bash
+omarchy plugin add https://github.com/onlyVishesh/omarchy-power-manager.git --enable --yes
+```
+
+When another theme is selected, the post-theme hook disables the external power
+manager and restores the user's cloned power widget or `omarchy.power`.
+
+Both replacement widgets follow Omarchy's live theme palette instead of using
+fixed icon colors: their bar icons use the active bar foreground, while active
+states and status marks use `Color.accent`. They therefore inherit each
+theme's colors automatically after a theme switch or shell reload.
 
 The notification center is installed and enabled idempotently. Its DND control
 replaces the standalone DND indicator in the Virtual☆Paradise bar, while

@@ -754,6 +754,16 @@ INSTALL_AND_ENABLE_PLUGINS() {
       RUN_AS_INSTALL_USER omarchy plugin disable "${CURRENT_USER}.monitor" 2>/dev/null || true
       RUN_AS_INSTALL_USER omarchy plugin disable "omarchy.monitor" 2>/dev/null || true
 
+      # The external power manager replaces the cloned Power & Battery widget.
+      if ! RUN_AS_INSTALL_USER omarchy plugin list --json 2>/dev/null | jq -e 'any(.[]; .id == "onlyvishesh.power-manager")' >/dev/null; then
+        log_sub "Adding external Omarchy power manager plugin from git..."
+        RUN_AS_INSTALL_USER omarchy plugin add https://github.com/onlyVishesh/omarchy-power-manager.git --enable --yes 2>/dev/null || true
+      else
+        RUN_AS_INSTALL_USER omarchy plugin enable "onlyvishesh.power-manager" 2>/dev/null || true
+      fi
+      RUN_AS_INSTALL_USER omarchy plugin disable "${CURRENT_USER}.power" 2>/dev/null || true
+      RUN_AS_INSTALL_USER omarchy plugin disable "omarchy.power" 2>/dev/null || true
+
       # The notification center owns the DND control. Disable a separately
       # installed DND plugin when present, but keep Omarchy's notification
       # service enabled because the new plugin uses it as its backend.
@@ -797,8 +807,12 @@ if [[ -f "$REPO_DIR/shell/shell.json" ]]; then
       log_warn "Notification center could not be enabled after shell layout sync."
     RUN_AS_INSTALL_USER omarchy plugin enable "crmne.hyprmoncfg" 2>/dev/null || \
       log_warn "hyprmoncfg could not be enabled after shell layout sync."
+    RUN_AS_INSTALL_USER omarchy plugin enable "onlyvishesh.power-manager" 2>/dev/null || \
+      log_warn "power manager could not be enabled after shell layout sync."
     RUN_AS_INSTALL_USER omarchy plugin disable "${CURRENT_USER}.monitor" 2>/dev/null || true
     RUN_AS_INSTALL_USER omarchy plugin disable "omarchy.monitor" 2>/dev/null || true
+    RUN_AS_INSTALL_USER omarchy plugin disable "${CURRENT_USER}.power" 2>/dev/null || true
+    RUN_AS_INSTALL_USER omarchy plugin disable "omarchy.power" 2>/dev/null || true
   fi
 fi
 
@@ -1121,6 +1135,9 @@ if command -v omarchy >/dev/null 2>&1; then
   omarchy plugin enable "crmne.hyprmoncfg" >/dev/null 2>&1 || true
   omarchy plugin disable "${u}.monitor" >/dev/null 2>&1 || true
   omarchy plugin disable "omarchy.monitor" >/dev/null 2>&1 || true
+  omarchy plugin enable "onlyvishesh.power-manager" >/dev/null 2>&1 || true
+  omarchy plugin disable "${u}.power" >/dev/null 2>&1 || true
+  omarchy plugin disable "omarchy.power" >/dev/null 2>&1 || true
 fi
 
   # Activate Virtual Paradise Fastfetch config
@@ -1155,6 +1172,8 @@ else
     u="${USER:-$(id -un)}"
     omarchy plugin disable "crmne.hyprmoncfg" >/dev/null 2>&1 || true
     omarchy plugin enable "${u}.monitor" >/dev/null 2>&1 || omarchy plugin enable "omarchy.monitor" >/dev/null 2>&1 || true
+    omarchy plugin disable "onlyvishesh.power-manager" >/dev/null 2>&1 || true
+    omarchy plugin enable "${u}.power" >/dev/null 2>&1 || omarchy plugin enable "omarchy.power" >/dev/null 2>&1 || true
   fi
 
   # Cleanly stop live video wallpaper so new theme background displays properly
@@ -1358,6 +1377,10 @@ if [[ $IS_HOOK -eq 0 ]]; then
     # discovery, so enforce the notification center state last.
     RUN_AS_INSTALL_USER omarchy plugin enable "jankeesvw.notification-center" 2>/dev/null || \
       log_warn "Notification center could not be enabled after theme activation."
+    RUN_AS_INSTALL_USER omarchy plugin enable "crmne.hyprmoncfg" 2>/dev/null || true
+    RUN_AS_INSTALL_USER omarchy plugin enable "onlyvishesh.power-manager" 2>/dev/null || true
+    RUN_AS_INSTALL_USER omarchy plugin disable "${CURRENT_USER}.power" 2>/dev/null || true
+    RUN_AS_INSTALL_USER omarchy plugin disable "omarchy.power" 2>/dev/null || true
   fi
 
   if command -v hyprctl &>/dev/null; then
