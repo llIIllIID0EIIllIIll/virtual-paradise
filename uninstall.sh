@@ -92,6 +92,7 @@ fi
 
 if command -v omarchy &>/dev/null; then
   RUN_AS_INSTALL_USER omarchy plugin disable "crmne.hyprmoncfg" 2>/dev/null || true
+  RUN_AS_INSTALL_USER omarchy plugin disable "io.github.jeffcortez23.omarchy-projector-cast" 2>/dev/null || true
   RUN_AS_INSTALL_USER omarchy plugin disable "jankeesvw.notification-center" 2>/dev/null || true
   RUN_AS_INSTALL_USER omarchy plugin disable "onlyvishesh.power-manager" 2>/dev/null || true
   RUN_AS_INSTALL_USER omarchy plugin disable "ssupt.audio-control" 2>/dev/null || true

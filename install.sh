@@ -759,6 +759,13 @@ APPLY_WAVEBAR_RICE() {
   fi
 }
 
+APPLY_PROJECTOR_COMPATIBILITY() {
+  local panel="$CONFIG_DIR/omarchy/plugins/io.github.jeffcortez23.omarchy-projector-cast/Panel.qml"
+  if [[ -f "$panel" ]]; then
+    sed -i 's/Style\.radius(6)/Style.cornerRadius/g' "$panel"
+  fi
+}
+
 # ------------------------------------------------------------------------------
 # 3. Install & Enable Custom Omarchy Bar Plugins
 # ------------------------------------------------------------------------------
@@ -839,6 +846,15 @@ INSTALL_AND_ENABLE_PLUGINS() {
       fi
       RUN_AS_INSTALL_USER omarchy plugin disable "${CURRENT_USER}.monitor" 2>/dev/null || true
       RUN_AS_INSTALL_USER omarchy plugin disable "omarchy.monitor" 2>/dev/null || true
+
+      # Projector & Cast adds screen-mirroring controls to the right bar.
+      if ! RUN_AS_INSTALL_USER omarchy plugin list --json 2>/dev/null | jq -e 'any(.[]; .id == "io.github.jeffcortez23.omarchy-projector-cast")' >/dev/null; then
+        log_sub "Adding external Projector & Cast plugin from git..."
+        RUN_AS_INSTALL_USER omarchy plugin add https://github.com/JeffCortez23/omarchy-projector-cast.git --enable --yes 2>/dev/null || true
+      else
+        RUN_AS_INSTALL_USER omarchy plugin enable "io.github.jeffcortez23.omarchy-projector-cast" 2>/dev/null || true
+      fi
+      APPLY_PROJECTOR_COMPATIBILITY
 
       # The external power manager replaces the cloned Power & Battery widget.
       if ! RUN_AS_INSTALL_USER omarchy plugin list --json 2>/dev/null | jq -e 'any(.[]; .id == "onlyvishesh.power-manager")' >/dev/null; then
@@ -938,6 +954,9 @@ if [[ -f "$REPO_DIR/shell/shell.json" ]]; then
       log_warn "Notification center could not be enabled after shell layout sync."
     RUN_AS_INSTALL_USER omarchy plugin enable "crmne.hyprmoncfg" 2>/dev/null || \
       log_warn "hyprmoncfg could not be enabled after shell layout sync."
+    RUN_AS_INSTALL_USER omarchy plugin enable "io.github.jeffcortez23.omarchy-projector-cast" 2>/dev/null || \
+      log_warn "Projector & Cast could not be enabled after shell layout sync."
+    APPLY_PROJECTOR_COMPATIBILITY
     RUN_AS_INSTALL_USER omarchy plugin enable "onlyvishesh.power-manager" 2>/dev/null || \
       log_warn "power manager could not be enabled after shell layout sync."
     RUN_AS_INSTALL_USER omarchy plugin disable "${CURRENT_USER}.monitor" 2>/dev/null || true
@@ -1292,6 +1311,8 @@ fi
 if command -v omarchy >/dev/null 2>&1; then
   u="${USER:-$(id -un)}"
   omarchy plugin enable "crmne.hyprmoncfg" >/dev/null 2>&1 || true
+  omarchy plugin enable "io.github.jeffcortez23.omarchy-projector-cast" >/dev/null 2>&1 || true
+  APPLY_PROJECTOR_COMPATIBILITY
   omarchy plugin disable "${u}.monitor" >/dev/null 2>&1 || true
   omarchy plugin disable "omarchy.monitor" >/dev/null 2>&1 || true
   omarchy plugin enable "onlyvishesh.power-manager" >/dev/null 2>&1 || true
@@ -1343,6 +1364,7 @@ else
   if command -v omarchy >/dev/null 2>&1; then
     u="${USER:-$(id -un)}"
     omarchy plugin disable "crmne.hyprmoncfg" >/dev/null 2>&1 || true
+    omarchy plugin disable "io.github.jeffcortez23.omarchy-projector-cast" >/dev/null 2>&1 || true
     omarchy plugin enable "omarchy.monitor" >/dev/null 2>&1 || true
     omarchy plugin disable "onlyvishesh.power-manager" >/dev/null 2>&1 || true
     omarchy plugin enable "omarchy.power" >/dev/null 2>&1 || true

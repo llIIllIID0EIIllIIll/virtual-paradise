@@ -113,6 +113,7 @@ The installer configures these applications when available:
 | VS Code | Default text/code MIME handlers and `EDITOR=code --wait` |
 | GitHub Copilot CLI | Omarchy default coding agent |
 | `crmne.hyprmoncfg` | Display & Scaling replacement |
+| `io.github.jeffcortez23.omarchy-projector-cast` | Projector and wireless display casting |
 | `onlyvishesh.power-manager` | Power & Battery replacement |
 | `ssupt.audio-control` | Audio control and PipeWire mixer replacement |
 | `io.github.erikburdett.wavebar` | Waveform media controller replacing Cava audio bar |
@@ -131,6 +132,19 @@ The theme disables the cloned `${USER}.monitor` and `omarchy.monitor` widgets
 to prevent duplicate display controls. When another theme is selected, the
 post-theme hook disables `crmne.hyprmoncfg` and restores `omarchy.monitor` if
 available.
+
+`io.github.jeffcortez23.omarchy-projector-cast` adds projector, Miracast and
+wireless-display controls to the right side of the bar:
+
+```bash
+omarchy plugin add https://github.com/JeffCortez23/omarchy-projector-cast.git --enable --yes
+```
+
+It is enabled idempotently by the installer and theme hook, and disabled by
+the uninstaller or when another theme is selected. The installer also applies
+a compatibility substitution for the current Omarchy `Style` API
+(`Style.radius(6)` to `Style.cornerRadius`) so its panel does not emit QML
+runtime errors.
 
 `onlyvishesh.power-manager` replaces the cloned `${USER}.power` widget in the
 same way. It is installed and enabled idempotently from:
