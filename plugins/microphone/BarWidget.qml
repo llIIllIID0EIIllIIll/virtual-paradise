@@ -62,7 +62,7 @@ BarWidget {
     Rectangle {
       id: micPill
       anchors.centerIn: parent
-      width: 28
+      width: 44
       height: 28
       radius: 14
       color: root.inUse
@@ -99,6 +99,24 @@ BarWidget {
           loops: Animation.Infinite
           NumberAnimation { to: 0.35; duration: 800; easing.type: Easing.InOutQuad }
           NumberAnimation { to: 0.95; duration: 800; easing.type: Easing.InOutQuad }
+        }
+      }
+
+      Rectangle {
+        anchors.fill: parent
+        anchors.margins: -6
+        radius: micPill.radius + 6
+        color: "transparent"
+        border.color: root.inUse ? "#00ff88" : "#00f5d4"
+        border.width: 1.5
+        opacity: 0.60
+        visible: !root.muted || root.inUse || button.tooltipHovered
+
+        SequentialAnimation on opacity {
+          running: !root.muted || root.inUse || button.tooltipHovered
+          loops: Animation.Infinite
+          NumberAnimation { to: 0.20; duration: 800; easing.type: Easing.InOutQuad }
+          NumberAnimation { to: 0.75; duration: 800; easing.type: Easing.InOutQuad }
         }
       }
 

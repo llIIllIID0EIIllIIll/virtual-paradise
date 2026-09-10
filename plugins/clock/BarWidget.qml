@@ -141,7 +141,7 @@ BarWidget {
       id: clockPill
       visible: !root.vertical
       anchors.centerIn: parent
-      width: clockRow.implicitWidth + 24
+      width: clockRow.implicitWidth + 20
       height: 28
       radius: 14
       color: root.opened
@@ -172,6 +172,24 @@ BarWidget {
           loops: Animation.Infinite
           NumberAnimation { to: 0.35; duration: 800; easing.type: Easing.InOutQuad }
           NumberAnimation { to: 0.95; duration: 800; easing.type: Easing.InOutQuad }
+        }
+      }
+
+      Rectangle {
+        anchors.fill: parent
+        anchors.margins: -6
+        radius: clockPill.radius + 6
+        color: "transparent"
+        border.color: "#00ff88"
+        border.width: 1.5
+        opacity: 0.60
+        visible: root.opened || button.tooltipHovered
+
+        SequentialAnimation on opacity {
+          running: root.opened || button.tooltipHovered
+          loops: Animation.Infinite
+          NumberAnimation { to: 0.20; duration: 800; easing.type: Easing.InOutQuad }
+          NumberAnimation { to: 0.75; duration: 800; easing.type: Easing.InOutQuad }
         }
       }
 

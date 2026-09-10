@@ -118,6 +118,24 @@ BarWidget {
         }
       }
 
+      Rectangle {
+        anchors.fill: parent
+        anchors.margins: -6
+        radius: weatherPill.radius + 6
+        color: "transparent"
+        border.color: "#ffe066"
+        border.width: 1.5
+        opacity: 0.60
+        visible: root.opened || button.tooltipHovered
+
+        SequentialAnimation on opacity {
+          running: root.opened || button.tooltipHovered
+          loops: Animation.Infinite
+          NumberAnimation { to: 0.20; duration: 800; easing.type: Easing.InOutQuad }
+          NumberAnimation { to: 0.75; duration: 800; easing.type: Easing.InOutQuad }
+        }
+      }
+
       Row {
         id: weatherRow
         anchors.centerIn: parent

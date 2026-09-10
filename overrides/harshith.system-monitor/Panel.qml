@@ -362,7 +362,7 @@ Panel {
       id: monitorPill
       visible: !root.vertical
       anchors.centerIn: parent
-      width: monitorRow.implicitWidth + Style.space(18)
+      width: monitorRow.implicitWidth + Style.space(20)
       height: Style.space(28)
       radius: height / 2
       color: root.critical ? Qt.rgba(root.urgent.r, root.urgent.g, root.urgent.b, 0.28)
@@ -394,6 +394,24 @@ Panel {
           loops: Animation.Infinite
           NumberAnimation { to: 0.30; duration: 850; easing.type: Easing.InOutQuad }
           NumberAnimation { to: 0.78; duration: 850; easing.type: Easing.InOutQuad }
+        }
+      }
+
+      Rectangle {
+        anchors.fill: parent
+        anchors.margins: -6
+        radius: monitorPill.radius + 6
+        color: "transparent"
+        border.color: root.critical ? root.urgent : root.warning ? root.warningColor : root.accent
+        border.width: 1.5
+        opacity: button.tooltipHovered || root.warning || root.critical ? 0.60 : 0
+        visible: button.tooltipHovered || root.warning || root.critical
+
+        SequentialAnimation on opacity {
+          running: button.tooltipHovered || root.warning || root.critical
+          loops: Animation.Infinite
+          NumberAnimation { to: 0.20; duration: 800; easing.type: Easing.InOutQuad }
+          NumberAnimation { to: 0.75; duration: 800; easing.type: Easing.InOutQuad }
         }
       }
 
@@ -440,7 +458,7 @@ Panel {
     Rectangle {
       id: iconPill
       anchors.centerIn: parent
-      width: iconGlyph.width + Style.space(18)
+      width: iconGlyph.width + Style.space(20)
       height: Style.space(28)
       radius: height / 2
       color: root.critical ? Qt.rgba(root.urgent.r, root.urgent.g, root.urgent.b, 0.28)
@@ -473,6 +491,24 @@ Panel {
           loops: Animation.Infinite
           NumberAnimation { to: 0.30; duration: 850; easing.type: Easing.InOutQuad }
           NumberAnimation { to: 0.78; duration: 850; easing.type: Easing.InOutQuad }
+        }
+      }
+
+      Rectangle {
+        anchors.fill: parent
+        anchors.margins: -6
+        radius: iconPill.radius + 6
+        color: "transparent"
+        border.color: root.critical ? root.urgent : root.warning ? root.warningColor : root.accent
+        border.width: 1.5
+        opacity: iconButton.tooltipHovered || root.warning || root.critical ? 0.60 : 0
+        visible: iconButton.tooltipHovered || root.warning || root.critical
+
+        SequentialAnimation on opacity {
+          running: iconButton.tooltipHovered || root.warning || root.critical
+          loops: Animation.Infinite
+          NumberAnimation { to: 0.20; duration: 800; easing.type: Easing.InOutQuad }
+          NumberAnimation { to: 0.75; duration: 800; easing.type: Easing.InOutQuad }
         }
       }
 
