@@ -848,6 +848,17 @@ INSTALL_AND_ENABLE_PLUGINS() {
       RUN_AS_INSTALL_USER omarchy plugin disable "${CURRENT_USER}.monitor" 2>/dev/null || true
       RUN_AS_INSTALL_USER omarchy plugin disable "omarchy.monitor" 2>/dev/null || true
 
+      # System Monitor replaces the memory-only widget in this theme's
+      # center bar slot.
+      if ! RUN_AS_INSTALL_USER omarchy plugin list --json 2>/dev/null | jq -e 'any(.[]; .id == "harshith.system-monitor")' >/dev/null; then
+        log_sub "Adding external System Monitor plugin from git..."
+        RUN_AS_INSTALL_USER omarchy plugin add https://github.com/Harshith292002/omarchy-system-monitor.git --enable --yes 2>/dev/null || true
+      else
+        RUN_AS_INSTALL_USER omarchy plugin enable "harshith.system-monitor" 2>/dev/null || true
+      fi
+      RUN_AS_INSTALL_USER omarchy plugin disable "${CURRENT_USER}.memory" 2>/dev/null || true
+      RUN_AS_INSTALL_USER omarchy plugin disable "omarchy.memory" 2>/dev/null || true
+
       # Projector & Cast adds screen-mirroring controls to the right bar.
       if ! RUN_AS_INSTALL_USER omarchy plugin list --json 2>/dev/null | jq -e 'any(.[]; .id == "io.github.jeffcortez23.omarchy-projector-cast")' >/dev/null; then
         log_sub "Adding external Projector & Cast plugin from git..."
@@ -962,6 +973,10 @@ if [[ -f "$REPO_DIR/shell/shell.json" ]]; then
       log_warn "power manager could not be enabled after shell layout sync."
     RUN_AS_INSTALL_USER omarchy plugin disable "${CURRENT_USER}.monitor" 2>/dev/null || true
     RUN_AS_INSTALL_USER omarchy plugin disable "omarchy.monitor" 2>/dev/null || true
+    RUN_AS_INSTALL_USER omarchy plugin enable "harshith.system-monitor" 2>/dev/null || \
+      log_warn "System Monitor could not be enabled after shell layout sync."
+    RUN_AS_INSTALL_USER omarchy plugin disable "${CURRENT_USER}.memory" 2>/dev/null || true
+    RUN_AS_INSTALL_USER omarchy plugin disable "omarchy.memory" 2>/dev/null || true
     RUN_AS_INSTALL_USER omarchy plugin disable "${CURRENT_USER}.power" 2>/dev/null || true
     RUN_AS_INSTALL_USER omarchy plugin disable "omarchy.power" 2>/dev/null || true
     RUN_AS_INSTALL_USER omarchy plugin enable "io.github.erikburdett.wavebar" 2>/dev/null || \
@@ -1313,6 +1328,9 @@ if command -v omarchy >/dev/null 2>&1; then
   u="${USER:-$(id -un)}"
   omarchy plugin enable "crmne.hyprmoncfg" >/dev/null 2>&1 || true
   omarchy plugin enable "io.github.jeffcortez23.omarchy-projector-cast" >/dev/null 2>&1 || true
+  omarchy plugin enable "harshith.system-monitor" >/dev/null 2>&1 || true
+  omarchy plugin disable "${u}.memory" >/dev/null 2>&1 || true
+  omarchy plugin disable "omarchy.memory" >/dev/null 2>&1 || true
   APPLY_PROJECTOR_COMPATIBILITY
   omarchy plugin disable "${u}.monitor" >/dev/null 2>&1 || true
   omarchy plugin disable "omarchy.monitor" >/dev/null 2>&1 || true
@@ -1366,6 +1384,8 @@ else
     u="${USER:-$(id -un)}"
     omarchy plugin disable "crmne.hyprmoncfg" >/dev/null 2>&1 || true
     omarchy plugin disable "io.github.jeffcortez23.omarchy-projector-cast" >/dev/null 2>&1 || true
+    omarchy plugin disable "harshith.system-monitor" >/dev/null 2>&1 || true
+    omarchy plugin enable "omarchy.memory" >/dev/null 2>&1 || true
     omarchy plugin enable "omarchy.monitor" >/dev/null 2>&1 || true
     omarchy plugin disable "onlyvishesh.power-manager" >/dev/null 2>&1 || true
     omarchy plugin enable "omarchy.power" >/dev/null 2>&1 || true

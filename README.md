@@ -114,6 +114,7 @@ The installer configures these applications when available:
 | GitHub Copilot CLI | Omarchy default coding agent |
 | `crmne.hyprmoncfg` | Display & Scaling replacement |
 | `io.github.jeffcortez23.omarchy-projector-cast` | Projector and wireless display casting |
+| `harshith.system-monitor` | Memory-focused system monitor replacing the memory widget |
 | `onlyvishesh.power-manager` | Power & Battery replacement |
 | `ssupt.audio-control` | Audio control and PipeWire mixer replacement |
 | `io.github.erikburdett.wavebar` | Waveform media controller replacing Cava audio bar |
@@ -145,6 +146,16 @@ the uninstaller or when another theme is selected. The installer also applies
 a compatibility substitution for the current Omarchy `Style` API
 (`Style.radius(6)` to `Style.cornerRadius`) so its panel does not emit QML
 runtime errors.
+
+`harshith.system-monitor` replaces the center-bar memory usage widget and is
+configured in Memory mode to preserve the existing layout slot:
+
+```bash
+omarchy plugin add https://github.com/Harshith292002/omarchy-system-monitor.git --enable --yes
+```
+
+When another theme is selected, the hook disables it and restores
+`omarchy.memory` if available.
 
 `onlyvishesh.power-manager` replaces the cloned `${USER}.power` widget in the
 same way. It is installed and enabled idempotently from:

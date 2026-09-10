@@ -19,7 +19,10 @@
           "verticalFormat": "HH\n—\nmm"
         },
         {
-          "id": "__USER__.memory"
+          "id": "harshith.system-monitor",
+          "settings": {
+            "barMode": "Memory"
+          }
         },
         {
           "id": "__USER__.cputemp"
