@@ -763,6 +763,7 @@ APPLY_PROJECTOR_COMPATIBILITY() {
   local panel="$CONFIG_DIR/omarchy/plugins/io.github.jeffcortez23.omarchy-projector-cast/Panel.qml"
   if [[ -f "$panel" ]]; then
     sed -i 's/Style\.radius(6)/Style.cornerRadius/g' "$panel"
+    sed -i 's/foreground: root\.gndRunning ? Color\.accent : (root\.presentationMode ? Color\.accent : (root\.bar ? root\.bar\.foreground : Color\.foreground))/foreground: Color.accent/' "$panel"
   fi
 }
 
