@@ -42,8 +42,22 @@ Item {
   }
 
   function isWallpaperPlayer(player) {
-    var identity = String(player && (player.identity || player.desktopEntry || player.dbusName) || "").toLowerCase()
+    if (!player) return false
+    var identity = String(player.identity || "").toLowerCase()
+    var desktopEntry = String(player.desktopEntry || "").toLowerCase()
+    var dbusName = String(player.dbusName || "").toLowerCase()
+    var metadata = [
+      player.trackTitle || "",
+      player.trackAlbum || "",
+      player.trackArtUrl || ""
+    ].join(" ").toLowerCase()
+    var wallpaperFile = /\.(mp4|webm|mkv|gif|avi|mov)([?#].*)?$/.test(metadata)
+    var wallpaperName = /(^|[\s_/-])(miku|wallpaper|background|live)([\s_.-]|$)/.test(metadata)
+
     return identity.indexOf("mpvpaper") !== -1
+      || (dbusName.indexOf("org.mpris.mediaplayer2.mpv") !== -1
+        && (desktopEntry === "mpv" || identity === "mpv")
+        && (wallpaperFile || wallpaperName))
   }
 
   function hasMetadata(player) {

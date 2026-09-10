@@ -27,6 +27,11 @@ controls a real audio player, while `mpvpaper` is excluded from MPRIS actions.
 Live wallpaper remains controlled by the dedicated `Super + Alt + Up/Left/Right`
 bindings.
 
+Wallpaper filtering also covers `mpv`-named MPRIS sessions whose metadata
+contains known wallpaper filenames or video/GIF extensions, such as
+`Miku_live.mp4`. This prevents media actions from pausing or resuming the
+wallpaper process.
+
 The media focus is persistent while paused: pausing YouTube or another MPRIS
 source keeps that player selected, so clicking the widget again resumes the
 same source instead of switching to another player. Webcam and notification

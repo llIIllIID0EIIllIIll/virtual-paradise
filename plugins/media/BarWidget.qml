@@ -13,8 +13,7 @@ BarWidget {
   readonly property var activePlayer: mediaService ? mediaService.activePlayer : null
 
   function isWallpaperPlayer(player) {
-    var identity = String(player && (player.identity || player.desktopEntry || player.dbusName) || "").toLowerCase()
-    return identity.indexOf("mpvpaper") !== -1
+    return !!player && mediaService && mediaService.isWallpaperPlayer(player)
   }
 
   function isAudioPlayer(player) {
