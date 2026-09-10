@@ -378,11 +378,13 @@ CHECK_AND_INSTALL_PACKAGES() {
     "nautilus"
     "github-copilot-cli"
     "visual-studio-code-bin"
+    "wtype"
   )
   local AUR_PKGS=(
     "mpvpaper"
     "gnome-network-displays"
     "hyprmoncfg"
+    "voxtype-bin"
   )
 
   local HW_VENDOR=$(detect_hardware_vendor)
@@ -682,6 +684,48 @@ mkdir -p "$LOCAL_BIN"
 mkdir -p "$HOME/.local/state/virtual-paradise"
 log_sub "Directories verified under $CONFIG_DIR and $LOCAL_BIN"
 
+# Keep third-party bar icons on the active theme accent instead of the
+# default bar foreground, which is intentionally white in some Omarchy setups.
+APPLY_EXTERNAL_PLUGIN_THEME_COLORS() {
+  local monitor_bar="$CONFIG_DIR/omarchy/plugins/crmne.hyprmoncfg/BarWidget.qml"
+  local power_panel="$CONFIG_DIR/omarchy/plugins/onlyvishesh.power-manager/Panel.qml"
+  local webcam_bar="$CONFIG_DIR/omarchy/plugins/io.github.kristoferlund.webcam/BarWidget.qml"
+  local notification_panel="$CONFIG_DIR/omarchy/plugins/jankeesvw.notification-center/Panel.qml"
+
+  if [[ -f "$monitor_bar" ]] && ! grep -q "Virtual Paradise theme accent override" "$monitor_bar"; then
+    sed -i '/id: button/,/text: root.monitorCount/ {
+      /bar: root.bar/ a\
+    // Virtual Paradise theme accent override\
+    foreground: Color.accent
+    }' "$monitor_bar"
+  fi
+
+  if [[ -f "$power_panel" ]] && ! grep -q "Virtual Paradise theme accent override" "$power_panel"; then
+    sed -i '/id: barBtn/,/text: ((root.config/ {
+      /bar: root.bar/ a\
+    // Virtual Paradise theme accent override\
+    foreground: Color.accent
+    }' "$power_panel"
+  fi
+
+  if [[ -f "$webcam_bar" ]] && ! grep -q "Virtual Paradise theme accent override" "$webcam_bar"; then
+    sed -i '1a import qs.Commons' "$webcam_bar"
+    sed -i '/id: button/,/text: "󰄀"/ {
+      /bar: root.bar/ a\
+    // Virtual Paradise theme accent override\
+    foreground: root.bar ? root.bar.urgent : "#00f5d4"
+    }' "$webcam_bar"
+  fi
+
+  if [[ -f "$notification_panel" ]] && ! grep -q "Virtual Paradise theme accent override" "$notification_panel"; then
+    sed -i '/id: button/,/text: root.dnd/ {
+      /bar: root.bar/ a\
+    // Virtual Paradise theme accent override\
+    foreground: Color.accent
+    }' "$notification_panel"
+  fi
+}
+
 # ------------------------------------------------------------------------------
 # 3. Install & Enable Custom Omarchy Bar Plugins
 # ------------------------------------------------------------------------------
@@ -724,6 +768,7 @@ INSTALL_AND_ENABLE_PLUGINS() {
           enabled_count=$((enabled_count + 1))
         fi
       done
+      APPLY_EXTERNAL_PLUGIN_THEME_COLORS
       log_sub "Enabled all ${enabled_count} Virtual Paradise plugins in Omarchy shell"
 
       # Install & enable external Omarchy webcam plugin
@@ -803,6 +848,7 @@ if [[ -f "$REPO_DIR/shell/shell.json" ]]; then
   # The shell layout copy above can reset plugin enablement. Restore the
   # external notification center after the layout is installed.
   if command -v omarchy &>/dev/null; then
+    APPLY_EXTERNAL_PLUGIN_THEME_COLORS
     RUN_AS_INSTALL_USER omarchy plugin enable "jankeesvw.notification-center" 2>/dev/null || \
       log_warn "Notification center could not be enabled after shell layout sync."
     RUN_AS_INSTALL_USER omarchy plugin enable "crmne.hyprmoncfg" 2>/dev/null || \

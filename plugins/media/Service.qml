@@ -14,7 +14,10 @@ Item {
   property var pendingTrackOsd: null
   property int playSerial: 0
 
-  readonly property var players: Mpris.players ? Mpris.players.values : []
+  readonly property var players: {
+    var all = Mpris.players ? Mpris.players.values : []
+    return all.filter(function(player) { return !isWallpaperPlayer(player) })
+  }
   readonly property var nodes: Pipewire.nodes ? Pipewire.nodes.values : []
   readonly property var playbackStreams: {
     var list = []
@@ -36,6 +39,11 @@ Item {
 
   function isProxyPlayer(player) {
     return MediaModel.isProxyPlayer(player)
+  }
+
+  function isWallpaperPlayer(player) {
+    var identity = String(player && (player.identity || player.desktopEntry || player.dbusName) || "").toLowerCase()
+    return identity.indexOf("mpvpaper") !== -1
   }
 
   function hasMetadata(player) {
@@ -225,7 +233,8 @@ Item {
       }
     }
 
-    if (preferred && preferred.isPlaying) return preferred
+    // Keep a paused player selected so the bar can resume the same source.
+    if (preferred) return preferred
     var streamCandidate = streamPlayer || streamProxy
     var streamPreferred = preferred && playerHasPlaybackStream(preferred) ? preferred : null
     return oldestPlayingPlayer(true) || oldestPlayingPlayer(false) || streamPreferred || streamCandidate || preferred || trackPlayer || trackProxy || controllablePlayer || controllableProxy || identityPlayer || identityProxy || null
@@ -351,6 +360,9 @@ Item {
   function playerForAction(action, targetKey) {
     var targeted = playerForKey(targetKey)
     if (targeted) return targeted
+
+    var preferred = playerForKey(preferredPlayerKey)
+    if (action === "playPause" && canHandleAction(preferred, action)) return preferred
 
     if (action === "pause" || action === "playPause") {
       var oldest = oldestPlayingPlayer(true) || oldestPlayingPlayer(false)

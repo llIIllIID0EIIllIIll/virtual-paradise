@@ -19,7 +19,6 @@ BarWidget {
 
   function isAudioPlayer(player) {
     return !!player && !isWallpaperPlayer(player)
-      && (!mediaService || mediaService.playerHasPlaybackStream(player))
   }
 
   readonly property var sourcePlayers: mediaService
@@ -202,16 +201,16 @@ BarWidget {
 
     onClicked: function(mouse) {
       if (mouse.button === Qt.MiddleButton) {
-        if (root.mediaService) root.mediaService.runAction("next", false)
+        if (root.audioPlayer && root.mediaService) root.mediaService.runAction("next", false)
       } else if (mouse.button === Qt.RightButton) {
         root.popupOpen = !root.popupOpen
       } else {
-        if (root.mediaService) root.mediaService.runAction("playPause", false)
+        if (root.audioPlayer && root.mediaService) root.mediaService.runAction("playPause", false)
       }
     }
     onWheel: function(wheel) {
-      if (wheel.angleDelta.y > 0 && root.mediaService) root.mediaService.runAction("previous", false)
-      else if (wheel.angleDelta.y < 0 && root.mediaService) root.mediaService.runAction("next", false)
+      if (wheel.angleDelta.y > 0 && root.audioPlayer && root.mediaService) root.mediaService.runAction("previous", false)
+      else if (wheel.angleDelta.y < 0 && root.audioPlayer && root.mediaService) root.mediaService.runAction("next", false)
     }
     onEntered: {
       if (root.bar) {

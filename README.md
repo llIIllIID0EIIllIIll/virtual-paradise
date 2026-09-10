@@ -22,6 +22,16 @@ without editing Omarchy's packaged files under `/usr/share/omarchy`.
 *Five-terminal development rice with live wallpaper, system telemetry, Cava and
 Paradise Agent.*
 
+The Cava/media widget is isolated from wallpaper control: clicking it only
+controls a real audio player, while `mpvpaper` is excluded from MPRIS actions.
+Live wallpaper remains controlled by the dedicated `Super + Alt + Up/Left/Right`
+bindings.
+
+The media focus is persistent while paused: pausing YouTube or another MPRIS
+source keeps that player selected, so clicking the widget again resumes the
+same source instead of switching to another player. Webcam and notification
+icons also use the active theme accent without changing their panel behavior.
+
 ## Highlights
 
 ### Workspace and wallpaper
@@ -127,6 +137,12 @@ fixed icon colors: their bar icons use the active bar foreground, while active
 states and status marks use `Color.accent`. They therefore inherit each
 theme's colors automatically after a theme switch or shell reload.
 
+Virtual Paradise additionally applies a small scoped override to the four
+third-party bar buttons (display, power, webcam and notifications) so their
+icons use the active `Color.accent` directly.
+This avoids the white `Color.bar.text` fallback used by some Omarchy bar
+configurations while preserving the plugin panels and all other widgets.
+
 The notification center is installed and enabled idempotently. Its DND control
 replaces the standalone DND indicator in the Virtual☆Paradise bar, while
 Omarchy's notification service remains enabled as its backend.
@@ -211,7 +227,9 @@ uninstall.sh  Conservative cleanup and configuration restore
 
 The installer adds the required packages where possible, including `ghostty`,
 `nautilus`, `visual-studio-code-bin`, `github-copilot-cli`, `hyprmoncfg`,
-`mpvpaper`, `jq`, `socat` and hardware-specific fan tooling.
+`mpvpaper`, `jq`, `socat`, `wtype`, `voxtype-bin` and hardware-specific fan
+tooling. Voxtype can also be initialized after installation with
+`omarchy voxtype install`.
 
 ## Validation
 
@@ -226,6 +244,16 @@ jq empty shell/shell.json
 
 `--hook` exercises plugin synchronization and theme configuration without
 installing packages or rebuilding the boot image.
+
+The media isolation and plugin lifecycle can be smoke-tested with:
+
+```bash
+bash -n install.sh uninstall.sh bin/*.sh
+python3 -m py_compile bin/paradise_agent.py
+jq empty shell/shell.json
+git diff --check
+./install.sh --hook
+```
 
 ## License
 
