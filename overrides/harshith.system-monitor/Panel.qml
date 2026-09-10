@@ -311,7 +311,7 @@ Panel {
   }
 
   visible: true
-  implicitWidth: iconOnly ? iconButton.implicitWidth : monitorPill.width + Style.space(6)
+  implicitWidth: iconOnly ? iconPill.width + Style.space(6) : monitorPill.width + Style.space(6)
   implicitHeight: iconOnly ? iconButton.implicitHeight : button.implicitHeight
 
   onOpenedChanged: {
@@ -427,11 +427,64 @@ Panel {
     anchors.fill: parent
     visible: root.iconOnly
     bar: root.bar
-    text: root.heroGlyph
+    text: ""
+    labelVisible: false
+    hasVisualContent: true
+    horizontalMargin: 2
+    verticalPadding: 2
     active: root.warning || root.critical
     activeColor: root.critical ? root.urgent : root.warningColor
     tooltipText: root.tooltipText()
     onPressed: function(buttonCode) { root.barPressed(buttonCode) }
+
+    Rectangle {
+      id: iconPill
+      anchors.centerIn: parent
+      width: iconGlyph.width + Style.space(18)
+      height: Style.space(28)
+      radius: height / 2
+      color: root.critical ? Qt.rgba(root.urgent.r, root.urgent.g, root.urgent.b, 0.28)
+        : root.warning ? Qt.rgba(root.warningColor.r, root.warningColor.g, root.warningColor.b, 0.22)
+        : (iconButton.tooltipHovered ? Qt.rgba(root.accent.r, root.accent.g, root.accent.b, 0.18)
+          : Qt.rgba(root.accent.r, root.accent.g, root.accent.b, 0.09))
+      border.color: root.critical ? root.urgent
+        : root.warning ? root.warningColor : root.accent
+      border.width: root.warning || root.critical || iconButton.tooltipHovered ? 2 : 1
+      scale: iconButton.tooltipHovered ? 1.08 : 1
+
+      Behavior on color { ColorAnimation { duration: 180 } }
+      Behavior on border.color { ColorAnimation { duration: 180 } }
+      Behavior on border.width { NumberAnimation { duration: 140 } }
+      Behavior on scale { NumberAnimation { duration: 140; easing.type: Easing.OutBack } }
+
+      Rectangle {
+        anchors.fill: parent
+        anchors.margins: -3
+        radius: iconPill.radius + 3
+        color: "transparent"
+        border.color: root.critical ? root.urgent
+          : root.warning ? root.warningColor : root.accent
+        border.width: 2
+        opacity: iconButton.tooltipHovered || root.warning || root.critical ? 0.72 : 0
+
+        Behavior on opacity { NumberAnimation { duration: 180 } }
+        SequentialAnimation on opacity {
+          running: root.warning || root.critical
+          loops: Animation.Infinite
+          NumberAnimation { to: 0.30; duration: 850; easing.type: Easing.InOutQuad }
+          NumberAnimation { to: 0.78; duration: 850; easing.type: Easing.InOutQuad }
+        }
+      }
+
+      Text {
+        id: iconGlyph
+        anchors.centerIn: parent
+        text: root.heroGlyph
+        color: root.critical ? root.urgent : root.warning ? root.warningColor : root.accent
+        font.family: root.fontFamily
+        font.pixelSize: Style.font.body + 1
+      }
+    }
   }
 
   KeyboardPanel {
