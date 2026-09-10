@@ -81,7 +81,8 @@ BarWidget {
   Row {
     id: horizontalContent
     visible: !root.vertical
-    anchors.centerIn: parent
+    x: 0
+    y: 0
     spacing: Style.space(3)
 
     Item {
