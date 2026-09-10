@@ -31,7 +31,7 @@ BarWidget {
   readonly property bool opened: panelLoader.item ? panelLoader.item.opened === true : false
   readonly property bool popoutSwitchClosing: panelLoader.item
     ? panelLoader.item.popoutSwitchClosing === true : false
-  readonly property bool shouldShow: hasMedia && (!hideWhenPaused || playing)
+  readonly property bool shouldShow: !hideWhenPaused || playing || hasMedia
 
   visible: shouldShow
   implicitWidth: shouldShow
@@ -88,11 +88,11 @@ BarWidget {
     hasVisualContent: true
     horizontalMargin: 2
     verticalPadding: 2
-    tooltipText: root.waveformService
+    tooltipText: (root.waveformService && root.hasMedia && root.waveformService.title)
       ? (root.waveformService.title
           + (root.waveformService.artist ? " — " + root.waveformService.artist : "")
           + "\nLeft: Open Player | Scroll: Prev/Next")
-      : "Media"
+      : "No media\nLeft: Open Player"
 
     onPressed: function(b) {
       root.toggle()
@@ -239,12 +239,14 @@ BarWidget {
             width: parent.width
             height: implicitHeight
             text: {
-              if (!root.waveformService) return ""
-              var title = root.waveformService.title || ""
-              if (root.showArtist && root.waveformService.artist) {
-                return title + " \u2014 " + root.waveformService.artist
+              if (root.waveformService && root.hasMedia && root.waveformService.title) {
+                var title = root.waveformService.title || ""
+                if (root.showArtist && root.waveformService.artist) {
+                  return title + " \u2014 " + root.waveformService.artist
+                }
+                return title
               }
-              return title
+              return "No media"
             }
             foreground: "#ffffff"
             fontFamily: root.bar ? root.bar.fontFamily : Style.font.family
