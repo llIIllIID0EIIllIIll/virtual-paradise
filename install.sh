@@ -784,14 +784,14 @@ INSTALL_AND_ENABLE_PLUGINS() {
   # Remove their installed copies so an install cannot briefly re-enable or
   # leave stale rice widgets in the plugin registry.
   local replaced_plugin
-  for replaced_plugin in audio monitor power workspaces media; do
+  for replaced_plugin in audio monitor power workspaces media memory; do
     RUN_AS_INSTALL_USER omarchy plugin remove "${CURRENT_USER}.${replaced_plugin}" --yes 2>/dev/null || true
     rm -rf "$CONFIG_DIR/omarchy/plugins/${CURRENT_USER}.${replaced_plugin}"
   done
   if [[ -d "$REPO_DIR/plugins" ]]; then
     local count=0
     for pdir in "$REPO_DIR"/plugins/*; do
-      if [[ -d "$pdir" ]]; then
+      if [[ -d "$pdir" && -n "$(find "$pdir" -mindepth 1 -maxdepth 1 -print -quit 2>/dev/null)" ]]; then
         local plugin_name=$(basename "$pdir")
         local target_plugin_id="${CURRENT_USER}.${plugin_name}"
         local target_dir="$CONFIG_DIR/omarchy/plugins/$target_plugin_id"
@@ -818,7 +818,7 @@ INSTALL_AND_ENABLE_PLUGINS() {
     if command -v omarchy &>/dev/null; then
       local enabled_count=0
       for pdir in "$REPO_DIR"/plugins/*; do
-        if [[ -d "$pdir" ]]; then
+        if [[ -d "$pdir" && -n "$(find "$pdir" -mindepth 1 -maxdepth 1 -print -quit 2>/dev/null)" ]]; then
           local pname=$(basename "$pdir")
           local pid="${CURRENT_USER}.${pname}"
           RUN_AS_INSTALL_USER omarchy plugin enable "$pid" 2>/dev/null || true
@@ -978,7 +978,13 @@ if [[ -f "$REPO_DIR/shell/shell.json" ]]; then
       log_warn "hyprmoncfg could not be enabled after shell layout sync."
     RUN_AS_INSTALL_USER omarchy plugin enable "io.github.jeffcortez23.omarchy-projector-cast" 2>/dev/null || \
       log_warn "Projector & Cast could not be enabled after shell layout sync."
-    APPLY_PROJECTOR_COMPATIBILITY
+    projector_panel="$HOME/.config/omarchy/plugins/io.github.jeffcortez23.omarchy-projector-cast/Panel.qml"
+    if [[ -f "$projector_panel" ]]; then
+      sed -i \
+        -e 's/Style\.radius(6)/Style.cornerRadius/g' \
+        -e 's/foreground: root\.gndRunning ? Color\.accent : (root\.presentationMode ? Color\.accent : (root\.bar ? root\.bar\.foreground : Color\.foreground))/foreground: Color.accent/' \
+        "$projector_panel"
+    fi
     RUN_AS_INSTALL_USER omarchy plugin enable "onlyvishesh.power-manager" 2>/dev/null || \
       log_warn "power manager could not be enabled after shell layout sync."
     RUN_AS_INSTALL_USER omarchy plugin disable "${CURRENT_USER}.monitor" 2>/dev/null || true
@@ -1346,7 +1352,13 @@ if command -v omarchy >/dev/null 2>&1; then
   omarchy plugin enable "harshith.system-monitor" >/dev/null 2>&1 || true
   omarchy plugin disable "${u}.memory" >/dev/null 2>&1 || true
   omarchy plugin disable "omarchy.memory" >/dev/null 2>&1 || true
-  APPLY_PROJECTOR_COMPATIBILITY
+  projector_panel="$HOME/.config/omarchy/plugins/io.github.jeffcortez23.omarchy-projector-cast/Panel.qml"
+  if [[ -f "$projector_panel" ]]; then
+    sed -i \
+      -e 's/Style\.radius(6)/Style.cornerRadius/g' \
+      -e 's/foreground: root\.gndRunning ? Color\.accent : (root\.presentationMode ? Color\.accent : (root\.bar ? root\.bar\.foreground : Color\.foreground))/foreground: Color.accent/' \
+      "$projector_panel"
+  fi
   omarchy plugin disable "${u}.monitor" >/dev/null 2>&1 || true
   omarchy plugin disable "omarchy.monitor" >/dev/null 2>&1 || true
   omarchy plugin enable "onlyvishesh.power-manager" >/dev/null 2>&1 || true
