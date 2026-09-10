@@ -76,10 +76,12 @@ BarWidget {
           ? (button.tooltipHovered ? "#00ff88" : "#00f5d4")
           : (button.tooltipHovered ? "#ffffff" : Qt.rgba(1.0, 1.0, 1.0, 0.15)))
       border.width: (!root.muted || root.inUse) ? 2 : 1
+      scale: button.tooltipHovered ? 1.05 : 1
 
       Behavior on color { ColorAnimation { duration: 160 } }
       Behavior on border.color { ColorAnimation { duration: 160 } }
       Behavior on border.width { NumberAnimation { duration: 150 } }
+      Behavior on scale { NumberAnimation { duration: 150; easing.type: Easing.OutBack } }
 
       // Outer Halo Glow Ring when Live or In-Use
       Rectangle {
@@ -90,7 +92,7 @@ BarWidget {
         border.color: root.inUse ? "#00ff88" : "#00f5d4"
         border.width: 1.8
         opacity: 0.85
-        visible: !root.muted || root.inUse
+        visible: !root.muted || root.inUse || button.tooltipHovered
 
         SequentialAnimation on opacity {
           running: !root.muted || root.inUse

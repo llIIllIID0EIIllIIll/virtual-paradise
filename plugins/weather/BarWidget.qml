@@ -92,10 +92,12 @@ BarWidget {
         : (button.tooltipHovered ? Qt.rgba(1.0, 0.88, 0.40, 0.16) : Qt.rgba(1.0, 0.88, 0.40, 0.09))
       border.color: root.opened ? "#ffe066" : (button.tooltipHovered ? "#ffe066" : Qt.rgba(1.0, 0.88, 0.40, 0.38))
       border.width: root.opened ? 2 : 1
+      scale: button.tooltipHovered ? 1.05 : 1
 
       Behavior on color { ColorAnimation { duration: 180 } }
       Behavior on border.color { ColorAnimation { duration: 180 } }
       Behavior on border.width { NumberAnimation { duration: 150 } }
+      Behavior on scale { NumberAnimation { duration: 150; easing.type: Easing.OutBack } }
 
       // Outer Halo Glow Ring when Weather Popup is Opened
       Rectangle {
@@ -106,7 +108,7 @@ BarWidget {
         border.color: "#ffe066"
         border.width: 1.8
         opacity: 0.85
-        visible: root.opened
+        visible: root.opened || button.tooltipHovered
 
         SequentialAnimation on opacity {
           running: root.opened

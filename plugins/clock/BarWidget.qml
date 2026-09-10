@@ -149,10 +149,12 @@ BarWidget {
         : (button.tooltipHovered ? Qt.rgba(0.0, 0.96, 0.83, 0.16) : Qt.rgba(0.0, 0.96, 0.83, 0.09))
       border.color: root.opened ? "#00ff88" : (button.tooltipHovered ? "#00f5d4" : Qt.rgba(0.0, 0.96, 0.83, 0.40))
       border.width: root.opened ? 2 : 1
+      scale: button.tooltipHovered ? 1.05 : 1
 
       Behavior on color { ColorAnimation { duration: 180 } }
       Behavior on border.color { ColorAnimation { duration: 180 } }
       Behavior on border.width { NumberAnimation { duration: 150 } }
+      Behavior on scale { NumberAnimation { duration: 150; easing.type: Easing.OutBack } }
 
       // Outer Halo Glow Ring when Calendar Popup is Opened
       Rectangle {
@@ -163,7 +165,7 @@ BarWidget {
         border.color: "#00ff88"
         border.width: 1.8
         opacity: 0.85
-        visible: root.opened
+        visible: root.opened || button.tooltipHovered
 
         SequentialAnimation on opacity {
           running: root.opened

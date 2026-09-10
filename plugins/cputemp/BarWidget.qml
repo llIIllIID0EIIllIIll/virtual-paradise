@@ -95,10 +95,12 @@ BarWidget {
           ? "#00ff88"
           : (button.tooltipHovered ? "#ffb7d5" : Qt.rgba(1.0, 0.72, 0.84, 0.38)))
       border.width: (root.coolerActive || root.isOverheating) ? 2 : 1
+      scale: button.tooltipHovered ? 1.05 : 1
 
       Behavior on color { ColorAnimation { duration: 180 } }
       Behavior on border.color { ColorAnimation { duration: 180 } }
       Behavior on border.width { NumberAnimation { duration: 150 } }
+      Behavior on scale { NumberAnimation { duration: 150; easing.type: Easing.OutBack } }
 
       // Intense Outer Halo Glow Ring 1 (Immediate Bright Aura)
       Rectangle {
@@ -109,7 +111,7 @@ BarWidget {
         border.color: root.isOverheating ? "#ff0055" : "#00ff88"
         border.width: 2.0
         opacity: 0.90
-        visible: root.coolerActive || root.isOverheating
+        visible: root.coolerActive || root.isOverheating || button.tooltipHovered
 
         SequentialAnimation on opacity {
           running: root.coolerActive && !root.isOverheating
@@ -128,7 +130,7 @@ BarWidget {
         border.color: root.isOverheating ? "#ff0055" : "#39ff14"
         border.width: 1.5
         opacity: 0.60
-        visible: root.coolerActive || root.isOverheating
+        visible: root.coolerActive || root.isOverheating || button.tooltipHovered
 
         SequentialAnimation on opacity {
           running: root.coolerActive && !root.isOverheating
