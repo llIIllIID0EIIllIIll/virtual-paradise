@@ -691,6 +691,7 @@ APPLY_EXTERNAL_PLUGIN_THEME_COLORS() {
   local power_panel="$CONFIG_DIR/omarchy/plugins/onlyvishesh.power-manager/Panel.qml"
   local webcam_bar="$CONFIG_DIR/omarchy/plugins/io.github.kristoferlund.webcam/BarWidget.qml"
   local notification_panel="$CONFIG_DIR/omarchy/plugins/jankeesvw.notification-center/Panel.qml"
+  local audio_panel="$CONFIG_DIR/omarchy/plugins/ssupt.audio-control/Panel.qml"
 
   if [[ -f "$monitor_bar" ]] && ! grep -q "Virtual Paradise theme accent override" "$monitor_bar"; then
     sed -i '/id: button/,/text: root.monitorCount/ {
@@ -723,6 +724,22 @@ APPLY_EXTERNAL_PLUGIN_THEME_COLORS() {
     // Virtual Paradise theme accent override\
     foreground: Color.accent
     }' "$notification_panel"
+  fi
+
+  if [[ -f "$audio_panel" ]] && ! grep -q "Virtual Paradise theme accent override" "$audio_panel"; then
+    sed -i '/foreground: root.barForeground/ {
+      i\
+          // Virtual Paradise theme accent override
+      s/foreground: root.barForeground/foreground: Color.accent/
+    }' "$audio_panel"
+  fi
+}
+
+APPLY_WORKSPACE_JAP_RICE() {
+  local source="$REPO_DIR/overrides/io.github.tyrichards.workspaces-jap/Workspaces.qml"
+  local target="$CONFIG_DIR/omarchy/plugins/io.github.tyrichards.workspaces-jap/Workspaces.qml"
+  if [[ -f "$source" && -d "$(dirname "$target")" ]]; then
+    cp "$source" "$target"
   fi
 }
 
@@ -809,6 +826,27 @@ INSTALL_AND_ENABLE_PLUGINS() {
       RUN_AS_INSTALL_USER omarchy plugin disable "${CURRENT_USER}.power" 2>/dev/null || true
       RUN_AS_INSTALL_USER omarchy plugin disable "omarchy.power" 2>/dev/null || true
 
+      # Advanced Audio Control replaces the cloned Omarchy audio widget.
+      if ! RUN_AS_INSTALL_USER omarchy plugin list --json 2>/dev/null | jq -e 'any(.[]; .id == "ssupt.audio-control")' >/dev/null; then
+        log_sub "Adding external Omarchy audio control plugin from git..."
+        RUN_AS_INSTALL_USER omarchy plugin add https://github.com/ssupt/omarchy-audio-control.git --enable --yes 2>/dev/null || true
+      else
+        RUN_AS_INSTALL_USER omarchy plugin enable "ssupt.audio-control" 2>/dev/null || true
+      fi
+      RUN_AS_INSTALL_USER omarchy plugin disable "${CURRENT_USER}.audio" 2>/dev/null || true
+      RUN_AS_INSTALL_USER omarchy plugin disable "omarchy.audio" 2>/dev/null || true
+
+      # Workspaces (JAP) replaces the cloned Omarchy workspace widget.
+      if ! RUN_AS_INSTALL_USER omarchy plugin list --json 2>/dev/null | jq -e 'any(.[]; .id == "io.github.tyrichards.workspaces-jap")' >/dev/null; then
+        log_sub "Adding external Japanese workspace plugin from git..."
+        RUN_AS_INSTALL_USER omarchy plugin add https://github.com/TyRichards/omarchy-workspaces-jap.git --enable --yes 2>/dev/null || true
+      else
+        RUN_AS_INSTALL_USER omarchy plugin enable "io.github.tyrichards.workspaces-jap" 2>/dev/null || true
+      fi
+      RUN_AS_INSTALL_USER omarchy plugin disable "${CURRENT_USER}.workspaces" 2>/dev/null || true
+      RUN_AS_INSTALL_USER omarchy plugin disable "omarchy.workspaces" 2>/dev/null || true
+      APPLY_WORKSPACE_JAP_RICE
+
       # The notification center owns the DND control. Disable a separately
       # installed DND plugin when present, but keep Omarchy's notification
       # service enabled because the new plugin uses it as its backend.
@@ -849,6 +887,7 @@ if [[ -f "$REPO_DIR/shell/shell.json" ]]; then
   # external notification center after the layout is installed.
   if command -v omarchy &>/dev/null; then
     APPLY_EXTERNAL_PLUGIN_THEME_COLORS
+    APPLY_WORKSPACE_JAP_RICE
     RUN_AS_INSTALL_USER omarchy plugin enable "jankeesvw.notification-center" 2>/dev/null || \
       log_warn "Notification center could not be enabled after shell layout sync."
     RUN_AS_INSTALL_USER omarchy plugin enable "crmne.hyprmoncfg" 2>/dev/null || \
@@ -859,6 +898,14 @@ if [[ -f "$REPO_DIR/shell/shell.json" ]]; then
     RUN_AS_INSTALL_USER omarchy plugin disable "omarchy.monitor" 2>/dev/null || true
     RUN_AS_INSTALL_USER omarchy plugin disable "${CURRENT_USER}.power" 2>/dev/null || true
     RUN_AS_INSTALL_USER omarchy plugin disable "omarchy.power" 2>/dev/null || true
+    RUN_AS_INSTALL_USER omarchy plugin enable "ssupt.audio-control" 2>/dev/null || \
+      log_warn "audio control could not be enabled after shell layout sync."
+    RUN_AS_INSTALL_USER omarchy plugin disable "${CURRENT_USER}.audio" 2>/dev/null || true
+    RUN_AS_INSTALL_USER omarchy plugin disable "omarchy.audio" 2>/dev/null || true
+    RUN_AS_INSTALL_USER omarchy plugin enable "io.github.tyrichards.workspaces-jap" 2>/dev/null || \
+      log_warn "Japanese workspace plugin could not be enabled after shell layout sync."
+    RUN_AS_INSTALL_USER omarchy plugin disable "${CURRENT_USER}.workspaces" 2>/dev/null || true
+    RUN_AS_INSTALL_USER omarchy plugin disable "omarchy.workspaces" 2>/dev/null || true
   fi
 fi
 
@@ -1175,6 +1222,11 @@ fi
 
 # 2. Theme-specific setup
 if [[ "$THEME_NAME" == "virtual-paradise" ]]; then
+if [[ -f "$HOME/.config/omarchy/themes/virtual-paradise/overrides/io.github.tyrichards.workspaces-jap/Workspaces.qml" \
+  && -d "$HOME/.config/omarchy/plugins/io.github.tyrichards.workspaces-jap" ]]; then
+  cp "$HOME/.config/omarchy/themes/virtual-paradise/overrides/io.github.tyrichards.workspaces-jap/Workspaces.qml" \
+    "$HOME/.config/omarchy/plugins/io.github.tyrichards.workspaces-jap/Workspaces.qml"
+fi
 # Use hyprmoncfg in place of the cloned Display & Scaling widget.
 if command -v omarchy >/dev/null 2>&1; then
   u="${USER:-$(id -un)}"
@@ -1184,6 +1236,12 @@ if command -v omarchy >/dev/null 2>&1; then
   omarchy plugin enable "onlyvishesh.power-manager" >/dev/null 2>&1 || true
   omarchy plugin disable "${u}.power" >/dev/null 2>&1 || true
   omarchy plugin disable "omarchy.power" >/dev/null 2>&1 || true
+  omarchy plugin enable "ssupt.audio-control" >/dev/null 2>&1 || true
+  omarchy plugin disable "${u}.audio" >/dev/null 2>&1 || true
+  omarchy plugin disable "omarchy.audio" >/dev/null 2>&1 || true
+  omarchy plugin enable "io.github.tyrichards.workspaces-jap" >/dev/null 2>&1 || true
+  omarchy plugin disable "${u}.workspaces" >/dev/null 2>&1 || true
+  omarchy plugin disable "omarchy.workspaces" >/dev/null 2>&1 || true
 fi
 
   # Activate Virtual Paradise Fastfetch config
@@ -1220,6 +1278,10 @@ else
     omarchy plugin enable "${u}.monitor" >/dev/null 2>&1 || omarchy plugin enable "omarchy.monitor" >/dev/null 2>&1 || true
     omarchy plugin disable "onlyvishesh.power-manager" >/dev/null 2>&1 || true
     omarchy plugin enable "${u}.power" >/dev/null 2>&1 || omarchy plugin enable "omarchy.power" >/dev/null 2>&1 || true
+    omarchy plugin disable "ssupt.audio-control" >/dev/null 2>&1 || true
+    omarchy plugin enable "${u}.audio" >/dev/null 2>&1 || omarchy plugin enable "omarchy.audio" >/dev/null 2>&1 || true
+    omarchy plugin disable "io.github.tyrichards.workspaces-jap" >/dev/null 2>&1 || true
+    omarchy plugin enable "${u}.workspaces" >/dev/null 2>&1 || omarchy plugin enable "omarchy.workspaces" >/dev/null 2>&1 || true
   fi
 
   # Cleanly stop live video wallpaper so new theme background displays properly

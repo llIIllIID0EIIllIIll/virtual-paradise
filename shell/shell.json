@@ -47,7 +47,7 @@
           "id": "__USER__.menu"
         },
         {
-          "id": "__USER__.workspaces"
+          "id": "io.github.tyrichards.workspaces-jap"
         },
         {
           "id": "__USER__.active-window"
@@ -77,7 +77,7 @@
           "id": "__USER__.network"
         },
         {
-          "id": "__USER__.audio"
+          "id": "ssupt.audio-control"
         },
         {
           "id": "onlyvishesh.power-manager",

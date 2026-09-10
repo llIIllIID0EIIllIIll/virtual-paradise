@@ -114,6 +114,8 @@ The installer configures these applications when available:
 | GitHub Copilot CLI | Omarchy default coding agent |
 | `crmne.hyprmoncfg` | Display & Scaling replacement |
 | `onlyvishesh.power-manager` | Power & Battery replacement |
+| `ssupt.audio-control` | Audio control and PipeWire mixer replacement |
+| `io.github.tyrichards.workspaces-jap` | Japanese numeral workspace indicators |
 | `jankeesvw.notification-center` | Notification center and DND control |
 
 `hyprmoncfg` is installed from AUR as `hyprmoncfg` and the shell plugin is
@@ -137,13 +139,39 @@ omarchy plugin add https://github.com/onlyVishesh/omarchy-power-manager.git --en
 When another theme is selected, the post-theme hook disables the external power
 manager and restores the user's cloned power widget or `omarchy.power`.
 
+`ssupt.audio-control` replaces the cloned `${USER}.audio` widget and is
+installed idempotently from:
+
+```bash
+omarchy plugin add https://github.com/ssupt/omarchy-audio-control.git --enable --yes
+```
+
+When another theme is selected, the hook disables it and restores the cloned
+audio widget or `omarchy.audio`.
+
+`io.github.tyrichards.workspaces-jap` replaces the cloned `${USER}.workspaces`
+widget and is installed idempotently from:
+
+```bash
+omarchy plugin add https://github.com/TyRichards/omarchy-workspaces-jap.git --enable --yes
+```
+
+When another theme is selected, the hook disables it and restores the cloned
+workspace widget or `omarchy.workspaces`.
+
+The Japanese workspace widget is rice-styled by the theme override in
+`overrides/io.github.tyrichards.workspaces-jap/Workspaces.qml`: it keeps the
+Japanese numerals while adding the Virtual Paradise glass dock, accent-colored
+active workspace, green occupied workspace state, hover animation and active
+underline.
+
 Both replacement widgets follow Omarchy's live theme palette instead of using
 fixed icon colors: their bar icons use the active bar foreground, while active
 states and status marks use `Color.accent`. They therefore inherit each
 theme's colors automatically after a theme switch or shell reload.
 
-Virtual Paradise additionally applies a small scoped override to the four
-third-party bar buttons (display, power, webcam and notifications) so their
+Virtual Paradise additionally applies a small scoped override to the five
+third-party bar buttons (display, power, audio, webcam and notifications) so their
 icons use the active `Color.accent` directly.
 This avoids the white `Color.bar.text` fallback used by some Omarchy bar
 configurations while preserving the plugin panels and all other widgets.
