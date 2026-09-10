@@ -38,7 +38,7 @@ Panel {
   readonly property bool warning: pressure >= warningThreshold || metrics.cpuTemperature >= 85 || metrics.gpuTemperature >= 85
   readonly property bool critical: pressure >= criticalThreshold || metrics.cpuTemperature >= 95 || metrics.gpuTemperature >= 95
 
-  readonly property string heroGlyph: "󰻠"
+  readonly property string heroGlyph: "󰍛"
 
   // Package temperature only spans a useful band; drawing 57°C as 57% of a
   // meter makes a cold chip look half-loaded. Anchor the scale at 30°C.
@@ -364,15 +364,17 @@ Panel {
       id: monitorPill
       visible: !root.vertical
       anchors.centerIn: parent
-      width: monitorRow.implicitWidth + Style.space(20)
-      height: Style.space(28)
+      width: monitorRow.implicitWidth + 20
+      height: 28
       radius: height / 2
       color: root.critical ? Qt.rgba(root.urgent.r, root.urgent.g, root.urgent.b, 0.28)
         : root.warning ? Qt.rgba(root.warningColor.r, root.warningColor.g, root.warningColor.b, 0.22)
         : (button.tooltipHovered ? Qt.rgba(root.accent.r, root.accent.g, root.accent.b, 0.18)
           : Qt.rgba(root.accent.r, root.accent.g, root.accent.b, 0.09))
       border.color: root.critical ? root.urgent
-        : root.warning ? root.warningColor : root.accent
+        : root.warning ? root.warningColor
+        : button.tooltipHovered ? root.accent
+        : Qt.rgba(root.accent.r, root.accent.g, root.accent.b, 0.38)
       border.width: root.warning || root.critical || button.tooltipHovered ? 2 : 1
 
       Behavior on color { ColorAnimation { duration: 180 } }
@@ -426,7 +428,7 @@ Panel {
           text: root.heroGlyph
           color: root.critical ? root.urgent : root.warning ? root.warningColor : root.accent
           font.family: root.fontFamily
-          font.pixelSize: Style.font.body + 1
+          font.pixelSize: Style.font.body
           anchors.verticalCenter: parent.verticalCenter
         }
 
@@ -460,15 +462,17 @@ Panel {
     Rectangle {
       id: iconPill
       anchors.centerIn: parent
-      width: iconGlyph.width + Style.space(20)
-      height: Style.space(28)
+      width: iconGlyph.width + 20
+      height: 28
       radius: height / 2
       color: root.critical ? Qt.rgba(root.urgent.r, root.urgent.g, root.urgent.b, 0.28)
         : root.warning ? Qt.rgba(root.warningColor.r, root.warningColor.g, root.warningColor.b, 0.22)
         : (iconButton.tooltipHovered ? Qt.rgba(root.accent.r, root.accent.g, root.accent.b, 0.18)
           : Qt.rgba(root.accent.r, root.accent.g, root.accent.b, 0.09))
       border.color: root.critical ? root.urgent
-        : root.warning ? root.warningColor : root.accent
+        : root.warning ? root.warningColor
+        : iconButton.tooltipHovered ? root.accent
+        : Qt.rgba(root.accent.r, root.accent.g, root.accent.b, 0.38)
       border.width: root.warning || root.critical || iconButton.tooltipHovered ? 2 : 1
       scale: iconButton.tooltipHovered ? 1.08 : 1
 
@@ -520,7 +524,7 @@ Panel {
         text: root.heroGlyph
         color: root.critical ? root.urgent : root.warning ? root.warningColor : root.accent
         font.family: root.fontFamily
-        font.pixelSize: Style.font.body + 1
+        font.pixelSize: Style.font.body
       }
     }
   }
