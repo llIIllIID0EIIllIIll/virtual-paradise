@@ -158,10 +158,11 @@ When another theme is selected, the hook disables it and restores
 `omarchy.memory` if available.
 
 Its bar view is overridden by
-`overrides/harshith.system-monitor/Panel.qml`: the memory label uses the
-Virtual Paradise accent/neon palette, keeps a fixed-width layout, and changes
-to warning/urgent colors only at configured pressure thresholds. The
-dashboard panel remains upstream.
+`overrides/harshith.system-monitor/Panel.qml`: the memory label uses a
+Virtual Paradise glass pill with neon border, glow and hover scaling, while
+warning/urgent colors remain tied to the configured pressure thresholds. The
+popup keeps per-core percentages visible in compact cells and retains the
+upstream metrics dashboard structure.
 
 `onlyvishesh.power-manager` replaces the cloned `${USER}.power` widget in the
 same way. It is installed and enabled idempotently from:

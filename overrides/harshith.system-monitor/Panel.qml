@@ -311,7 +311,7 @@ Panel {
   }
 
   visible: true
-  implicitWidth: iconOnly ? iconButton.implicitWidth : button.implicitWidth
+  implicitWidth: iconOnly ? iconButton.implicitWidth : monitorPill.width + Style.space(6)
   implicitHeight: iconOnly ? iconButton.implicitHeight : button.implicitHeight
 
   onOpenedChanged: {
@@ -350,16 +350,76 @@ Panel {
     anchors.fill: parent
     visible: !root.iconOnly
     bar: root.bar
-    text: root.barLabel()
-    fontSize: Style.font.caption
-    fontFamily: root.fontFamily
-    horizontalMargin: Style.space(7)
-    foreground: root.critical ? root.urgent
-      : root.warning ? root.warningColor : root.accent
-    active: root.warning || root.critical
-    activeColor: root.critical ? root.urgent : root.warningColor
+    text: ""
+    labelVisible: false
+    hasVisualContent: true
+    horizontalMargin: 2
+    verticalPadding: 2
     tooltipText: root.tooltipText()
     onPressed: function(buttonCode) { root.barPressed(buttonCode) }
+
+    Rectangle {
+      id: monitorPill
+      visible: !root.vertical
+      anchors.centerIn: parent
+      width: monitorRow.implicitWidth + Style.space(18)
+      height: Style.space(28)
+      radius: height / 2
+      color: root.critical ? Qt.rgba(root.urgent.r, root.urgent.g, root.urgent.b, 0.28)
+        : root.warning ? Qt.rgba(root.warningColor.r, root.warningColor.g, root.warningColor.b, 0.22)
+        : (button.tooltipHovered ? Qt.rgba(root.accent.r, root.accent.g, root.accent.b, 0.18)
+          : Qt.rgba(root.accent.r, root.accent.g, root.accent.b, 0.09))
+      border.color: root.critical ? root.urgent
+        : root.warning ? root.warningColor : root.accent
+      border.width: root.warning || root.critical || button.tooltipHovered ? 2 : 1
+
+      Behavior on color { ColorAnimation { duration: 180 } }
+      Behavior on border.color { ColorAnimation { duration: 180 } }
+      Behavior on border.width { NumberAnimation { duration: 140 } }
+      Behavior on scale { NumberAnimation { duration: 140; easing.type: Easing.OutCubic } }
+      scale: button.tooltipHovered ? 1.04 : 1
+
+      Rectangle {
+        anchors.fill: parent
+        anchors.margins: -3
+        radius: monitorPill.radius + 3
+        color: "transparent"
+        border.color: root.critical ? root.urgent : root.accent
+        border.width: 2
+        opacity: button.tooltipHovered || root.warning || root.critical ? 0.72 : 0
+
+        Behavior on opacity { NumberAnimation { duration: 180 } }
+        SequentialAnimation on opacity {
+          running: root.warning || root.critical
+          loops: Animation.Infinite
+          NumberAnimation { to: 0.30; duration: 850; easing.type: Easing.InOutQuad }
+          NumberAnimation { to: 0.78; duration: 850; easing.type: Easing.InOutQuad }
+        }
+      }
+
+      Row {
+        id: monitorRow
+        anchors.centerIn: parent
+        spacing: Style.space(5)
+
+        Text {
+          text: root.heroGlyph
+          color: root.critical ? root.urgent : root.warning ? root.warningColor : root.accent
+          font.family: root.fontFamily
+          font.pixelSize: Style.font.body + 1
+          anchors.verticalCenter: parent.verticalCenter
+        }
+
+        Text {
+          text: root.barLabel()
+          color: root.critical ? root.urgent : root.warning ? root.warningColor : Color.foreground
+          font.family: root.fontFamily
+          font.pixelSize: Style.font.body
+          font.bold: true
+          anchors.verticalCenter: parent.verticalCenter
+        }
+      }
+    }
   }
 
   BarIconButton {
@@ -622,7 +682,7 @@ Panel {
                 : 0
               // Numbers only survive down to about four characters; past that
               // the tint carries the reading on its own.
-              readonly property bool showValues: cellWidth >= Style.space(30)
+              readonly property bool showValues: true
 
               Repeater {
                 model: metrics.perCore
@@ -651,10 +711,13 @@ Panel {
                   Text {
                     anchors.centerIn: parent
                     visible: coreStrip.showValues
-                    text: root.percent(coreCell.modelData.percent)
+                    text: Math.round(coreCell.modelData.percent)
                     color: root.foreground
                     font.family: root.fontFamily
-                    font.pixelSize: Style.font.caption
+                    font.pixelSize: Math.max(Style.space(7), Math.min(Style.font.caption, coreStrip.cellWidth * 0.42))
+                    font.bold: true
+                    horizontalAlignment: Text.AlignHCenter
+                    elide: Text.ElideNone
                   }
                 }
               }
