@@ -861,7 +861,6 @@ INSTALL_AND_ENABLE_PLUGINS() {
         RUN_AS_INSTALL_USER omarchy plugin enable "io.github.erikburdett.wavebar" 2>/dev/null || true
       fi
       APPLY_WAVEBAR_RICE
-      RUN_AS_INSTALL_USER omarchy plugin disable "ssupt.audio-control" 2>/dev/null || true
 
       # Workspaces (JAP) replaces the cloned Omarchy workspace widget.
       if ! RUN_AS_INSTALL_USER omarchy plugin list --json 2>/dev/null | jq -e 'any(.[]; .id == "io.github.tyrichards.workspaces-jap")' >/dev/null; then
@@ -938,7 +937,8 @@ if [[ -f "$REPO_DIR/shell/shell.json" ]]; then
     RUN_AS_INSTALL_USER omarchy plugin disable "omarchy.power" 2>/dev/null || true
     RUN_AS_INSTALL_USER omarchy plugin enable "io.github.erikburdett.wavebar" 2>/dev/null || \
       log_warn "Wavebar could not be enabled after shell layout sync."
-    RUN_AS_INSTALL_USER omarchy plugin disable "ssupt.audio-control" 2>/dev/null || true
+    RUN_AS_INSTALL_USER omarchy plugin enable "ssupt.audio-control" 2>/dev/null || \
+      log_warn "audio control could not be enabled after shell layout sync."
     RUN_AS_INSTALL_USER omarchy plugin disable "${CURRENT_USER}.audio" 2>/dev/null || true
     RUN_AS_INSTALL_USER omarchy plugin disable "omarchy.audio" 2>/dev/null || true
     RUN_AS_INSTALL_USER omarchy plugin enable "io.github.tyrichards.workspaces-jap" 2>/dev/null || \
@@ -1286,7 +1286,7 @@ if command -v omarchy >/dev/null 2>&1; then
   omarchy plugin disable "${u}.power" >/dev/null 2>&1 || true
   omarchy plugin disable "omarchy.power" >/dev/null 2>&1 || true
   omarchy plugin enable "io.github.erikburdett.wavebar" >/dev/null 2>&1 || true
-  omarchy plugin disable "ssupt.audio-control" >/dev/null 2>&1 || true
+  omarchy plugin enable "ssupt.audio-control" >/dev/null 2>&1 || true
   omarchy plugin disable "${u}.audio" >/dev/null 2>&1 || true
   omarchy plugin disable "omarchy.audio" >/dev/null 2>&1 || true
   omarchy plugin enable "io.github.tyrichards.workspaces-jap" >/dev/null 2>&1 || true
@@ -1335,7 +1335,7 @@ else
     omarchy plugin disable "onlyvishesh.power-manager" >/dev/null 2>&1 || true
     omarchy plugin enable "${u}.power" >/dev/null 2>&1 || omarchy plugin enable "omarchy.power" >/dev/null 2>&1 || true
     omarchy plugin disable "io.github.erikburdett.wavebar" >/dev/null 2>&1 || true
-    omarchy plugin enable "ssupt.audio-control" >/dev/null 2>&1 || \
+    omarchy plugin disable "ssupt.audio-control" >/dev/null 2>&1 || \
       omarchy plugin enable "${u}.audio" >/dev/null 2>&1 || \
       omarchy plugin enable "omarchy.audio" >/dev/null 2>&1 || true
     omarchy plugin disable "io.github.tyrichards.workspaces-jap" >/dev/null 2>&1 || true
