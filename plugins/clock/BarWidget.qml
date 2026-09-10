@@ -82,7 +82,8 @@ BarWidget {
     if ("hostWidget" in target) target.hostWidget = root
   }
 
-  implicitWidth: root.vertical ? button.implicitWidth : (clockPill.width + 8)
+  implicitWidth: root.vertical ? button.implicitWidth
+    : (clockPill.width + 6 + (button.tooltipHovered ? 4 : 0))
   implicitHeight: button.implicitHeight
 
   onBarChanged: injectPanel()
@@ -149,7 +150,7 @@ BarWidget {
         : (button.tooltipHovered ? Qt.rgba(0.0, 0.96, 0.83, 0.16) : Qt.rgba(0.0, 0.96, 0.83, 0.09))
       border.color: root.opened ? "#00ff88" : (button.tooltipHovered ? "#00f5d4" : Qt.rgba(0.0, 0.96, 0.83, 0.40))
       border.width: root.opened ? 2 : 1
-      scale: button.tooltipHovered ? 1.05 : 1
+      scale: button.tooltipHovered ? 1.04 : 1
 
       Behavior on color { ColorAnimation { duration: 180 } }
       Behavior on border.color { ColorAnimation { duration: 180 } }

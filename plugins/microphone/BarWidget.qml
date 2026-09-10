@@ -25,7 +25,8 @@ BarWidget {
   readonly property bool inUse: activeStreams.length > 0 && !muted
 
   visible: source !== null
-  implicitWidth: 32
+  implicitWidth: root.vertical ? button.implicitWidth
+    : (micPill.width + 6 + (button.tooltipHovered ? 4 : 0))
   implicitHeight: button.implicitHeight
 
   function toggleMute() {
@@ -76,7 +77,7 @@ BarWidget {
           ? (button.tooltipHovered ? "#00ff88" : "#00f5d4")
           : (button.tooltipHovered ? "#ffffff" : Qt.rgba(1.0, 1.0, 1.0, 0.15)))
       border.width: (!root.muted || root.inUse) ? 2 : 1
-      scale: button.tooltipHovered ? 1.05 : 1
+      scale: button.tooltipHovered ? 1.04 : 1
 
       Behavior on color { ColorAnimation { duration: 160 } }
       Behavior on border.color { ColorAnimation { duration: 160 } }

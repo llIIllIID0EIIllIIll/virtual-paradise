@@ -44,7 +44,8 @@ BarWidget {
   }
 
   visible: true
-  implicitWidth: root.vertical ? button.implicitWidth : (tempPill.width + 6)
+  implicitWidth: root.vertical ? button.implicitWidth
+    : (tempPill.width + 6 + (button.tooltipHovered ? 4 : 0))
   implicitHeight: button.implicitHeight
 
   WidgetButton {
@@ -95,7 +96,7 @@ BarWidget {
           ? "#00ff88"
           : (button.tooltipHovered ? "#ffb7d5" : Qt.rgba(1.0, 0.72, 0.84, 0.38)))
       border.width: (root.coolerActive || root.isOverheating) ? 2 : 1
-      scale: button.tooltipHovered ? 1.05 : 1
+      scale: button.tooltipHovered ? 1.04 : 1
 
       Behavior on color { ColorAnimation { duration: 180 } }
       Behavior on border.color { ColorAnimation { duration: 180 } }

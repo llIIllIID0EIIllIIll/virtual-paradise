@@ -44,7 +44,8 @@ BarWidget {
   readonly property string weatherLoc: (panelLoader.item && panelLoader.item.reportLocation !== "") ? panelLoader.item.reportLocation : "Local Weather"
 
   visible: true
-  implicitWidth: root.vertical ? button.implicitWidth : (weatherRow.implicitWidth + 24)
+  implicitWidth: root.vertical ? button.implicitWidth
+    : (weatherPill.width + 6 + (button.tooltipHovered ? 4 : 0))
   implicitHeight: button.implicitHeight
 
   onBarChanged: injectPanel()
@@ -92,7 +93,7 @@ BarWidget {
         : (button.tooltipHovered ? Qt.rgba(1.0, 0.88, 0.40, 0.16) : Qt.rgba(1.0, 0.88, 0.40, 0.09))
       border.color: root.opened ? "#ffe066" : (button.tooltipHovered ? "#ffe066" : Qt.rgba(1.0, 0.88, 0.40, 0.38))
       border.width: root.opened ? 2 : 1
-      scale: button.tooltipHovered ? 1.05 : 1
+      scale: button.tooltipHovered ? 1.04 : 1
 
       Behavior on color { ColorAnimation { duration: 180 } }
       Behavior on border.color { ColorAnimation { duration: 180 } }

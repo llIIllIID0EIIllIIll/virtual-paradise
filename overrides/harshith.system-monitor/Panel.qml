@@ -311,7 +311,9 @@ Panel {
   }
 
   visible: true
-  implicitWidth: iconOnly ? iconPill.width + Style.space(6) : monitorPill.width + Style.space(6)
+  implicitWidth: iconOnly
+    ? iconPill.width + Style.space(6) + (iconButton.tooltipHovered ? Style.space(4) : 0)
+    : monitorPill.width + Style.space(6) + (button.tooltipHovered ? Style.space(4) : 0)
   implicitHeight: iconOnly ? iconButton.implicitHeight : button.implicitHeight
 
   onOpenedChanged: {
