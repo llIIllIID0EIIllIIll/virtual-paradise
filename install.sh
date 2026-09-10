@@ -743,6 +743,14 @@ APPLY_WORKSPACE_JAP_RICE() {
   fi
 }
 
+APPLY_VOXTYPE_AURA_RICE() {
+  local source="$REPO_DIR/overrides/io.github.adamcbrewer.voxtype-aura/Service.qml"
+  local target="$CONFIG_DIR/omarchy/plugins/io.github.adamcbrewer.voxtype-aura/Service.qml"
+  if [[ -f "$source" && -d "$(dirname "$target")" ]]; then
+    cp "$source" "$target"
+  fi
+}
+
 # ------------------------------------------------------------------------------
 # 3. Install & Enable Custom Omarchy Bar Plugins
 # ------------------------------------------------------------------------------
@@ -847,6 +855,15 @@ INSTALL_AND_ENABLE_PLUGINS() {
       RUN_AS_INSTALL_USER omarchy plugin disable "omarchy.workspaces" 2>/dev/null || true
       APPLY_WORKSPACE_JAP_RICE
 
+      # Voxtype Aura provides the themed dictation overlay.
+      if ! RUN_AS_INSTALL_USER omarchy plugin list --json 2>/dev/null | jq -e 'any(.[]; .id == "io.github.adamcbrewer.voxtype-aura")' >/dev/null; then
+        log_sub "Adding Voxtype Aura dictation overlay plugin from git..."
+        RUN_AS_INSTALL_USER omarchy plugin add https://github.com/adamcbrewer/voxtype-aura.git --enable --yes 2>/dev/null || true
+      else
+        RUN_AS_INSTALL_USER omarchy plugin enable "io.github.adamcbrewer.voxtype-aura" 2>/dev/null || true
+      fi
+      APPLY_VOXTYPE_AURA_RICE
+
       # The notification center owns the DND control. Disable a separately
       # installed DND plugin when present, but keep Omarchy's notification
       # service enabled because the new plugin uses it as its backend.
@@ -888,6 +905,7 @@ if [[ -f "$REPO_DIR/shell/shell.json" ]]; then
   if command -v omarchy &>/dev/null; then
     APPLY_EXTERNAL_PLUGIN_THEME_COLORS
     APPLY_WORKSPACE_JAP_RICE
+    APPLY_VOXTYPE_AURA_RICE
     RUN_AS_INSTALL_USER omarchy plugin enable "jankeesvw.notification-center" 2>/dev/null || \
       log_warn "Notification center could not be enabled after shell layout sync."
     RUN_AS_INSTALL_USER omarchy plugin enable "crmne.hyprmoncfg" 2>/dev/null || \
@@ -1227,6 +1245,11 @@ if [[ -f "$HOME/.config/omarchy/themes/virtual-paradise/overrides/io.github.tyri
   cp "$HOME/.config/omarchy/themes/virtual-paradise/overrides/io.github.tyrichards.workspaces-jap/Workspaces.qml" \
     "$HOME/.config/omarchy/plugins/io.github.tyrichards.workspaces-jap/Workspaces.qml"
 fi
+if [[ -f "$HOME/.config/omarchy/themes/virtual-paradise/overrides/io.github.adamcbrewer.voxtype-aura/Service.qml" \
+  && -d "$HOME/.config/omarchy/plugins/io.github.adamcbrewer.voxtype-aura" ]]; then
+  cp "$HOME/.config/omarchy/themes/virtual-paradise/overrides/io.github.adamcbrewer.voxtype-aura/Service.qml" \
+    "$HOME/.config/omarchy/plugins/io.github.adamcbrewer.voxtype-aura/Service.qml"
+fi
 # Use hyprmoncfg in place of the cloned Display & Scaling widget.
 if command -v omarchy >/dev/null 2>&1; then
   u="${USER:-$(id -un)}"
@@ -1242,6 +1265,7 @@ if command -v omarchy >/dev/null 2>&1; then
   omarchy plugin enable "io.github.tyrichards.workspaces-jap" >/dev/null 2>&1 || true
   omarchy plugin disable "${u}.workspaces" >/dev/null 2>&1 || true
   omarchy plugin disable "omarchy.workspaces" >/dev/null 2>&1 || true
+  omarchy plugin enable "io.github.adamcbrewer.voxtype-aura" >/dev/null 2>&1 || true
 fi
 
   # Activate Virtual Paradise Fastfetch config
@@ -1254,8 +1278,13 @@ fi
     if ! cmp -s "$HOME/.config/omarchy/shell-paradise.json" "$HOME/.config/omarchy/shell.json" 2>/dev/null; then
       cp "$HOME/.config/omarchy/shell-paradise.json" "$HOME/.config/omarchy/shell.json"
       omarchy-restart-shell >/dev/null 2>&1 || true
+      sleep 1
     fi
   fi
+
+  # Re-enable the service after a shell layout reload, which can rebuild the
+  # plugin registry from shell.json.
+  omarchy plugin enable "io.github.adamcbrewer.voxtype-aura" >/dev/null 2>&1 || true
 
   # Apply Virtual Paradise GTK styling
   if [[ -f "$HOME/.config/omarchy/themes/virtual-paradise/config/gtk.css" ]]; then
@@ -1282,6 +1311,7 @@ else
     omarchy plugin enable "${u}.audio" >/dev/null 2>&1 || omarchy plugin enable "omarchy.audio" >/dev/null 2>&1 || true
     omarchy plugin disable "io.github.tyrichards.workspaces-jap" >/dev/null 2>&1 || true
     omarchy plugin enable "${u}.workspaces" >/dev/null 2>&1 || omarchy plugin enable "omarchy.workspaces" >/dev/null 2>&1 || true
+    omarchy plugin disable "io.github.adamcbrewer.voxtype-aura" >/dev/null 2>&1 || true
   fi
 
   # Cleanly stop live video wallpaper so new theme background displays properly

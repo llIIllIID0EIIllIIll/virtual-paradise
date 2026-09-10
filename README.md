@@ -116,6 +116,7 @@ The installer configures these applications when available:
 | `onlyvishesh.power-manager` | Power & Battery replacement |
 | `ssupt.audio-control` | Audio control and PipeWire mixer replacement |
 | `io.github.tyrichards.workspaces-jap` | Japanese numeral workspace indicators |
+| `io.github.adamcbrewer.voxtype-aura` | Theme-aware Voxtype dictation overlay |
 | `jankeesvw.notification-center` | Notification center and DND control |
 
 `hyprmoncfg` is installed from AUR as `hyprmoncfg` and the shell plugin is
@@ -164,6 +165,17 @@ The Japanese workspace widget is rice-styled by the theme override in
 Japanese numerals while adding the Virtual Paradise glass dock, accent-colored
 active workspace, green occupied workspace state, hover animation and active
 underline.
+
+`io.github.adamcbrewer.voxtype-aura` is installed idempotently from:
+
+```bash
+omarchy plugin add https://github.com/adamcbrewer/voxtype-aura.git --enable --yes
+```
+
+Its dictation overlay keeps the plugin's recording/transcribing states while
+using Virtual Paradise accent, urgent and green success colors, a stronger
+neon glow, and a wider glass capsule from
+`overrides/io.github.adamcbrewer.voxtype-aura/Service.qml`.
 
 Both replacement widgets follow Omarchy's live theme palette instead of using
 fixed icon colors: their bar icons use the active bar foreground, while active
