@@ -129,7 +129,8 @@ omarchy plugin add https://github.com/crmne/omarchy-hyprmoncfg.git --enable --ye
 
 The theme disables the cloned `${USER}.monitor` and `omarchy.monitor` widgets
 to prevent duplicate display controls. When another theme is selected, the
-post-theme hook disables `crmne.hyprmoncfg` and restores `${USER}.monitor`.
+post-theme hook disables `crmne.hyprmoncfg` and restores `omarchy.monitor` if
+available.
 
 `onlyvishesh.power-manager` replaces the cloned `${USER}.power` widget in the
 same way. It is installed and enabled idempotently from:
@@ -139,7 +140,7 @@ omarchy plugin add https://github.com/onlyVishesh/omarchy-power-manager.git --en
 ```
 
 When another theme is selected, the post-theme hook disables the external power
-manager and restores the user's cloned power widget or `omarchy.power`.
+manager and restores `omarchy.power` if available.
 
 `ssupt.audio-control` replaces the cloned `${USER}.audio` widget and is
 installed idempotently from:
@@ -148,8 +149,8 @@ installed idempotently from:
 omarchy plugin add https://github.com/ssupt/omarchy-audio-control.git --enable --yes
 ```
 
-When another theme is selected, the hook disables it and restores the cloned
-audio widget or `omarchy.audio`.
+When another theme is selected, the hook disables it and restores
+`omarchy.audio` if available.
 
 `io.github.erikburdett.wavebar` replaces the existing center media/Cava widget
 in the Virtual Paradise bar and is installed idempotently from:
@@ -173,8 +174,8 @@ widget and is installed idempotently from:
 omarchy plugin add https://github.com/TyRichards/omarchy-workspaces-jap.git --enable --yes
 ```
 
-When another theme is selected, the hook disables it and restores the cloned
-workspace widget or `omarchy.workspaces`.
+When another theme is selected, the hook disables it and restores
+`omarchy.workspaces` if available.
 
 The Japanese workspace widget is rice-styled by the theme override in
 `overrides/io.github.tyrichards.workspaces-jap/Workspaces.qml`: it keeps the

@@ -764,6 +764,14 @@ APPLY_WAVEBAR_RICE() {
 # ------------------------------------------------------------------------------
 INSTALL_AND_ENABLE_PLUGINS() {
   log_step "3" "$TOTAL_STEPS" "Installing and enabling custom Quickshell plugins for user '$CURRENT_USER'..."
+  # These repo-owned clones were replaced by maintained external plugins.
+  # Remove their installed copies so an install cannot briefly re-enable or
+  # leave stale rice widgets in the plugin registry.
+  local replaced_plugin
+  for replaced_plugin in audio monitor power workspaces media; do
+    RUN_AS_INSTALL_USER omarchy plugin remove "${CURRENT_USER}.${replaced_plugin}" --yes 2>/dev/null || true
+    rm -rf "$CONFIG_DIR/omarchy/plugins/${CURRENT_USER}.${replaced_plugin}"
+  done
   if [[ -d "$REPO_DIR/plugins" ]]; then
     local count=0
     for pdir in "$REPO_DIR"/plugins/*; do
@@ -1335,15 +1343,14 @@ else
   if command -v omarchy >/dev/null 2>&1; then
     u="${USER:-$(id -un)}"
     omarchy plugin disable "crmne.hyprmoncfg" >/dev/null 2>&1 || true
-    omarchy plugin enable "${u}.monitor" >/dev/null 2>&1 || omarchy plugin enable "omarchy.monitor" >/dev/null 2>&1 || true
+    omarchy plugin enable "omarchy.monitor" >/dev/null 2>&1 || true
     omarchy plugin disable "onlyvishesh.power-manager" >/dev/null 2>&1 || true
-    omarchy plugin enable "${u}.power" >/dev/null 2>&1 || omarchy plugin enable "omarchy.power" >/dev/null 2>&1 || true
+    omarchy plugin enable "omarchy.power" >/dev/null 2>&1 || true
     omarchy plugin disable "io.github.erikburdett.wavebar" >/dev/null 2>&1 || true
     omarchy plugin disable "ssupt.audio-control" >/dev/null 2>&1 || \
-      omarchy plugin enable "${u}.audio" >/dev/null 2>&1 || \
       omarchy plugin enable "omarchy.audio" >/dev/null 2>&1 || true
     omarchy plugin disable "io.github.tyrichards.workspaces-jap" >/dev/null 2>&1 || true
-    omarchy plugin enable "${u}.workspaces" >/dev/null 2>&1 || omarchy plugin enable "omarchy.workspaces" >/dev/null 2>&1 || true
+    omarchy plugin enable "omarchy.workspaces" >/dev/null 2>&1 || true
     omarchy plugin disable "io.github.adamcbrewer.voxtype-aura" >/dev/null 2>&1 || true
   fi
 
