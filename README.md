@@ -151,8 +151,8 @@ omarchy plugin add https://github.com/ssupt/omarchy-audio-control.git --enable -
 When another theme is selected, the hook disables it and restores the cloned
 audio widget or `omarchy.audio`.
 
-`io.github.erikburdett.wavebar` replaces the Cava/audio widget in the Virtual
-Paradise bar and is installed idempotently from:
+`io.github.erikburdett.wavebar` replaces the existing center media/Cava widget
+in the Virtual Paradise bar and is installed idempotently from:
 
 ```bash
 omarchy plugin add https://github.com/ErikBurdett/omarchy-wavebar.git --enable --yes
@@ -160,8 +160,9 @@ omarchy plugin add https://github.com/ErikBurdett/omarchy-wavebar.git --enable -
 
 Its waveform and controls are rice-styled with an accent neon capsule,
 accent-colored waveform/actions and a translucent Virtual Paradise background
-through `overrides/io.github.erikburdett.wavebar/BarWidget.qml`. Outside this
-theme, the hook disables Wavebar and restores `ssupt.audio-control` (or the
+through `overrides/io.github.erikburdett.wavebar/BarWidget.qml`. It occupies
+the former `__USER__.media` slot rather than the right-side audio slot. Outside
+this theme, the hook disables Wavebar and restores `ssupt.audio-control` (or the
 cloned/default audio widget).
 
 `io.github.tyrichards.workspaces-jap` replaces the cloned `${USER}.workspaces`

@@ -852,7 +852,8 @@ INSTALL_AND_ENABLE_PLUGINS() {
       RUN_AS_INSTALL_USER omarchy plugin disable "${CURRENT_USER}.audio" 2>/dev/null || true
       RUN_AS_INSTALL_USER omarchy plugin disable "omarchy.audio" 2>/dev/null || true
 
-      # Wavebar replaces the Cava/audio widget in the Virtual Paradise bar.
+      # Wavebar replaces the media/Cava widget in the center of the
+      # Virtual Paradise bar.
       if ! RUN_AS_INSTALL_USER omarchy plugin list --json 2>/dev/null | jq -e 'any(.[]; .id == "io.github.erikburdett.wavebar")' >/dev/null; then
         log_sub "Adding Omarchy Wavebar media widget from git..."
         RUN_AS_INSTALL_USER omarchy plugin add https://github.com/ErikBurdett/omarchy-wavebar.git --enable --yes 2>/dev/null || true

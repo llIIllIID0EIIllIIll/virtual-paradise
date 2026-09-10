@@ -4,7 +4,7 @@
     "layout": {
       "center": [
         {
-          "id": "__USER__.media"
+          "id": "io.github.erikburdett.wavebar"
         },
         {
           "id": "omarchy.spacer"
@@ -75,9 +75,6 @@
         },
         {
           "id": "__USER__.network"
-        },
-        {
-          "id": "io.github.erikburdett.wavebar"
         },
         {
           "id": "onlyvishesh.power-manager",
