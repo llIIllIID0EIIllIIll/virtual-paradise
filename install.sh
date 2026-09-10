@@ -752,10 +752,12 @@ APPLY_VOXTYPE_AURA_RICE() {
 }
 
 APPLY_WAVEBAR_RICE() {
-  local source="$REPO_DIR/overrides/io.github.erikburdett.wavebar/BarWidget.qml"
-  local target="$CONFIG_DIR/omarchy/plugins/io.github.erikburdett.wavebar/BarWidget.qml"
-  if [[ -f "$source" && -d "$(dirname "$target")" ]]; then
-    cp "$source" "$target"
+  local target_dir="$CONFIG_DIR/omarchy/plugins/io.github.erikburdett.wavebar"
+  local source_dir="$REPO_DIR/overrides/io.github.erikburdett.wavebar"
+  if [[ -d "$source_dir" && -d "$target_dir" ]]; then
+    cp "$source_dir/BarWidget.qml" "$target_dir/BarWidget.qml" 2>/dev/null || true
+    [[ -f "$source_dir/Waveform.qml" ]] && cp "$source_dir/Waveform.qml" "$target_dir/Waveform.qml"
+    [[ -f "$source_dir/waveform.py" ]] && cp "$source_dir/waveform.py" "$target_dir/waveform.py" && chmod +x "$target_dir/waveform.py"
   fi
 }
 
@@ -1334,10 +1336,15 @@ if [[ -f "$HOME/.config/omarchy/themes/virtual-paradise/overrides/io.github.adam
   cp "$HOME/.config/omarchy/themes/virtual-paradise/overrides/io.github.adamcbrewer.voxtype-aura/Service.qml" \
     "$HOME/.config/omarchy/plugins/io.github.adamcbrewer.voxtype-aura/Service.qml"
 fi
-if [[ -f "$HOME/.config/omarchy/themes/virtual-paradise/overrides/io.github.erikburdett.wavebar/BarWidget.qml" \
+if [[ -d "$HOME/.config/omarchy/themes/virtual-paradise/overrides/io.github.erikburdett.wavebar" \
   && -d "$HOME/.config/omarchy/plugins/io.github.erikburdett.wavebar" ]]; then
   cp "$HOME/.config/omarchy/themes/virtual-paradise/overrides/io.github.erikburdett.wavebar/BarWidget.qml" \
-    "$HOME/.config/omarchy/plugins/io.github.erikburdett.wavebar/BarWidget.qml"
+    "$HOME/.config/omarchy/plugins/io.github.erikburdett.wavebar/BarWidget.qml" 2>/dev/null || true
+  cp "$HOME/.config/omarchy/themes/virtual-paradise/overrides/io.github.erikburdett.wavebar/Waveform.qml" \
+    "$HOME/.config/omarchy/plugins/io.github.erikburdett.wavebar/Waveform.qml" 2>/dev/null || true
+  cp "$HOME/.config/omarchy/themes/virtual-paradise/overrides/io.github.erikburdett.wavebar/waveform.py" \
+    "$HOME/.config/omarchy/plugins/io.github.erikburdett.wavebar/waveform.py" 2>/dev/null || true
+  chmod +x "$HOME/.config/omarchy/plugins/io.github.erikburdett.wavebar/waveform.py" 2>/dev/null || true
 fi
 if [[ -f "$HOME/.config/omarchy/themes/virtual-paradise/overrides/harshith.system-monitor/Panel.qml" \
   && -d "$HOME/.config/omarchy/plugins/harshith.system-monitor" ]]; then
