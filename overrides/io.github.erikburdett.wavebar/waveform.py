@@ -163,17 +163,16 @@ def waveform_frame(samples: Iterable[int], bars: int, previous: list[float]) -> 
             fft = np.abs(np.fft.rfft(pcm * window))
             freqs = np.fft.rfftfreq(n_samples, 1.0 / SAMPLE_RATE)
 
-            # CAVA frequency range: 50Hz to 5200Hz on logarithmic scale
-            min_freq, max_freq = 50.0, 5200.0
-            edges = np.geomspace(min_freq, max_freq, bars + 1)
-            # High-frequency weighting (equal loudness compensation so treble isn't drowned by bass)
-            weights = np.linspace(1.0, 3.2, bars)
+            # Continuous logarithmic frequency spectrum (CAVA style)
+            # Center frequencies from 55Hz (sub-bass) to 5200Hz (treble)
+            target_freqs = np.geomspace(55.0, 5200.0, bars)
 
-            current_bins: list[float] = []
-            for i in range(bars):
-                mask = (freqs >= edges[i]) & (freqs < edges[i + 1])
-                val = float(np.mean(fft[mask])) if np.any(mask) else 0.0
-                current_bins.append(val * float(weights[i]))
+            # Continuous FFT interpolation - guarantees EVERY bar (including bar 1 & 2) has active signal
+            raw_bins = np.interp(target_freqs, freqs, fft)
+
+            # High-frequency weighting (equal loudness compensation so treble isn't drowned by bass)
+            weights = np.linspace(1.1, 3.4, bars)
+            current_bins = [float(raw_bins[i] * weights[i]) for i in range(bars)]
 
             cur_max = max(current_bins) if current_bins else 1.0
             # Autosens dynamic gain tracking:

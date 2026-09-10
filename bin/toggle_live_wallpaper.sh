@@ -108,7 +108,7 @@ set_live() {
     # Launch mpvpaper hardware accelerated on all monitors (screen is already covered by Glitch)
     killall -9 mpvpaper 2>/dev/null || true
     if command -v mpvpaper &>/dev/null; then
-      setsid -f mpvpaper -vs -o "no-audio loop hwdec=auto-safe --input-ipc-server=$SOCKET_FILE" '*' "$target" >/dev/null 2>&1
+      setsid -f mpvpaper -vs -o "no-audio loop hwdec=auto-safe --load-scripts=no --input-ipc-server=$SOCKET_FILE" '*' "$target" >/dev/null 2>&1
       if [[ "$transition" == "true" ]]; then
         wait_for_mpv_ready &
       else
