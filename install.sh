@@ -759,6 +759,14 @@ APPLY_WAVEBAR_RICE() {
   fi
 }
 
+APPLY_SYSTEM_MONITOR_RICE() {
+  local source="$REPO_DIR/overrides/harshith.system-monitor/Panel.qml"
+  local target="$CONFIG_DIR/omarchy/plugins/harshith.system-monitor/Panel.qml"
+  if [[ -f "$source" && -d "$(dirname "$target")" ]]; then
+    cp "$source" "$target"
+  fi
+}
+
 APPLY_PROJECTOR_COMPATIBILITY() {
   local panel="$CONFIG_DIR/omarchy/plugins/io.github.jeffcortez23.omarchy-projector-cast/Panel.qml"
   if [[ -f "$panel" ]]; then
@@ -856,6 +864,7 @@ INSTALL_AND_ENABLE_PLUGINS() {
       else
         RUN_AS_INSTALL_USER omarchy plugin enable "harshith.system-monitor" 2>/dev/null || true
       fi
+      APPLY_SYSTEM_MONITOR_RICE
       RUN_AS_INSTALL_USER omarchy plugin disable "${CURRENT_USER}.memory" 2>/dev/null || true
       RUN_AS_INSTALL_USER omarchy plugin disable "omarchy.memory" 2>/dev/null || true
 
@@ -897,6 +906,7 @@ INSTALL_AND_ENABLE_PLUGINS() {
         RUN_AS_INSTALL_USER omarchy plugin enable "io.github.erikburdett.wavebar" 2>/dev/null || true
       fi
       APPLY_WAVEBAR_RICE
+      APPLY_SYSTEM_MONITOR_RICE
 
       # Workspaces (JAP) replaces the cloned Omarchy workspace widget.
       if ! RUN_AS_INSTALL_USER omarchy plugin list --json 2>/dev/null | jq -e 'any(.[]; .id == "io.github.tyrichards.workspaces-jap")' >/dev/null; then
@@ -1322,6 +1332,11 @@ if [[ -f "$HOME/.config/omarchy/themes/virtual-paradise/overrides/io.github.erik
   && -d "$HOME/.config/omarchy/plugins/io.github.erikburdett.wavebar" ]]; then
   cp "$HOME/.config/omarchy/themes/virtual-paradise/overrides/io.github.erikburdett.wavebar/BarWidget.qml" \
     "$HOME/.config/omarchy/plugins/io.github.erikburdett.wavebar/BarWidget.qml"
+fi
+if [[ -f "$HOME/.config/omarchy/themes/virtual-paradise/overrides/harshith.system-monitor/Panel.qml" \
+  && -d "$HOME/.config/omarchy/plugins/harshith.system-monitor" ]]; then
+  cp "$HOME/.config/omarchy/themes/virtual-paradise/overrides/harshith.system-monitor/Panel.qml" \
+    "$HOME/.config/omarchy/plugins/harshith.system-monitor/Panel.qml"
 fi
 # Use hyprmoncfg in place of the cloned Display & Scaling widget.
 if command -v omarchy >/dev/null 2>&1; then

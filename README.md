@@ -114,7 +114,7 @@ The installer configures these applications when available:
 | GitHub Copilot CLI | Omarchy default coding agent |
 | `crmne.hyprmoncfg` | Display & Scaling replacement |
 | `io.github.jeffcortez23.omarchy-projector-cast` | Projector and wireless display casting |
-| `harshith.system-monitor` | Memory-focused system monitor replacing the memory widget |
+| `harshith.system-monitor` | Theme-rice system monitor replacing the memory widget |
 | `onlyvishesh.power-manager` | Power & Battery replacement |
 | `ssupt.audio-control` | Audio control and PipeWire mixer replacement |
 | `io.github.erikburdett.wavebar` | Waveform media controller replacing Cava audio bar |
@@ -156,6 +156,12 @@ omarchy plugin add https://github.com/Harshith292002/omarchy-system-monitor.git 
 
 When another theme is selected, the hook disables it and restores
 `omarchy.memory` if available.
+
+Its bar view is overridden by
+`overrides/harshith.system-monitor/Panel.qml`: the memory label uses the
+Virtual Paradise accent/neon palette, keeps a fixed-width layout, and changes
+to warning/urgent colors only at configured pressure thresholds. The
+dashboard panel remains upstream.
 
 `onlyvishesh.power-manager` replaces the cloned `${USER}.power` widget in the
 same way. It is installed and enabled idempotently from:
