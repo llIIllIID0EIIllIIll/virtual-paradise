@@ -152,8 +152,8 @@ log_info() {
 # Banner
 # ------------------------------------------------------------------------------
 if [[ $IS_HOOK -eq 0 ]]; then
-  if command -v python3 &>/dev/null && [[ -f "$REPO_DIR/bin/paradise_agent.py" ]]; then
-    python3 -c "import sys; sys.path.insert(0, '$REPO_DIR/bin'); import paradise_agent; print(paradise_agent.get_banner_art())" 2>/dev/null || true
+  if command -v python3 &>/dev/null && [[ -f "$REPO_DIR/bin/paradise_banner.py" ]]; then
+    python3 "$REPO_DIR/bin/paradise_banner.py" 2>/dev/null || true
   fi
   echo -e "${C_CYAN}===================================================================================================================${C_RESET}"
   echo -e "${C_BOLD}${C_CYAN}  🌸 Virtual☆Paradise${C_RESET} ${C_GREEN}— Cyberpunk Rice & Theme Installer${C_RESET}"
@@ -1070,12 +1070,6 @@ cat << 'EOF' > "$CONFIG_DIR/omarchy/extensions/paradise.json"
     "label": "Cast Screen (SUPER+SHIFT+K)",
     "description": "Wireless Display / Miracast & Chromecast projection",
     "action": "bash -c ~/.local/bin/cast_screen.sh"
-  },
-  "paradise.agent": {
-    "icon": "󰚩",
-    "label": "Paradise Local Agent",
-    "description": "Autonomous offline local AI pair-programmer (Qwen 2.5 Coder)",
-    "action": "bash -c 'for t in ghostty alacritty foot kitty xdg-terminal-exec; do if command -v \"$t\" &>/dev/null; then if [ \"$t\" = \"foot\" ]; then exec foot ~/.local/bin/paradise-agent; else exec \"$t\" -e ~/.local/bin/paradise-agent; fi; fi; done'"
   }
 }
 EOF
@@ -1228,18 +1222,18 @@ rm -f "$LOCAL_BIN/omarchy-agent" \
 
 if [[ -d "$REPO_DIR/bin" ]]; then
   rm -rf "$LOCAL_BIN/__pycache__" 2>/dev/null || true
+  rm -f "$LOCAL_BIN/paradise_agent.py" "$LOCAL_BIN/paradise-agent" "$LOCAL_BIN/offline-agent" 2>/dev/null || true
   rsync -a --exclude='__pycache__' "$REPO_DIR"/bin/ "$LOCAL_BIN/"
   chmod +x "$LOCAL_BIN"/*.sh "$LOCAL_BIN"/*.py "$LOCAL_BIN"/momoisay "$LOCAL_BIN"/momoisay.real 2>/dev/null || true
-  ln -nsf "$LOCAL_BIN/paradise_agent.py" "$LOCAL_BIN/paradise-agent" 2>/dev/null || true
-  ln -nsf "$LOCAL_BIN/paradise_agent.py" "$LOCAL_BIN/offline-agent" 2>/dev/null || true
+  ln -nsf "$LOCAL_BIN/paradise_banner.py" "$LOCAL_BIN/paradise-banner" 2>/dev/null || true
   ln -nsf "$LOCAL_BIN/virtual_matrix.py" "$LOCAL_BIN/virtual_matrix" 2>/dev/null || true
   ln -nsf "$LOCAL_BIN/cast_screen.sh" "$LOCAL_BIN/cast-screen" 2>/dev/null || true
   ln -nsf "$LOCAL_BIN/format-docx-vn.py" "$LOCAL_BIN/format-docx" 2>/dev/null || true
   ln -nsf "$LOCAL_BIN/format-docx-vn.py" "$LOCAL_BIN/vn-docx" 2>/dev/null || true
-  chmod +x "$LOCAL_BIN/sync_cava_theme.py" "$LOCAL_BIN/virtual_matrix.py" "$LOCAL_BIN/cast_screen.sh" "$LOCAL_BIN/format-docx-vn.py" 2>/dev/null || true
+  chmod +x "$LOCAL_BIN/sync_cava_theme.py" "$LOCAL_BIN/virtual_matrix.py" "$LOCAL_BIN/cast_screen.sh" "$LOCAL_BIN/format-docx-vn.py" "$LOCAL_BIN/paradise_banner.py" 2>/dev/null || true
   cp "$REPO_DIR/uninstall.sh" "$LOCAL_BIN/uninstall-virtual-paradise"
   chmod +x "$LOCAL_BIN/uninstall-virtual-paradise"
-  log_sub "Installed helper tools (rice_layout, momoisay, toggle_live_wallpaper, logout_splash, paradise-agent, etc.)"
+  log_sub "Installed helper tools (rice_layout, momoisay, toggle_live_wallpaper, logout_splash, paradise-banner, etc.)"
 fi
 
 # ------------------------------------------------------------------------------
@@ -1551,22 +1545,28 @@ configure_shell_file() {
     echo 'export PATH="$HOME/.local/bin:$PATH"' >> "$file"
   fi
 
-  # Purge any legacy agy alias that shadows official Antigravity CLI
-  sed -i '/alias agy=/d' "$file" 2>/dev/null || true
+  # Purge any legacy agy or paradise-agent aliases
+  sed -i '/alias agy=/d; /alias pa=/d; /alias offline-agent=/d' "$file" 2>/dev/null || true
 
   # Add Virtual Paradise aliases
-  if ! grep -q "paradise-agent" "$file"; then
+  if ! grep -q "paradise_banner" "$file" && ! grep -q "paradise-banner" "$file"; then
     cat << 'EOF' >> "$file"
 
 # ==============================================================================
 #  Virtual☆Paradise Add-on Aliases & Integration
 # ==============================================================================
-alias pa="paradise-agent"
-alias offline-agent="paradise-agent"
+alias banner="$HOME/.local/bin/paradise_banner.py"
 alias rice="$HOME/.local/bin/rice_layout.sh"
 alias matrix="$HOME/.local/bin/virtual_matrix.py"
 alias boost="$HOME/.local/bin/toggle_cooler_boost.sh"
 alias cast="$HOME/.local/bin/cast_screen.sh"
+
+# Run Virtual Paradise Cyberpunk Banner on terminal startup (only in interactive shells)
+if [[ -o interactive ]] 2>/dev/null || [[ "$-" == *i* ]]; then
+  if [[ -z "$VIRTUAL_PARADISE_NO_BANNER" && -x "$HOME/.local/bin/paradise_banner.py" ]]; then
+    "$HOME/.local/bin/paradise_banner.py"
+  fi
+fi
 EOF
   fi
 

@@ -72,7 +72,7 @@ if [[ -d "$REPO_DIR/plugins" ]]; then
 fi
 
 for file in \
-  paradise-agent offline-agent rice_layout.sh rice cast_screen.sh cast-screen \
+  paradise_banner.py paradise-banner paradise-agent offline-agent rice_layout.sh rice cast_screen.sh cast-screen \
   toggle_cooler_boost.sh toggle_live_wallpaper.sh virtual_matrix virtual_matrix.py \
   momoisay sync_cava_theme.py format-docx format-docx-vn.py vn-docx \
   hypr_window_error_shake.sh hypr_window_error_restore.sh logout_splash.qml; do

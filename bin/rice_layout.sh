@@ -144,22 +144,22 @@ LAUNCH_RICE_TERM() {
 # 7. Sequential Launch with Optimized Micro-Delay for Instant Tiling Layout
 # In Hyprland's dwindle tree, sequential launch with a micro-delay (0.08s)
 # creates the exact target 5-pane layout near-instantaneously (~0.35s total).
-# Window 1: Fastfetch + Paradise Agent (Master Left Panel)
+# Window 1: Fastfetch + Paradise Banner (Master Left Panel)
 case "$TERM_BIN" in
   ghostty)
-    setsid -f ghostty --title="fastfetch-agent" -e "$USER_SHELL" -i -c "trap '' INT; printf '\033]0;fastfetch-agent\007'; fastfetch; \"$HOME/.local/bin/paradise-agent\" || true; exec $USER_SHELL -l" >/dev/null 2>&1
+    setsid -f ghostty --title="fastfetch-agent" -e "$USER_SHELL" -i -c "trap '' INT; printf '\033]0;fastfetch-agent\007'; fastfetch; \"$HOME/.local/bin/paradise_banner.py\" || true; exec $USER_SHELL -l" >/dev/null 2>&1
     ;;
   foot)
-    setsid -f foot --title="fastfetch-agent" "$USER_SHELL" -i -c "trap '' INT; printf '\033]0;fastfetch-agent\007'; fastfetch; \"$HOME/.local/bin/paradise-agent\" || true; exec $USER_SHELL -l" >/dev/null 2>&1
+    setsid -f foot --title="fastfetch-agent" "$USER_SHELL" -i -c "trap '' INT; printf '\033]0;fastfetch-agent\007'; fastfetch; \"$HOME/.local/bin/paradise_banner.py\" || true; exec $USER_SHELL -l" >/dev/null 2>&1
     ;;
   alacritty)
-    setsid -f alacritty --title "fastfetch-agent" -e "$USER_SHELL" -i -c "trap '' INT; printf '\033]0;fastfetch-agent\007'; fastfetch; \"$HOME/.local/bin/paradise-agent\" || true; exec $USER_SHELL -l" >/dev/null 2>&1
+    setsid -f alacritty --title "fastfetch-agent" -e "$USER_SHELL" -i -c "trap '' INT; printf '\033]0;fastfetch-agent\007'; fastfetch; \"$HOME/.local/bin/paradise_banner.py\" || true; exec $USER_SHELL -l" >/dev/null 2>&1
     ;;
   kitty)
-    setsid -f kitty --title="fastfetch-agent" "$USER_SHELL" -i -c "trap '' INT; printf '\033]0;fastfetch-agent\007'; fastfetch; \"$HOME/.local/bin/paradise-agent\" || true; exec $USER_SHELL -l" >/dev/null 2>&1
+    setsid -f kitty --title="fastfetch-agent" "$USER_SHELL" -i -c "trap '' INT; printf '\033]0;fastfetch-agent\007'; fastfetch; \"$HOME/.local/bin/paradise_banner.py\" || true; exec $USER_SHELL -l" >/dev/null 2>&1
     ;;
   *)
-    LAUNCH_RICE_TERM "fastfetch-agent" "$USER_SHELL" -i -c "trap '' INT; printf '\033]0;fastfetch-agent\007'; fastfetch; \"$HOME/.local/bin/paradise-agent\" || true; exec $USER_SHELL -l"
+    LAUNCH_RICE_TERM "fastfetch-agent" "$USER_SHELL" -i -c "trap '' INT; printf '\033]0;fastfetch-agent\007'; fastfetch; \"$HOME/.local/bin/paradise_banner.py\" || true; exec $USER_SHELL -l"
     ;;
 esac
 sleep 0.08

@@ -57,30 +57,14 @@ icons also use the active theme accent without changing their panel behavior.
 | `SUPER + ALT + LEFT` | Previous live wallpaper |
 | `SUPER + N` | Next static theme background |
 
-### Local Paradise Agent
+### Cyberpunk ASCII Banner
 
-`paradise-agent` is an Ollama/Qwen local coding and diagnostic assistant. It
-supports file inspection and editing, shell execution, search, health checks,
-session persistence and local skills.
+`paradise_banner.py` is a standalone Cyberpunk ASCII banner display featuring a
+45-degree diagonal RGB gradient (40% Cyan -> 20% Green -> 40% Sakura Pink) that
+dynamically adapts to the active Omarchy theme. It automatically prints whenever
+an interactive terminal session starts.
 
-The agent uses GPU-aware Ollama options by default:
-
-- all available GPU layers (`num_gpu=99`);
-- bounded CPU threads and tuned batch size;
-- compact context handling and shorter tool-call output;
-- internal reasoning hidden by default for a cleaner terminal UI.
-
-Use `/thinking` to toggle reasoning display. Runtime tuning is available with:
-
-```bash
-export PARADISE_AGENT_MODEL=qwen2.5-coder:3b
-export PARADISE_AGENT_NUM_CTX=4096
-export PARADISE_AGENT_NUM_THREADS=8
-export PARADISE_AGENT_NUM_GPU=99
-export PARADISE_AGENT_NUM_BATCH=512
-```
-
-Aliases: `pa` and `offline-agent`.
+Aliases: `banner`.
 
 ### Hardware and GPU integration
 
@@ -343,7 +327,7 @@ Safe local checks used by the project:
 
 ```bash
 bash -n install.sh bin/*.sh
-python3 -m py_compile bin/paradise_agent.py
+python3 -m py_compile bin/paradise_banner.py
 jq empty shell/shell.json
 ./install.sh --hook
 ```
@@ -355,7 +339,7 @@ The media isolation and plugin lifecycle can be smoke-tested with:
 
 ```bash
 bash -n install.sh uninstall.sh bin/*.sh
-python3 -m py_compile bin/paradise_agent.py
+python3 -m py_compile bin/paradise_banner.py
 jq empty shell/shell.json
 git diff --check
 ./install.sh --hook

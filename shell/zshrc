@@ -3003,11 +3003,12 @@ alias up="omarchy-pkg-missing >/dev/null 2>&1 && sudo pacman -Syu || sudo pacman
 alias rice="$HOME/.local/bin/rice_layout.sh"
 alias matrix="$HOME/.local/bin/virtual_matrix.py"
 alias boost="$HOME/.local/bin/toggle_cooler_boost.sh"
-# Omarchy Default Coding Agent (Copilot, Claude, etc.)
-alias a="omarchy-agent --inline"
-alias oagent="omarchy-agent"
-
-# Virtual Paradise Local Offline AI Agent (Qwen 2.5 Coder)
-alias pa="paradise-agent"
-alias offline-agent="paradise-agent"
+alias banner="$HOME/.local/bin/paradise_banner.py"
 export PATH="$HOME/.local/bin:$PATH"
+
+# Run Virtual Paradise Cyberpunk Banner on terminal startup (only in interactive shells)
+if [[ -o interactive ]] && [[ -z "$VIRTUAL_PARADISE_NO_BANNER" ]]; then
+  if [[ -x "$HOME/.local/bin/paradise_banner.py" ]]; then
+    "$HOME/.local/bin/paradise_banner.py"
+  fi
+fi
