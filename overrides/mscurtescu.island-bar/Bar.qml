@@ -1384,11 +1384,11 @@ Item {
     property string islandPos: "center"
     property real islandRadius: 10
 
-    // Deep translucent glass background
+    // Deep translucent glass background matching active theme
     Rectangle {
       anchors.fill: parent
       radius: backdropRoot.islandRadius
-      color: Qt.rgba(7 / 255, 8 / 255, 13 / 255, 0.88)
+      color: Qt.rgba(root.background.r, root.background.g, root.background.b, 0.88)
     }
 
     // Inner subtle glow/gradient wash
@@ -1404,20 +1404,24 @@ Item {
           color: backdropRoot.islandPos === "left"
             ? Qt.rgba(0, 245 / 255, 212 / 255, 0.12)
             : backdropRoot.islandPos === "right"
-              ? Qt.rgba(0, 1.0, 136 / 255, 0.08)
-              : Qt.rgba(0, 245 / 255, 212 / 255, 0.08)
+              ? Qt.rgba(0, 255 / 255, 136 / 255, 0.10)
+              : Qt.rgba(0, 245 / 255, 212 / 255, 0.10)
         }
         GradientStop {
           position: 0.5
-          color: Qt.rgba(0, 1.0, 136 / 255, 0.06)
+          color: backdropRoot.islandPos === "left"
+            ? Qt.rgba(0, 250 / 255, 174 / 255, 0.10)
+            : backdropRoot.islandPos === "right"
+              ? Qt.rgba(128 / 255, 219 / 255, 175 / 255, 0.10)
+              : Qt.rgba(0, 255 / 255, 136 / 255, 0.09)
         }
         GradientStop {
           position: 1.0
-          color: backdropRoot.islandPos === "right"
-            ? Qt.rgba(255 / 255, 183 / 255, 213 / 255, 0.12)
-            : backdropRoot.islandPos === "left"
-              ? Qt.rgba(0, 1.0, 136 / 255, 0.08)
-              : Qt.rgba(255 / 255, 183 / 255, 0.09)
+          color: backdropRoot.islandPos === "left"
+            ? Qt.rgba(0, 255 / 255, 136 / 255, 0.10)
+            : backdropRoot.islandPos === "right"
+              ? Qt.rgba(255 / 255, 183 / 255, 213 / 255, 0.12)
+              : Qt.rgba(255 / 255, 183 / 255, 0.10)
         }
       }
     }
