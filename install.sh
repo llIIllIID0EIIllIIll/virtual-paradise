@@ -692,6 +692,7 @@ APPLY_EXTERNAL_PLUGIN_THEME_COLORS() {
   local webcam_bar="$CONFIG_DIR/omarchy/plugins/io.github.kristoferlund.webcam/BarWidget.qml"
   local notification_panel="$CONFIG_DIR/omarchy/plugins/jankeesvw.notification-center/Panel.qml"
   local audio_panel="$CONFIG_DIR/omarchy/plugins/ssupt.audio-control/Panel.qml"
+  local bluetooth_panel="$CONFIG_DIR/omarchy/plugins/ssupt.bluetooth-audio/Panel.qml"
 
   if [[ -f "$monitor_bar" ]] && ! grep -q "Virtual Paradise theme accent override" "$monitor_bar"; then
     sed -i '/id: button/,/text: root.monitorCount/ {
@@ -732,6 +733,14 @@ APPLY_EXTERNAL_PLUGIN_THEME_COLORS() {
           // Virtual Paradise theme accent override
       s/foreground: root.barForeground/foreground: Color.accent/
     }' "$audio_panel"
+  fi
+
+  if [[ -f "$bluetooth_panel" ]] && ! grep -q "Virtual Paradise theme accent override" "$bluetooth_panel"; then
+    sed -i '/id: button/,/text: root.icon/ {
+      /bar: root.bar/ a\
+    // Virtual Paradise theme accent override\
+    foreground: Color.accent
+    }' "$bluetooth_panel"
   fi
 }
 
