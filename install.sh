@@ -787,7 +787,7 @@ INSTALL_AND_ENABLE_PLUGINS() {
   # Remove their installed copies so an install cannot briefly re-enable or
   # leave stale rice widgets in the plugin registry.
   local replaced_plugin
-  for replaced_plugin in audio monitor power workspaces media memory; do
+  for replaced_plugin in audio bluetooth monitor power workspaces media memory; do
     RUN_AS_INSTALL_USER omarchy plugin remove "${CURRENT_USER}.${replaced_plugin}" --yes 2>/dev/null || true
     rm -rf "$CONFIG_DIR/omarchy/plugins/${CURRENT_USER}.${replaced_plugin}"
   done
@@ -900,6 +900,16 @@ INSTALL_AND_ENABLE_PLUGINS() {
       RUN_AS_INSTALL_USER omarchy plugin disable "${CURRENT_USER}.audio" 2>/dev/null || true
       RUN_AS_INSTALL_USER omarchy plugin disable "omarchy.audio" 2>/dev/null || true
 
+      # Advanced Bluetooth Audio replaces the cloned Bluetooth widget while
+      # retaining its bar position and native device-management behavior.
+      if ! RUN_AS_INSTALL_USER omarchy plugin list --json 2>/dev/null | jq -e 'any(.[]; .id == "ssupt.bluetooth-audio")' >/dev/null; then
+        log_sub "Adding external Omarchy Bluetooth audio plugin from git..."
+        RUN_AS_INSTALL_USER omarchy plugin add https://github.com/ssupt/omarchy-bluetooth-audio.git --enable --yes 2>/dev/null || true
+      else
+        RUN_AS_INSTALL_USER omarchy plugin enable "ssupt.bluetooth-audio" 2>/dev/null || true
+      fi
+      RUN_AS_INSTALL_USER omarchy plugin disable "${CURRENT_USER}.bluetooth" 2>/dev/null || true
+
       # Wavebar replaces the media/Cava widget in the center of the
       # Virtual Paradise bar.
       if ! RUN_AS_INSTALL_USER omarchy plugin list --json 2>/dev/null | jq -e 'any(.[]; .id == "io.github.erikburdett.wavebar")' >/dev/null; then
@@ -1004,6 +1014,9 @@ if [[ -f "$REPO_DIR/shell/shell.json" ]]; then
       log_warn "audio control could not be enabled after shell layout sync."
     RUN_AS_INSTALL_USER omarchy plugin disable "${CURRENT_USER}.audio" 2>/dev/null || true
     RUN_AS_INSTALL_USER omarchy plugin disable "omarchy.audio" 2>/dev/null || true
+    RUN_AS_INSTALL_USER omarchy plugin enable "ssupt.bluetooth-audio" 2>/dev/null || \
+      log_warn "Bluetooth audio could not be enabled after shell layout sync."
+    RUN_AS_INSTALL_USER omarchy plugin disable "${CURRENT_USER}.bluetooth" 2>/dev/null || true
     RUN_AS_INSTALL_USER omarchy plugin enable "io.github.tyrichards.workspaces-jap" 2>/dev/null || \
       log_warn "Japanese workspace plugin could not be enabled after shell layout sync."
     RUN_AS_INSTALL_USER omarchy plugin disable "${CURRENT_USER}.workspaces" 2>/dev/null || true
@@ -1378,6 +1391,8 @@ if command -v omarchy >/dev/null 2>&1; then
   omarchy plugin enable "ssupt.audio-control" >/dev/null 2>&1 || true
   omarchy plugin disable "${u}.audio" >/dev/null 2>&1 || true
   omarchy plugin disable "omarchy.audio" >/dev/null 2>&1 || true
+  omarchy plugin enable "ssupt.bluetooth-audio" >/dev/null 2>&1 || true
+  omarchy plugin disable "${u}.bluetooth" >/dev/null 2>&1 || true
   omarchy plugin enable "io.github.tyrichards.workspaces-jap" >/dev/null 2>&1 || true
   omarchy plugin disable "${u}.workspaces" >/dev/null 2>&1 || true
   omarchy plugin disable "omarchy.workspaces" >/dev/null 2>&1 || true
@@ -1429,6 +1444,8 @@ else
     omarchy plugin disable "io.github.erikburdett.wavebar" >/dev/null 2>&1 || true
     omarchy plugin disable "ssupt.audio-control" >/dev/null 2>&1 || \
       omarchy plugin enable "omarchy.audio" >/dev/null 2>&1 || true
+    omarchy plugin disable "ssupt.bluetooth-audio" >/dev/null 2>&1 || true
+    omarchy plugin enable "omarchy.bluetooth" >/dev/null 2>&1 || true
     omarchy plugin disable "io.github.tyrichards.workspaces-jap" >/dev/null 2>&1 || true
     omarchy plugin enable "omarchy.workspaces" >/dev/null 2>&1 || true
     omarchy plugin disable "io.github.adamcbrewer.voxtype-aura" >/dev/null 2>&1 || true

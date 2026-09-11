@@ -117,6 +117,7 @@ The installer configures these applications when available:
 | `harshith.system-monitor` | Theme-rice system monitor replacing the memory widget |
 | `onlyvishesh.power-manager` | Power & Battery replacement |
 | `ssupt.audio-control` | Audio control and PipeWire mixer replacement |
+| `ssupt.bluetooth-audio` | Bluetooth widget with audio codec and routing controls |
 | `io.github.erikburdett.wavebar` | Waveform media controller replacing Cava audio bar |
 | `io.github.tyrichards.workspaces-jap` | Japanese numeral workspace indicators |
 | `io.github.adamcbrewer.voxtype-aura` | Theme-aware Voxtype dictation overlay |
@@ -183,6 +184,17 @@ omarchy plugin add https://github.com/ssupt/omarchy-audio-control.git --enable -
 
 When another theme is selected, the hook disables it and restores
 `omarchy.audio` if available.
+
+`ssupt.bluetooth-audio` replaces the cloned `${USER}.bluetooth` widget while
+preserving its right-bar position. It adds per-device PipeWire codec selection,
+default output/input routing and remembered connect policies:
+
+```bash
+omarchy plugin add https://github.com/ssupt/omarchy-bluetooth-audio.git --enable --yes
+```
+
+When the theme is changed, the hook disables this plugin and restores
+`omarchy.bluetooth`.
 
 `io.github.erikburdett.wavebar` replaces the existing center media/Cava widget
 in the Virtual Paradise bar and is installed idempotently from:

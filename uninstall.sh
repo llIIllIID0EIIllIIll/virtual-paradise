@@ -98,6 +98,7 @@ if command -v omarchy &>/dev/null; then
   RUN_AS_INSTALL_USER omarchy plugin disable "jankeesvw.notification-center" 2>/dev/null || true
   RUN_AS_INSTALL_USER omarchy plugin disable "onlyvishesh.power-manager" 2>/dev/null || true
   RUN_AS_INSTALL_USER omarchy plugin disable "ssupt.audio-control" 2>/dev/null || true
+  RUN_AS_INSTALL_USER omarchy plugin disable "ssupt.bluetooth-audio" 2>/dev/null || true
   RUN_AS_INSTALL_USER omarchy plugin disable "io.github.erikburdett.wavebar" 2>/dev/null || true
   RUN_AS_INSTALL_USER omarchy plugin disable "io.github.tyrichards.workspaces-jap" 2>/dev/null || true
   RUN_AS_INSTALL_USER omarchy plugin disable "io.github.adamcbrewer.voxtype-aura" 2>/dev/null || true
@@ -105,6 +106,7 @@ if command -v omarchy &>/dev/null; then
   RUN_AS_INSTALL_USER omarchy plugin enable "omarchy.memory" 2>/dev/null || true
   RUN_AS_INSTALL_USER omarchy plugin enable "omarchy.power" 2>/dev/null || true
   RUN_AS_INSTALL_USER omarchy plugin enable "omarchy.audio" 2>/dev/null || true
+  RUN_AS_INSTALL_USER omarchy plugin enable "omarchy.bluetooth" 2>/dev/null || true
   RUN_AS_INSTALL_USER omarchy plugin enable "omarchy.workspaces" 2>/dev/null || true
   RUN_AS_INSTALL_USER omarchy restart shell 2>/dev/null || true
 fi
