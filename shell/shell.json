@@ -68,9 +68,6 @@
           "device": "/dev/video0"
         },
         {
-          "id": "omarchy.agents"
-        },
-        {
           "id": "crmne.hyprmoncfg"
         },
         {
