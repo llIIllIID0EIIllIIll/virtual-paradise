@@ -141,44 +141,139 @@ LAUNCH_RICE_TERM() {
   esac
 }
 
-# 7. Sequential Launch with Optimized Micro-Delay for Instant Tiling Layout
-# In Hyprland's dwindle tree, sequential launch with a micro-delay (0.08s)
-# creates the exact target 5-pane layout near-instantaneously (~0.35s total).
+# 7. Ultra-Fast Event-Driven Sequential Launcher with Auto-Focus
+# To preserve Hyprland dwindle's exact tree layout, each pane splits against
+# the currently focused window. When a user moves their mouse, focus would shift
+# and corrupt the layout.
+# By immediately auto-focusing each newly mapped window via Hyprland's IPC socket2,
+# windows split in the exact deterministic order instantly without requiring
+# sleep delays or being affected by mouse movement.
+
+HYPR_SOCK2="/run/user/${UID:-1000}/hypr/${HYPRLAND_INSTANCE_SIGNATURE}/.socket2.sock"
+
+# Launch and immediately wait for window to map, auto-focusing it
+LAUNCH_AND_FOCUS() {
+  local target_title="$1"
+  shift
+
+  # Connect to socket2 before launching so we never miss the event
+  python3 -c "
+import socket, subprocess, sys, time, os
+
+title = sys.argv[1]
+cmd = sys.argv[2:]
+sock_path = '$HYPR_SOCK2'
+
+s = None
+if os.path.exists(sock_path):
+    try:
+        s = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+        s.connect(sock_path)
+        s.setblocking(False)
+        try:
+            s.recv(8192)
+        except BlockingIOError:
+            pass
+    except Exception:
+        s = None
+
+# Spawn detached terminal
+subprocess.Popen(cmd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, start_new_session=True)
+
+# Wait for openwindow / windowtitle event
+t0 = time.time()
+found_addr = None
+buf = ''
+while s is not None and time.time() - t0 < 0.6:
+    try:
+        data = s.recv(4096).decode('utf-8', errors='ignore')
+        if not data:
+            break
+        buf += data
+        lines = buf.split('\n')
+        buf = lines[-1]
+        for line in lines[:-1]:
+            if line.startswith('openwindow>>') or line.startswith('windowtitlev2>>'):
+                parts = line.split('>>')[1].split(',')
+                # openwindow: address,workspace,class,title
+                # windowtitlev2: address,title
+                if any(title in p for p in parts[1:]):
+                    found_addr = parts[0]
+                    break
+        if found_addr:
+            break
+    except BlockingIOError:
+        time.sleep(0.005)
+
+if s:
+    s.close()
+
+if found_addr:
+    subprocess.run(['hyprctl', 'eval', f'hl.dsp.focus({{ window = \"address:0x{found_addr}\" }})'],
+                   stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+else:
+    time.sleep(0.06)
+    subprocess.run(['hyprctl', 'eval', f'hl.dsp.focus({{ window = \"title:{title}\" }})'],
+                   stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+" "$target_title" "$@"
+}
+
 # Window 1: Fastfetch + Paradise Banner (Master Left Panel)
+# VIRTUAL_PARADISE_NO_BANNER=1 ensures the interactive shell inside doesn't repeat the banner
+MASTER_CMD="trap '' INT; printf '\033]0;fastfetch-agent\007'; fastfetch; \"$HOME/.local/bin/paradise_banner.py\" || true; exec $USER_SHELL -l"
 case "$TERM_BIN" in
   ghostty)
-    setsid -f ghostty --title="fastfetch-agent" -e "$USER_SHELL" -i -c "trap '' INT; printf '\033]0;fastfetch-agent\007'; fastfetch; \"$HOME/.local/bin/paradise_banner.py\" || true; exec $USER_SHELL -l" >/dev/null 2>&1
+    LAUNCH_AND_FOCUS "fastfetch-agent" env VIRTUAL_PARADISE_NO_BANNER=1 ghostty --title="fastfetch-agent" -e "$USER_SHELL" -i -c "$MASTER_CMD"
     ;;
   foot)
-    setsid -f foot --title="fastfetch-agent" "$USER_SHELL" -i -c "trap '' INT; printf '\033]0;fastfetch-agent\007'; fastfetch; \"$HOME/.local/bin/paradise_banner.py\" || true; exec $USER_SHELL -l" >/dev/null 2>&1
+    LAUNCH_AND_FOCUS "fastfetch-agent" env VIRTUAL_PARADISE_NO_BANNER=1 foot --title="fastfetch-agent" "$USER_SHELL" -i -c "$MASTER_CMD"
     ;;
   alacritty)
-    setsid -f alacritty --title "fastfetch-agent" -e "$USER_SHELL" -i -c "trap '' INT; printf '\033]0;fastfetch-agent\007'; fastfetch; \"$HOME/.local/bin/paradise_banner.py\" || true; exec $USER_SHELL -l" >/dev/null 2>&1
+    LAUNCH_AND_FOCUS "fastfetch-agent" env VIRTUAL_PARADISE_NO_BANNER=1 alacritty --title "fastfetch-agent" -e "$USER_SHELL" -i -c "$MASTER_CMD"
     ;;
   kitty)
-    setsid -f kitty --title="fastfetch-agent" "$USER_SHELL" -i -c "trap '' INT; printf '\033]0;fastfetch-agent\007'; fastfetch; \"$HOME/.local/bin/paradise_banner.py\" || true; exec $USER_SHELL -l" >/dev/null 2>&1
+    LAUNCH_AND_FOCUS "fastfetch-agent" env VIRTUAL_PARADISE_NO_BANNER=1 kitty --title="fastfetch-agent" "$USER_SHELL" -i -c "$MASTER_CMD"
     ;;
   *)
-    LAUNCH_RICE_TERM "fastfetch-agent" "$USER_SHELL" -i -c "trap '' INT; printf '\033]0;fastfetch-agent\007'; fastfetch; \"$HOME/.local/bin/paradise_banner.py\" || true; exec $USER_SHELL -l"
+    LAUNCH_AND_FOCUS "fastfetch-agent" env VIRTUAL_PARADISE_NO_BANNER=1 "$TERM_BIN" -e "$USER_SHELL" -i -c "$MASTER_CMD"
     ;;
 esac
-sleep 0.08
 
 # Window 2: btop (Top Right)
-LAUNCH_RICE_TERM "rice-btop" btop
-sleep 0.08
+case "$TERM_BIN" in
+  ghostty)   LAUNCH_AND_FOCUS "rice-btop" ghostty --title="rice-btop" -e btop ;;
+  foot)      LAUNCH_AND_FOCUS "rice-btop" foot --title="rice-btop" btop ;;
+  alacritty) LAUNCH_AND_FOCUS "rice-btop" alacritty --title "rice-btop" -e btop ;;
+  kitty)     LAUNCH_AND_FOCUS "rice-btop" kitty --title="rice-btop" btop ;;
+  *)         LAUNCH_AND_FOCUS "rice-btop" "$TERM_BIN" -e btop ;;
+esac
 
 # Window 3: momoisay (Bottom Right Left - Cute Mascot)
-LAUNCH_RICE_TERM "rice-momoi" "$HOME/.local/bin/momoisay" -f
-sleep 0.08
+case "$TERM_BIN" in
+  ghostty)   LAUNCH_AND_FOCUS "rice-momoi" ghostty --title="rice-momoi" -e "$HOME/.local/bin/momoisay" -f ;;
+  foot)      LAUNCH_AND_FOCUS "rice-momoi" foot --title="rice-momoi" "$HOME/.local/bin/momoisay" -f ;;
+  alacritty) LAUNCH_AND_FOCUS "rice-momoi" alacritty --title "rice-momoi" -e "$HOME/.local/bin/momoisay" -f ;;
+  kitty)     LAUNCH_AND_FOCUS "rice-momoi" kitty --title="rice-momoi" "$HOME/.local/bin/momoisay" -f ;;
+  *)         LAUNCH_AND_FOCUS "rice-momoi" "$TERM_BIN" -e "$HOME/.local/bin/momoisay" -f ;;
+esac
 
 # Window 4: cava (Bottom Right Right Top - Audio Visualizer)
-LAUNCH_RICE_TERM "rice-cava" cava
-sleep 0.08
+case "$TERM_BIN" in
+  ghostty)   LAUNCH_AND_FOCUS "rice-cava" ghostty --title="rice-cava" -e cava ;;
+  foot)      LAUNCH_AND_FOCUS "rice-cava" foot --title="rice-cava" cava ;;
+  alacritty) LAUNCH_AND_FOCUS "rice-cava" alacritty --title "rice-cava" -e cava ;;
+  kitty)     LAUNCH_AND_FOCUS "rice-cava" kitty --title="rice-cava" cava ;;
+  *)         LAUNCH_AND_FOCUS "rice-cava" "$TERM_BIN" -e cava ;;
+esac
 
 # Window 5: unimatrix / virtual_matrix (Bottom Right Right Bottom - Tri-color Cyber Matrix)
-LAUNCH_RICE_TERM "rice-matrix" "$HOME/.local/bin/virtual_matrix" -a -f -s 50 -l k -u "☆★✦✧"
+case "$TERM_BIN" in
+  ghostty)   LAUNCH_AND_FOCUS "rice-matrix" ghostty --title="rice-matrix" -e "$HOME/.local/bin/virtual_matrix" -a -f -s 50 -l k -u "☆★✦✧" ;;
+  foot)      LAUNCH_AND_FOCUS "rice-matrix" foot --title="rice-matrix" "$HOME/.local/bin/virtual_matrix" -a -f -s 50 -l k -u "☆★✦✧" ;;
+  alacritty) LAUNCH_AND_FOCUS "rice-matrix" alacritty --title "rice-matrix" -e "$HOME/.local/bin/virtual_matrix" -a -f -s 50 -l k -u "☆★✦✧" ;;
+  kitty)     LAUNCH_AND_FOCUS "rice-matrix" kitty --title="rice-matrix" "$HOME/.local/bin/virtual_matrix" -a -f -s 50 -l k -u "☆★✦✧" ;;
+  *)         LAUNCH_AND_FOCUS "rice-matrix" "$TERM_BIN" -e "$HOME/.local/bin/virtual_matrix" -a -f -s 50 -l k -u "☆★✦✧" ;;
+esac
 
-# 8. Return Focus to Master Terminal (Paradise Agent)
-sleep 0.15
-hyprctl dispatch "hl.dsp.focus({ window = \"title:fastfetch-agent\" })" 2>/dev/null || true
+# 8. Return Focus to Master Terminal
+hyprctl eval 'hl.dsp.focus({ window = "title:fastfetch-agent" })' >/dev/null 2>&1 || true
