@@ -1,4 +1,6 @@
 import QtQuick
+import Quickshell
+import Quickshell.Io
 import qs.Commons
 import qs.Ui
 
@@ -33,6 +35,12 @@ BarWidget {
     if (panelLoader.item && panelLoader.item.close) panelLoader.item.close()
   }
 
+  function editLocation() {
+    if (!panelLoader.item) return
+    panelLoader.item.openFromHotkey()
+    panelLoader.item.startEditingLocation()
+  }
+
   readonly property bool popoutSwitchClosing: panelLoader.item ? panelLoader.item.popoutSwitchClosing === true : false
 
   function closeForPopoutSwitch() {
@@ -60,6 +68,23 @@ BarWidget {
       root.injectPanel()
       Qt.callLater(root.injectPanel)
     }
+  }
+
+  // A panel is loaded for each bar surface. Keeping its IpcHandler inside the
+  // panel therefore registers the same target repeatedly during reloads and
+  // can leave the popout coordinator pointing at a destroyed instance. Match
+  // the clock widget: the bar host owns the IPC route and relays refreshes to
+  // every monitor, while each loaded panel only owns its presentation.
+  IpcHandler {
+    target: "__USER__.weather"
+
+    function refresh(): void { root.broadcast("refresh") }
+    function open(): void { root.open() }
+    function close(): void { root.close() }
+    function show(): void { root.open() }
+    function hide(): void { root.close() }
+    function toggle(): void { root.togglePanel() }
+    function edit(): void { root.editLocation() }
   }
 
   WidgetButton {

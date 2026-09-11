@@ -8,7 +8,6 @@ import "Model.js" as Model
 Panel {
   id: root
   moduleName: "__USER__.weather"
-  ipcTarget: "__USER__.weather"
   manageIpc: false
 
   property var anchorItem: null
@@ -471,17 +470,6 @@ Panel {
     repeat: true
     triggeredOnStart: true
     onTriggered: root.refresh()
-  }
-
-  IpcHandler {
-    target: root.ipcTarget
-
-    function open(): void { root.openFromHotkey() }
-    function close(): void { root.close() }
-    function show(): void { root.openFromHotkey() }
-    function hide(): void { root.close() }
-    function toggle(): void { root.toggle() }
-    function edit(): void { root.openFromHotkey(); root.startEditingLocation() }
   }
 
   KeyboardPanel {

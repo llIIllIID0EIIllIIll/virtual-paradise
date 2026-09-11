@@ -108,7 +108,7 @@ BarWidget {
               : (wsBtn.tooltipHovered
                 ? (root.bar ? root.bar.barForeground : Color.foreground)
                 : (wsBtn.occupied
-                  ? Color.green
+                  ? "#00ff88"
                   : Qt.darker(root.bar ? root.bar.barForeground : Color.foreground, 1.8)))
             font.family: root.bar ? root.bar.fontFamily : Style.font.family
             font.pixelSize: wsBtn.focused ? Style.font.body : Style.font.caption
