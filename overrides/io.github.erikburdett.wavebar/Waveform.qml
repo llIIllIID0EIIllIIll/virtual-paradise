@@ -112,12 +112,12 @@ Item {
         }
       }
 
-      // Attack: instant (0ms), decay: ~1 frame @ 60fps = 14ms — crisp, not laggy
-      // Idle state uses slower ease for smooth breathing
+      // Python EMA already smooths the data — QML behavior only covers pipe jitter.
+      // 6ms live: sub-frame jitter absorption. 80ms idle: natural breathing ease.
       Behavior on targetHeight {
         NumberAnimation {
-          duration: root.live ? 14 : 80
-          easing.type: root.live ? Easing.OutQuart : Easing.InOutSine
+          duration: root.live ? 6 : 80
+          easing.type: root.live ? Easing.Linear : Easing.InOutSine
         }
       }
       Behavior on opacity { NumberAnimation { duration: 120 } }
