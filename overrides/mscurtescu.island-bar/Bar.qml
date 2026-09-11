@@ -1384,14 +1384,15 @@ Item {
     property string islandPos: "center"
     property real islandRadius: 10
 
-    // Deep translucent glass background matching active theme
+    // Deep Dark Purple frosted glass background
     Rectangle {
       anchors.fill: parent
       radius: backdropRoot.islandRadius
-      color: Qt.rgba(root.background.r, root.background.g, root.background.b, 0.88)
+      color: "#0f081d"
+      opacity: 0.90
     }
 
-    // Inner subtle glow/gradient wash
+    // Ambient Cyber Violet / Neon Dark Purple inner glow
     Rectangle {
       anchors.fill: parent
       anchors.margins: 1
@@ -1401,27 +1402,15 @@ Item {
         orientation: root.vertical ? Gradient.Vertical : Gradient.Horizontal
         GradientStop {
           position: 0.0
-          color: backdropRoot.islandPos === "left"
-            ? Qt.rgba(0, 245 / 255, 212 / 255, 0.12)
-            : backdropRoot.islandPos === "right"
-              ? Qt.rgba(0, 255 / 255, 136 / 255, 0.10)
-              : Qt.rgba(0, 245 / 255, 212 / 255, 0.10)
+          color: Qt.rgba(64 / 255, 16 / 255, 112 / 255, 0.40)
         }
         GradientStop {
           position: 0.5
-          color: backdropRoot.islandPos === "left"
-            ? Qt.rgba(0, 250 / 255, 174 / 255, 0.10)
-            : backdropRoot.islandPos === "right"
-              ? Qt.rgba(128 / 255, 219 / 255, 175 / 255, 0.10)
-              : Qt.rgba(0, 255 / 255, 136 / 255, 0.09)
+          color: Qt.rgba(40 / 255, 10 / 255, 80 / 255, 0.28)
         }
         GradientStop {
           position: 1.0
-          color: backdropRoot.islandPos === "left"
-            ? Qt.rgba(0, 255 / 255, 136 / 255, 0.10)
-            : backdropRoot.islandPos === "right"
-              ? Qt.rgba(255 / 255, 183 / 255, 213 / 255, 0.12)
-              : Qt.rgba(255 / 255, 183 / 255, 0.10)
+          color: Qt.rgba(88 / 255, 20 / 255, 130 / 255, 0.42)
         }
       }
     }
@@ -1432,7 +1421,7 @@ Item {
       radius: backdropRoot.islandRadius
       borderSpec: ({
         color: "#00f5d4",
-        widths: { top: 1.5, right: 1.5, bottom: 1.5, left: 1.5 },
+        widths: { top: 1.8, right: 1.8, bottom: 1.8, left: 1.8 },
         gradient: {
           enabled: true,
           angle: root.vertical ? 90 : 0,
