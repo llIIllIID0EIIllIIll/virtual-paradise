@@ -5,9 +5,9 @@ var MAX_METADATA_LENGTH = 192
 var MAX_IDENTITY_LENGTH = 96
 var MAX_KEY_LENGTH = 256
 var MAX_NODE_LENGTH = 256
-var MAX_FRAME_CHARS = 384
-var MAX_RAW_CHUNK_CHARS = 4096
-var MAX_FRAMES_PER_CHUNK = 32
+var MAX_FRAME_CHARS = 512
+var MAX_RAW_CHUNK_CHARS = 65536
+var MAX_FRAMES_PER_CHUNK = 512
 
 function boundedText(value, maxLength) {
   var limit = Math.max(0, Math.min(2048, Math.floor(Number(maxLength) || MAX_METADATA_LENGTH)))
@@ -500,25 +500,26 @@ function parseFrame(line, count) {
 function frameChunk(remainder, incoming) {
   var prefix = String(remainder || "")
   var chunk = String(incoming || "")
-  if (prefix.length > MAX_FRAME_CHARS || chunk.length > MAX_RAW_CHUNK_CHARS)
-    return { ok: false, frames: [], remainder: "" }
+  if (prefix.length > MAX_FRAME_CHARS) prefix = ""
+  if (chunk.length > MAX_RAW_CHUNK_CHARS) {
+    chunk = chunk.slice(-MAX_RAW_CHUNK_CHARS)
+  }
 
   var data = prefix + chunk
   var frames = []
   var start = 0
   for (var i = 0; i < data.length; i++) {
     if (data.charCodeAt(i) !== 10) continue
-    if (frames.length >= MAX_FRAMES_PER_CHUNK || i - start > MAX_FRAME_CHARS)
-      return { ok: false, frames: [], remainder: "" }
     var line = data.slice(start, i)
     if (line.endsWith("\r")) line = line.slice(0, -1)
-    frames.push(line)
+    if (line.length > 0 && line.length <= MAX_FRAME_CHARS) {
+      frames.push(line)
+    }
     start = i + 1
   }
 
   var tail = data.slice(start)
-  if (tail.length > MAX_FRAME_CHARS)
-    return { ok: false, frames: [], remainder: "" }
+  if (tail.length > MAX_FRAME_CHARS) tail = ""
   return { ok: true, frames: frames, remainder: tail }
 }
 
