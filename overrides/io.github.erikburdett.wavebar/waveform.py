@@ -45,7 +45,7 @@ FPS = 60
 PYTHON_PATH = "/usr/bin/python3"
 PW_RECORD_PATH = "/usr/bin/pw-record"
 MAX_TARGET_BYTES = 256
-MAX_FRAME_BYTES = 384
+MAX_FRAME_BYTES = 512
 TERM_TIMEOUT = 1.0
 PARENT_GONE_EXIT = 125
 PR_SET_PDEATHSIG = 1
@@ -150,56 +150,77 @@ _HOP: int = 0        # samples per frame (SAMPLE_RATE // FPS), set on first call
 _FFT_SIZE: int = 0   # ring buffer length = HOP * 4
 
 # Pre-computed per-FFT-size constants (cached once, reused every frame)
-_ring_buf: "collections.deque[float] | None" = None
+_ring_buf: "np.ndarray | None" = None
 _np_window: "np.ndarray | None" = None
-_np_freqs: "np.ndarray | None" = None
-_np_target_freqs: "np.ndarray | None" = None
+_bar_bin_ranges: "list[tuple[int, int]] | None" = None
 _np_weights: "np.ndarray | None" = None
 
 # CAVA-style EMA smoothing: instant attack, gravity fall
-# alpha values are per-frame (at 60fps).
-#   EMA_ATTACK = 0.80 → bar jumps to ~80% of target in 1 frame  (crisp hit)
-#   EMA_DECAY  = 0.28 → bar falls to ~28% of target in 1 frame  (gravity feel)
-EMA_ATTACK: float = 0.80
-EMA_DECAY: float = 0.28
+#   EMA_ATTACK = 0.85 → bar jumps to ~85% of target in 1 frame (crisp hit)
+#   EMA_DECAY  = 0.18 → bar falls smoothly with natural mass/gravity
+EMA_ATTACK: float = 0.85
+EMA_DECAY: float = 0.18
 
 # Smoothed bars state (persistent across frames, like CAVA's running average)
 _ema_state: "np.ndarray | None" = None
 
-# Rolling peak tracker for autosensitivity (like CAVA autosens)
-_peak_tracker: float = 8000.0
+# Rolling peak tracker for autosensitivity (slow decay, stable baseline)
+_peak_tracker: float = 5000.0
 
 
 def _ensure_cava_cache(hop: int, bars: int) -> None:
     """Build or rebuild all numpy pre-computations when frame size changes."""
-    global _HOP, _FFT_SIZE, _ring_buf, _np_window, _np_freqs
-    global _np_target_freqs, _np_weights, _ema_state
+    global _HOP, _FFT_SIZE, _ring_buf, _np_window
+    global _bar_bin_ranges, _np_weights, _ema_state
     fft_size = hop * 4   # 75% overlap = 4× window-to-hop ratio
-    if _FFT_SIZE == fft_size and _ring_buf is not None:
+    if _FFT_SIZE == fft_size and _ring_buf is not None and len(_bar_bin_ranges or []) == bars:
         return
     if np is None:
         return
     _HOP = hop
     _FFT_SIZE = fft_size
-    _ring_buf = collections.deque([0.0] * fft_size, maxlen=fft_size)
+    _ring_buf = np.zeros(fft_size, dtype=np.float32)
     # Hann window for spectral leakage suppression
     _np_window = np.hanning(fft_size).astype(np.float32)
-    _np_freqs = np.fft.rfftfreq(fft_size, 1.0 / SAMPLE_RATE).astype(np.float32)
-    # Logarithmic centre frequencies: 55 Hz (sub-bass) → 5200 Hz (treble)
-    _np_target_freqs = np.geomspace(55.0, 5200.0, bars).astype(np.float32)
-    # Equal-loudness tilt: treble bars get progressively more gain
-    _np_weights = np.linspace(1.1, 3.4, bars).astype(np.float32)
+    df = SAMPLE_RATE / fft_size  # Hz per bin
+
+    # Logarithmic frequency cutoffs: 45 Hz (deep bass) → 5800 Hz (treble)
+    freq_cutoffs = np.geomspace(45.0, 5800.0, bars + 1)
+    ranges = []
+    max_bin = fft_size // 2
+    for i in range(bars):
+        start_bin = min(max_bin, int(freq_cutoffs[i] / df))
+        end_bin = min(max_bin + 1, max(start_bin + 1, int(np.ceil(freq_cutoffs[i + 1] / df))))
+        ranges.append((start_bin, end_bin))
+    _bar_bin_ranges = ranges
+
+    # Equal-loudness tilt: gradual gain boost for higher frequencies
+    _np_weights = np.linspace(1.1, 3.2, bars).astype(np.float32)
     _ema_state = np.zeros(bars, dtype=np.float32)
+
+
+def _apply_monstercat(bins: np.ndarray) -> np.ndarray:
+    """CAVA Monstercat spatial filter across adjacent bars.
+    Blends neighboring bins so the spectrum forms a smooth, cohesive wave.
+    """
+    if len(bins) < 3:
+        return bins
+    res = np.copy(bins)
+    for _ in range(2):
+        prev = np.copy(res)
+        res[0] = 0.82 * prev[0] + 0.18 * prev[1]
+        res[1:-1] = 0.16 * prev[:-2] + 0.68 * prev[1:-1] + 0.16 * prev[2:]
+        res[-1] = 0.18 * prev[-2] + 0.82 * prev[-1]
+    return res
 
 
 def waveform_frame(samples: Iterable[int], bars: int, previous: list[float]) -> list[float]:
     """Return a list of *bars* float values in [0, 1] representing the spectrum.
 
-    Uses a 75%-overlap ring-buffer FFT (CAVA style) with asymmetric EMA smoothing:
-      - Attack: fast blend (0.80) so beats hit immediately
-      - Decay : slow gravity (0.28) so bars fall with natural weight
+    Uses a 75%-overlap ring-buffer FFT (CAVA style) with Monstercat filter
+    and asymmetric EMA smoothing (instant attack, gravity fall).
     """
-    global _peak_tracker, _ema_state
+    global _peak_tracker, _ema_state, _ring_buf
     values = list(samples)
     hop = max(bars, SAMPLE_RATE // FPS)
 
@@ -209,7 +230,7 @@ def waveform_frame(samples: Iterable[int], bars: int, previous: list[float]) -> 
     # No new samples → apply decay to current EMA state
     if not values:
         if np is not None and _ema_state is not None:
-            _ema_state = _ema_state * (1.0 - EMA_DECAY)   # vectorized gravity fall
+            _ema_state = _ema_state * 0.80   # vectorized gravity fall
             return _ema_state.tolist()
         return [v * 0.72 for v in previous]
 
@@ -219,38 +240,53 @@ def waveform_frame(samples: Iterable[int], bars: int, previous: list[float]) -> 
             _ensure_cava_cache(hop, bars)
             assert _ring_buf is not None
             assert _np_window is not None
-            assert _np_freqs is not None
-            assert _np_target_freqs is not None
+            assert _bar_bin_ranges is not None
             assert _np_weights is not None
             assert _ema_state is not None
 
-            # Push new hop into the ring; ring always holds 4×HOP = 75% old audio
-            _ring_buf.extend(
-                np.frombuffer(bytes(array.array("h", values)), dtype=np.int16)
-                .astype(np.float32)
-                .tolist()
-            )
+            # Fast rolling ring buffer (pure NumPy, zero list allocations)
+            new_samples = np.frombuffer(bytes(array.array("h", values)), dtype=np.int16).astype(np.float32)
+            if len(new_samples) >= hop:
+                _ring_buf = np.roll(_ring_buf, -hop)
+                _ring_buf[-hop:] = new_samples[:hop]
+            else:
+                n = len(new_samples)
+                _ring_buf = np.roll(_ring_buf, -n)
+                _ring_buf[-n:] = new_samples
 
-            # FFT on the full overlapping window — smoother than per-hop FFT
-            pcm = np.array(_ring_buf, dtype=np.float32)
-            fft = np.abs(np.fft.rfft(pcm * _np_window))
+            # Full 4×HOP windowed FFT
+            fft = np.abs(np.fft.rfft(_ring_buf * _np_window))
 
-            # Map FFT to log-spaced bars with equal-loudness weighting
-            raw_bins = np.interp(_np_target_freqs, _np_freqs, fft) * _np_weights
+            # Full frequency bin integration for each bar
+            raw_bins = np.empty(bars, dtype=np.float32)
+            for i, (s, e) in enumerate(_bar_bin_ranges):
+                raw_bins[i] = np.max(fft[s:e])
+            raw_bins *= _np_weights
 
-            # Autosens peak tracking
+            # CAVA Monstercat spatial smoothing
+            raw_bins = _apply_monstercat(raw_bins)
+
             cur_max = float(raw_bins.max())
-            _peak_tracker = max(_peak_tracker * 0.95, cur_max, 4000.0)
 
-            # Power-curve compression (punch)
-            norm = np.clip((raw_bins / _peak_tracker) ** 0.62, 0.0, 1.0)
+            # Soft noise gate for silence / between tracks
+            if cur_max < 200.0:
+                _ema_state = _ema_state * 0.75
+                if np.all(_ema_state < 0.005):
+                    _ema_state[:] = 0.0
+                return _ema_state.tolist()
 
-            # Asymmetric EMA: fast attack on rising bars, slow gravity on falling bars
+            # Autosens peak tracking (slow decay = stable baseline)
+            _peak_tracker = max(_peak_tracker * 0.995, cur_max, 3500.0)
+
+            # Power-curve compression (punchy response)
+            norm = np.clip((raw_bins / _peak_tracker) ** 0.65, 0.0, 1.0)
+
+            # Asymmetric EMA: fast attack on rising bars, gravity fall on decaying bars
             rising = norm > _ema_state
             _ema_state = np.where(
                 rising,
                 EMA_ATTACK * norm + (1.0 - EMA_ATTACK) * _ema_state,  # fast hit
-                EMA_DECAY  * norm + (1.0 - EMA_DECAY)  * _ema_state,  # gravity fall
+                _ema_state * (1.0 - EMA_DECAY) + norm * EMA_DECAY,    # smooth gravity fall
             )
             return _ema_state.tolist()
         except Exception:

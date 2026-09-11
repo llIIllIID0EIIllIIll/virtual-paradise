@@ -7,7 +7,17 @@ BarWidget {
   id: root
   moduleName: "io.github.erikburdett.wavebar"
 
-  readonly property var waveformService: bar && bar.shell ? bar.shell.serviceFor(moduleName) : null
+  // First-party Omarchy bar exposes a service-capable shell to each widget.
+  // Third-party replacement bars (island-bar) only get a service-less facade, so
+  // `serviceFor(wavebar)` is always null there even while the host service is
+  // live — which left this pill stuck on idle/"Nothing playing". Fall back to
+  // an embedded Service instance when the bar cannot lend us ours.
+  readonly property var hostedService: bar && bar.shell
+    ? bar.shell.serviceFor(moduleName) : null
+  readonly property bool needsLocalService: !hostedService
+  readonly property var waveformService: hostedService
+    || (localServiceLoader.status === Loader.Ready ? localServiceLoader.item : null)
+
   readonly property var activePlayer: waveformService ? waveformService.activePlayer : null
   readonly property bool hasMedia: waveformService ? waveformService.hasMedia : false
   readonly property bool playing: waveformService ? waveformService.playing : false
@@ -63,9 +73,27 @@ BarWidget {
     return !!(player.canTogglePlaying || player.canPlay || player.canPause)
   }
 
+  function meaningfulTitle(value) {
+    var title = String(value || "")
+    if (!title) return ""
+    if (/^[\s\u3164\u115f\u1160\u200b\u00a0_]+$/.test(title)) return ""
+    return title
+  }
+
   onBarChanged: injectPanel()
   onSettingsChanged: injectPanel()
   onWaveformServiceChanged: injectPanel()
+
+  Loader {
+    id: localServiceLoader
+    active: root.needsLocalService
+    asynchronous: false
+    source: Qt.resolvedUrl("Service.qml")
+    onLoaded: {
+      root.injectPanel()
+      Qt.callLater(root.injectPanel)
+    }
+  }
 
   Loader {
     id: panelLoader
@@ -88,11 +116,19 @@ BarWidget {
     hasVisualContent: true
     horizontalMargin: 2
     verticalPadding: 2
-    tooltipText: (root.waveformService && root.hasMedia && root.waveformService.title)
-      ? (root.waveformService.title
+    tooltipText: {
+      var title = root.meaningfulTitle(root.waveformService ? root.waveformService.title : "")
+      if (root.waveformService && root.hasMedia && title) {
+        return title
           + (root.waveformService.artist ? " — " + root.waveformService.artist : "")
-          + "\nLeft: Open Player | Scroll: Prev/Next")
-      : "No media\nLeft: Open Player"
+          + "\nLeft: Open Player | Scroll: Prev/Next"
+      }
+      if (root.playing || root.hasMedia)
+        return (root.waveformService && root.waveformService.identity
+          ? root.waveformService.identity : "Playing")
+          + "\nLeft: Open Player | Scroll: Prev/Next"
+      return "Waveform\nLeft: Open Player"
+    }
 
     onPressed: function(b) {
       root.toggle()
@@ -176,7 +212,7 @@ BarWidget {
 
         // Prev button (shown left of waveform when !groupControls)
         Item {
-          visible: root.showControls && !root.groupControls
+          visible: root.showControls && !root.groupControls && root.hasMedia
           width: visible ? prevLeftBtn.implicitWidth : 0
           height: 18
           anchors.verticalCenter: parent.verticalCenter
@@ -202,6 +238,7 @@ BarWidget {
           height: 18
           barCount: Math.min(48, Math.max(10, Math.round(width / 4)))
           samples: root.waveformService ? root.waveformService.samples : []
+          frameSerial: root.waveformService ? root.waveformService.frameSerial : 0
           active: root.playing
           live: root.waveformService ? root.waveformService.receivingFrames : false
           foreground: root.playing ? "#00f5d4" : "#ad88ff"
@@ -224,9 +261,10 @@ BarWidget {
           }
         }
 
-        // Track title
+        // Track title — only when a real source is selected (never show "No media")
         Item {
-          visible: root.showTitle && !root.vertical
+          visible: root.showTitle && !root.vertical && root.hasMedia
+            && root.meaningfulTitle(root.waveformService ? root.waveformService.title : "") !== ""
           width: visible ? (root.showFullTitle
             ? titleText.implicitWidth
             : Math.min(root.maxTitleWidth, titleText.implicitWidth)) : 0
@@ -239,14 +277,12 @@ BarWidget {
             width: parent.width
             height: implicitHeight
             text: {
-              if (root.waveformService && root.hasMedia && root.waveformService.title) {
-                var title = root.waveformService.title || ""
-                if (root.showArtist && root.waveformService.artist) {
-                  return title + " \u2014 " + root.waveformService.artist
-                }
-                return title
+              var title = root.meaningfulTitle(root.waveformService ? root.waveformService.title : "")
+              if (!title) return ""
+              if (root.showArtist && root.waveformService && root.waveformService.artist) {
+                return title + " \u2014 " + root.waveformService.artist
               }
-              return "No media"
+              return title
             }
             foreground: "#ffffff"
             fontFamily: root.bar ? root.bar.fontFamily : Style.font.family
@@ -255,9 +291,9 @@ BarWidget {
           }
         }
 
-        // Play/Pause button
+        // Play/Pause button — idle pill is waveform-only until a player attaches
         Item {
-          visible: root.showControls
+          visible: root.showControls && root.hasMedia
           width: visible ? playBtn.implicitWidth : 0
           height: 18
           anchors.verticalCenter: parent.verticalCenter
@@ -279,7 +315,7 @@ BarWidget {
 
         // Next button (grouped controls only)
         Item {
-          visible: root.showControls && root.groupControls
+          visible: root.showControls && root.groupControls && root.hasMedia
           width: visible ? nextBtn.implicitWidth : 0
           height: 18
           anchors.verticalCenter: parent.verticalCenter
@@ -308,7 +344,7 @@ BarWidget {
       spacing: 3
 
       Button {
-        visible: root.showControls
+        visible: root.showControls && root.hasMedia
         enabled: root.actionEnabled("playPause")
         iconText: root.playing ? "󰏤" : "󰐊"
         foreground: root.playing ? "#00f5d4" : "#ad88ff"
@@ -330,6 +366,7 @@ BarWidget {
           rotation: 90
           barCount: 13
           samples: root.waveformService ? root.waveformService.samples : []
+          frameSerial: root.waveformService ? root.waveformService.frameSerial : 0
           active: root.playing
           live: root.waveformService ? root.waveformService.receivingFrames : false
           foreground: root.playing ? "#00f5d4" : "#ad88ff"

@@ -70,6 +70,10 @@ function isGenericTitle(title, player) {
   var value = normalized(title, MAX_TITLE_LENGTH)
   if (!value) return true
 
+  // Hangul filler / whitespace-only "titles" (common on some web players)
+  // are not meaningful track names — treat as missing metadata.
+  if (/^[\s\u3164\u115f\u1160\u200b\u00a0_]+$/i.test(value)) return true
+
   var generic = {
     "audioplaying": true,
     "videoplaying": true,
@@ -497,12 +501,20 @@ function parseFrame(line, count) {
 // SplitParser normally retains data until it sees a newline. WaveBar instead
 // asks it for raw chunks and performs bounded framing here, so an incomplete
 // line can never grow without limit inside the resident shell.
+//
+// Oversized input must never return ok:false — that trips Service.rejectProtocol
+// and permanently kills the helper. Truncate, realign to a newline, and keep
+// only the newest frames so a chunk backlog cannot stall or fatal the visualizer.
 function frameChunk(remainder, incoming) {
   var prefix = String(remainder || "")
   var chunk = String(incoming || "")
   if (prefix.length > MAX_FRAME_CHARS) prefix = ""
   if (chunk.length > MAX_RAW_CHUNK_CHARS) {
     chunk = chunk.slice(-MAX_RAW_CHUNK_CHARS)
+    // Drop a leading partial line so truncate never invents a garbage frame
+    // that would still fatal via consumeFrame/parseFrame.
+    var align = chunk.indexOf("\n")
+    chunk = align < 0 ? "" : chunk.slice(align + 1)
   }
 
   var data = prefix + chunk
@@ -516,6 +528,10 @@ function frameChunk(remainder, incoming) {
       frames.push(line)
     }
     start = i + 1
+  }
+
+  if (frames.length > MAX_FRAMES_PER_CHUNK) {
+    frames = frames.slice(-MAX_FRAMES_PER_CHUNK)
   }
 
   var tail = data.slice(start)
