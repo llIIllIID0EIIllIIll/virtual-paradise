@@ -40,7 +40,7 @@ except ImportError:
 
 
 SAMPLE_RATE = 12_000
-FPS = 30
+FPS = 60
 PYTHON_PATH = "/usr/bin/python3"
 PW_RECORD_PATH = "/usr/bin/pw-record"
 MAX_TARGET_BYTES = 256
@@ -142,8 +142,30 @@ def checked_target(value: str) -> str:
     return value
 
 
+# Pre-computed constants for vectorized FFT (computed once, reused every frame)
+_np_frame_size: int = 0
+_np_window: "np.ndarray | None" = None
+_np_freqs: "np.ndarray | None" = None
+_np_target_freqs: "np.ndarray | None" = None
+_np_weights: "np.ndarray | None" = None
+
 # Rolling peak tracker for autosensitivity (like CAVA autosens)
 _peak_tracker: float = 8000.0
+
+
+def _ensure_fft_cache(n_samples: int, bars: int) -> None:
+    """Lazily build all per-frame numpy constants on first call or when size changes."""
+    global _np_frame_size, _np_window, _np_freqs, _np_target_freqs, _np_weights
+    if _np_frame_size == n_samples and _np_window is not None:
+        return
+    if np is None:
+        return
+    _np_frame_size = n_samples
+    _np_window = np.hanning(n_samples).astype(np.float32)
+    _np_freqs = np.fft.rfftfreq(n_samples, 1.0 / SAMPLE_RATE).astype(np.float32)
+    _np_target_freqs = np.geomspace(55.0, 5200.0, bars).astype(np.float32)
+    # Equal-loudness weighting: low freqs get less boost, high freqs get more
+    _np_weights = np.linspace(1.1, 3.4, bars).astype(np.float32)
 
 
 def waveform_frame(samples: Iterable[int], bars: int, previous: list[float]) -> list[float]:
@@ -152,55 +174,47 @@ def waveform_frame(samples: Iterable[int], bars: int, previous: list[float]) -> 
     if bars < 1:
         raise ValueError("bars must be positive")
     if not values:
+        # Fast decay: use numpy for speed when available
+        if np is not None and previous:
+            return (np.array(previous, dtype=np.float32) * 0.72).tolist()
         return [value * 0.72 for value in previous]
 
-    # Fast FFT frequency spectrum analysis (CAVA style)
-    if np is not None and len(values) >= bars:
+    n_samples = len(values)
+
+    # Fast vectorized FFT path (numpy available)
+    if np is not None and n_samples >= bars:
         try:
-            pcm = np.array(values, dtype=np.float32)
-            n_samples = len(pcm)
-            window = np.hanning(n_samples)
-            fft = np.abs(np.fft.rfft(pcm * window))
-            freqs = np.fft.rfftfreq(n_samples, 1.0 / SAMPLE_RATE)
+            _ensure_fft_cache(n_samples, bars)
+            assert _np_window is not None
+            assert _np_freqs is not None
+            assert _np_target_freqs is not None
+            assert _np_weights is not None
 
-            # Continuous logarithmic frequency spectrum (CAVA style)
-            # Center frequencies from 55Hz (sub-bass) to 5200Hz (treble)
-            target_freqs = np.geomspace(55.0, 5200.0, bars)
+            # All numpy — no Python loops in the hot path
+            pcm = np.frombuffer(bytes(array.array("h", values)), dtype=np.int16).astype(np.float32)
+            fft = np.abs(np.fft.rfft(pcm * _np_window))
+            raw_bins = np.interp(_np_target_freqs, _np_freqs, fft) * _np_weights
 
-            # Continuous FFT interpolation - guarantees EVERY bar (including bar 1 & 2) has active signal
-            raw_bins = np.interp(target_freqs, freqs, fft)
-
-            # High-frequency weighting (equal loudness compensation so treble isn't drowned by bass)
-            weights = np.linspace(1.1, 3.4, bars)
-            current_bins = [float(raw_bins[i] * weights[i]) for i in range(bars)]
-
-            cur_max = max(current_bins) if current_bins else 1.0
-            # Autosens dynamic gain tracking:
-            # Gradually decays if audio gets quieter, jumps up instantly if loud
+            cur_max = float(raw_bins.max())
             _peak_tracker = max(_peak_tracker * 0.95, cur_max, 4000.0)
 
-            result: list[float] = []
-            for i in range(bars):
-                # Power-curve compression for punchy visual bounce
-                norm = min(1.0, max(0.0, (current_bins[i] / _peak_tracker) ** 0.62))
-                prior = previous[i] if i < len(previous) else 0.0
-                # Instant rise on attack, smooth drop-off on release (like CAVA)
-                val = norm if norm > prior else prior * 0.74
-                result.append(val)
-            return result
+            # Vectorized power-curve compression + CAVA-style instant rise / smooth fall
+            norm = np.clip((raw_bins / _peak_tracker) ** 0.62, 0.0, 1.0)
+            prev_arr = np.array(previous if len(previous) == bars else [0.0] * bars, dtype=np.float32)
+            frame = np.where(norm > prev_arr, norm, prev_arr * 0.74)
+            return frame.tolist()
         except Exception:
             pass
 
-    # Fallback to time-domain peak analysis if FFT fails
+    # Fallback: time-domain peak analysis when numpy is unavailable
     block_size = max(1, math.ceil(len(values) / bars))
     result = []
     for index in range(bars):
         block = values[index * block_size : (index + 1) * block_size]
-        peak = max((abs(value) for value in block), default=0) / 32768.0
+        peak = max((abs(v) for v in block), default=0) / 32768.0
         normalized = 0.0 if peak < 0.004 else min(1.0, (peak * 1.5) ** 0.55)
         prior = previous[index] if index < len(previous) else 0.0
-        val = normalized if normalized > prior else prior * 0.72
-        result.append(val)
+        result.append(normalized if normalized > prior else prior * 0.72)
     return result
 
 
@@ -308,7 +322,7 @@ def recorder_command(target: str) -> list[str]:
         "--format",
         "s16",
         "--latency",
-        "50ms",
+        "16ms",
         "--target",
         target,
         "-",

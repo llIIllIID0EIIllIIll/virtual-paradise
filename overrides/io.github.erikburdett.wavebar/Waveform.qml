@@ -21,7 +21,8 @@ Item {
     running: !root.live
     from: 0
     to: 6.283
-    duration: 2600
+    // Slightly faster idle animation at 60fps feels more alive
+    duration: 2200
     loops: Animation.Infinite
   }
 
@@ -69,9 +70,14 @@ Item {
 
       x: index * slotWidth + root.gap / 2
       width: Math.max(2, slotWidth - root.gap)
-      height: Math.max(root.minimumBarHeight, Math.round(root.height * (0.08 + level * 0.92)))
-      // Wave ngang centered vertically like original wavebar (oscilloscope style)
-      y: Math.round((root.height - height) / 2)
+
+      // Drive height via an intermediate target so y stays in sync during animation.
+      // Without this, height animates but y jumps immediately, causing visual jitter.
+      property real targetHeight: Math.max(root.minimumBarHeight, Math.round(root.height * (0.08 + level * 0.92)))
+      height: targetHeight
+      // y derives from animated height so centering is always in sync
+      y: (root.height - height) / 2
+
       radius: Math.max(1, width / 2)
       opacity: root.live ? (level > 0.75 ? 1.0 : 0.95) : (root.active ? 0.70 : 0.45)
 
@@ -106,10 +112,15 @@ Item {
         }
       }
 
-      Behavior on height {
-        NumberAnimation { duration: 38; easing.type: Easing.OutCubic }
+      // Attack: instant (0ms), decay: ~1 frame @ 60fps = 14ms — crisp, not laggy
+      // Idle state uses slower ease for smooth breathing
+      Behavior on targetHeight {
+        NumberAnimation {
+          duration: root.live ? 14 : 80
+          easing.type: root.live ? Easing.OutQuart : Easing.InOutSine
+        }
       }
-      Behavior on opacity { NumberAnimation { duration: 140 } }
+      Behavior on opacity { NumberAnimation { duration: 120 } }
     }
   }
 }
