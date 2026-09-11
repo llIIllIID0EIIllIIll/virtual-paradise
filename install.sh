@@ -1370,6 +1370,11 @@ if [[ -f "$HOME/.config/omarchy/themes/virtual-paradise/overrides/harshith.syste
   cp "$HOME/.config/omarchy/themes/virtual-paradise/overrides/harshith.system-monitor/Panel.qml" \
     "$HOME/.config/omarchy/plugins/harshith.system-monitor/Panel.qml"
 fi
+if [[ -f "$HOME/.config/omarchy/themes/virtual-paradise/overrides/mscurtescu.island-bar/Bar.qml" \
+  && -d "$HOME/.config/omarchy/plugins/mscurtescu.island-bar" ]]; then
+  cp "$HOME/.config/omarchy/themes/virtual-paradise/overrides/mscurtescu.island-bar/Bar.qml" \
+    "$HOME/.config/omarchy/plugins/mscurtescu.island-bar/Bar.qml"
+fi
 # Use hyprmoncfg in place of the cloned Display & Scaling widget.
 if command -v omarchy >/dev/null 2>&1; then
   u="${USER:-$(id -un)}"

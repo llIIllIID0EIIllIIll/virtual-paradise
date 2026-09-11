@@ -92,7 +92,8 @@
       ]
     },
     "position": "top",
-    "transparent": false
+    "transparent": false,
+    "id": "mscurtescu.island-bar"
   },
   "idle": {
     "lock": 300,

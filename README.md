@@ -106,6 +106,15 @@ The installer configures these applications when available:
 | `io.github.tyrichards.workspaces-jap` | Japanese numeral workspace indicators |
 | `io.github.adamcbrewer.voxtype-aura` | Theme-aware Voxtype dictation overlay |
 | `jankeesvw.notification-center` | Notification center and DND control |
+| `mscurtescu.island-bar` | Cyber City 3-Island floating bar with gradient neon glow borders |
+
+`mscurtescu.island-bar` is installed idempotently from:
+
+```bash
+omarchy plugin add https://github.com/mscurtescu/omarchy-island-bar.git --enable --yes
+```
+
+It replaces the flat continuous bar with 3 floating cyberpunk islands (Left, Center, Right), styled with frosted dark glass, subtle inner gradient tint, and glowing neon vector borders (Miku Cyan -> Hacker Green -> Sakura Pink) tailored for Virtual☆Paradise.
 
 `hyprmoncfg` is installed from AUR as `hyprmoncfg` and the shell plugin is
 installed with:
