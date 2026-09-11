@@ -767,7 +767,10 @@ APPLY_WAVEBAR_RICE() {
     cp "$source_dir/BarWidget.qml" "$target_dir/BarWidget.qml" 2>/dev/null || true
     [[ -f "$source_dir/Waveform.qml" ]] && cp "$source_dir/Waveform.qml" "$target_dir/Waveform.qml"
     [[ -f "$source_dir/MediaModel.js" ]] && cp "$source_dir/MediaModel.js" "$target_dir/MediaModel.js"
+    [[ -f "$source_dir/Service.qml" ]] && cp "$source_dir/Service.qml" "$target_dir/Service.qml"
+    [[ -f "$source_dir/Panel.qml" ]] && cp "$source_dir/Panel.qml" "$target_dir/Panel.qml"
     [[ -f "$source_dir/waveform.py" ]] && cp "$source_dir/waveform.py" "$target_dir/waveform.py" && chmod +x "$target_dir/waveform.py"
+    [[ -f "$source_dir/manifest.json" ]] && cp "$source_dir/manifest.json" "$target_dir/manifest.json"
   fi
 }
 
@@ -1361,6 +1364,10 @@ if [[ -d "$HOME/.config/omarchy/themes/virtual-paradise/overrides/io.github.erik
     "$HOME/.config/omarchy/plugins/io.github.erikburdett.wavebar/Waveform.qml" 2>/dev/null || true
   cp "$HOME/.config/omarchy/themes/virtual-paradise/overrides/io.github.erikburdett.wavebar/MediaModel.js" \
     "$HOME/.config/omarchy/plugins/io.github.erikburdett.wavebar/MediaModel.js" 2>/dev/null || true
+  cp "$HOME/.config/omarchy/themes/virtual-paradise/overrides/io.github.erikburdett.wavebar/Service.qml" \
+    "$HOME/.config/omarchy/plugins/io.github.erikburdett.wavebar/Service.qml" 2>/dev/null || true
+  cp "$HOME/.config/omarchy/themes/virtual-paradise/overrides/io.github.erikburdett.wavebar/Panel.qml" \
+    "$HOME/.config/omarchy/plugins/io.github.erikburdett.wavebar/Panel.qml" 2>/dev/null || true
   cp "$HOME/.config/omarchy/themes/virtual-paradise/overrides/io.github.erikburdett.wavebar/waveform.py" \
     "$HOME/.config/omarchy/plugins/io.github.erikburdett.wavebar/waveform.py" 2>/dev/null || true
   chmod +x "$HOME/.config/omarchy/plugins/io.github.erikburdett.wavebar/waveform.py" 2>/dev/null || true
