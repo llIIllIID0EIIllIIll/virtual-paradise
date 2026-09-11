@@ -73,7 +73,10 @@ Item {
 
       // Drive height via an intermediate target so y stays in sync during animation.
       // Without this, height animates but y jumps immediately, causing visual jitter.
-      property real targetHeight: Math.max(root.minimumBarHeight, Math.round(root.height * (0.08 + level * 0.92)))
+      // Keep the target fractional. Rounding this to pixels turns small audio
+      // changes into 1 px steps, which is especially noticeable in an 18 px
+      // high bar as apparent low frame-rate motion.
+      property real targetHeight: Math.max(root.minimumBarHeight, root.height * (0.08 + level * 0.92))
       height: targetHeight
       // y derives from animated height so centering is always in sync
       y: (root.height - height) / 2
@@ -112,12 +115,17 @@ Item {
         }
       }
 
-      // Python EMA already smooths the data — QML behavior only covers pipe jitter.
-      // 6ms live: sub-frame jitter absorption. 80ms idle: natural breathing ease.
+      // The helper delivers a new target roughly every 16 ms. A 6 ms animation
+      // completed before the next display refresh, exposing each update as a
+      // step. SmoothedAnimation retargets from its current in-flight value and
+      // lets the scene graph interpolate across successive refreshes instead.
       Behavior on targetHeight {
-        NumberAnimation {
-          duration: root.live ? 6 : 80
-          easing.type: root.live ? Easing.Linear : Easing.InOutSine
+        SmoothedAnimation {
+          // 360 px/s crosses this widget's full 18 px range in about 50 ms:
+          // smooth at 60+ Hz without making beats feel delayed.
+          velocity: root.live ? 360 : 90
+          maximumEasingTime: root.live ? 50 : 160
+          reversingMode: SmoothedAnimation.Eased
         }
       }
       Behavior on opacity { NumberAnimation { duration: 120 } }
