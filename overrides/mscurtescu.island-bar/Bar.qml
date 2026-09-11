@@ -1422,60 +1422,23 @@ Item {
       }
     }
 
-    // Neon gradient outline
-    Shape {
+    // Cyberpunk gradient border overlay
+    BorderOverlay {
       anchors.fill: parent
-      preferredRendererType: Shape.CurveRenderer
-
-      ShapePath {
-        fillColor: "transparent"
-        strokeWidth: 1.5
-        capStyle: ShapePath.RoundCap
-        joinStyle: ShapePath.RoundJoin
-        strokeGradient: LinearGradient {
-          x1: 0
-          y1: 0
-          x2: root.vertical ? 0 : backdropRoot.width
-          y2: root.vertical ? backdropRoot.height : 0
-
-          GradientStop {
-            position: 0.0
-            color: backdropRoot.islandPos === "left"
-              ? "#00f5d4"
-              : backdropRoot.islandPos === "right"
-                ? "#00ff88"
-                : "#00f5d4"
-          }
-          GradientStop {
-            position: 0.5
-            color: "#00ff88"
-          }
-          GradientStop {
-            position: 1.0
-            color: backdropRoot.islandPos === "right"
-              ? "#ffb7d5"
-              : backdropRoot.islandPos === "left"
-                ? "#00ff88"
-                : "#ffb7d5"
-          }
+      radius: backdropRoot.islandRadius
+      borderSpec: ({
+        color: "#00f5d4",
+        widths: { top: 1.5, right: 1.5, bottom: 1.5, left: 1.5 },
+        gradient: {
+          enabled: true,
+          angle: root.vertical ? 90 : 0,
+          colors: backdropRoot.islandPos === "left"
+            ? ["#00f5d4", "#00ff88"]
+            : backdropRoot.islandPos === "right"
+              ? ["#00ff88", "#ffb7d5"]
+              : ["#00f5d4", "#00ff88", "#ffb7d5"]
         }
-
-        // Clockwise rounded rectangle path
-        readonly property real r: backdropRoot.islandRadius
-        readonly property real w: backdropRoot.width
-        readonly property real h: backdropRoot.height
-
-        startX: r
-        startY: 0
-        PathLine { x: w - r; y: 0 }
-        PathArc { x: w; y: r; radiusX: r; radiusY: r; direction: PathArc.Clockwise }
-        PathLine { x: w; y: h - r }
-        PathArc { x: w - r; y: h; radiusX: r; radiusY: r; direction: PathArc.Clockwise }
-        PathLine { x: r; y: h }
-        PathArc { x: 0; y: h - r; radiusX: r; radiusY: r; direction: PathArc.Clockwise }
-        PathLine { x: 0; y: r }
-        PathArc { x: r; y: 0; radiusX: r; radiusY: r; direction: PathArc.Clockwise }
-      }
+      })
     }
   }
 
