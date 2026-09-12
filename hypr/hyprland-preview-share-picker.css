@@ -3,13 +3,13 @@
  * ============================================================================== */
 
 @define-color foreground #eafbfa;
-@define-color background #07080d;
+@define-color background #0f081d;
 @define-color accent #00f5d4;
 @define-color accent_secondary #00ff88;
 @define-color accent_highlight #ffb7d5;
 @define-color muted #7091a4;
 @define-color card_bg #0e121a;
-@define-color text_dark #07080d;
+@define-color text_dark #0f081d;
 @define-color accent_hover #00ff88;
 @define-color selected_tab #00f5d4;
 @define-color text #eafbfa;

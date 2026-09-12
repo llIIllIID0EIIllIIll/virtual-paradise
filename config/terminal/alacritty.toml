@@ -4,35 +4,35 @@
 opacity = 0.85
 
 [colors.primary]
-background = "#07080d"
+background = "#0f081d"
 foreground = "#eafbfa"
 
 [colors.cursor]
-text = "#07080d"
+text = "#0f081d"
 cursor = "#00f5d4"
 
 [colors.vi_mode_cursor]
-text = "#07080d"
+text = "#0f081d"
 cursor = "#00f5d4"
 
 [colors.search.matches]
-foreground = "#07080d"
+foreground = "#0f081d"
 background = "#00ff88"
 
 [colors.search.focused_match]
-foreground = "#07080d"
+foreground = "#0f081d"
 background = "#ffb7d5"
 
 [colors.footer_bar]
-foreground = "#07080d"
+foreground = "#0f081d"
 background = "#00f5d4"
 
 [colors.selection]
-text = "#07080d"
+text = "#0f081d"
 background = "#00f5d4"
 
 [colors.normal]
-black   = "#07080d"
+black   = "#0f081d"
 red     = "#ff5287"
 green   = "#00ff88"
 yellow  = "#ffe066"
@@ -42,7 +42,7 @@ cyan    = "#39c5bb"
 white   = "#eafbfa"
 
 [colors.bright]
-black   = "#526e7f"
+black   = "#5a3e85"
 red     = "#ff79a8"
 green   = "#39ff14"
 yellow  = "#fff099"

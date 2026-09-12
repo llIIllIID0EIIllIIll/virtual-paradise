@@ -5,9 +5,9 @@ local activeBorderColor = {
   colors = { "rgba(00f5d4ee)", "rgba(00ff88dd)", "rgba(ffb7d5ee)" },
   angle = 45,
 }
-local inactiveBorderColor = "rgba(182833aa)"
+local inactiveBorderColor = "rgba(3b255caa)"
 local activeShadowColor = "rgba(00f5d428)"
-local inactiveShadowColor = "rgba(00000080)"
+local inactiveShadowColor = "rgba(0a051590)"
 
 hl.config({
   general = {

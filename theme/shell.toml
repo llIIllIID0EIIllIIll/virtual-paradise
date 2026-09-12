@@ -2,8 +2,8 @@
 # Translucent Frosted Glass with Neon Miku Cyan, Hacker Green, and Sakura Blossom highlights
 
 [bar]
-background       = "#07080d"
-background-alpha = 0.80
+background       = "#0f081d"
+background-alpha = 0.88
 text             = "#eafbfa"
 active           = "#00f5d4"
 scale-with-font  = true
@@ -15,7 +15,7 @@ active-border            = "rgba(00f5d4ee) rgba(00f5d4ee) rgba(00ff88cc) rgba(ff
 active-border-foreground = "rgb(00f5d4) rgb(00f5d4) rgb(00ff88) rgb(ffb7d5) rgb(ffb7d5) 45deg"
 
 [controls]
-normal-color        = "#7091a4"
+normal-color        = "#5a3e85"
 normal-fill-alpha   = 0.08
 normal-border       = "#00f5d4"
 normal-border-width = 0
@@ -73,7 +73,7 @@ icon          = 14
 icon-large    = 19
 
 [popups]
-background       = "#07080d"
+background       = "#0f081d"
 background-alpha = 0.92
 text             = "#eafbfa"
 border           = "hyprland.active-border"
@@ -81,14 +81,14 @@ border-alpha     = 0.90
 border-width     = 2
 
 [tooltip]
-background       = "#07080d"
+background       = "#0f081d"
 background-alpha = 0.96
 text             = "#ffffff"
 border           = "hyprland.active-border"
 border-alpha     = 0.90
 
 [notifications]
-background       = "#07080d"
+background       = "#0f081d"
 background-alpha = 0.94
 text             = "#eafbfa"
 text-error       = "#ff0055"
@@ -100,13 +100,13 @@ countdown        = "#00ff88"
 countdown-error  = "#ff0055"
 
 [launcher]
-background                = "#07080d"
+background                = "#0f081d"
 background-alpha          = 0.94
 text                      = "#eafbfa"
 border                    = "hyprland.active-border"
 border-alpha              = 0.90
 border-width              = 2
-scrim                     = "#030406"
+scrim                     = "#06030c"
 scrim-alpha               = 0.0
 selected-background       = "#00f5d4"
 selected-background-alpha = 0.20
@@ -116,13 +116,13 @@ selected-border-alpha     = 0.90
 selected-border-width     = 1
 
 [menu]
-background                = "#07080d"
+background                = "#0f081d"
 background-alpha          = 0.94
 text                      = "#eafbfa"
 border                    = "hyprland.active-border"
 border-alpha              = 0.90
 border-width              = 2
-scrim                     = "#030406"
+scrim                     = "#06030c"
 scrim-alpha               = 0.0
 selected-background       = "#00f5d4"
 selected-background-alpha = 0.20
@@ -132,22 +132,22 @@ selected-border-alpha     = 0.90
 selected-border-width     = 1
 
 [polkit]
-background       = "#07080d"
+background       = "#0f081d"
 background-alpha = 0.96
 text             = "#eafbfa"
 text-error       = "#ff0055"
 border           = "hyprland.active-border"
 border-error     = "#ff0055"
 border-alpha     = 0.95
-scrim            = "#030406"
+scrim            = "#06030c"
 scrim-alpha      = 0.0
 accent           = "#00f5d4"
 
 [lock]
-background       = "#07080d"
+background       = "#0f081d"
 background-alpha = 0.85
 text             = "#ffffff"
-placeholder      = "#526e7f"
+placeholder      = "#5a3e85"
 text-error       = "#ff0055"
 border           = "hyprland.active-border"
 border-active    = "hyprland.active-border"
@@ -157,10 +157,10 @@ selection        = "#00f5d4"
 selection-alpha  = 0.40
 
 [image-picker]
-scrim                   = "#030406"
+scrim                   = "#06030c"
 scrim-alpha             = 0.70
 text                    = "#ffffff"
 selected-border         = "hyprland.active-border"
 selected-border-alpha   = 1.0
-unselected-border       = "#284452"
+unselected-border       = "#3b255c"
 unselected-border-alpha = 0.50

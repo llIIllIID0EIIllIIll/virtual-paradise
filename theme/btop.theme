@@ -2,7 +2,7 @@
 # Neon Pastel Cyberpunk: Miku Cyan -> Hacker Green -> Sakura Pink
 
 # Main background, empty for transparent
-theme[main_bg]="#07080d"
+theme[main_bg]="#0f081d"
 
 # Main text color
 theme[main_fg]="#eafbfa"
@@ -14,13 +14,13 @@ theme[title]="#ffb7d5"
 theme[hi_fg]="#00ff88"
 
 # Background color of selected item in processes box
-theme[selected_bg]="#10141e"
+theme[selected_bg]="#180e2e"
 
 # Foreground color of selected item in processes box
 theme[selected_fg]="#00f5d4"
 
 # Color of inactive/disabled text
-theme[inactive_fg]="#526e7f"
+theme[inactive_fg]="#5a3e85"
 
 # Misc colors for processes box
 theme[proc_misc]="#c5e8ea"
@@ -30,7 +30,7 @@ theme[cpu_box]="#00f5d4"
 theme[mem_box]="#ffb7d5"
 theme[net_box]="#00ff88"
 theme[proc_box]="#00f5d4"
-theme[div_line]="#284452"
+theme[div_line]="#3b255c"
 
 # Gradient for all meters and graphs (40% Cyan -> 20% Green -> 40% Sakura Pink)
 theme[temp_start]="#00f5d4"

@@ -1,7 +1,7 @@
 /* Virtual☆Paradise shared CSS color variables */
 
 /* ANSI palette */
-@define-color color0 #07080d;
+@define-color color0 #0f081d;
 @define-color color1 #ff5287;
 @define-color color2 #00ff88;
 @define-color color3 #ffe066;
@@ -9,7 +9,7 @@
 @define-color color5 #ffb7d5;
 @define-color color6 #39c5bb;
 @define-color color7 #eafbfa;
-@define-color color8 #526e7f;
+@define-color color8 #5a3e85;
 @define-color color9 #ff79a8;
 @define-color color10 #39ff14;
 @define-color color11 #fff099;
@@ -19,9 +19,9 @@
 @define-color color15 #ffffff;
 
 /* Semantic aliases */
-@define-color background #07080d;
+@define-color background #0f081d;
 @define-color foreground #eafbfa;
 @define-color accent #00f5d4;
 @define-color selection_bg #00f5d4;
-@define-color selection_fg #07080d;
+@define-color selection_fg #0f081d;
 @define-color cursor #00f5d4;
