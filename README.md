@@ -1,79 +1,133 @@
 <div align="center">
 
-# Virtual☆Paradise
+```
+██╗   ██╗██╗██████╗ ████████╗██╗   ██╗ █████╗ ██╗         ██████╗  █████╗ ██████╗  █████╗ ██████╗ ██╗███████╗███████╗
+██║   ██║██║██╔══██╗╚══██╔══╝██║   ██║██╔══██╗██║         ██╔══██╗██╔══██╗██╔══██╗██╔══██╗██╔══██╗██║██╔════╝██╔════╝
+██║   ██║██║██████╔╝   ██║   ██║   ██║███████║██║         ██████╔╝███████║██████╔╝███████║██║  ██║██║███████╗█████╗  
+╚██╗ ██╔╝██║██╔══██╗   ██║   ██║   ██║██╔══██║██║         ██╔═══╝ ██╔══██║██╔══██╗██╔══██║██║  ██║██║╚════██║██╔══╝  
+ ╚████╔╝ ██║██║  ██║   ██║   ╚██████╔╝██║  ██║███████╗    ██║     ██║  ██║██║  ██║██║  ██║██████╔╝██║███████║███████╗
+  ╚═══╝  ╚═╝╚═╝  ╚═╝   ╚═╝    ╚═════╝ ╚═╝  ╚═╝╚══════╝    ╚═╝     ╚═╝  ╚═╝╚═╝  ╚═╝╚═╝  ╚═╝╚═════╝ ╚═╝╚══════╝╚══════╝
+```
 
-**Cyber Dark Purple Rice, Audio-Reactive CAVA Waveform, Floating Island Bar & Universal Development Environment for Omarchy Linux**
+### 🌸 Virtual☆Paradise
+**An audio-reactive, neon-infused Cyber Dark Purple desktop rice & development habitat.**
 
-Arch Linux · Hyprland · Wayland · Quickshell
+*Crafted for Omarchy Linux · Arch Linux · Hyprland · Quickshell · Wayland*
 
-[![Platform](https://img.shields.io/badge/Platform-Arch%20%7C%20Omarchy%204.0%2B-1793D1?logo=arch-linux&logoColor=white)](https://archlinux.org)
-[![Compositor](https://img.shields.io/badge/Compositor-Hyprland-00f5d4?logo=wayland&logoColor=white)](https://hyprland.org)
-[![Shell Bar](https://img.shields.io/badge/Shell-Quickshell%20Island%20Bar-9d4edd?logo=kde&logoColor=white)](https://github.com/mscurtescu/omarchy-island-bar)
-[![Palette](https://img.shields.io/badge/Palette-Cyber%20Dark%20Purple%20%230f081d-ff5287)](https://github.com/llIIllIID0EIIllIIll/virtual-paradise)
-[![Visualizer](https://img.shields.io/badge/Audio-CAVA%20DSP%20120FPS-00ff88)](https://github.com/ErikBurdett/omarchy-wavebar)
-[![License](https://img.shields.io/badge/License-MIT-00f5d4.svg)](LICENSE)
+<br/>
+
+[![Platform](https://img.shields.io/badge/Arch_Linux-Omarchy_4.0+-1793D1?style=for-the-badge&logo=arch-linux&logoColor=white)](https://archlinux.org)
+[![Compositor](https://img.shields.io/badge/Hyprland-0.56+-00f5d4?style=for-the-badge&logo=wayland&logoColor=black)](https://hyprland.org)
+[![Bar](https://img.shields.io/badge/Quickshell-Island_Bar-9d4edd?style=for-the-badge&logo=kde&logoColor=white)](https://github.com/mscurtescu/omarchy-island-bar)
+[![Palette](https://img.shields.io/badge/Palette-%230f081d_Dark_Purple-ff5287?style=for-the-badge)](https://github.com/llIIllIID0EIIllIIll/virtual-paradise)
+[![Visualizer](https://img.shields.io/badge/CAVA_DSP-120_FPS-00ff88?style=for-the-badge)](https://github.com/ErikBurdett/omarchy-wavebar)
+[![License](https://img.shields.io/badge/License-MIT-ffe066?style=for-the-badge)](LICENSE)
+
+<br/>
+
+<a href="assets/preview-showcase.png">
+  <img src="assets/preview-showcase.png" alt="Virtual Paradise Desktop Preview" width="100%" style="border-radius: 12px; box-shadow: 0 8px 32px rgba(0, 245, 212, 0.2); border: 1px solid rgba(0, 245, 212, 0.3);" />
+</a>
+
+*5-Terminal Development Rice with CAVA Audio Wavebar, 3-Island Floating Bar, Glitch Wallpaper Engine & Paradise Agent.*
 
 </div>
 
 ---
 
-Virtual☆Paradise is an advanced, full-topping cyberpunk theme and desktop integration ecosystem crafted specifically for Omarchy Linux (Arch Linux + Hyprland). Built around an ultra-deep night violet canvas (`#0f081d`) accented with glowing Miku Cyan (`#00f5d4`), Sakura Pink (`#ff5287`), and Hacker Green (`#00ff88`), it transforms the desktop into an immersive cyber city workstation without modifying core packaged files in `/usr/share/omarchy`.
+## 🎨 The Aesthetic & Palette
 
-![Virtual Paradise Desktop Preview](assets/preview-showcase.png)
+Virtual☆Paradise is built on an ultra-deep, atmospheric cyber night canvas (`#0f081d`) illuminated by high-contrast neon accents inspired by futuristic anime cityscapes and vocaloid aesthetics.
 
-*Full 5-terminal development rice featuring CAVA audio waveform, Island Bar, system telemetry, live video wallpaper, and Paradise Agent.*
-
----
-
-## ⚡ Core Features
-
-### 🌌 Cyber Dark Purple Aesthetic (`#0f081d`)
-- **Unified Background Across Applications**: Ghostty, Alacritty, Kitty, Foot, Neovim, Helix, btop, Fastfetch, and Omarchy Quickshell all share the same calibrated night-violet canvas (`#0f081d`).
-- **Dynamic Neon Accents**: Vibrant gradients flow across UI components:
-  - **Miku Cyan (`#00f5d4`)**: Primary accents, focus rings, active tab indicators, and fastfetch metrics.
-  - **Sakura Pink (`#ff5287`)**: Urgent states, decorative gradients, and visual highlights.
-  - **Hacker Green (`#00ff88`)**: Occupied workspace indicators, success dialogs, and secondary telemetry.
-  - **Cyber Yellow (`#ffe066`)**: Warning indicators and battery status highlights.
-
-### 🏝️ Cyber City 3-Island Floating Bar
-- Powered by `mscurtescu.island-bar` and customized with custom glassmorphism styling:
-  - **Left Island**: Omarchy App Menu, Japanese Numeral Workspaces (`io.github.tyrichards.workspaces-jap`), and Active Window Title.
-  - **Center Island**: Real-time CAVA Wavebar Media Controller (`io.github.erikburdett.wavebar`), Weather Pill, Clock & Date, System Telemetry Pill (`harshith.system-monitor`), and Hardware Indicators.
-  - **Right Island**: Miracast/Projector Quick Cast (`io.github.jeffcortez23.omarchy-projector-cast`), Advanced PipeWire Audio Controller (`ssupt.audio-control`), Bluetooth Routing (`ssupt.bluetooth-audio`), Multi-Monitor Configuration (`crmne.hyprmoncfg`), Power Manager (`onlyvishesh.power-manager`), and Notification Drawer.
-- **Visual Ricing**: Frosted acrylic glass pills with subtle glowing neon borders, SVG gradient drop-shadows, and smooth micro-interactions.
-
-### 🎵 60–120 FPS CAVA DSP Audio Wavebar
-- **High-Performance Waveform Engine**: Powered by an asynchronous backend daemon (`waveform.py`) driving real-time CAVA DSP audio analysis.
-- **Monstercat Frequency Smoothing**: Smooth logarithmic frequency distribution across 24 reactive bars with zero frame stutter.
-- **Intelligent PipeWire Monitoring**: Automatically attaches to active audio playback sources (Firefox, Spotify, mpv, Chromium) and enters low-overhead sleep mode when idle or silent.
-- **Isolated Media Controls**: Dedicated MPRIS media playback bindings that never interfere with `mpvpaper` live wallpapers.
-
-### 💻 5-Terminal Development Rice (`SUPER + Q`)
-- Instantly deploys a deterministic 5-pane dwindle layout in milliseconds:
-  1. **Terminal 1 (Top Left)**: Fastfetch system overview with high-resolution anime Braille artwork and Paradise Agent prompt.
-  2. **Terminal 2 (Top Right)**: `btop` system monitor themed in cyber dark purple with CPU/GPU thermal curves.
-  3. **Terminal 3 (Bottom Left)**: `momoisay` fortune speaker with randomized cute anime cyber quotes.
-  4. **Terminal 4 (Bottom Center)**: Terminal `cava` visualizer synchronized to active theme gradients.
-  5. **Terminal 5 (Bottom Right)**: Tri-color gradient `virtual_matrix` stream (Cyan ➔ Green ➔ Pink).
-
-### 🎬 Hardware-Accelerated Live Wallpaper Engine
-- Seamless video & animated GIF background playback powered by `mpvpaper` and hardware VA-API / NVDEC decoding.
-- **Cyber Glitch HUD Transition**: Switching wallpapers triggers a momentary cyberpunk HUD overlay with glowing neon scanlines, target name, animated progress bar, and automatic fallback safeguards.
-
-### ❄️ Intelligent Laptop Cooling & Hardware Helpers
-- Real-time fan speed boost and embedded controller (EC) control for Acer Nitro (`acer-wmi`), ASUS ROG/TUF (`asusctl`), MSI (`isw`), and NBFC supported laptops via `SUPER + ALT + C`.
-- Native NVIDIA GPU persistence management with automated power state calibration.
+| Color Swatch | Name | Hex Code | Role in Rice |
+| :---: | :--- | :---: | :--- |
+| ![#0f081d](https://via.placeholder.com/16/0f081d/000000?text=+) | **Cyber Dark Purple** | `#0f081d` | Universal canvas: Terminals, Shell, Panels, btop, Neovim, Helix |
+| ![#00f5d4](https://via.placeholder.com/16/00f5d4/000000?text=+) | **Miku Cyan** | `#00f5d4` | Primary brand accent: Active borders, visualizer peaks, focus rings |
+| ![#ff5287](https://via.placeholder.com/16/ff5287/000000?text=+) | **Sakura Pink** | `#ff5287` | Urgent indicators, secondary gradients, media titles, fastfetch logo |
+| ![#00ff88](https://via.placeholder.com/16/00ff88/000000?text=+) | **Hacker Green** | `#00ff88` | Occupied workspace dots, success badges, memory pressure status |
+| ![#ffe066](https://via.placeholder.com/16/ffe066/000000?text=+) | **Cyber Yellow** | `#ffe066` | Battery charging highlights, warnings, weather temperature pills |
+| ![#1c1038](https://via.placeholder.com/16/1c1038/000000?text=+) | **Night Surface** | `#1c1038` | Card background, hover states, pill containers, dropdown menus |
 
 ---
 
-## ⌨️ Keybindings Cheat Sheet
+## 🍱 Rice Architecture & Highlights
 
-### Window & Workspace Navigation
+### 🏝️ 1. Cyber City 3-Island Floating Bar
+Powered by `mscurtescu.island-bar` and extensively riced with custom QML vector styling:
+- **Left Island**: Omarchy Quick Launch Menu, Japanese Numeral Workspaces (`io.github.tyrichards.workspaces-jap`), and Active Window Title.
+- **Center Island**: Real-time CAVA Wavebar Media Controller (`io.github.erikburdett.wavebar`), Weather Pill, Clock & Date, System Telemetry Pill (`harshith.system-monitor`), and Status Indicators.
+- **Right Island**: Projector & Wireless Display Cast (`io.github.jeffcortez23.omarchy-projector-cast`), PipeWire Audio Mixer (`ssupt.audio-control`), Bluetooth Routing (`ssupt.bluetooth-audio`), Multi-Monitor Configuration (`crmne.hyprmoncfg`), Power Manager (`onlyvishesh.power-manager`), and Notification Drawer.
+- **Ricing Details**: Frosted dark acrylic glass with subtle neon SVG drop-shadows, responsive hover scaling, and clean micro-padding.
+
+### 🌊 2. 60–120 FPS CAVA DSP Audio Wavebar
+- **Hardware-Level Precision**: Powered by an asynchronous backend daemon (`waveform.py`) performing real-time CAVA DSP audio spectrum analysis over PipeWire.
+- **Monstercat Frequency Smoothing**: Perfectly balanced 24-band logarithmic frequency curve for fluid visual response across all musical genres.
+- **Dynamic Stream Detection**: Automatically attaches to active audio players (Firefox, Spotify, mpv, Chromium) and sleeps during silence to maintain <1% CPU overhead.
+- **MPRIS Media Isolation**: Clicking controls audio playback without interrupting `mpvpaper` live video wallpapers.
+
+### 🚀 3. 5-Terminal Development Rice (`SUPER + Q`)
+Launches a deterministic, instant 5-pane Hyprland dwindle layout tuned for maximum aesthetic output:
+1. **Pane 1 (Top Left)**: Fastfetch system telemetry with high-resolution anime Braille artwork and Paradise Agent prompt.
+2. **Pane 2 (Top Right)**: `btop` system monitor themed in cyber dark purple with CPU/GPU thermal curves.
+3. **Pane 3 (Bottom Left)**: `momoisay` fortune speaker with randomized cute anime cyber quotes.
+4. **Pane 4 (Bottom Center)**: Terminal `cava` visualizer synchronized to active theme gradients.
+5. **Pane 5 (Bottom Right)**: Tri-color gradient `virtual_matrix` digital rain (Cyan ➔ Green ➔ Pink).
+
+### 🎬 4. Hardware-Accelerated Live Video Wallpaper Engine
+- Seamless video & animated GIF loop playback via `mpvpaper` with hardware VA-API / NVDEC video decoding.
+- **Cyber Glitch HUD Transition**: Cycling wallpapers (`SUPER + ALT + LEFT/RIGHT`) triggers a cyberpunk scanline HUD overlay with target filename, animated progress bar, and safety timeout.
+
+### ❄️ 5. Embedded Controller (EC) Laptop Cooling
+- Integrated fan overclocking and Cooler Boost for Acer Nitro (`acer-wmi`), ASUS ROG/TUF (`asusctl`), MSI (`isw`), and NBFC laptops via `SUPER + ALT + C`.
+- Native NVIDIA GPU persistence management with calibrated power states.
+
+### 🛡️ 6. Zero-Contamination Theme Switching
+- Guaranteed **100% clean isolation**: Switching to stock Omarchy themes (`Catppuccin`, `Tokyo Night`, `Nord`, etc.) automatically disables all 3rd-party plugins, restores `omarchy.bar`, restores canonical `shell.json`, removes GTK overrides, and terminates live wallpapers.
+- Switching back to `Virtual Paradise` re-enables all islands, audio visualizers, and custom styling instantly.
+
+```mermaid
+flowchart LR
+    A["omarchy theme set"] --> B{"Target Theme?"}
+    
+    B -- "Virtual Paradise" --> C["🎨 Apply #0f081d Canvas"]
+    C --> D["🏝️ Enable Island Bar & Overrides"]
+    D --> E["🌊 Start CAVA DSP Wavebar"]
+    E --> F["🎬 Start mpvpaper Live Loop"]
+    
+    B -- "Catppuccin / Tokyo Night / Stock" --> G["🎨 Apply Target Palette"]
+    G --> H["🏛️ Restore Stock omarchy.bar"]
+    H --> I["🧩 Restore Default omarchy.* Plugins"]
+    I --> J["📄 Restore Stock shell-default.json"]
+    J --> K["🛑 Terminate mpvpaper & Reset GTK"]
+```
+
+---
+
+## 🛠️ Rice Specifications
+
+| Category | Component | Configuration Details |
+| :--- | :--- | :--- |
+| **OS** | [Arch Linux](https://archlinux.org) / [Omarchy 4.0+](https://github.com/omarchy) | Rolling Release · Linux 6.x+ |
+| **Compositor** | [Hyprland](https://hyprland.org) | Wayland · `cyberSpring` animations · Dual-layer blur |
+| **Status Bar** | [Quickshell](https://outfoxxed.me/quickshell) | `mscurtescu.island-bar` 3-Island Floating Glassmorphism |
+| **Audio Visualizer** | [Wavebar](https://github.com/ErikBurdett/omarchy-wavebar) + [CAVA](https://github.com/karlstav/cava) | 24-Bar DSP · Monstercat filter · PipeWire sink tracking |
+| **Terminal** | [Ghostty](https://ghostty.org) | Primary terminal · `#0f081d` background · Zsh + Starship |
+| **Alternative Terminals** | Alacritty · Kitty · Foot | Fully synchronized with Virtual Paradise palette |
+| **Font** | JetBrains Mono Nerd Font | 9pt · High legibility · Symbol ligatures |
+| **File Manager** | Nautilus | Styled with Libadwaita Cyberpunk GTK 3/4 CSS |
+| **Live Wallpaper** | `mpvpaper` | Hardware-decoded video loops (`Miku_live.mp4`) |
+| **System Monitor** | `btop` | Custom dark purple theme with hardware thermal sensors |
+
+---
+
+## ⌨️ Essential Keybindings
+
+### 🪟 Window & Workspace Controls
 | Shortcut | Action |
 | :--- | :--- |
-| `SUPER + Return` | Open Ghostty terminal |
-| `SUPER + Q` | Launch 5-terminal development rice layout |
-| `SUPER + E` | Open Nautilus file manager (themed with cyberpunk accents) |
+| `SUPER + Return` | Open Ghostty terminal emulator |
+| `SUPER + Q` | **Launch 5-Terminal Development Rice** |
+| `SUPER + E` | Open Nautilus file manager |
 | `SUPER + B` | Open default web browser |
 | `SUPER + C` | Close focused window |
 | `SUPER + V` | Toggle floating window mode |
@@ -81,80 +135,49 @@ Virtual☆Paradise is an advanced, full-topping cyberpunk theme and desktop inte
 | `SUPER + 1..9` | Switch to workspace 1..9 (with Japanese indicator updates) |
 | `SUPER + SHIFT + 1..9` | Move window to workspace 1..9 |
 
-### Wallpaper & Ricing Controls
+### 🎬 Wallpaper & Environment
 | Shortcut | Action |
 | :--- | :--- |
-| `SUPER + ALT + UP` | Toggle Live Video Wallpaper / Static Canvas |
-| `SUPER + ALT + RIGHT` | Next live wallpaper (Glitch transition HUD) |
-| `SUPER + ALT + LEFT` | Previous live wallpaper (Glitch transition HUD) |
+| `SUPER + ALT + UP` | Toggle Live Video Wallpaper / Static Art |
+| `SUPER + ALT + RIGHT` | Next live wallpaper (Cyberpunk Glitch HUD) |
+| `SUPER + ALT + LEFT` | Previous live wallpaper (Cyberpunk Glitch HUD) |
 | `SUPER + N` | Cycle next static theme background |
 
-### Hardware, Screen & Tools
+### ⚡ Hardware & Utilities
 | Shortcut | Action |
 | :--- | :--- |
-| `SUPER + ALT + C` | Toggle Cooler Boost high-velocity laptop cooling |
-| `SUPER + SHIFT + K` | Launch Projector & Wireless Display Cast Manager |
-| `SUPER + SHIFT + T` | Open Omarchy theme picker carousel |
-| `SUPER + SHIFT + C` | Open color picker with hex copy to clipboard |
-| `SUPER + \` | Fullscreen matrix screensaver |
-| `SUPER + ALT + V` | Open Voxtype Aura dictation overlay |
+| `SUPER + ALT + C` | **Toggle Cooler Boost (High-Velocity Fan Cooling)** |
+| `SUPER + SHIFT + K` | Launch Wireless Display / Projector Cast |
+| `SUPER + SHIFT + T` | Open Omarchy Theme Picker |
+| `SUPER + SHIFT + C` | Color picker with HEX copy to clipboard |
+| `SUPER + \` | Fullscreen Matrix Screensaver |
+| `SUPER + ALT + V` | Toggle Voxtype Aura Voice Dictation |
 
 ---
 
-## 🧩 Omarchy Plugin Architecture
+## 📦 Integrated Quickshell Plugins
 
-Virtual☆Paradise coordinates multiple first-party and community Quickshell plugins to provide an integrated desktop experience:
+Virtual☆Paradise coordinates modular Quickshell plugins without hardcoding or conflicting with system files:
 
-| Plugin ID | Component | Role in Virtual☆Paradise |
-| :--- | :--- | :--- |
-| `mscurtescu.island-bar` | Floating Island Bar | 3-Island layout with `#0f081d` dark glass & glowing SVG neon borders |
-| `io.github.erikburdett.wavebar` | WaveBar Visualizer | Audio-reactive 120FPS CAVA waveform with MPRIS track control |
-| `io.github.tyrichards.workspaces-jap` | Japanese Workspaces | Minimalist Kanji numeral workspace pills with active underline |
-| `io.github.adamcbrewer.voxtype-aura` | Voxtype Aura | Theme-aware voice dictation popup with live recording indicators |
-| `crmne.hyprmoncfg` | Multi-Monitor Manager | Hyprland per-output scaling, refresh rate, and layout config |
-| `harshith.system-monitor` | System Monitor | Compact RAM & CPU pressure badge with popout metric details |
-| `onlyvishesh.power-manager` | Power Manager | Battery health, charging rates, and power profiles |
-| `ssupt.audio-control` | Audio Control | PipeWire sink/source selector, volume sliders, and stream mixer |
-| `ssupt.bluetooth-audio` | Bluetooth Audio | Device pairing, codec negotiation (LDAC/aptX), and routing |
-| `io.github.jeffcortez23.omarchy-projector-cast` | Projector & Cast | Miracast, wireless display, and external presentation modes |
-| `jankeesvw.notification-center` | Notification Center | Centralized notification history drawer and Do-Not-Disturb switch |
-
----
-
-## 🔄 Theme Switching & 100% Isolation
-
-A critical design goal of Virtual☆Paradise is **zero contamination** of other Omarchy themes. All customizations are managed dynamically via `~/.config/omarchy/hooks/theme-set.d/virtual-paradise.sh`:
-
-```mermaid
-flowchart TD
-    A["omarchy theme set"] --> B{"Selected Theme?"}
-    
-    B -- "Virtual Paradise" --> C["Apply Cyber Dark Purple (#0f081d)"]
-    C --> D["Enable mscurtescu.island-bar"]
-    D --> E["Enable Wavebar, Japanese Workspaces & Aura"]
-    E --> F["Load shell-paradise.json Layout"]
-    F --> G["Apply Cyberpunk GTK & Fastfetch Configs"]
-    G --> H["Initialize mpvpaper Live Wallpaper"]
-    
-    B -- "Catppuccin / Tokyo Night / Other" --> I["Apply Target Palette"]
-    I --> J["Disable mscurtescu.island-bar & Enable omarchy.bar"]
-    J --> K["Disable Virtual Paradise 3rd-Party Plugins"]
-    K --> L["Re-enable Canonical Omarchy Widgets"]
-    L --> M["Restore Canonical shell-default.json"]
-    M --> N["Restore Native GTK / Adwaita Styles"]
-    N --> O["Terminate mpvpaper Process"]
-```
-
-- When switching to **Catppuccin, Tokyo Night, Nord, etc.**, the hook cleanly disables `mscurtescu.island-bar`, disables all 3rd-party ricing plugins, re-enables standard first-party Omarchy widgets (`omarchy.bar`, `omarchy.clock`, `omarchy.workspaces`, etc.), restores stock `shell.json`, and stops background video rendering.
-- When switching back to **Virtual Paradise**, the hook seamlessly re-enables the Island Bar, restores plugin overrides, starts the audio waveform visualizer, and resumes live wallpapers.
+| Plugin ID | Function |
+| :--- | :--- |
+| [`mscurtescu.island-bar`](https://github.com/mscurtescu/omarchy-island-bar) | Cyber City 3-Island floating bar with gradient vector borders |
+| [`io.github.erikburdett.wavebar`](https://github.com/ErikBurdett/omarchy-wavebar) | 120Hz real-time CAVA waveform with MPRIS track control |
+| [`io.github.tyrichards.workspaces-jap`](https://github.com/TyRichards/omarchy-workspaces-jap) | Japanese numeral workspace indicators with active underline |
+| [`io.github.adamcbrewer.voxtype-aura`](https://github.com/adamcbrewer/voxtype-aura) | Theme-aware voice dictation HUD overlay |
+| [`crmne.hyprmoncfg`](https://github.com/crmne/omarchy-hyprmoncfg) | Multi-monitor display management & per-output scaling |
+| [`harshith.system-monitor`](https://github.com/Harshith292002/omarchy-system-monitor) | Theme-rice system monitor replacing standard memory widget |
+| [`onlyvishesh.power-manager`](https://github.com/onlyVishesh/omarchy-power-manager) | Battery health telemetry and power profiles |
+| [`ssupt.audio-control`](https://github.com/ssupt/omarchy-audio-control) | PipeWire stream mixer, device selection, and volume curves |
+| [`ssupt.bluetooth-audio`](https://github.com/ssupt/omarchy-bluetooth-audio) | Bluetooth audio device management with LDAC/aptX selection |
+| [`io.github.jeffcortez23.omarchy-projector-cast`](https://github.com/JeffCortez23/omarchy-projector-cast) | Wireless display casting and presentation mode |
+| [`jankeesvw.notification-center`](https://github.com/jankeesvw/omarchy-notification-center) | Notification drawer and Do-Not-Disturb control |
 
 ---
 
-## 🚀 Installation & Uninstallation
+## 🚀 Installation
 
-### 1. Automated Installation
-
-Clone the repository and run the installer:
+### Automated Install (Recommended)
 
 ```bash
 git clone https://github.com/llIIllIID0EIIllIIll/virtual-paradise.git
@@ -162,63 +185,57 @@ cd virtual-paradise
 ./install.sh
 ```
 
-#### Installer Options
-| Command | Mode | Description |
-| :--- | :--- | :--- |
-| `./install.sh` | **Full Install** | Complete installation including Plymouth boot animations, SDDM, plugins, and theme configs. (Prompts for sudo when needed) |
-| `./install.sh --user-only` | **User Only** | Installs user plugins, bar ricing, wallpapers, binaries, and themes without requiring sudo privileges. |
-| `./install.sh --no-boot` | **Skip Boot** | Deploys desktop rice and plugins while skipping Plymouth and SDDM setup. |
-| `./install.sh --hook` | **Sync Only** | Re-applies plugin overrides and theme assets without re-running system package checks. |
+### Modular Flags
 
-### 2. Clean Uninstallation
+| Command | Description |
+| :--- | :--- |
+| `./install.sh` | **Full Installation**: Deploys themes, plugins, SDDM, and Plymouth boot animations. *(Prompts for sudo when needed)* |
+| `./install.sh --user-only` | **User Only**: Installs desktop rice, plugins, and configs without requiring sudo privileges. |
+| `./install.sh --no-boot` | Deploys desktop theme and plugins while skipping Plymouth and SDDM setup. |
+| `./install.sh --hook` | Fast-syncs plugin overrides and assets without re-checking dependencies. |
 
-Virtual☆Paradise includes a comprehensive, non-destructive uninstaller:
+### Clean Uninstallation Guarantee
+
+We believe rice should always be respectful of the host machine:
 
 ```bash
-# Via repository:
+# From repository:
 ./uninstall.sh
 
-# Or via installed helper:
+# Or via installed command:
 uninstall-virtual-paradise
 ```
 
-The uninstaller:
-1. Gracefully switches the active theme back to a default stock theme (Catppuccin, Tokyo Night, etc.).
-2. Restores the canonical `shell.json` from `shell-default.json`.
-3. Disables all Virtual Paradise third-party plugins and re-enables official `omarchy.*` components.
-4. Removes theme assets, GTK overrides, and helper binaries from `~/.local/bin`.
-5. Creates a timestamped recovery backup in `~/.local/state/virtual-paradise/`.
+The uninstaller gracefully switches the active theme back to a fallback theme (Catppuccin, Tokyo Night, etc.), restores stock `shell.json`, re-enables all official `omarchy.*` widgets, removes theme files, and leaves zero residual background processes.
 
 ---
 
-## 🧪 Quality Assurance & Test Matrix
+## 🧪 Automated Test Matrix
 
-All features, scripts, and components undergo structured verification:
+All releases are verified against our end-to-end test suite:
 
-| Test Case | Description | Verification Method | Status |
-| :--- | :--- | :--- | :--- |
-| **TC-1: Script Syntax & Parsing** | Validates bash syntax, Python byte-compilation, and JSON schema. | `bash -n install.sh uninstall.sh bin/*.sh`<br>`python3 -m py_compile bin/*.py`<br>`jq empty shell/shell.json` | ✅ **PASS** |
-| **TC-2: Uninstaller Coexistence** | Verifies clean cleanup, plugin state reset, and fallback theme activation. | `./uninstall.sh --keep-backups`<br>Verified `omarchy.bar` active and zero residual files. | ✅ **PASS** |
-| **TC-3: Installer Idempotency** | Verifies flawless re-run and clean deployment from a fresh state. | `./install.sh --user-only`<br>Verified exit code 0, all 12 plugins registered. | ✅ **PASS** |
-| **TC-4: Theme Switching Isolation** | Tests round-trip switching between Virtual Paradise and stock themes. | `omarchy theme set "Catppuccin"` ➔ Verify defaults<br>`omarchy theme set "Virtual Paradise"` ➔ Verify restoration | ✅ **PASS** |
-| **TC-5: Audio Capture & DSP** | Verifies low-latency CAVA waveform processing over PipeWire. | Supervised `waveform.py --bars 24`<br>Verified active audio sync with Firefox/Spotify. | ✅ **PASS** |
-| **TC-6: Palette Uniformity** | Verifies `#0f081d` dark purple across all terminal emulators and shell. | Inspected `ghostty.conf`, `colors.toml`, `alacritty.toml`, `foot.ini`, `kitty.conf`. | ✅ **PASS** |
+- **TC-1: Script Syntax & Static Code Analysis** — `bash -n`, `py_compile`, and `jq` schema validation.
+- **TC-2: Uninstaller Coexistence** — Non-destructive cleanup, backup creation, and clean widget restore.
+- **TC-3: Installer Idempotency** — Safe multi-run execution without duplicating configs or corrupting state.
+- **TC-4: Theme Switching Isolation** — Full round-trip testing (`Virtual Paradise ➔ Catppuccin ➔ Virtual Paradise`) with zero bleed.
+- **TC-5: Audio Capture & DSP Engine** — PipeWire sink tracking and 120Hz waveform stability under heavy playback.
+- **TC-6: Palette Uniformity** — Exact `#0f081d` canvas matching across Ghostty, Alacritty, Kitty, Foot, and Shell.
 
 ---
 
-## 📁 Repository Structure
+## 📂 Repository Structure
 
 ```text
 virtual-paradise/
-├── assets/          # High-resolution desktop preview screenshots & artwork
-├── backgrounds/     # Live MP4/GIF loops and 4K cyberpunk static wallpapers
-├── bin/             # Shell launchers, CAVA sync daemon, matrix effect & helpers
-├── cava/            # Cava audio visualizer color gradients & configuration
-├── config/          # Modern GTK 3/4 CSS overrides and terminal profiles
-├── fastfetch/       # Custom Fastfetch configuration with Anime Braille artwork
+├── assets/          # High-resolution screenshots, showcase artwork & badges
+├── backgrounds/     # Video loops (Miku_live.mp4) and 4K cyberpunk wallpapers
+├── bin/             # Launchers, CAVA sync daemon, matrix effect & helpers
+├── cava/            # CAVA visualizer configuration and gradient palettes
+├── config/          # Modern GTK 3/4 CSS overrides and terminal configs
+├── fastfetch/       # Fastfetch profile with high-res Anime Braille artwork
 ├── hypr/            # Hyprland window rules, gestures, and cyber animations
 ├── overrides/       # Scoped QML overrides for Island Bar, Wavebar, Workspaces & Aura
-├── plugins/         # User Quickshell widgets cloned and calibrated for the active user
+├── plugins/         # User Quickshell widgets cloned for active user namespace
 ├── plymouth/        # Plymouth boot & shutdown splash animation assets
 ├── sddm/            # SDDM cyberpunk login display theme
 ├── shell/           # 3-Island Quickshell layout configuration (shell.json)
@@ -229,6 +246,10 @@ virtual-paradise/
 
 ---
 
-## 📄 License
+<div align="center">
 
-Distributed under the [MIT License](LICENSE). Built with love for the Omarchy Linux and Arch Linux communities.
+Made with 💜 for the **Omarchy Linux**, **Arch Linux**, and **r/unixporn** communities.
+
+[Back to top ↑](#-virtualparadise)
+
+</div>
