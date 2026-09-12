@@ -790,6 +790,15 @@ APPLY_PROJECTOR_COMPATIBILITY() {
   fi
 }
 
+APPLY_ISLAND_BAR_RICE() {
+  local source="$REPO_DIR/overrides/mscurtescu.island-bar/Bar.qml"
+  local target="$CONFIG_DIR/omarchy/plugins/mscurtescu.island-bar/Bar.qml"
+  if [[ -f "$source" && -d "$(dirname "$target")" ]]; then
+    cp "$source" "$target"
+  fi
+}
+
+
 # ------------------------------------------------------------------------------
 # 3. Install & Enable Custom Omarchy Bar Plugins
 # ------------------------------------------------------------------------------
@@ -954,6 +963,17 @@ INSTALL_AND_ENABLE_PLUGINS() {
       fi
       APPLY_VOXTYPE_AURA_RICE
 
+      # Island Bar provides the floating island style cyber bar.
+      if ! RUN_AS_INSTALL_USER omarchy plugin list --json 2>/dev/null | jq -e 'any(.[]; .id == "mscurtescu.island-bar")' >/dev/null; then
+        log_sub "Adding Island Bar plugin from git..."
+        RUN_AS_INSTALL_USER omarchy plugin add https://github.com/mscurtescu/omarchy-island-bar.git --enable --yes 2>/dev/null || true
+      else
+        RUN_AS_INSTALL_USER omarchy plugin enable "mscurtescu.island-bar" 2>/dev/null || true
+      fi
+      RUN_AS_INSTALL_USER omarchy plugin disable "omarchy.bar" 2>/dev/null || true
+      APPLY_ISLAND_BAR_RICE
+
+
       # The notification center owns the DND control. Disable a separately
       # installed DND plugin when present, but keep Omarchy's notification
       # service enabled because the new plugin uses it as its backend.
@@ -1033,6 +1053,10 @@ if [[ -f "$REPO_DIR/shell/shell.json" ]]; then
       log_warn "Japanese workspace plugin could not be enabled after shell layout sync."
     RUN_AS_INSTALL_USER omarchy plugin disable "${CURRENT_USER}.workspaces" 2>/dev/null || true
     RUN_AS_INSTALL_USER omarchy plugin disable "omarchy.workspaces" 2>/dev/null || true
+    RUN_AS_INSTALL_USER omarchy plugin enable "mscurtescu.island-bar" 2>/dev/null || true
+    RUN_AS_INSTALL_USER omarchy plugin disable "omarchy.bar" 2>/dev/null || true
+    APPLY_ISLAND_BAR_RICE
+
   fi
 fi
 
@@ -1412,6 +1436,12 @@ if command -v omarchy >/dev/null 2>&1; then
   omarchy plugin disable "${u}.workspaces" >/dev/null 2>&1 || true
   omarchy plugin disable "omarchy.workspaces" >/dev/null 2>&1 || true
   omarchy plugin enable "io.github.adamcbrewer.voxtype-aura" >/dev/null 2>&1 || true
+  omarchy plugin enable "mscurtescu.island-bar" >/dev/null 2>&1 || true
+  omarchy plugin disable "omarchy.bar" >/dev/null 2>&1 || true
+  for u_widget in clock weather cputemp indicators active-window menu system-update network microphone; do
+    omarchy plugin enable "${u}.${u_widget}" >/dev/null 2>&1 || true
+    omarchy plugin disable "omarchy.${u_widget}" >/dev/null 2>&1 || true
+  done
 fi
 
   # Activate Virtual Paradise Fastfetch config
@@ -1464,6 +1494,15 @@ else
     omarchy plugin disable "io.github.tyrichards.workspaces-jap" >/dev/null 2>&1 || true
     omarchy plugin enable "omarchy.workspaces" >/dev/null 2>&1 || true
     omarchy plugin disable "io.github.adamcbrewer.voxtype-aura" >/dev/null 2>&1 || true
+    omarchy plugin disable "mscurtescu.island-bar" >/dev/null 2>&1 || true
+    omarchy plugin enable "omarchy.bar" >/dev/null 2>&1 || true
+    for u_widget in clock weather cputemp indicators active-window menu system-update network microphone; do
+      omarchy plugin disable "${u}.${u_widget}" >/dev/null 2>&1 || true
+      omarchy plugin enable "omarchy.${u_widget}" >/dev/null 2>&1 || true
+    done
+    omarchy plugin enable "omarchy.agents" >/dev/null 2>&1 || true
+    omarchy plugin enable "omarchy.keyboard-layout" >/dev/null 2>&1 || true
+    omarchy plugin enable "omarchy.tray" >/dev/null 2>&1 || true
   fi
 
   # Cleanly stop live video wallpaper so new theme background displays properly
@@ -1473,15 +1512,15 @@ else
   rm -f "$HOME/.config/fastfetch/config.jsonc" 2>/dev/null || true
 
   # Restore default GTK CSS so other themes keep their native look
-  if [[ -f "$HOME/.config/gtk-4.0/gtk.css.bak_default" ]]; then
+  if [[ -f "$HOME/.config/gtk-4.0/gtk.css.bak_default" ]] && ! grep -q "Virtual" "$HOME/.config/gtk-4.0/gtk.css.bak_default"; then
     cp "$HOME/.config/gtk-4.0/gtk.css.bak_default" "$HOME/.config/gtk-4.0/gtk.css" 2>/dev/null || true
   else
-    rm -f "$HOME/.config/gtk-4.0/gtk.css" 2>/dev/null || true
+    rm -f "$HOME/.config/gtk-4.0/gtk.css" "$HOME/.config/gtk-4.0/gtk.css.bak_default" 2>/dev/null || true
   fi
-  if [[ -f "$HOME/.config/gtk-3.0/gtk.css.bak_default" ]]; then
+  if [[ -f "$HOME/.config/gtk-3.0/gtk.css.bak_default" ]] && ! grep -q "Virtual" "$HOME/.config/gtk-3.0/gtk.css.bak_default"; then
     cp "$HOME/.config/gtk-3.0/gtk.css.bak_default" "$HOME/.config/gtk-3.0/gtk.css" 2>/dev/null || true
   else
-    rm -f "$HOME/.config/gtk-3.0/gtk.css" 2>/dev/null || true
+    rm -f "$HOME/.config/gtk-3.0/gtk.css" "$HOME/.config/gtk-3.0/gtk.css.bak_default" 2>/dev/null || true
   fi
 
   # Restore canonical default Omarchy Bar Layout only if it changed

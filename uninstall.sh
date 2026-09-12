@@ -57,7 +57,26 @@ restore_or_remove() {
   fi
 }
 
+# Stop theme processes
 pkill -u "$CURRENT_USER" -f 'mpvpaper|virtual_matrix|momoisay|paradise_agent|rice-btop|rice-cava|rice-momoi|fastfetch-agent' 2>/dev/null || true
+
+# Switch theme if current theme is Virtual Paradise
+if command -v omarchy &>/dev/null; then
+  current_theme="$(RUN_AS_INSTALL_USER omarchy theme current 2>/dev/null || echo "")"
+  if [[ "$current_theme" =~ ^[Vv]irtual ]]; then
+    fallback_theme=""
+    for candidate in "Catppuccin" "Tokyo Night" "Gruvbox" "Nord" "Everforest" "Rose Pine"; do
+      if RUN_AS_INSTALL_USER omarchy theme list 2>/dev/null | grep -qx "$candidate"; then
+        fallback_theme="$candidate"
+        break
+      fi
+    done
+    if [[ -n "$fallback_theme" ]]; then
+      printf 'Switching active theme from "%s" to fallback "%s"...\n' "$current_theme" "$fallback_theme"
+      RUN_AS_INSTALL_USER omarchy theme set "$fallback_theme" 2>/dev/null || true
+    fi
+  fi
+fi
 
 restore_or_remove "$CONFIG_DIR/omarchy/shell.json" "$CONFIG_DIR/omarchy/shell-default.json"
 rm -f "$CONFIG_DIR/omarchy/shell-paradise.json" "$CONFIG_DIR/omarchy/extensions/paradise.json"
@@ -71,11 +90,18 @@ if [[ -d "$REPO_DIR/plugins" ]]; then
   done
 fi
 
+if [[ -d "$REPO_DIR/bin" ]]; then
+  for bin_source in "$REPO_DIR"/bin/*; do
+    rm -f "$LOCAL_BIN/$(basename "$bin_source")"
+  done
+fi
+
 for file in \
   paradise_banner.py paradise-banner paradise-agent offline-agent rice_layout.sh rice cast_screen.sh cast-screen \
-  toggle_cooler_boost.sh toggle_live_wallpaper.sh virtual_matrix virtual_matrix.py \
-  momoisay sync_cava_theme.py format-docx format-docx-vn.py vn-docx \
-  hypr_window_error_shake.sh hypr_window_error_restore.sh logout_splash.qml; do
+  toggle_cooler_boost.sh toggle_live_wallpaper.sh toggle_btop.sh toggle_voxtype_config.sh memory_detail_notify.sh \
+  virtual_matrix virtual_matrix.py momoisay momoisay.real sync_cava_theme.py format-docx format-docx-vn.py vn-docx \
+  hypr_window_error_shake.sh hypr_window_error_restore.sh logout_splash.qml curtain_transition.qml glitch_transition.qml \
+  Glitch.jpg Miku_missing.gif uninstall-virtual-paradise; do
   rm -f "$LOCAL_BIN/$file"
 done
 
@@ -85,12 +111,18 @@ done
 
 if [[ -f "$HOME/.config/gtk-4.0/gtk.css.bak_default" ]]; then
   cp "$HOME/.config/gtk-4.0/gtk.css.bak_default" "$HOME/.config/gtk-4.0/gtk.css"
+else
+  rm -f "$HOME/.config/gtk-4.0/gtk.css"
 fi
 if [[ -f "$HOME/.config/gtk-3.0/gtk.css.bak_default" ]]; then
   cp "$HOME/.config/gtk-3.0/gtk.css.bak_default" "$HOME/.config/gtk-3.0/gtk.css"
+else
+  rm -f "$HOME/.config/gtk-3.0/gtk.css"
 fi
 
 if command -v omarchy &>/dev/null; then
+  # Disable Virtual Paradise plugins
+  RUN_AS_INSTALL_USER omarchy plugin disable "mscurtescu.island-bar" 2>/dev/null || true
   RUN_AS_INSTALL_USER omarchy plugin disable "crmne.hyprmoncfg" 2>/dev/null || true
   RUN_AS_INSTALL_USER omarchy plugin disable "io.github.jeffcortez23.omarchy-projector-cast" 2>/dev/null || true
   RUN_AS_INSTALL_USER omarchy plugin disable "harshith.system-monitor" 2>/dev/null || true
@@ -102,12 +134,33 @@ if command -v omarchy &>/dev/null; then
   RUN_AS_INSTALL_USER omarchy plugin disable "io.github.erikburdett.wavebar" 2>/dev/null || true
   RUN_AS_INSTALL_USER omarchy plugin disable "io.github.tyrichards.workspaces-jap" 2>/dev/null || true
   RUN_AS_INSTALL_USER omarchy plugin disable "io.github.adamcbrewer.voxtype-aura" 2>/dev/null || true
+  RUN_AS_INSTALL_USER omarchy plugin disable "io.github.kristoferlund.webcam" 2>/dev/null || true
+
+  # Disable user custom widgets
+  for u_widget in clock weather cputemp indicators active-window menu system-update network microphone; do
+    RUN_AS_INSTALL_USER omarchy plugin disable "${CURRENT_USER}.${u_widget}" 2>/dev/null || true
+  done
+
+  # Enable canonical Omarchy plugins
+  RUN_AS_INSTALL_USER omarchy plugin enable "omarchy.bar" 2>/dev/null || true
   RUN_AS_INSTALL_USER omarchy plugin enable "omarchy.monitor" 2>/dev/null || true
   RUN_AS_INSTALL_USER omarchy plugin enable "omarchy.memory" 2>/dev/null || true
   RUN_AS_INSTALL_USER omarchy plugin enable "omarchy.power" 2>/dev/null || true
   RUN_AS_INSTALL_USER omarchy plugin enable "omarchy.audio" 2>/dev/null || true
   RUN_AS_INSTALL_USER omarchy plugin enable "omarchy.bluetooth" 2>/dev/null || true
   RUN_AS_INSTALL_USER omarchy plugin enable "omarchy.workspaces" 2>/dev/null || true
+  RUN_AS_INSTALL_USER omarchy plugin enable "omarchy.clock" 2>/dev/null || true
+  RUN_AS_INSTALL_USER omarchy plugin enable "omarchy.weather" 2>/dev/null || true
+  RUN_AS_INSTALL_USER omarchy plugin enable "omarchy.indicators" 2>/dev/null || true
+  RUN_AS_INSTALL_USER omarchy plugin enable "omarchy.active-window" 2>/dev/null || true
+  RUN_AS_INSTALL_USER omarchy plugin enable "omarchy.menu" 2>/dev/null || true
+  RUN_AS_INSTALL_USER omarchy plugin enable "omarchy.system-update" 2>/dev/null || true
+  RUN_AS_INSTALL_USER omarchy plugin enable "omarchy.network" 2>/dev/null || true
+  RUN_AS_INSTALL_USER omarchy plugin enable "omarchy.microphone" 2>/dev/null || true
+  RUN_AS_INSTALL_USER omarchy plugin enable "omarchy.agents" 2>/dev/null || true
+  RUN_AS_INSTALL_USER omarchy plugin enable "omarchy.keyboard-layout" 2>/dev/null || true
+  RUN_AS_INSTALL_USER omarchy plugin enable "omarchy.tray" 2>/dev/null || true
+
   RUN_AS_INSTALL_USER omarchy restart shell 2>/dev/null || true
 fi
 
