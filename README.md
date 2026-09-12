@@ -19,7 +19,7 @@ Arch Linux · Hyprland · Wayland · Quickshell
 
 Virtual☆Paradise is an advanced, full-topping cyberpunk theme and desktop integration ecosystem crafted specifically for Omarchy Linux (Arch Linux + Hyprland). Built around an ultra-deep night violet canvas (`#0f081d`) accented with glowing Miku Cyan (`#00f5d4`), Sakura Pink (`#ff5287`), and Hacker Green (`#00ff88`), it transforms the desktop into an immersive cyber city workstation without modifying core packaged files in `/usr/share/omarchy`.
 
-![Virtual Paradise Desktop Preview](assets/preview.png)
+![Virtual Paradise Desktop Preview](assets/preview-showcase.png)
 
 *Full 5-terminal development rice featuring CAVA audio waveform, Island Bar, system telemetry, live video wallpaper, and Paradise Agent.*
 
