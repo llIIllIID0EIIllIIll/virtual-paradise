@@ -798,6 +798,15 @@ APPLY_ISLAND_BAR_RICE() {
   fi
 }
 
+APPLY_AUDIO_CONTROL_RICE() {
+  local source_dir="$REPO_DIR/overrides/ssupt.audio-control"
+  local target_dir="$CONFIG_DIR/omarchy/plugins/ssupt.audio-control"
+  if [[ -d "$source_dir" && -d "$target_dir" ]]; then
+    [[ -f "$source_dir/Panel.qml" ]] && cp "$source_dir/Panel.qml" "$target_dir/Panel.qml"
+    [[ -f "$source_dir/Model.js" ]] && cp "$source_dir/Model.js" "$target_dir/Model.js"
+  fi
+}
+
 
 # ------------------------------------------------------------------------------
 # 3. Install & Enable Custom Omarchy Bar Plugins
@@ -920,6 +929,7 @@ INSTALL_AND_ENABLE_PLUGINS() {
       fi
       RUN_AS_INSTALL_USER omarchy plugin disable "${CURRENT_USER}.audio" 2>/dev/null || true
       RUN_AS_INSTALL_USER omarchy plugin disable "omarchy.audio" 2>/dev/null || true
+      APPLY_AUDIO_CONTROL_RICE
 
       # Advanced Bluetooth Audio replaces the cloned Bluetooth widget while
       # retaining its bar position and native device-management behavior.
@@ -1056,6 +1066,7 @@ if [[ -f "$REPO_DIR/shell/shell.json" ]]; then
     RUN_AS_INSTALL_USER omarchy plugin enable "mscurtescu.island-bar" 2>/dev/null || true
     RUN_AS_INSTALL_USER omarchy plugin disable "omarchy.bar" 2>/dev/null || true
     APPLY_ISLAND_BAR_RICE
+    APPLY_AUDIO_CONTROL_RICE
 
   fi
 fi
@@ -1405,6 +1416,15 @@ if [[ -f "$HOME/.config/omarchy/themes/virtual-paradise/overrides/mscurtescu.isl
   && -d "$HOME/.config/omarchy/plugins/mscurtescu.island-bar" ]]; then
   cp "$HOME/.config/omarchy/themes/virtual-paradise/overrides/mscurtescu.island-bar/Bar.qml" \
     "$HOME/.config/omarchy/plugins/mscurtescu.island-bar/Bar.qml"
+fi
+if [[ -d "$HOME/.config/omarchy/themes/virtual-paradise/overrides/ssupt.audio-control" \
+  && -d "$HOME/.config/omarchy/plugins/ssupt.audio-control" ]]; then
+  [[ -f "$HOME/.config/omarchy/themes/virtual-paradise/overrides/ssupt.audio-control/Panel.qml" ]] && \
+    cp "$HOME/.config/omarchy/themes/virtual-paradise/overrides/ssupt.audio-control/Panel.qml" \
+      "$HOME/.config/omarchy/plugins/ssupt.audio-control/Panel.qml" 2>/dev/null || true
+  [[ -f "$HOME/.config/omarchy/themes/virtual-paradise/overrides/ssupt.audio-control/Model.js" ]] && \
+    cp "$HOME/.config/omarchy/themes/virtual-paradise/overrides/ssupt.audio-control/Model.js" \
+      "$HOME/.config/omarchy/plugins/ssupt.audio-control/Model.js" 2>/dev/null || true
 fi
 # Use hyprmoncfg in place of the cloned Display & Scaling widget.
 if command -v omarchy >/dev/null 2>&1; then
