@@ -1,0 +1,121 @@
+# ==============================================================================
+#  Virtual☆Paradise — Helix Editor Cyberpunk Neon Theme
+# ==============================================================================
+
+# Syntax
+"keyword" = "color5"
+"keyword.control" = { fg = "color5", modifiers = ["italic"] }
+"function" = "color4"
+"function.builtin" = "color4"
+"function.macro" = "color5"
+"type" = "color3"
+"type.builtin" = "color5"
+"type.enum.variant" = "color6"
+"constructor" = "color4"
+"constant" = "color3"
+"constant.builtin" = "color3"
+"constant.numeric" = "color3"
+"constant.character" = "color6"
+"constant.character.escape" = "color5"
+"string" = "color2"
+"string.regexp" = "color5"
+"string.special" = "color4"
+"comment" = { fg = "color8", modifiers = ["italic"] }
+"variable" = "foreground"
+"variable.parameter" = { fg = "color5", modifiers = ["italic"] }
+"variable.builtin" = "color1"
+"variable.other.member" = "color4"
+"label" = "color4"
+"punctuation" = "color8"
+"punctuation.special" = "color6"
+"operator" = "color6"
+"tag" = "color4"
+"namespace" = { fg = "color3", modifiers = ["italic"] }
+"special" = "color5"
+"attribute" = "color3"
+
+# Markup
+"markup.heading.1" = "color1"
+"markup.heading.2" = "color3"
+"markup.heading.3" = "color3"
+"markup.heading.4" = "color2"
+"markup.heading.5" = "color4"
+"markup.heading.6" = "color5"
+"markup.list" = "color6"
+"markup.list.unchecked" = "color8"
+"markup.list.checked" = "color2"
+"markup.bold" = { modifiers = ["bold"] }
+"markup.italic" = { modifiers = ["italic"] }
+"markup.strikethrough" = { modifiers = ["crossed_out"] }
+"markup.link.url" = { fg = "color5", modifiers = ["underlined"] }
+"markup.link.text" = "color4"
+"markup.quote" = "color8"
+"markup.raw" = "color2"
+
+# Diff
+"diff.plus" = "color2"
+"diff.delta" = "color3"
+"diff.minus" = "color1"
+
+# Diagnostics
+"diagnostic.info" = { underline = { color = "color4", style = "curl" } }
+"diagnostic.hint" = { underline = { color = "color6", style = "curl" } }
+"diagnostic.warning" = { underline = { color = "color3", style = "curl" } }
+"diagnostic.error" = { underline = { color = "color1", style = "curl" } }
+
+# Editor
+"ui.background" = { bg = "background" }
+"ui.background.separator" = { fg = "color8" }
+"ui.cursor" = { fg = "background", bg = "cursor" }
+"ui.cursor.normal" = { fg = "background", bg = "cursor" }
+"ui.cursor.insert" = { fg = "background", bg = "cursor" }
+"ui.cursor.select" = { fg = "background", bg = "cursor" }
+"ui.cursor.match" = { fg = "color3", modifiers = ["underlined"] }
+"ui.cursorline.primary" = { bg = "lighter_background" }
+"ui.cursorline.secondary" = { bg = "lighter_background" }
+"ui.selection" = { bg = "selection_background", fg = "selection_foreground" }
+"ui.selection.primary" = { bg = "selection_background", fg = "selection_foreground" }
+"ui.linenr" = "color8"
+"ui.linenr.selected" = "color4"
+"ui.statusline" = { fg = "foreground", bg = "lighter_background" }
+"ui.statusline.inactive" = { fg = "color8", bg = "background" }
+"ui.statusline.normal" = { fg = "background", bg = "color4", modifiers = ["bold"] }
+"ui.statusline.insert" = { fg = "background", bg = "color2", modifiers = ["bold"] }
+"ui.statusline.select" = { fg = "background", bg = "color5", modifiers = ["bold"] }
+"ui.popup" = { fg = "foreground", bg = "lighter_background" }
+"ui.popup.info" = { fg = "foreground", bg = "lighter_background" }
+"ui.window" = { fg = "color8" }
+"ui.help" = { fg = "foreground", bg = "lighter_background" }
+"ui.text" = "foreground"
+"ui.text.focus" = "color4"
+"ui.text.inactive" = "color8"
+"ui.text.info" = "color4"
+"ui.virtual.ruler" = { bg = "lighter_background" }
+"ui.virtual.whitespace" = "color8"
+"ui.virtual.indent-guide" = "color8"
+"ui.menu" = { fg = "foreground", bg = "lighter_background" }
+"ui.menu.selected" = { fg = "selection_foreground", bg = "selection_background" }
+"ui.menu.scroll" = { fg = "color4", bg = "lighter_background" }
+
+# Diagnostic badges in statusline
+info = "color4"
+warning = "color3"
+error = "color1"
+hint = "color6"
+
+[palette]
+background = "#0f081d"
+foreground = "#eafbfa"
+lighter_background = "#180e2e"
+cursor = "#00f5d4"
+selection_background = "#00f5d4"
+selection_foreground = "#0f081d"
+color0 = "#0f081d"
+color1 = "#ff0055"
+color2 = "#00ff88"
+color3 = "#ffe066"
+color4 = "#00f5d4"
+color5 = "#ffb7d5"
+color6 = "#39c5bb"
+color7 = "#eafbfa"
+color8 = "#5a3e85"
