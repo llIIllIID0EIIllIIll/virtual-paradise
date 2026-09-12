@@ -1,0 +1,66 @@
+# Virtual☆Paradise btop theme
+# Neon Pastel Cyberpunk: Miku Cyan -> Hacker Green -> Sakura Pink
+
+# Main background, empty for transparent
+theme[main_bg]="#0f081d"
+
+# Main text color
+theme[main_fg]="#eafbfa"
+
+# Title color for boxes
+theme[title]="#ffb7d5"
+
+# Highlight color for keyboard shortcuts
+theme[hi_fg]="#00ff88"
+
+# Background color of selected item in processes box
+theme[selected_bg]="#180e2e"
+
+# Foreground color of selected item in processes box
+theme[selected_fg]="#00f5d4"
+
+# Color of inactive/disabled text
+theme[inactive_fg]="#5a3e85"
+
+# Misc colors for processes box
+theme[proc_misc]="#c5e8ea"
+
+# Box outline and divider line color
+theme[cpu_box]="#00f5d4"
+theme[mem_box]="#ffb7d5"
+theme[net_box]="#00ff88"
+theme[proc_box]="#00f5d4"
+theme[div_line]="#3b255c"
+
+# Gradient for all meters and graphs (40% Cyan -> 20% Green -> 40% Sakura Pink)
+theme[temp_start]="#00f5d4"
+theme[temp_mid]="#00ff88"
+theme[temp_end]="#ffb7d5"
+
+theme[cpu_start]="#00f5d4"
+theme[cpu_mid]="#00ff88"
+theme[cpu_end]="#ffb7d5"
+
+theme[free_start]="#00f5d4"
+theme[free_mid]="#00ff88"
+theme[free_end]="#ffb7d5"
+
+theme[cached_start]="#00f5d4"
+theme[cached_mid]="#00ff88"
+theme[cached_end]="#ffb7d5"
+
+theme[available_start]="#00f5d4"
+theme[available_mid]="#00ff88"
+theme[available_end]="#ffb7d5"
+
+theme[used_start]="#00f5d4"
+theme[used_mid]="#00ff88"
+theme[used_end]="#ffb7d5"
+
+theme[download_start]="#00f5d4"
+theme[download_mid]="#00ff88"
+theme[download_end]="#ffb7d5"
+
+theme[upload_start]="#ffb7d5"
+theme[upload_mid]="#00ff88"
+theme[upload_end]="#00f5d4"
