@@ -1,0 +1,10 @@
+[Unit]
+Description=Periodic health check for the Omarchy audio-control backend
+
+[Timer]
+OnBootSec=2min
+OnUnitActiveSec=5min
+AccuracySec=30s
+
+[Install]
+WantedBy=timers.target
