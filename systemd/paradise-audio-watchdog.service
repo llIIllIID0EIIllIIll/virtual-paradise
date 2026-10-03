@@ -1,0 +1,9 @@
+[Unit]
+Description=Reset the ssupt.audio-control backend if it stops answering
+Documentation=https://github.com/ssupt/omarchy-audio-control
+
+[Service]
+Type=oneshot
+ExecStart=%h/.local/bin/audio-backend-watchdog.sh
+# Short: the healthy path is one round-trip to a unix socket.
+TimeoutStartSec=45
