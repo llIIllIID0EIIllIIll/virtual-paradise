@@ -1,0 +1,15 @@
+{
+  "schemaVersion": 1,
+  "id": "__USER__.island-bar",
+  "name": "Paradise Island Bar",
+  "version": "1.0.0",
+  "author": "virtual-paradise",
+  "license": "MIT",
+  "description": "Status bar drawn as three floating theme-aware islands. Keeps the upstream first-party widget host so service-backed widgets resolve their service.",
+  "kinds": [
+    "bar"
+  ],
+  "entryPoints": {
+    "bar": "Bar.qml"
+  }
+}
