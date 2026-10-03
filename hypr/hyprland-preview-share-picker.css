@@ -1,0 +1,84 @@
+/* ==============================================================================
+ *  Virtual☆Paradise — Hyprland Screen & Window Share Picker Stylesheet
+ * ============================================================================== */
+
+@define-color foreground #eafbfa;
+@define-color background #0f081d;
+@define-color accent #00f5d4;
+@define-color accent_secondary #00ff88;
+@define-color accent_highlight #ffb7d5;
+@define-color muted #9684c0;
+@define-color card_bg #0e121a;
+@define-color text_dark #0f081d;
+@define-color accent_hover #00ff88;
+@define-color selected_tab #00f5d4;
+@define-color text #eafbfa;
+
+* {
+  all: unset;
+  font-family: JetBrains Mono NF, Inter, sans-serif;
+  color: @foreground;
+  font-weight: bold;
+  font-size: 15px;
+}
+
+.window {
+  background: alpha(@background, 0.94);
+  border: solid 2px @accent;
+  border-radius: 16px;
+  margin: 4px;
+  padding: 18px;
+}
+
+tabs {
+  padding: 0.5rem 1rem;
+}
+
+tabs > tab {
+  margin-right: 1.2rem;
+  padding: 6px 14px;
+  border-radius: 8px;
+}
+
+.tab-label {
+  color: @muted;
+  transition: all 0.2s ease;
+}
+
+tabs > tab:checked > .tab-label,
+tabs > tab:active > .tab-label {
+  color: @accent;
+  font-weight: 800;
+  text-decoration: underline currentColor;
+}
+
+.button {
+  background-color: @card_bg;
+  border: 1px solid alpha(@accent, 0.35);
+  border-radius: 12px;
+  padding: 10px;
+  margin: 6px;
+  transition: all 0.2s ease;
+}
+
+.button:hover {
+  background-color: alpha(@accent, 0.18);
+  border-color: @accent_secondary;
+}
+
+.button:active,
+.button:checked {
+  background-color: alpha(@accent, 0.28);
+  border-color: @accent;
+}
+
+.card-title {
+  color: @foreground;
+  font-size: 14px;
+  padding: 4px;
+}
+
+.preview-image {
+  border-radius: 8px;
+  border: 1px solid alpha(@muted, 0.3);
+}
