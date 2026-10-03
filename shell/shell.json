@@ -1,0 +1,111 @@
+{
+  "bar": {
+    "centerAnchor": "__USER__.clock",
+    "layout": {
+      "center": [
+        {
+          "id": "io.github.erikburdett.wavebar"
+        },
+        {
+          "id": "omarchy.spacer"
+        },
+        {
+          "id": "__USER__.weather"
+        },
+        {
+          "id": "__USER__.clock",
+          "format": "d MMMM 'W'ww yyyy",
+          "formatAlt": "yyyy-MM-dd HH:mm:ss",
+          "verticalFormat": "HH\n—\nmm"
+        },
+        {
+          "id": "io.github.woogy7.vitals"
+        },
+        {
+          "id": "__USER__.cputemp"
+        },
+        {
+          "id": "__USER__.microphone"
+        },
+        {
+          "alwaysShow": true,
+          "id": "__USER__.indicators",
+          "items": [
+            "Dictation",
+            "ScreenRecording",
+            "Reminder",
+            "NightLight",
+            "StayAwake"
+          ]
+        },
+        {
+          "id": "omarchy.keyboard-layout"
+        }
+      ],
+      "left": [
+        {
+          "id": "__USER__.menu"
+        },
+        {
+          "id": "io.github.tyrichards.workspaces-jap"
+        },
+        {
+          "id": "__USER__.active-window"
+        }
+      ],
+      "right": [
+        {
+          "id": "omarchy.tray"
+        },
+        {
+          "id": "jankeesvw.notification-center"
+        },
+        {
+          "id": "io.github.kristoferlund.webcam",
+          "device": "/dev/video0"
+        },
+        {
+          "id": "crmne.hyprmoncfg"
+        },
+        {
+          "id": "io.github.jeffcortez23.omarchy-projector-cast"
+        },
+        {
+          "id": "ssupt.bluetooth-audio"
+        },
+        {
+          "id": "__USER__.network"
+        },
+        {
+          "id": "ssupt.audio-control"
+        },
+        {
+          "id": "onlyvishesh.power-manager",
+          "showPercentage": true
+        },
+        {
+          "id": "__USER__.system-update"
+        }
+      ]
+    },
+    "position": "top",
+    "transparent": true,
+    "id": "__USER__.island-bar"
+  },
+  "idle": {
+    "lock": 300,
+    "screensaver": 150
+  },
+  "plugins": [
+    {
+      "id": "__USER__.lock"
+    }
+  ],
+  "version": 1,
+  "disabledPlugins": [
+    "omarchy.lock"
+  ],
+  "cloneSourceRestores": [
+    "__USER__.lock"
+  ]
+}
