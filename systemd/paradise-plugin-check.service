@@ -1,0 +1,13 @@
+[Unit]
+Description=Check for Omarchy plugin updates (read-only)
+# Network is genuinely required here; this is the one unit that may fail offline.
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+ExecStart=%h/.local/bin/notify-plugin-updates.sh
+# Overlap detection: a slow fetch must not stack with the next timer tick.
+TimeoutStartSec=180
+Nice=10
+IOSchedulingClass=idle

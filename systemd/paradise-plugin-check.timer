@@ -1,0 +1,12 @@
+[Unit]
+Description=Daily Omarchy plugin update check
+
+[Timer]
+OnCalendar=*-*-* 10:17:00
+# Spread load and survive a suspended laptop: catch up if a tick was missed.
+Persistent=true
+RandomizedDelaySec=45m
+AccuracySec=1m
+
+[Install]
+WantedBy=timers.target
