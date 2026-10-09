@@ -3,26 +3,25 @@ import QtQuick.Effects
 import QtQuick.Shapes
 import qs.Commons
 
-// V2-style bar surface: one continuous strip attached to the screen edge.
+// V2-style bar surface: a continuous strip, or one notch tab.
 //
-// Replaces the three floating pills. The bar spans the width and reads as part
-// of the screen edge rather than three objects on the wallpaper. A single
-// shadow belongs to the whole strip, not to each group - fragmenting it per
-// group is what made the old design fall apart into pills.
+// A single shadow belongs to the whole shape. It is drawn by MultiEffect over
+// the rendered path rather than by RectangularShadow: a rectangular shadow
+// cannot follow a notch whose desktop edge tapers inward at both ends, so its
+// square corners pushed out past the curve and the whole thing read as a block
+// sitting behind the bar.
 //
-// Adapted from Shibumi-Shell's V2 shell. Forms offered here:
+// Adapted from Shibumi-Shell's V2 shell. Forms:
 //
 //   "notch"  the desktop-facing edge is inset at each end and curves up into
 //            the screen edge, so the bar grows out of the top of the screen.
-//   "dock"   screen edge straight, desktop-facing corners rounded by
-//            space(8). The quiet strip.
+//   "dock"   screen edge straight, desktop-facing corners rounded by space(8).
 //   "full"   screen edge straight, desktop corners square. Edge to edge.
 //   "fit"    inset from the screen edge and the sides, all four corners
 //            rounded: a floating frame rather than an attached strip.
 //
 // Shibumi's connected tongue - a lobe that flows down into an open panel - is
-// left out; that needs the panel-open geometry plumbed through, and this bar's
-// panels anchor themselves.
+// left out; that needs the panel-open geometry plumbed through.
 Item {
   id: root
 
@@ -33,12 +32,15 @@ Item {
     Color.foreground.b, 0.10)
   property bool borderEnabled: true
   property bool shadowEnabled: true
+  // Depth of the cast shadow. Kept modest because a bar window is only as tall
+  // as the bar, so anything past the desktop edge has nowhere to render.
+  property real shadowBlur: 0.7
+  property real shadowOffset: 3
 
   // Notch geometry, from the Shibumi V2 contract: the shoulder runs out to
   // `wing`, the body corner adds `bodyRadius`, and the cubic's control points
   // use the circular-arc kappa so the curve reads as a quarter round.
-  // Overridable: a narrow island needs a smaller shoulder or the two curves
-  // eat the whole edge.
+  // Overridable: a narrow island needs a smaller shoulder.
   property real wing: Style.space(14)
   property real bodyRadius: Style.space(9)
   readonly property real inset: wing + bodyRadius
@@ -46,9 +48,9 @@ Item {
 
   readonly property bool notch: variant === "notch"
 
-  // Per-form geometry. "fit" floats: it is inset from the screen edge and both
-  // sides and rounds every corner. The attached forms sit flush at the screen
-  // edge and only round the desktop-facing pair.
+  // Per-form geometry. "fit" floats: inset from the screen edge and both sides,
+  // every corner rounded. The attached forms sit flush at the screen edge and
+  // only round the desktop-facing pair.
   readonly property real fitInset: Style.space(3)
   readonly property real insetH: variant === "fit" ? fitInset : 0
   readonly property real screenInset: variant === "fit" ? fitInset : 0
@@ -64,119 +66,125 @@ Item {
   readonly property real bl: root.atTop ? desktopCorner : screenCorner
   readonly property real br: root.bl
 
-  Shape {
-    id: surface
+  // The whole shape is rendered as one layer so MultiEffect can cast a shadow
+  // that follows the path, curve and all.
+  Item {
+    id: surfaceContent
 
     anchors.fill: parent
-    antialiasing: true
-    preferredRendererType: Shape.CurveRenderer
-    visible: root.notch
+    layer.enabled: root.shadowEnabled
+    layer.effect: MultiEffect {
+      shadowEnabled: true
+      shadowColor: Qt.rgba(0, 0, 0, 0.55)
+      shadowBlur: root.shadowBlur
+      shadowVerticalOffset: root.atTop ? root.shadowOffset : -root.shadowOffset
+      shadowHorizontalOffset: 0
+      shadowScale: 1.0
+      // Lets the blur bleed past the item; harmless where the bar fills the
+      // window, needed in the gaps between islands.
+      autoPaddingEnabled: true
+    }
 
-    ShapePath {
-      strokeColor: root.borderEnabled ? root.borderColor : "transparent"
-      strokeWidth: root.borderEnabled ? 1 : 0
-      fillColor: root.fillColor
-      capStyle: ShapePath.FlatCap
-      joinStyle: ShapePath.RoundJoin
+    Shape {
+      id: notchShape
 
-      startX: 0.5
-      startY: root.atTop ? 0 : root.height
+      anchors.fill: parent
+      antialiasing: true
+      preferredRendererType: Shape.CurveRenderer
+      visible: root.notch
 
-      // Straight along the screen edge.
-      PathLine { x: root.width; y: root.atTop ? 0 : root.height }
+      ShapePath {
+        strokeColor: root.borderEnabled ? root.borderColor : "transparent"
+        strokeWidth: root.borderEnabled ? 1 : 0
+        fillColor: root.fillColor
+        capStyle: ShapePath.FlatCap
+        joinStyle: ShapePath.RoundJoin
 
-      // Right shoulder: the desktop edge curves up into the screen edge.
-      PathCubic {
-        x: root.width - root.inset
-        y: root.atTop ? root.height : 0
-        control1X: root.width - root.kappa * root.wing
-        control1Y: root.atTop ? 0 : root.height
-        control2X: root.width - root.wing + (1 - root.kappa) * root.bodyRadius
-        control2Y: root.atTop ? root.height : 0
-      }
+        startX: 0.5
+        startY: root.atTop ? 0 : root.height
 
-      // Straight desktop edge between the shoulders.
-      PathLine { x: root.inset; y: root.atTop ? root.height : 0 }
+        // Straight along the screen edge.
+        PathLine { x: root.width; y: root.atTop ? 0 : root.height }
 
-      // Left shoulder.
-      PathCubic {
-        x: 0
-        y: root.atTop ? 0 : root.height
-        control1X: root.wing - (1 - root.kappa) * root.bodyRadius
-        control1Y: root.atTop ? root.height : 0
-        control2X: root.kappa * root.wing
-        control2Y: root.atTop ? 0 : root.height
+        // Right shoulder: the desktop edge curves up into the screen edge.
+        PathCubic {
+          x: root.width - root.inset
+          y: root.atTop ? root.height : 0
+          control1X: root.width - root.kappa * root.wing
+          control1Y: root.atTop ? 0 : root.height
+          control2X: root.width - root.wing + (1 - root.kappa) * root.bodyRadius
+          control2Y: root.atTop ? root.height : 0
+        }
+
+        // Straight desktop edge between the shoulders.
+        PathLine { x: root.inset; y: root.atTop ? root.height : 0 }
+
+        // Left shoulder.
+        PathCubic {
+          x: 0
+          y: root.atTop ? 0 : root.height
+          control1X: root.wing - (1 - root.kappa) * root.bodyRadius
+          control1Y: root.atTop ? root.height : 0
+          control2X: root.kappa * root.wing
+          control2Y: root.atTop ? 0 : root.height
+        }
       }
     }
-  }
 
-  // dock / full / fit: a rounded rectangle, optionally inset. The two edges are
-  // the screen edge (y = screenY) and the desktop edge (y = deskY).
-  Shape {
-    anchors.fill: parent
-    antialiasing: true
-    preferredRendererType: Shape.CurveRenderer
-    visible: !root.notch
+    // dock / full / fit: a rounded rectangle, optionally inset.
+    Shape {
+      anchors.fill: parent
+      antialiasing: true
+      preferredRendererType: Shape.CurveRenderer
+      visible: !root.notch
 
-    readonly property real x0: root.insetH
-    readonly property real x1: root.width - root.insetH
-    readonly property real screenY: root.atTop ? root.screenInset
-      : root.height - root.screenInset
-    readonly property real deskY: root.atTop
-      ? root.height - root.deskInset : root.deskInset
-    // Radii touching the screen edge and the desktop edge respectively.
-    readonly property real sr: root.atTop ? root.screenCorner : root.desktopCorner
-    readonly property real dr: root.atTop ? root.desktopCorner : root.screenCorner
+      readonly property real x0: root.insetH
+      readonly property real x1: root.width - root.insetH
+      readonly property real screenY: root.atTop ? root.screenInset
+        : root.height - root.screenInset
+      readonly property real deskY: root.atTop
+        ? root.height - root.deskInset : root.deskInset
+      readonly property real sr: root.atTop ? root.screenCorner : root.desktopCorner
+      readonly property real dr: root.atTop ? root.desktopCorner : root.screenCorner
 
-    ShapePath {
-      strokeColor: root.borderEnabled ? root.borderColor : "transparent"
-      strokeWidth: root.borderEnabled ? 1 : 0
-      fillColor: root.fillColor
-      capStyle: ShapePath.FlatCap
-      joinStyle: ShapePath.RoundJoin
+      ShapePath {
+        strokeColor: root.borderEnabled ? root.borderColor : "transparent"
+        strokeWidth: root.borderEnabled ? 1 : 0
+        fillColor: root.fillColor
+        capStyle: ShapePath.FlatCap
+        joinStyle: ShapePath.RoundJoin
 
-      startX: parent.x0 + parent.sr
-      startY: parent.screenY
-      PathLine { x: parent.x1 - parent.sr; y: parent.screenY }
-      PathQuad {
-        x: parent.x1
-        y: parent.screenY + (root.atTop ? parent.sr : -parent.sr)
-        controlX: parent.x1
-        controlY: parent.screenY
-      }
-      PathLine { x: parent.x1; y: parent.deskY + (root.atTop ? -parent.dr : parent.dr) }
-      PathQuad {
-        x: parent.x1 - parent.dr
-        y: parent.deskY
-        controlX: parent.x1
-        controlY: parent.deskY
-      }
-      PathLine { x: parent.x0 + parent.dr; y: parent.deskY }
-      PathQuad {
-        x: parent.x0
-        y: parent.deskY + (root.atTop ? -parent.dr : parent.dr)
-        controlX: parent.x0
-        controlY: parent.deskY
-      }
-      PathLine { x: parent.x0; y: parent.screenY + (root.atTop ? parent.sr : -parent.sr) }
-      PathQuad {
-        x: parent.x0 + parent.sr
-        y: parent.screenY
-        controlX: parent.x0
-        controlY: parent.screenY
+        startX: parent.x0 + parent.sr
+        startY: parent.screenY
+        PathLine { x: parent.x1 - parent.sr; y: parent.screenY }
+        PathQuad {
+          x: parent.x1
+          y: parent.screenY + (root.atTop ? parent.sr : -parent.sr)
+          controlX: parent.x1
+          controlY: parent.screenY
+        }
+        PathLine { x: parent.x1; y: parent.deskY + (root.atTop ? -parent.dr : parent.dr) }
+        PathQuad {
+          x: parent.x1 - parent.dr
+          y: parent.deskY
+          controlX: parent.x1
+          controlY: parent.deskY
+        }
+        PathLine { x: parent.x0 + parent.dr; y: parent.deskY }
+        PathQuad {
+          x: parent.x0
+          y: parent.deskY + (root.atTop ? -parent.dr : parent.dr)
+          controlX: parent.x0
+          controlY: parent.deskY
+        }
+        PathLine { x: parent.x0; y: parent.screenY + (root.atTop ? parent.sr : -parent.sr) }
+        PathQuad {
+          x: parent.x0 + parent.sr
+          y: parent.screenY
+          controlX: parent.x0
+          controlY: parent.screenY
+        }
       }
     }
-  }
-
-  // One shadow for the whole strip, cast away from the screen edge.
-  RectangularShadow {
-    anchors.fill: parent
-    radius: root.notch ? root.bodyRadius : Math.max(root.tl, root.bl)
-    blur: 10
-    spread: 0
-    offset: Qt.vector2d(0, root.atTop ? 3 : -3)
-    color: Qt.rgba(0, 0, 0, 0.40)
-    visible: root.shadowEnabled
-    z: -1
   }
 }

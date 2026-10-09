@@ -70,6 +70,10 @@ Item {
   // screen edge. Takes precedence over shellVariant, which only applies to the
   // single continuous surface.
   property bool notchIslands: true
+  // A bar window is exactly as tall as the bar, so a cast shadow has nowhere
+  // to fall. The notch tabs stop this far short of the desktop edge, leaving
+  // that strip for the shadow to render in.
+  readonly property real barShadowRoom: Style.space(4)
   // Which V2 form BarSurface draws when one continuous surface is used:
   // "notch" (flowing shoulders), "dock", "full" or "fit".
   property string shellVariant: "fit"
@@ -1442,7 +1446,7 @@ Item {
           anchors.bottom: root.notchIslands && root.position === "bottom" ? parent.bottom : undefined
           width: leftContentWidth + root.islandPad * 2
           height: root.notchIslands
-            ? root.barSize
+            ? root.barSize - root.barShadowRoom
             : Math.max(1, root.barSize - root.islandInset * 2)
 
           readonly property real leftContentWidth: {
@@ -1489,7 +1493,7 @@ Item {
           anchors.bottom: root.notchIslands && root.position === "bottom" ? parent.bottom : undefined
           width: rightContentWidth + root.islandPad * 2
           height: root.notchIslands
-            ? root.barSize
+            ? root.barSize - root.barShadowRoom
             : Math.max(1, root.barSize - root.islandInset * 2)
 
           readonly property real rightContentWidth: {
@@ -1883,7 +1887,9 @@ Item {
             && hCenter.islandRight > hCenter.islandLeft
           x: hCenter.islandLeft - root.islandPad
           width: hCenter.islandRight - hCenter.islandLeft + root.islandPad * 2
-          height: root.barSize
+          height: root.notchIslands
+            ? root.barSize - root.barShadowRoom
+            : Math.max(1, root.barSize - root.islandInset * 2)
           anchors.verticalCenter: root.notchIslands ? undefined : parent.verticalCenter
           anchors.top: root.notchIslands && root.position !== "bottom" ? parent.top : undefined
           anchors.bottom: root.notchIslands && root.position === "bottom" ? parent.bottom : undefined
