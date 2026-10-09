@@ -34,9 +34,19 @@ Item {
     Color.accent.b, 0.55)
   property bool borderEnabled: true
   // Thin lit line along the screen edge - the glass cue.
-  // Off: the lit line read as a seam rather than glass.
+  // Off: the lit line read as a seam rather than glass. The centre island turns
+  // it back on at a lower weight, where it reads as a highlight.
   property bool highlightEnabled: false
   property color highlightColor: Qt.rgba(1, 1, 1, 0.10)
+
+  // Centre-island treatments. The accent glow replaces the black cast shadow
+  // with a coloured one at zero offset, which haloes the island instead of
+  // grounding it. The gradient lifts the top of the fill so it does not read
+  // as one flat block.
+  property bool glowEnabled: false
+  property color glowColor: Color.accent
+  property bool gradientEnabled: false
+  property color gradientTopColor: Qt.lighter(Color.bar.background, 1.7)
   // On: it is what separates the island from the wallpaper. Kept soft and
   // shape-following so it reads as depth rather than a block.
   property bool shadowEnabled: true
@@ -80,12 +90,15 @@ Item {
     id: surfaceContent
 
     anchors.fill: parent
-    layer.enabled: root.shadowEnabled
+    layer.enabled: root.shadowEnabled || root.glowEnabled
     layer.effect: MultiEffect {
       shadowEnabled: true
-      shadowColor: Qt.rgba(0, 0, 0, 0.55)
-      shadowBlur: root.shadowBlur
-      shadowVerticalOffset: root.atTop ? root.shadowOffset : -root.shadowOffset
+      shadowColor: root.glowEnabled
+        ? Qt.rgba(root.glowColor.r, root.glowColor.g, root.glowColor.b, 0.65)
+        : Qt.rgba(0, 0, 0, 0.55)
+      shadowBlur: root.glowEnabled ? 1.0 : root.shadowBlur
+      shadowVerticalOffset: root.glowEnabled
+        ? 0 : (root.atTop ? root.shadowOffset : -root.shadowOffset)
       shadowHorizontalOffset: 0
       shadowScale: 1.0
       // Lets the blur bleed past the item; harmless where the bar fills the
@@ -105,6 +118,14 @@ Item {
         strokeColor: root.borderEnabled ? root.borderColor : "transparent"
         strokeWidth: root.borderEnabled ? 1.5 : 0
         fillColor: root.fillColor
+        fillGradient: Gradient {
+          orientation: Gradient.Vertical
+          GradientStop {
+            position: 0.0
+            color: root.gradientEnabled ? root.gradientTopColor : root.fillColor
+          }
+          GradientStop { position: 1.0; color: root.fillColor }
+        }
         capStyle: ShapePath.FlatCap
         joinStyle: ShapePath.RoundJoin
 
@@ -159,6 +180,14 @@ Item {
         strokeColor: root.borderEnabled ? root.borderColor : "transparent"
         strokeWidth: root.borderEnabled ? 1.5 : 0
         fillColor: root.fillColor
+        fillGradient: Gradient {
+          orientation: Gradient.Vertical
+          GradientStop {
+            position: 0.0
+            color: root.gradientEnabled ? root.gradientTopColor : root.fillColor
+          }
+          GradientStop { position: 1.0; color: root.fillColor }
+        }
         capStyle: ShapePath.FlatCap
         joinStyle: ShapePath.RoundJoin
 
