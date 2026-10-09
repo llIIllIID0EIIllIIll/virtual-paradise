@@ -34,7 +34,8 @@ Item {
     Color.accent.b, 0.55)
   property bool borderEnabled: true
   // Thin lit line along the screen edge - the glass cue.
-  property bool highlightEnabled: true
+  // Off: the lit line read as a seam rather than glass.
+  property bool highlightEnabled: false
   property color highlightColor: Qt.rgba(1, 1, 1, 0.10)
   // On: it is what separates the island from the wallpaper. Kept soft and
   // shape-following so it reads as depth rather than a block.
