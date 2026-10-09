@@ -28,10 +28,10 @@ Item {
   property bool atTop: true
   property string variant: "notch"
   property color fillColor: Color.bar.background
-  // A faint accent-tinted edge rather than plain foreground: it ties the
-  // surface to the theme colour the way the widgets are tied to it.
+  // An accent-tinted edge rather than plain foreground: it ties the surface to
+  // the theme colour the way the widgets are tied to it.
   property color borderColor: Qt.rgba(Color.accent.r, Color.accent.g,
-    Color.accent.b, 0.35)
+    Color.accent.b, 0.55)
   property bool borderEnabled: true
   // Thin lit line along the screen edge - the glass cue.
   property bool highlightEnabled: true
@@ -92,17 +92,6 @@ Item {
       autoPaddingEnabled: true
     }
 
-    // A lit line along the screen edge. Reads as light catching the top of the
-    // surface, which is what makes the strip look like glass rather than paint.
-    Rectangle {
-      anchors.left: parent.left
-      anchors.right: parent.right
-      y: root.atTop ? 0 : parent.height - height
-      height: 1
-      color: root.highlightColor
-      visible: root.highlightEnabled
-    }
-
     Shape {
       id: notchShape
 
@@ -113,7 +102,7 @@ Item {
 
       ShapePath {
         strokeColor: root.borderEnabled ? root.borderColor : "transparent"
-        strokeWidth: root.borderEnabled ? 1 : 0
+        strokeWidth: root.borderEnabled ? 1.5 : 0
         fillColor: root.fillColor
         capStyle: ShapePath.FlatCap
         joinStyle: ShapePath.RoundJoin
@@ -167,7 +156,7 @@ Item {
 
       ShapePath {
         strokeColor: root.borderEnabled ? root.borderColor : "transparent"
-        strokeWidth: root.borderEnabled ? 1 : 0
+        strokeWidth: root.borderEnabled ? 1.5 : 0
         fillColor: root.fillColor
         capStyle: ShapePath.FlatCap
         joinStyle: ShapePath.RoundJoin
@@ -203,6 +192,18 @@ Item {
           controlY: parent.screenY
         }
       }
+    }
+
+    // A lit line along the screen edge, drawn last so the surface fill cannot
+    // cover it. Reads as light catching the edge, which is what makes the
+    // strip look like glass rather than paint.
+    Rectangle {
+      anchors.left: parent.left
+      anchors.right: parent.right
+      y: root.atTop ? 0.5 : parent.height - height - 0.5
+      height: 1
+      color: root.highlightColor
+      visible: root.highlightEnabled
     }
   }
 }

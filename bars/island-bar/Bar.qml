@@ -76,7 +76,7 @@ Item {
   readonly property real barShadowRoom: 0
   // The centre island carries the taller telemetry widgets (waveform, vitals),
   // so it hangs a little past the bar line where the sides do not.
-  readonly property real centerIslandDrop: 1
+  readonly property real centerIslandDrop: 3
   // How far the notch shoulder has withdrawn by the vertical middle of the bar.
   // A gap glow is a horizontal band at that midline, so its runs have to start
   // at the island edge there - which is inside the host rectangle, because the
