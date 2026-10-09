@@ -60,6 +60,9 @@ Item {
   readonly property int islandPad: Style.space(4)
   readonly property int islandInset: Style.space(2)
   readonly property bool islandsEnabled: true
+  // Streaming glow in the gaps between islands. Only meaningful while the bar
+  // is split into islands; a merged bar has no gaps for it to live in.
+  property bool gapEffects: true
 
   // The bar owns an IPC handler, and Quickshell keeps only one handler per
   // target. Leaving this on the upstream "omarchy.bar" makes the bundled bar
@@ -1389,7 +1392,7 @@ Item {
       Item {
         anchors.fill: parent
 
-        CenterModules { anchors.fill: parent }
+        CenterModules { id: centerModules; anchors.fill: parent }
 
         // Each side section is wrapped in a host that measures its own
         // content, so the island hugs the widgets instead of stretching to
@@ -1458,6 +1461,28 @@ Item {
 
             x: root.islandPad
             anchors.verticalCenter: parent.verticalCenter
+          }
+        }
+
+        // Streaming glow in the gaps between the three islands. Clipped to the
+        // gaps, so it never paints over a widget even though it spans the bar.
+        GapGlow {
+          id: gapGlow
+
+          z: 1
+          anchors.fill: parent
+          enabled: root.islandsEnabled && root.gapEffects
+          runs: {
+            var list = []
+            if (leftHost.leftContentWidth > 0)
+              list.push({ x: leftHost.x, width: leftHost.width })
+            var c = centerModules.islandRect
+            if (c && c.width > 0)
+              list.push({ x: c.x, width: c.width })
+            if (rightHost.rightContentWidth > 0)
+              list.push({ x: rightHost.x, width: rightHost.width })
+            list.sort(function (a, b) { return a.x - b.x })
+            return list
           }
         }
       }
@@ -1685,8 +1710,13 @@ Item {
     property var entries: root.layoutEntries("center")
     readonly property bool hasAnchor: root.entryIndex(entries, root.centerAnchor) !== -1
     readonly property var anchorEntry: root.findCenterAnchorEntry()
+    // Forwarded from the horizontal centre layout so the gap layer, a sibling
+    // in horizontalBar, can see where the island sits.
+    readonly property var islandRect: centerLoader.item && centerLoader.item.islandRect
+      ? centerLoader.item.islandRect : null
 
     Loader {
+      id: centerLoader
       anchors.fill: parent
       sourceComponent: root.vertical ? verticalCenterModules : horizontalCenterModules
     }
@@ -1728,6 +1758,14 @@ Item {
           acc(centerAfter)
           return isFinite(right) ? right : 0
         }
+
+        // The centre island's rectangle in the bar's coordinate space, so the
+        // gap layer can measure the gaps either side of it. Mirrors the x and
+        // width used by the backdrop below.
+        readonly property var islandRect: ({
+          x: islandLeft - root.islandPad,
+          width: Math.max(0, islandRight - islandLeft + root.islandPad * 2)
+        })
 
         CenterGestureArea { anchors.fill: parent }
 
