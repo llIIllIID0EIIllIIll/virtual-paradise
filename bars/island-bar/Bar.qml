@@ -1416,6 +1416,7 @@ Item {
             edge: "left"
             visible: root.islandsEnabled && leftHost.leftContentWidth > 0
             fillOpacity: root.islandFillOpacity
+            barAtTop: root.position !== "bottom"
             radius: root.islandRadius(leftHost.height)
           }
 
@@ -1448,6 +1449,7 @@ Item {
             edge: "right"
             visible: root.islandsEnabled && rightHost.rightContentWidth > 0
             fillOpacity: root.islandFillOpacity
+            barAtTop: root.position !== "bottom"
             radius: root.islandRadius(rightHost.height)
           }
 
@@ -1490,6 +1492,7 @@ Item {
             edge: "left"
             visible: root.islandsEnabled && leftHostV.leftContentHeightV > 0
             fillOpacity: root.islandFillOpacity
+            barAtTop: root.position !== "bottom"
             radius: root.islandRadius(leftHostV.width)
           }
 
@@ -1522,6 +1525,7 @@ Item {
             edge: "right"
             visible: root.islandsEnabled && rightHostV.rightContentHeightV > 0
             fillOpacity: root.islandFillOpacity
+            barAtTop: root.position !== "bottom"
             radius: root.islandRadius(rightHostV.width)
           }
 
@@ -1740,6 +1744,7 @@ Item {
           anchors.verticalCenter: parent.verticalCenter
           edge: "center"
           fillOpacity: root.islandFillOpacity
+          barAtTop: root.position !== "bottom"
           radius: root.islandRadius(height)
         }
 
@@ -1836,6 +1841,7 @@ Item {
           anchors.horizontalCenter: parent.horizontalCenter
           edge: "center"
           fillOpacity: root.islandFillOpacity
+          barAtTop: root.position !== "bottom"
           radius: root.islandRadius(width)
         }
 

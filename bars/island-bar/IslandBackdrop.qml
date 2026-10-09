@@ -1,4 +1,5 @@
 import QtQuick
+import QtQuick.Effects
 import qs.Commons
 import qs.Ui
 
@@ -16,6 +17,9 @@ Item {
   property string edge: "center"
   property real radius: 0
   property real fillOpacity: 1
+  // Shadow direction follows the bar: an island on the bottom edge casts up.
+  property bool barAtTop: true
+  property bool shadowEnabled: true
 
   readonly property bool filled: fillOpacity > 0
 
@@ -26,6 +30,21 @@ Item {
     radius: root.radius
     color: Color.bar.background
     opacity: root.fillOpacity
+  }
+
+  // Soft drop shadow so the islands read as floating above the wallpaper
+  // rather than painted onto it. RectangularShadow tracks a rounded rect,
+  // which a plain Rectangle or a blurred copy cannot do cleanly. Sits behind
+  // every other child via z, and is skipped on a rim-only island.
+  RectangularShadow {
+    anchors.fill: parent
+    radius: root.radius
+    blur: 9
+    spread: 0
+    offset: Qt.vector2d(0, root.barAtTop ? 2 : -2)
+    color: Qt.rgba(0, 0, 0, 0.45)
+    visible: root.shadowEnabled && root.fillOpacity > 0
+    z: -1
   }
 
   // A one-stop sheen along the leading edge. Cheap depth cue: it reads as a
