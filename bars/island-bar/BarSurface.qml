@@ -10,18 +10,19 @@ import qs.Commons
 // shadow belongs to the whole strip, not to each group - fragmenting it per
 // group is what made the old design fall apart into pills.
 //
-// Adapted from Shibumi-Shell's V2 shell. Two of its forms are offered:
+// Adapted from Shibumi-Shell's V2 shell. Forms offered here:
 //
 //   "notch"  the desktop-facing edge is inset at each end and curves up into
 //            the screen edge, so the bar grows out of the top of the screen.
-//            This is the default.
-//   "full"   edge to edge with a plain rounded desktop edge.
+//   "dock"   screen-edge straight, desktop-facing corners rounded by
+//            `dockRadius`. The quiet option.
+//   "full"   screen-edge straight, desktop corners square. Edge to edge.
 //
-// Shibumi's "fit" and "dock" are content-width forms and are not offered,
-// because this bar keeps three fixed groups across the full width.
+// Shibumi's "fit" (all four corners rounded) is left out; with three fixed
+// groups spanning the bar it reads as a rounded frame rather than a bar edge.
 //
 // Its connected tongue - a lobe that flows down into an open panel - is left
-// out. That needs the panel-open geometry plumbed through, and this bar's
+// out too. That needs the panel-open geometry plumbed through, and this bar's
 // panels anchor themselves.
 Item {
   id: root
@@ -42,11 +43,10 @@ Item {
   readonly property real inset: wing + bodyRadius
   readonly property real kappa: 0.55228475
 
-  // Fallback radius for the "full" form.
-  readonly property real cornerRadius: Style.space(2)
-  readonly property real r: Math.max(0, Math.min(cornerRadius, height / 2))
-
   readonly property bool notch: variant === "notch"
+  // Corner radius for the desktop-facing pair on dock/full.
+  readonly property real radius: variant === "dock" ? Style.space(8) : 0
+  readonly property real r: Math.max(0, Math.min(radius, height / 2))
 
   Shape {
     id: surface
@@ -94,7 +94,8 @@ Item {
     }
   }
 
-  // "full": edge to edge with the desktop-facing corners rounded.
+  // "dock" and "full": straight along the screen edge, with the desktop-facing
+  // corners rounded by `r`. Dock uses r > 0, full leaves them square.
   Shape {
     anchors.fill: parent
     antialiasing: true
