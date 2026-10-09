@@ -37,8 +37,10 @@ Item {
   // Notch geometry, from the Shibumi V2 contract: the shoulder runs out to
   // `wing`, the body corner adds `bodyRadius`, and the cubic's control points
   // use the circular-arc kappa so the curve reads as a quarter round.
-  readonly property real wing: Style.space(14)
-  readonly property real bodyRadius: Style.space(9)
+  // Overridable: a narrow island needs a smaller shoulder or the two curves
+  // eat the whole edge.
+  property real wing: Style.space(14)
+  property real bodyRadius: Style.space(9)
   readonly property real inset: wing + bodyRadius
   readonly property real kappa: 0.55228475
 
