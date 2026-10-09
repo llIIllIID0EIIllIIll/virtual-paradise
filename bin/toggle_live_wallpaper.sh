@@ -1,0 +1,222 @@
+#!/bin/bash
+# ==============================================================================
+#  Virtual☆Paradise — Live Video & Animated GIF Wallpaper Engine
+# ==============================================================================
+#  Usage:
+#    toggle_live_wallpaper.sh          # Toggle live wallpaper on/off
+#    toggle_live_wallpaper.sh init     # Startup: start live wallpaper
+#    toggle_live_wallpaper.sh start    # Start live wallpaper
+#    toggle_live_wallpaper.sh stop     # Switch to static wallpaper
+#    toggle_live_wallpaper.sh next     # Cycle to next live wallpaper (video/GIF)
+#    toggle_live_wallpaper.sh prev     # Cycle to previous live wallpaper
+#    toggle_live_wallpaper.sh list     # List all live wallpapers
+# ==============================================================================
+
+BG_DIR="${XDG_CONFIG_HOME:-$HOME/.config}/omarchy/themes/virtual-paradise/backgrounds"
+STATE_DIR="$HOME/.local/state/virtual-paradise"
+STATE_FILE="$STATE_DIR/current_live_wallpaper"
+STATIC_BG="$BG_DIR/Miku_missing.jpg"
+READY_FILE="/tmp/virtual_paradise_wallpaper_ready"
+SOCKET_FILE="/tmp/mpv-live.sock"
+
+CURRENT_THEME="$(cat "$HOME/.local/state/omarchy/current/theme.name" 2>/dev/null || echo "")"
+if [[ "$CURRENT_THEME" != "virtual-paradise" && "$1" != "--force" ]]; then
+  exit 0
+fi
+
+mkdir -p "$STATE_DIR"
+
+get_live_items() {
+  local playlist=(
+    "$BG_DIR/Miku_live.mp4"
+    "$BG_DIR/Miku_missing.gif"
+    "$BG_DIR/Miku_animated_full.gif"
+    "$BG_DIR/Miku_animated1.gif"
+    "$BG_DIR/Miku_animated2.gif"
+    "$BG_DIR/Miku_animated3.gif"
+    "$BG_DIR/Miku_animated4.gif"
+  )
+  local items=()
+  for f in "${playlist[@]}"; do
+    if [[ -f "$f" ]]; then
+      items+=("$f")
+    fi
+  done
+  echo "${items[@]}"
+}
+
+is_live_running() {
+  pgrep -x mpvpaper >/dev/null 2>&1
+}
+
+play_curtain_transition() {
+  local target="${1:-LIVE STREAM}"
+  local qml_script="$HOME/.local/bin/glitch_transition.qml"
+  [[ ! -f "$qml_script" ]] && qml_script="$HOME/.local/bin/curtain_transition.qml"
+  if [[ -f "$qml_script" ]] && command -v quickshell &>/dev/null; then
+    rm -f "$READY_FILE"
+    export CURTAIN_LAYER="${CURTAIN_LAYER:-overlay}"
+    export WALLPAPER_TARGET
+    WALLPAPER_TARGET="$(basename "$target" 2>/dev/null || echo "LIVE STREAM")"
+    quickshell -p "$qml_script" >/dev/null 2>&1 &
+    # Wait until glitch layer surface is physically rendered on screen by Hyprland
+    for ((i=0; i<35; i++)); do
+      if hyprctl layers 2>/dev/null | grep -q "curtain-transition"; then
+        break
+      fi
+      sleep 0.015
+    done
+    # Allow the violent Phase 1 glitch to hit full swing before swapping wallpaper
+    sleep 0.12
+  fi
+}
+
+wait_for_mpv_ready() {
+  local max_checks=60 # 60 * 0.05s = 3.0s maximum
+  for ((i=0; i<max_checks; i++)); do
+    if [[ -S "$SOCKET_FILE" ]] && command -v socat &>/dev/null; then
+      local resp
+      resp=$(echo '{ "command": ["get_property", "playback-time"] }' | socat - "$SOCKET_FILE" 2>/dev/null || true)
+      if [[ "$resp" == *"\"data\":"* ]]; then
+        break
+      fi
+    fi
+    sleep 0.05
+  done
+  touch "$READY_FILE"
+}
+
+set_live() {
+  local target="$1"
+  local transition="${2:-true}"
+  if [[ -z "$target" ]] || [[ ! -f "$target" ]]; then
+    local -a items
+    mapfile -t items < <(get_live_items)
+    if [[ ${#items[@]} -gt 0 ]]; then
+      target="${items[0]}"
+    fi
+  fi
+
+  if [[ -n "$target" && -f "$target" ]]; then
+    rm -f "$READY_FILE" "$SOCKET_FILE"
+    if [[ "$transition" == "true" ]]; then
+      play_curtain_transition "$target"
+    fi
+
+    # Update static background symlink quietly without triggering duplicate compositor animation
+    if [[ -f "$STATIC_BG" ]]; then
+      ln -nsf "$STATIC_BG" "$HOME/.local/state/omarchy/current/background" 2>/dev/null || true
+    fi
+    # Launch mpvpaper hardware accelerated on all monitors (screen is already covered by Glitch)
+    killall -9 mpvpaper 2>/dev/null || true
+    if command -v mpvpaper &>/dev/null; then
+      setsid -f mpvpaper -vs -o "no-audio loop hwdec=auto-safe --load-scripts=no --input-ipc-server=$SOCKET_FILE" '*' "$target" >/dev/null 2>&1
+      if [[ "$transition" == "true" ]]; then
+        wait_for_mpv_ready &
+      else
+        touch "$READY_FILE"
+      fi
+    else
+      touch "$READY_FILE"
+    fi
+    echo "$target" > "$STATE_FILE"
+  else
+    set_static "$transition"
+  fi
+}
+
+set_static() {
+  local transition="${1:-true}"
+  rm -f "$READY_FILE" "$SOCKET_FILE"
+  if [[ "$transition" == "true" ]]; then
+    play_curtain_transition
+  fi
+  killall -9 mpvpaper 2>/dev/null || true
+  if [[ -f "$STATIC_BG" ]]; then
+    omarchy theme bg set "$STATIC_BG" 2>/dev/null || true
+  fi
+  touch "$READY_FILE"
+}
+
+cycle_live() {
+  local direction="${1:-next}"
+  local -a items
+  mapfile -t items < <(get_live_items)
+  local total=${#items[@]}
+  if [[ $total -eq 0 ]]; then
+    set_static
+    return
+  fi
+
+  local current=""
+  [[ -f "$STATE_FILE" ]] && current=$(cat "$STATE_FILE")
+  local current_idx=-1
+
+  for i in "${!items[@]}"; do
+    if [[ "${items[$i]}" == "$current" ]]; then
+      current_idx=$i
+      break
+    fi
+  done
+
+  local next_idx=0
+  if [[ $current_idx -ge 0 ]]; then
+    if [[ "$direction" == "prev" ]]; then
+      next_idx=$(( (current_idx - 1 + total) % total ))
+    else
+      next_idx=$(( (current_idx + 1) % total ))
+    fi
+  fi
+
+  set_live "${items[$next_idx]}"
+}
+
+case "$1" in
+  init|autostart)
+    # Brief delay on fresh login to ensure Wayland layer-shell is fully mapped
+    sleep 0.35
+    if [[ -f "$STATE_FILE" ]] && [[ -f "$(cat "$STATE_FILE" 2>/dev/null)" ]]; then
+      set_live "$(cat "$STATE_FILE")" false
+    else
+      set_live "" false
+    fi
+    ;;
+  stop)
+    set_static true
+    ;;
+  start)
+    set_live "$2" true
+    ;;
+  next)
+    cycle_live next
+    ;;
+  prev)
+    cycle_live prev
+    ;;
+  list)
+    echo "Available Live Wallpapers in Virtual☆Paradise:"
+    mapfile -t items < <(get_live_items)
+    for f in "${items[@]}"; do
+      echo "  • $(basename "$f")"
+    done
+    ;;
+  "")
+    if is_live_running; then
+      set_static true
+    else
+      if [[ -f "$STATE_FILE" ]] && [[ -f "$(cat "$STATE_FILE" 2>/dev/null)" ]]; then
+        set_live "$(cat "$STATE_FILE")" true
+      else
+        set_live "" true
+      fi
+    fi
+    ;;
+  *)
+    if [[ -f "$1" ]]; then
+      set_live "$1" true
+    else
+      echo "File not found: $1" >&2
+      exit 1
+    fi
+    ;;
+esac

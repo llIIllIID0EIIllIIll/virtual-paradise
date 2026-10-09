@@ -1,0 +1,31 @@
+name: test
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  suite:
+    name: TC-1..TC-5
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install test dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y zsh python3 systemd shellcheck
+
+      - name: Run test suite
+        run: ./tests/run.sh
+
+      - name: Fail on untracked build residue
+        run: |
+          if [ -n "$(git status --porcelain)" ]; then
+            echo "::error::tests left the working tree dirty"
+            git status --porcelain
+            git --no-pager diff
+            exit 1
+          fi
