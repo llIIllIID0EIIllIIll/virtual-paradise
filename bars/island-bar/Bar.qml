@@ -67,12 +67,13 @@ Item {
   // BarSurface.qml; true brings back the floating pill islands.
   property bool pillIslands: false
   // Which V2 form BarSurface draws: "notch" (flowing shoulders) or "full".
-  property string shellVariant: "notch"
+  property string shellVariant: "dock"
   // The notch's desktop edge is inset at each end, so the outer groups have to
-  // clear the shoulder or they sit where the surface has curved away.
+  // clear the shoulder or they sit where the surface has curved away. Dock and
+  // full are edge to edge and only need normal padding.
   readonly property real barEdgeInset: root.shellVariant === "notch"
     ? Style.space(14) + Style.space(9) + Style.space(3)
-    : Style.space(8)
+    : Style.space(3)
 
   // The bar owns an IPC handler, and Quickshell keeps only one handler per
   // target. Leaving this on the upstream "omarchy.bar" makes the bundled bar
