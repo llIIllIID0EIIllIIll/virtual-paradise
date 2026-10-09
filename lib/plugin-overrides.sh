@@ -178,6 +178,15 @@ po_apply_theme_colors() {
     foreground: Color.accent
     }"
 
+  # omaproton draws its mark in the bar foreground, so it reads as white next
+  # to the accent icons. Point its bar colour at the accent; the connected /
+  # disconnected difference is carried by the glyph's opacity, not the hue.
+  po_patch_accent io.github.grichard99.omaproton-vpn \
+    "$p/io.github.grichard99.omaproton-vpn/Panel.qml" \
+    "/readonly property color barIconColor/ {
+      s/.*/  readonly property color barIconColor: Color.accent/
+    }"
+
   # audio-control replaces an existing property rather than adding one.
   # `|| true` matters: an absent or partial plugin must degrade to the legacy
   # Panel.qml path instead of tripping `set -e` and aborting the whole install.
@@ -285,6 +294,12 @@ po_apply_repo_overrides() {
   po_install_override io.github.woogy7.vitals \
     "$o/io.github.woogy7.vitals/BarWidget.qml" \
     "$(po_plugin_dir io.github.woogy7.vitals)/BarWidget.qml"
+
+  # X-Ray draws its glyph in the bar foreground (near-white) where every other
+  # icon here uses the accent.
+  po_install_override io.github.randazraik.xray \
+    "$o/io.github.randazraik.xray/BarWidget.qml" \
+    "$(po_plugin_dir io.github.randazraik.xray)/BarWidget.qml"
 
   # audio-control ships QML under runtime/<hash>/; resolve both entryPoints.
   local a_src="$o/ssupt.audio-control"
