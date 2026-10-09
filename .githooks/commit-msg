@@ -1,0 +1,51 @@
+#!/usr/bin/env bash
+# Reject commit subjects that do not follow the convention in CONTRIBUTING.md.
+#
+# Enable once per clone:
+#     git config core.hooksPath .githooks
+#
+# Bypass a genuine exception with `git commit --no-verify`.
+
+set -uo pipefail
+
+msg_file="$1"
+subject="$(grep -v '^#' "$msg_file" | sed '/^$/d' | head -n 1)"
+
+# Let merges, reverts and fixups through untouched.
+case "$subject" in
+  Merge\ * | Revert\ * | revert:* | fixup!* | squash!* | amend!*) exit 0 ;;
+esac
+
+if [[ -z $subject ]]; then
+  # An empty message is a different error; let git report it.
+  exit 0
+fi
+
+pattern='^(feat|fix|docs|test|refactor|perf|style|chore|build|ci|revert)(\([a-z0-9._/-]+\))?!?: .+'
+
+if ! printf '%s' "$subject" | grep -qE "$pattern"; then
+  cat >&2 <<EOF
+commit-msg: subject does not follow the convention.
+
+  got:  $subject
+
+  want: <type>[(scope)]: <summary>
+        type is one of feat fix docs test refactor perf style chore build ci revert
+
+  examples:
+        fix(install): survive a clean-machine run
+        docs: rewrite README against reality
+        test: cover the theme-set hook in both directions
+
+  See CONTRIBUTING.md. Use --no-verify only for a real exception.
+EOF
+  exit 1
+fi
+
+# A summary that only restates the type adds nothing.
+if printf '%s' "$subject" | grep -qE '^(feat|fix|docs|test|refactor|perf|style|chore|build|ci|revert)(\([a-z0-9._/-]+\))?!?: (fix|update|change|stuff|things|wip)\.?$'; then
+  printf 'commit-msg: summary is too vague to be useful: %s\n' "$subject" >&2
+  exit 1
+fi
+
+exit 0
