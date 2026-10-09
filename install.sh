@@ -364,6 +364,38 @@ po_install_island_bar() {
   log_sub "Installed Paradise Island Bar to $dest_dir"
 }
 
+# The stock system tray reserves its entire drawer width even while collapsed,
+# so a bar host never shrinks when the drawer is closed and never moves when it
+# opens. Reserve only what is actually revealed instead.
+#
+# This is a stock Omarchy file, not ours, so it is edited in place rather than
+# replaced: shipping a full copy would silently roll back any upstream fix the
+# next time Omarchy updates the tray. The edit only lands when the exact
+# upstream expression is still present, and uninstall.sh restores the saved
+# original.
+patch_system_tray() {
+  local tray="/usr/share/omarchy/shell/plugins/bar/widgets/Tray.qml"
+  local orig="$tray.paradise.orig"
+  [[ -f "$tray" ]] || return 0
+
+  if grep -q 'expandIcon.implicitWidth + root.revealExtent' "$tray" 2>/dev/null; then
+    log_sub "System tray already follows its drawer reveal"
+    return 0
+  fi
+  if ! grep -q 'expandIcon.implicitWidth + root.drawerExtent' "$tray" 2>/dev/null; then
+    log_warn "System tray layout differs upstream; skipping the drawer-reveal patch."
+    return 0
+  fi
+  [[ -f "$orig" ]] || run_privileged cp "$tray" "$orig" 2>/dev/null || true
+  if run_privileged sed -i \
+    's/expandIcon\.implicitWidth + root\.drawerExtent/expandIcon.implicitWidth + root.revealExtent/' \
+    "$tray" 2>/dev/null; then
+    log_sub "Patched system tray to follow its drawer reveal"
+  else
+    log_warn "Could not patch the system tray (needs sudo)."
+  fi
+}
+
 if [[ $IS_HOOK -eq 0 ]]; then
   CHECK_AND_INSTALL_PACKAGES
   CONFIGURE_DEFAULT_APPS
@@ -606,6 +638,7 @@ EXTRA_PLUGINS
 # A missing bar bundle is a warning, not a fatal error: every other
       # plugin is still usable, so don't let `set -e` abort the whole install.
       po_install_island_bar || true
+      patch_system_tray
       RUN_AS_INSTALL_USER omarchy plugin enable "${CURRENT_USER}.island-bar" 2>/dev/null || \
         log_warn "Paradise Island Bar could not be enabled."
       RUN_AS_INSTALL_USER omarchy plugin disable "omarchy.bar" 2>/dev/null || true
