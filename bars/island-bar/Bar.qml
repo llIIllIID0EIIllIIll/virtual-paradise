@@ -1321,7 +1321,10 @@ Item {
     }
 
     implicitWidth: root.vertical ? root.barSize : 0
-    implicitHeight: root.vertical ? 0 : root.barSize
+    // The window is a little taller than the bar so the cast shadow has a
+    // strip to render in. The islands still occupy exactly barSize; shrinking
+    // them instead made their widgets - which are sized off barSize - spill out.
+    implicitHeight: root.vertical ? 0 : root.barSize + root.barShadowRoom
     // The window itself is always see-through. The islands draw the bar's
     // visible surface, so painting root.background here would smear one
     // continuous strip across the gaps and erase the floating look.
@@ -1446,7 +1449,7 @@ Item {
           anchors.bottom: root.notchIslands && root.position === "bottom" ? parent.bottom : undefined
           width: leftContentWidth + root.islandPad * 2
           height: root.notchIslands
-            ? root.barSize - root.barShadowRoom
+            ? root.barSize
             : Math.max(1, root.barSize - root.islandInset * 2)
 
           readonly property real leftContentWidth: {
@@ -1493,8 +1496,14 @@ Item {
           anchors.bottom: root.notchIslands && root.position === "bottom" ? parent.bottom : undefined
           width: rightContentWidth + root.islandPad * 2
           height: root.notchIslands
-            ? root.barSize - root.barShadowRoom
+            ? root.barSize
             : Math.max(1, root.barSize - root.islandInset * 2)
+          // The left island widens smoothly because ActiveWindow animates its
+          // own implicitWidth; the tray does not, so the right island snapped
+          // every time an item appeared. Ease the host width here instead.
+          Behavior on width {
+            NumberAnimation { duration: 180; easing.type: Easing.OutCubic }
+          }
 
           readonly property real rightContentWidth: {
             if (rightModules.item && rightModules.item.implicitWidth > 0)
@@ -1535,7 +1544,14 @@ Item {
           id: gapGlow
 
           z: 1
-          anchors.fill: parent
+          // Span the islands, not the whole window: the window now carries a
+          // shadow strip, and centring on that would drop the glow below the
+          // bar's midline.
+          anchors.left: parent.left
+          anchors.right: parent.right
+          height: root.barSize
+          anchors.top: root.position !== "bottom" ? parent.top : undefined
+          anchors.bottom: root.position === "bottom" ? parent.bottom : undefined
           enabled: root.islandsEnabled && root.gapEffects
           runs: {
             var list = []
@@ -1888,7 +1904,7 @@ Item {
           x: hCenter.islandLeft - root.islandPad
           width: hCenter.islandRight - hCenter.islandLeft + root.islandPad * 2
           height: root.notchIslands
-            ? root.barSize - root.barShadowRoom
+            ? root.barSize
             : Math.max(1, root.barSize - root.islandInset * 2)
           anchors.verticalCenter: root.notchIslands ? undefined : parent.verticalCenter
           anchors.top: root.notchIslands && root.position !== "bottom" ? parent.top : undefined

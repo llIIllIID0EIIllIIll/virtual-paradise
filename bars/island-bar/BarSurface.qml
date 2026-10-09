@@ -28,13 +28,18 @@ Item {
   property bool atTop: true
   property string variant: "notch"
   property color fillColor: Color.bar.background
-  property color borderColor: Qt.rgba(Color.foreground.r, Color.foreground.g,
-    Color.foreground.b, 0.10)
+  // A faint accent-tinted edge rather than plain foreground: it ties the
+  // surface to the theme colour the way the widgets are tied to it.
+  property color borderColor: Qt.rgba(Color.accent.r, Color.accent.g,
+    Color.accent.b, 0.35)
   property bool borderEnabled: true
+  // Thin lit line along the screen edge - the glass cue.
+  property bool highlightEnabled: true
+  property color highlightColor: Qt.rgba(1, 1, 1, 0.10)
   property bool shadowEnabled: true
   // Depth of the cast shadow. Kept modest because a bar window is only as tall
   // as the bar, so anything past the desktop edge has nowhere to render.
-  property real shadowBlur: 0.7
+  property real shadowBlur: 0.5
   property real shadowOffset: 3
 
   // Notch geometry, from the Shibumi V2 contract: the shoulder runs out to
@@ -83,6 +88,17 @@ Item {
       // Lets the blur bleed past the item; harmless where the bar fills the
       // window, needed in the gaps between islands.
       autoPaddingEnabled: true
+    }
+
+    // A lit line along the screen edge. Reads as light catching the top of the
+    // surface, which is what makes the strip look like glass rather than paint.
+    Rectangle {
+      anchors.left: parent.left
+      anchors.right: parent.right
+      y: root.atTop ? 0 : parent.height - height
+      height: 1
+      color: root.highlightColor
+      visible: root.highlightEnabled
     }
 
     Shape {
