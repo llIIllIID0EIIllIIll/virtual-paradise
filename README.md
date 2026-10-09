@@ -126,6 +126,9 @@ Widgets draw from this palette by literal hex, so re-theming means editing
 | `ssupt.bluetooth-audio` | Bluetooth routing and codec selection | [upstream](https://github.com/ssupt/omarchy-bluetooth-audio) |
 | `io.github.jeffcortez23.omarchy-projector-cast` | Wireless display and presentation mode | [upstream](https://github.com/JeffCortez23/omarchy-projector-cast) |
 | `jankeesvw.notification-center` | Notification drawer and DND | [upstream](https://github.com/jankeesvw/omarchy-notification-center) |
+| `io.github.randazraik.xray` | System inspector: trace a window, process, service, container, port, file or device to the process behind it | [upstream](https://github.com/RandaZraik/omarchy-xray) |
+| `io.github.grichard99.omaproton-vpn` | Proton VPN: one-click connect, world map, Kill Switch. Needs a Proton account; installs the `protonvpn` CLI on first use | [upstream](https://github.com/grichard99/omaproton-vpn) |
+| `com.omastorm.radar` | Live NOAA NEXRAD / EUMETNET OPERA weather radar. Downloads a pinned engine from upstream Releases on first open | [upstream](https://github.com/wesleygrimes/omastorm) |
 
 ### In-repo bar widgets
 
