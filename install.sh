@@ -528,6 +528,25 @@ INSTALL_AND_ENABLE_PLUGINS() {
       RUN_AS_INSTALL_USER omarchy plugin disable "${CURRENT_USER}.power" 2>/dev/null || true
       RUN_AS_INSTALL_USER omarchy plugin disable "omarchy.power" 2>/dev/null || true
 
+      # Extra bar widgets for the rice. Each is a self-contained Quickshell
+      # plugin; the VPN widget needs a Proton account before it does anything,
+      # and the radar downloads its engine from upstream Releases on first use.
+      while IFS='|' read -r extra_id extra_url; do
+        [[ -n $extra_id ]] || continue
+        if ! RUN_AS_INSTALL_USER omarchy plugin list --json 2>/dev/null |
+             jq -e --arg i "$extra_id" 'any(.[]; .id == $i)' >/dev/null; then
+          log_sub "Adding external plugin ${extra_id} from git..."
+          RUN_AS_INSTALL_USER omarchy plugin add "$extra_url" --enable --yes 2>/dev/null || true
+        else
+          RUN_AS_INSTALL_USER omarchy plugin enable "$extra_id" 2>/dev/null || true
+        fi
+      done <<'EXTRA_PLUGINS'
+io.github.randazraik.xray|https://github.com/RandaZraik/omarchy-xray
+io.github.grichard99.omaproton-vpn|https://github.com/grichard99/omaproton-vpn
+com.omastorm.radar|https://github.com/wesleygrimes/omastorm
+EXTRA_PLUGINS
+      po_apply_all
+
       # Advanced Audio Control replaces the cloned Omarchy audio widget.
       if ! RUN_AS_INSTALL_USER omarchy plugin list --json 2>/dev/null | jq -e 'any(.[]; .id == "ssupt.audio-control")' >/dev/null; then
         log_sub "Adding external Omarchy audio control plugin from git..."

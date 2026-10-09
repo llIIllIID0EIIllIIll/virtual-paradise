@@ -242,6 +242,9 @@ if command -v omarchy &>/dev/null; then
   RUN_AS_INSTALL_USER omarchy plugin disable "crmne.hyprmoncfg" 2>/dev/null || true
   RUN_AS_INSTALL_USER omarchy plugin disable "io.github.jeffcortez23.omarchy-projector-cast" 2>/dev/null || true
   RUN_AS_INSTALL_USER omarchy plugin disable "io.github.woogy7.vitals" 2>/dev/null || true
+  RUN_AS_INSTALL_USER omarchy plugin disable "io.github.randazraik.xray" 2>/dev/null || true
+  RUN_AS_INSTALL_USER omarchy plugin disable "io.github.grichard99.omaproton-vpn" 2>/dev/null || true
+  RUN_AS_INSTALL_USER omarchy plugin disable "com.omastorm.radar" 2>/dev/null || true
   RUN_AS_INSTALL_USER omarchy plugin disable "harshith.system-monitor" 2>/dev/null || true
   RUN_AS_INSTALL_USER omarchy plugin disable "${CURRENT_USER}.memory" 2>/dev/null || true
   RUN_AS_INSTALL_USER omarchy plugin disable "jankeesvw.notification-center" 2>/dev/null || true
