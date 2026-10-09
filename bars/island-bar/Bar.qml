@@ -63,6 +63,9 @@ Item {
   // Streaming glow in the gaps between islands. Only meaningful while the bar
   // is split into islands; a merged bar has no gaps for it to live in.
   property bool gapEffects: true
+  // Surface language. false (default) draws the V2 continuous strip in
+  // BarSurface.qml; true brings back the floating pill islands.
+  property bool pillIslands: false
 
   // The bar owns an IPC handler, and Quickshell keeps only one handler per
   // target. Leaving this on the upstream "omarchy.bar" makes the bundled bar
@@ -1392,6 +1395,16 @@ Item {
       Item {
         anchors.fill: parent
 
+        // V2 continuous strip. One surface for the whole bar, replacing the
+        // three floating pills when pillIslands is off.
+        BarSurface {
+          id: barSurface
+
+          anchors.fill: parent
+          visible: root.islandsEnabled && !root.pillIslands
+          atTop: root.position !== "bottom"
+        }
+
         CenterModules { id: centerModules; anchors.fill: parent }
 
         // Each side section is wrapped in a host that measures its own
@@ -1417,7 +1430,7 @@ Item {
           IslandBackdrop {
             anchors.fill: parent
             edge: "left"
-            visible: root.islandsEnabled && leftHost.leftContentWidth > 0
+            visible: root.islandsEnabled && root.pillIslands && leftHost.leftContentWidth > 0
             fillOpacity: root.islandFillOpacity
             barAtTop: root.position !== "bottom"
             radius: root.islandRadius(leftHost.height)
@@ -1450,7 +1463,7 @@ Item {
           IslandBackdrop {
             anchors.fill: parent
             edge: "right"
-            visible: root.islandsEnabled && rightHost.rightContentWidth > 0
+            visible: root.islandsEnabled && root.pillIslands && rightHost.rightContentWidth > 0
             fillOpacity: root.islandFillOpacity
             barAtTop: root.position !== "bottom"
             radius: root.islandRadius(rightHost.height)
@@ -1471,7 +1484,7 @@ Item {
 
           z: 1
           anchors.fill: parent
-          enabled: root.islandsEnabled && root.gapEffects
+          enabled: root.islandsEnabled && root.pillIslands && root.gapEffects
           runs: {
             var list = []
             if (leftHost.leftContentWidth > 0)
@@ -1483,6 +1496,36 @@ Item {
               list.push({ x: rightHost.x, width: rightHost.width })
             list.sort(function (a, b) { return a.x - b.x })
             return list
+          }
+        }
+
+        // Thin rules at the boundaries between the three groups - the V2 way
+        // of separating what used to be separate pills. Only drawn on the
+        // continuous surface, and only between groups that both have content.
+        Repeater {
+          model: {
+            var out = []
+            if (!root.islandsEnabled || root.pillIslands)
+              return out
+            var c = centerModules.islandRect
+            if (!c || c.width <= 0)
+              return out
+            if (leftHost.leftContentWidth > 0 && c.x > leftHost.x + leftHost.width)
+              out.push((leftHost.x + leftHost.width + c.x) / 2)
+            if (rightHost.rightContentWidth > 0 && rightHost.x > c.x + c.width)
+              out.push((c.x + c.width + rightHost.x) / 2)
+            return out
+          }
+
+          delegate: Rectangle {
+            required property real modelData
+
+            x: Math.round(modelData)
+            y: Math.round((root.barSize - height) / 2)
+            width: 1
+            height: Math.round(root.barSize * 0.44)
+            color: Qt.rgba(Color.foreground.r, Color.foreground.g,
+              Color.foreground.b, 0.16)
           }
         }
       }
@@ -1515,7 +1558,7 @@ Item {
           IslandBackdrop {
             anchors.fill: parent
             edge: "left"
-            visible: root.islandsEnabled && leftHostV.leftContentHeightV > 0
+            visible: root.islandsEnabled && root.pillIslands && leftHostV.leftContentHeightV > 0
             fillOpacity: root.islandFillOpacity
             barAtTop: root.position !== "bottom"
             radius: root.islandRadius(leftHostV.width)
@@ -1548,7 +1591,7 @@ Item {
           IslandBackdrop {
             anchors.fill: parent
             edge: "right"
-            visible: root.islandsEnabled && rightHostV.rightContentHeightV > 0
+            visible: root.islandsEnabled && root.pillIslands && rightHostV.rightContentHeightV > 0
             fillOpacity: root.islandFillOpacity
             barAtTop: root.position !== "bottom"
             radius: root.islandRadius(rightHostV.width)
@@ -1775,7 +1818,7 @@ Item {
 
         IslandBackdrop {
           z: -1
-          visible: root.islandsEnabled && hCenter.islandRight > hCenter.islandLeft
+          visible: root.islandsEnabled && root.pillIslands && hCenter.islandRight > hCenter.islandLeft
           x: hCenter.islandLeft - root.islandPad
           width: hCenter.islandRight - hCenter.islandLeft + root.islandPad * 2
           height: Math.max(1, root.barSize - root.islandInset * 2)
@@ -1872,7 +1915,7 @@ Item {
 
         IslandBackdrop {
           z: -1
-          visible: root.islandsEnabled && vCenter.islandBottom > vCenter.islandTop
+          visible: root.islandsEnabled && root.pillIslands && vCenter.islandBottom > vCenter.islandTop
           y: vCenter.islandTop - root.islandPad
           height: vCenter.islandBottom - vCenter.islandTop + root.islandPad * 2
           width: Math.max(1, root.barSize - root.islandInset * 2)
