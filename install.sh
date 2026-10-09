@@ -374,6 +374,13 @@ po_install_island_bar() {
 # upstream expression is still present, and uninstall.sh restores the saved
 # original.
 patch_system_tray() {
+  # Disabled: reserving only the revealed drawer broke the tray's own layout.
+  # Its clip region is drawerExtent wide and is expected to sit left of the
+  # pinned items; narrowing it moved the pinned items under the drawer icons,
+  # which then drew over them. Doing this properly means redesigning the
+  # drawer's slide geometry, and a patch that deep would be lost on the next
+  # Omarchy update. Left here as documentation, not called.
+  return 0
   local tray="/usr/share/omarchy/shell/plugins/bar/widgets/Tray.qml"
   local orig="$tray.paradise.orig"
   [[ -f "$tray" ]] || return 0
@@ -638,7 +645,8 @@ EXTRA_PLUGINS
 # A missing bar bundle is a warning, not a fatal error: every other
       # plugin is still usable, so don't let `set -e` abort the whole install.
       po_install_island_bar || true
-      patch_system_tray
+      # The stock tray reserves its whole drawer width by design; shrinking it
+      # is not a one-line change, see patch_system_tray.
       RUN_AS_INSTALL_USER omarchy plugin enable "${CURRENT_USER}.island-bar" 2>/dev/null || \
         log_warn "Paradise Island Bar could not be enabled."
       RUN_AS_INSTALL_USER omarchy plugin disable "omarchy.bar" 2>/dev/null || true

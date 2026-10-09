@@ -36,12 +36,12 @@ Item {
   // Thin lit line along the screen edge - the glass cue.
   property bool highlightEnabled: true
   property color highlightColor: Qt.rgba(1, 1, 1, 0.10)
-  // Off: the cast shadow sat on top of the accent edge and read as grime. Kept
-  // as a switch rather than deleted.
-  property bool shadowEnabled: false
+  // On: it is what separates the island from the wallpaper. Kept soft and
+  // shape-following so it reads as depth rather than a block.
+  property bool shadowEnabled: true
   // Depth of the cast shadow. Kept modest because a bar window is only as tall
   // as the bar, so anything past the desktop edge has nowhere to render.
-  property real shadowBlur: 0.5
+  property real shadowBlur: 0.7
   property real shadowOffset: 3
 
   // Notch geometry, from the Shibumi V2 contract: the shoulder runs out to
