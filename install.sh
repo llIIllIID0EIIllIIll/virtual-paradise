@@ -543,7 +543,6 @@ INSTALL_AND_ENABLE_PLUGINS() {
       done <<'EXTRA_PLUGINS'
 io.github.randazraik.xray|https://github.com/RandaZraik/omarchy-xray
 io.github.grichard99.omaproton-vpn|https://github.com/grichard99/omaproton-vpn
-com.omastorm.radar|https://github.com/wesleygrimes/omastorm
 EXTRA_PLUGINS
       po_apply_all
 

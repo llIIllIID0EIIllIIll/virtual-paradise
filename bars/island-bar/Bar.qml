@@ -66,6 +66,13 @@ Item {
   // Surface language. false (default) draws the V2 continuous strip in
   // BarSurface.qml; true brings back the floating pill islands.
   property bool pillIslands: false
+  // Which V2 form BarSurface draws: "notch" (flowing shoulders) or "full".
+  property string shellVariant: "notch"
+  // The notch's desktop edge is inset at each end, so the outer groups have to
+  // clear the shoulder or they sit where the surface has curved away.
+  readonly property real barEdgeInset: root.shellVariant === "notch"
+    ? Style.space(14) + Style.space(9) + Style.space(3)
+    : Style.space(8)
 
   // The bar owns an IPC handler, and Quickshell keeps only one handler per
   // target. Leaving this on the upstream "omarchy.bar" makes the bundled bar
@@ -1403,6 +1410,7 @@ Item {
           anchors.fill: parent
           visible: root.islandsEnabled && !root.pillIslands
           atTop: root.position !== "bottom"
+          variant: root.shellVariant
         }
 
         CenterModules { id: centerModules; anchors.fill: parent }
@@ -1416,7 +1424,7 @@ Item {
 
           z: 10
           anchors.left: parent.left
-          anchors.leftMargin: Style.space(8) - root.islandPad
+          anchors.leftMargin: root.barEdgeInset - root.islandPad
           anchors.verticalCenter: parent.verticalCenter
           width: leftContentWidth + root.islandPad * 2
           height: Math.max(1, root.barSize - root.islandInset * 2)
@@ -1449,7 +1457,7 @@ Item {
 
           z: 10
           anchors.right: parent.right
-          anchors.rightMargin: Style.space(8) - root.islandPad
+          anchors.rightMargin: root.barEdgeInset - root.islandPad
           anchors.verticalCenter: parent.verticalCenter
           width: rightContentWidth + root.islandPad * 2
           height: Math.max(1, root.barSize - root.islandInset * 2)
@@ -1484,7 +1492,7 @@ Item {
 
           z: 1
           anchors.fill: parent
-          enabled: root.islandsEnabled && root.pillIslands && root.gapEffects
+          enabled: root.islandsEnabled && root.gapEffects
           runs: {
             var list = []
             if (leftHost.leftContentWidth > 0)
@@ -1505,7 +1513,7 @@ Item {
         Repeater {
           model: {
             var out = []
-            if (!root.islandsEnabled || root.pillIslands)
+            if (!root.islandsEnabled || root.pillIslands || root.shellVariant !== "full")
               return out
             var c = centerModules.islandRect
             if (!c || c.width <= 0)
