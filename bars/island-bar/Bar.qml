@@ -1930,6 +1930,13 @@ Item {
           variant: "notch"
           wing: Style.space(6)
           bodyRadius: Style.space(4)
+          // The centre carries the telemetry widgets, so it gets the richer
+          // treatment: an accent halo, a lifted top on the fill, and a faint
+          // line along the screen edge.
+          glowEnabled: true
+          gradientEnabled: true
+          highlightEnabled: true
+          highlightColor: Qt.rgba(1, 1, 1, 0.06)
         }
 
         ModuleList {
