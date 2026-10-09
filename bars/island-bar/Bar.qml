@@ -77,6 +77,14 @@ Item {
   // The centre island carries the taller telemetry widgets (waveform, vitals),
   // so it hangs a little past the bar line where the sides do not.
   readonly property real centerIslandDrop: 1
+  // How far the notch shoulder has withdrawn by the vertical middle of the bar.
+  // A gap glow is a horizontal band at that midline, so its runs have to start
+  // at the island edge there - which is inside the host rectangle, because the
+  // shoulder tapers. Evaluated from the same cubic the surface uses at t=0.5.
+  readonly property real notchTaperMid: {
+    var w = Style.space(6), b = Style.space(4), k = 0.55228475
+    return (w * (3 * k + 4) - b * (2 - 3 * k)) / 8
+  }
   // Which V2 form BarSurface draws when one continuous surface is used:
   // "notch" (flowing shoulders), "dock", "full" or "fit".
   property string shellVariant: "fit"
@@ -1560,13 +1568,17 @@ Item {
           enabled: root.islandsEnabled && root.gapEffects
           runs: {
             var list = []
+            // Notch islands taper, so their edges facing a gap sit inside the
+            // host rectangle. Trim each inner edge or the band spills into the
+            // triangle the shoulder left empty and appears from nowhere.
+            var t = root.notchIslands && !root.pillIslands ? root.notchTaperMid : 0
             if (leftHost.leftContentWidth > 0)
-              list.push({ x: leftHost.x, width: leftHost.width })
+              list.push({ x: leftHost.x, width: leftHost.width - t })
             var c = centerModules.islandRect
             if (c && c.width > 0)
-              list.push({ x: c.x, width: c.width })
+              list.push({ x: c.x + t, width: c.width - 2 * t })
             if (rightHost.rightContentWidth > 0)
-              list.push({ x: rightHost.x, width: rightHost.width })
+              list.push({ x: rightHost.x + t, width: rightHost.width - t })
             list.sort(function (a, b) { return a.x - b.x })
             return list
           }
