@@ -70,10 +70,10 @@ Item {
   // screen edge. Takes precedence over shellVariant, which only applies to the
   // single continuous surface.
   property bool notchIslands: true
-  // A bar window is exactly as tall as the bar, so a cast shadow has nowhere
-  // to fall. The notch tabs stop this far short of the desktop edge, leaving
-  // that strip for the shadow to render in.
-  readonly property real barShadowRoom: Style.space(4)
+  // Extra window height, below the bar, for a cast shadow. Zero when the
+  // shadow is off - a taller window only made it harder to keep the widgets
+  // centred, because the centre lists centre on the window, not the bar.
+  readonly property real barShadowRoom: 0
   // Which V2 form BarSurface draws when one continuous surface is used:
   // "notch" (flowing shoulders), "dock", "full" or "fit".
   property string shellVariant: "fit"

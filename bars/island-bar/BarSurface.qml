@@ -36,7 +36,9 @@ Item {
   // Thin lit line along the screen edge - the glass cue.
   property bool highlightEnabled: true
   property color highlightColor: Qt.rgba(1, 1, 1, 0.10)
-  property bool shadowEnabled: true
+  // Off: the cast shadow sat on top of the accent edge and read as grime. Kept
+  // as a switch rather than deleted.
+  property bool shadowEnabled: false
   // Depth of the cast shadow. Kept modest because a bar window is only as tall
   // as the bar, so anything past the desktop edge has nowhere to render.
   property real shadowBlur: 0.5

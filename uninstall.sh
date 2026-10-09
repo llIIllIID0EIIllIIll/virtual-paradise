@@ -299,6 +299,17 @@ if [[ -d "$island_bar_dir" ]]; then
   fi
 fi
 
+# Restore the stock system tray if install.sh patched it for the drawer reveal.
+tray_qml="/usr/share/omarchy/shell/plugins/bar/widgets/Tray.qml"
+if [[ -f "$tray_qml.paradise.orig" ]]; then
+  if run_privileged cp "$tray_qml.paradise.orig" "$tray_qml" 2>/dev/null; then
+    run_privileged rm -f "$tray_qml.paradise.orig" 2>/dev/null || true
+    printf 'Restored the stock system tray.\n'
+  else
+    printf 'Could not restore the stock system tray (needs sudo).\n'
+  fi
+fi
+
 # shell-default.json is the pristine Omarchy layout restored above and the only
 # remaining copy of it. --keep-backups implies keeping that too, since without
 # it a re-install has nothing to restore from.
