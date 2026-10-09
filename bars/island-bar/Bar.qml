@@ -66,15 +66,22 @@ Item {
   // Surface language. false (default) draws the V2 continuous strip in
   // BarSurface.qml; true brings back the floating pill islands.
   property bool pillIslands: false
-  // Which V2 form BarSurface draws: "notch" (flowing shoulders) or "full".
+  // Three separate islands, each shaped like a V2 notch tab hanging off the
+  // screen edge. Takes precedence over shellVariant, which only applies to the
+  // single continuous surface.
+  property bool notchIslands: true
+  // Which V2 form BarSurface draws when one continuous surface is used:
+  // "notch" (flowing shoulders), "dock", "full" or "fit".
   property string shellVariant: "fit"
   // How far the outer groups sit from the window edge. Notch insets its
   // desktop edge at both ends, and fit floats inside its own margin, so both
   // push the groups in further than the attached, flush forms do.
-  readonly property real barEdgeInset: root.shellVariant === "notch"
-    ? Style.space(14) + Style.space(9) + Style.space(3)
-    : root.shellVariant === "fit" ? Style.space(3) + Style.space(2)
-    : Style.space(3)
+  readonly property real barEdgeInset: root.notchIslands
+    ? Style.space(3)
+    : root.shellVariant === "notch"
+      ? Style.space(14) + Style.space(9) + Style.space(3)
+      : root.shellVariant === "fit" ? Style.space(3) + Style.space(2)
+      : Style.space(3)
 
   // The bar owns an IPC handler, and Quickshell keeps only one handler per
   // target. Leaving this on the upstream "omarchy.bar" makes the bundled bar
@@ -1411,6 +1418,7 @@ Item {
 
           anchors.fill: parent
           visible: root.islandsEnabled && !root.pillIslands
+            && (!root.notchIslands || root.vertical)
           atTop: root.position !== "bottom"
           variant: root.shellVariant
         }
@@ -1427,9 +1435,15 @@ Item {
           z: 10
           anchors.left: parent.left
           anchors.leftMargin: root.barEdgeInset - root.islandPad
-          anchors.verticalCenter: parent.verticalCenter
+          // A notch tab hangs off the screen edge, so it spans the full bar
+          // height and pins to that edge. The pill islands float instead.
+          anchors.verticalCenter: root.notchIslands ? undefined : parent.verticalCenter
+          anchors.top: root.notchIslands && root.position !== "bottom" ? parent.top : undefined
+          anchors.bottom: root.notchIslands && root.position === "bottom" ? parent.bottom : undefined
           width: leftContentWidth + root.islandPad * 2
-          height: Math.max(1, root.barSize - root.islandInset * 2)
+          height: root.notchIslands
+            ? root.barSize
+            : Math.max(1, root.barSize - root.islandInset * 2)
 
           readonly property real leftContentWidth: {
             if (leftModules.item && leftModules.item.implicitWidth > 0)
@@ -1446,6 +1460,16 @@ Item {
             radius: root.islandRadius(leftHost.height)
           }
 
+          BarSurface {
+            anchors.fill: parent
+            visible: root.islandsEnabled && root.notchIslands && !root.pillIslands
+              && leftHost.leftContentWidth > 0
+            atTop: root.position !== "bottom"
+            variant: "notch"
+            wing: Style.space(6)
+            bodyRadius: Style.space(4)
+          }
+
           LeftModules {
             id: leftModules
 
@@ -1460,9 +1484,13 @@ Item {
           z: 10
           anchors.right: parent.right
           anchors.rightMargin: root.barEdgeInset - root.islandPad
-          anchors.verticalCenter: parent.verticalCenter
+          anchors.verticalCenter: root.notchIslands ? undefined : parent.verticalCenter
+          anchors.top: root.notchIslands && root.position !== "bottom" ? parent.top : undefined
+          anchors.bottom: root.notchIslands && root.position === "bottom" ? parent.bottom : undefined
           width: rightContentWidth + root.islandPad * 2
-          height: Math.max(1, root.barSize - root.islandInset * 2)
+          height: root.notchIslands
+            ? root.barSize
+            : Math.max(1, root.barSize - root.islandInset * 2)
 
           readonly property real rightContentWidth: {
             if (rightModules.item && rightModules.item.implicitWidth > 0)
@@ -1477,6 +1505,16 @@ Item {
             fillOpacity: root.islandFillOpacity
             barAtTop: root.position !== "bottom"
             radius: root.islandRadius(rightHost.height)
+          }
+
+          BarSurface {
+            anchors.fill: parent
+            visible: root.islandsEnabled && root.notchIslands && !root.pillIslands
+              && rightHost.rightContentWidth > 0
+            atTop: root.position !== "bottom"
+            variant: "notch"
+            wing: Style.space(6)
+            bodyRadius: Style.space(4)
           }
 
           RightModules {
@@ -1837,6 +1875,22 @@ Item {
           fillOpacity: root.islandFillOpacity
           barAtTop: root.position !== "bottom"
           radius: root.islandRadius(height)
+        }
+
+        BarSurface {
+          z: -1
+          visible: root.islandsEnabled && root.notchIslands && !root.pillIslands
+            && hCenter.islandRight > hCenter.islandLeft
+          x: hCenter.islandLeft - root.islandPad
+          width: hCenter.islandRight - hCenter.islandLeft + root.islandPad * 2
+          height: root.barSize
+          anchors.verticalCenter: root.notchIslands ? undefined : parent.verticalCenter
+          anchors.top: root.notchIslands && root.position !== "bottom" ? parent.top : undefined
+          anchors.bottom: root.notchIslands && root.position === "bottom" ? parent.bottom : undefined
+          atTop: root.position !== "bottom"
+          variant: "notch"
+          wing: Style.space(6)
+          bodyRadius: Style.space(4)
         }
 
         ModuleList {
