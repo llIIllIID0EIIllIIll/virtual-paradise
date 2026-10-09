@@ -74,6 +74,9 @@ Item {
   // shadow is off - a taller window only made it harder to keep the widgets
   // centred, because the centre lists centre on the window, not the bar.
   readonly property real barShadowRoom: 0
+  // The centre island carries the taller telemetry widgets (waveform, vitals),
+  // so it hangs a little past the bar line where the sides do not.
+  readonly property real centerIslandDrop: 1
   // Which V2 form BarSurface draws when one continuous surface is used:
   // "notch" (flowing shoulders), "dock", "full" or "fit".
   property string shellVariant: "fit"
@@ -1543,7 +1546,9 @@ Item {
         GapGlow {
           id: gapGlow
 
-          z: 1
+          // Above the islands: their shadow bleeds into the gaps and would
+          // otherwise clip the glow into a rectangular smear at each edge.
+          z: 11
           // Span the islands, not the whole window: the window now carries a
           // shadow strip, and centring on that would drop the glow below the
           // bar's midline.
@@ -1904,7 +1909,7 @@ Item {
           x: hCenter.islandLeft - root.islandPad
           width: hCenter.islandRight - hCenter.islandLeft + root.islandPad * 2
           height: root.notchIslands
-            ? root.barSize
+            ? root.barSize + root.centerIslandDrop
             : Math.max(1, root.barSize - root.islandInset * 2)
           anchors.verticalCenter: root.notchIslands ? undefined : parent.verticalCenter
           anchors.top: root.notchIslands && root.position !== "bottom" ? parent.top : undefined
