@@ -1565,7 +1565,7 @@ Item {
           height: root.barSize
           anchors.top: root.position !== "bottom" ? parent.top : undefined
           anchors.bottom: root.position === "bottom" ? parent.bottom : undefined
-          enabled: root.islandsEnabled && root.gapEffects
+          glowEnabled: root.islandsEnabled && root.gapEffects
           runs: {
             var list = []
             // Notch islands taper, so their edges facing a gap sit inside the
