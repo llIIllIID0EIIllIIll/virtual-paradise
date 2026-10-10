@@ -86,8 +86,7 @@
           "id": "ssupt.audio-control"
         },
         {
-          "id": "onlyvishesh.power-manager",
-          "showPercentage": true
+          "id": "__USER__.power"
         },
         {
           "id": "__USER__.system-update"

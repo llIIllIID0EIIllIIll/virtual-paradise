@@ -557,15 +557,10 @@ INSTALL_AND_ENABLE_PLUGINS() {
       fi
       po_apply_all
 
-      # The external power manager replaces the cloned Power & Battery widget.
-      if ! RUN_AS_INSTALL_USER omarchy plugin list --json 2>/dev/null | jq -e 'any(.[]; .id == "onlyvishesh.power-manager")' >/dev/null; then
-        log_sub "Adding external Omarchy power manager plugin from git..."
-        RUN_AS_INSTALL_USER omarchy plugin add https://github.com/onlyVishesh/omarchy-power-manager.git --enable --yes 2>/dev/null || true
-      else
-        RUN_AS_INSTALL_USER omarchy plugin enable "onlyvishesh.power-manager" 2>/dev/null || true
-      fi
-      RUN_AS_INSTALL_USER omarchy plugin disable "${CURRENT_USER}.power" 2>/dev/null || true
+      # Power comes from the in-repo ${CURRENT_USER}.power widget. Retire the
+      # stock widget and the previously cloned power manager.
       RUN_AS_INSTALL_USER omarchy plugin disable "omarchy.power" 2>/dev/null || true
+      RUN_AS_INSTALL_USER omarchy plugin disable "onlyvishesh.power-manager" 2>/dev/null || true
 
       # Extra bar widgets for the rice. Each is a self-contained Quickshell
       # plugin; the VPN widget needs a Proton account before it does anything,
@@ -714,8 +709,8 @@ if [[ -f "$REPO_DIR/shell/shell.json" ]]; then
         -e 's/foreground: root\.gndRunning ? Color\.accent : (root\.presentationMode ? Color\.accent : (root\.bar ? root\.bar\.foreground : Color\.foreground))/foreground: Color.accent/' \
         "$projector_panel"
     fi
-    RUN_AS_INSTALL_USER omarchy plugin enable "onlyvishesh.power-manager" 2>/dev/null || \
-      log_warn "power manager could not be enabled after shell layout sync."
+    RUN_AS_INSTALL_USER omarchy plugin enable "${CURRENT_USER}.power" 2>/dev/null || \
+      log_warn "Power could not be enabled after shell layout sync."
     RUN_AS_INSTALL_USER omarchy plugin disable "${CURRENT_USER}.monitor" 2>/dev/null || true
     RUN_AS_INSTALL_USER omarchy plugin disable "omarchy.monitor" 2>/dev/null || true
     RUN_AS_INSTALL_USER omarchy plugin enable "io.github.woogy7.vitals" 2>/dev/null || \
@@ -723,7 +718,7 @@ if [[ -f "$REPO_DIR/shell/shell.json" ]]; then
     RUN_AS_INSTALL_USER omarchy plugin disable "harshith.system-monitor" 2>/dev/null || true
     RUN_AS_INSTALL_USER omarchy plugin disable "${CURRENT_USER}.memory" 2>/dev/null || true
     RUN_AS_INSTALL_USER omarchy plugin disable "omarchy.memory" 2>/dev/null || true
-    RUN_AS_INSTALL_USER omarchy plugin disable "${CURRENT_USER}.power" 2>/dev/null || true
+    RUN_AS_INSTALL_USER omarchy plugin disable "onlyvishesh.power-manager" 2>/dev/null || true
     RUN_AS_INSTALL_USER omarchy plugin disable "omarchy.power" 2>/dev/null || true
     RUN_AS_INSTALL_USER omarchy plugin enable "io.github.erikburdett.wavebar" 2>/dev/null || \
       log_warn "Wavebar could not be enabled after shell layout sync."
@@ -1235,8 +1230,8 @@ if command -v omarchy >/dev/null 2>&1; then
   fi
   omarchy plugin disable "${u}.monitor" >/dev/null 2>&1 || true
   omarchy plugin disable "omarchy.monitor" >/dev/null 2>&1 || true
-  omarchy plugin enable "onlyvishesh.power-manager" >/dev/null 2>&1 || true
-  omarchy plugin disable "${u}.power" >/dev/null 2>&1 || true
+  omarchy plugin enable "${u}.power" >/dev/null 2>&1 || true
+  omarchy plugin disable "onlyvishesh.power-manager" >/dev/null 2>&1 || true
   omarchy plugin disable "omarchy.power" >/dev/null 2>&1 || true
   omarchy plugin enable "io.github.erikburdett.wavebar" >/dev/null 2>&1 || true
   omarchy plugin enable "ssupt.audio-control" >/dev/null 2>&1 || true
@@ -1590,8 +1585,8 @@ if [[ $IS_HOOK -eq 0 ]]; then
     RUN_AS_INSTALL_USER omarchy plugin enable "jankeesvw.notification-center" 2>/dev/null || \
       log_warn "Notification center could not be enabled after theme activation."
     RUN_AS_INSTALL_USER omarchy plugin enable "crmne.hyprmoncfg" 2>/dev/null || true
-    RUN_AS_INSTALL_USER omarchy plugin enable "onlyvishesh.power-manager" 2>/dev/null || true
-    RUN_AS_INSTALL_USER omarchy plugin disable "${CURRENT_USER}.power" 2>/dev/null || true
+    RUN_AS_INSTALL_USER omarchy plugin enable "${CURRENT_USER}.power" 2>/dev/null || true
+    RUN_AS_INSTALL_USER omarchy plugin disable "onlyvishesh.power-manager" 2>/dev/null || true
     RUN_AS_INSTALL_USER omarchy plugin disable "omarchy.power" 2>/dev/null || true
   fi
 
