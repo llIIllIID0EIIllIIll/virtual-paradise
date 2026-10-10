@@ -420,7 +420,8 @@ if want tc5; then
   # leak into it. This is asserted while the theme exists, which is why it lives
   # here rather than in TC-4 where uninstall has already removed it.
   stray=""
-  for junk in install.sh uninstall.sh README.md LICENSE .gitignore tests .github .githooks tools CONTRIBUTING.md; do
+  for junk in install.sh uninstall.sh README.md LICENSE .gitignore tests .github .githooks tools CONTRIBUTING.md \
+              plugins bars bin lib shell systemd sddm plymouth micro cava fastfetch; do
     [[ -e "$root/xdg/omarchy/themes/virtual-paradise/$junk" ]] && stray="$stray $junk"
   done
   check "theme payload has no repo boilerplate" \
