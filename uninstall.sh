@@ -252,7 +252,6 @@ if command -v omarchy &>/dev/null; then
   RUN_AS_INSTALL_USER omarchy plugin disable "ssupt.bluetooth-audio" 2>/dev/null || true
   RUN_AS_INSTALL_USER omarchy plugin disable "io.github.erikburdett.wavebar" 2>/dev/null || true
   RUN_AS_INSTALL_USER omarchy plugin disable "io.github.tyrichards.workspaces-jap" 2>/dev/null || true
-  RUN_AS_INSTALL_USER omarchy plugin disable "${CURRENT_USER}.workspaces" 2>/dev/null || true
   RUN_AS_INSTALL_USER omarchy plugin disable "io.github.adamcbrewer.voxtype-aura" 2>/dev/null || true
   RUN_AS_INSTALL_USER omarchy plugin disable "io.github.kristoferlund.webcam" 2>/dev/null || true
 
