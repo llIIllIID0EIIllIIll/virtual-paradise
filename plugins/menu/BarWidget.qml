@@ -37,7 +37,7 @@ BarWidget {
         text: "\ue900"
         font.family: "omarchy"
         font.pixelSize: Style.font.iconLarge + (button.tooltipHovered ? 2 : 0)
-        color: button.tooltipHovered ? "#00ff88" : "#00f5d4"
+        color: button.tooltipHovered ? "#00ff88" : "#00ffdd"
         scale: button.tooltipHovered ? 1.15 : 1.0
 
         Behavior on color { ColorAnimation { duration: 160 } }

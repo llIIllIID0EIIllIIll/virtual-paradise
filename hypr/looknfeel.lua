@@ -91,7 +91,7 @@ hl.config({
       text_color = "rgb(eafbfa)",
       text_color_inactive = "rgba(eafbfa80)",
       col = {
-        active = "rgba(00f5d466)",
+        active = "rgba(00ffdd66)",
         inactive = "rgba(0f081d99)",
       },
       gradients = true,
@@ -179,7 +179,7 @@ hl.layer_rule({ match = { namespace = "omarchy-osd" }, animation = "slidefadever
 --  10. URGENT & ERROR WINDOWS (Blazing Neon Red Warning Border & Glow on Error)
 -- ==============================================================================
 local urgentBorderGradient = {
-  colors = { "rgba(ff0055ff)", "rgba(ff1744ff)", "rgba(ff003cff)", "rgba(ff5287ff)" },
+  colors = { "rgba(ff0055ff)", "rgba(ff1744ff)", "rgba(ff003cff)", "rgba(ff00ffff)" },
   angle = 45,
 }
 local urgentInactiveGradient = {

@@ -660,7 +660,7 @@ Panel {
       ? "#00ff88"
       : (button.tooltipHovered
         ? "#ffffff"
-        : (root.isBtConnected ? "#00f5d4" : (root.isBtEnabled ? "#9684c0" : "#556d7d")))
+        : (root.isBtConnected ? "#00ffdd" : (root.isBtEnabled ? "#9684c0" : "#556d7d")))
     scale: button.tooltipHovered ? 1.15 : 1.0
     tooltipText: !root.isBtEnabled
       ? "Bluetooth: Disabled (OFF)\nLeft: Open Devices | Right: Toggle Power"

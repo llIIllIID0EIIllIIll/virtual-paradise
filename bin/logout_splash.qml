@@ -39,7 +39,7 @@ ShellRoot {
         anchors.top: parent.top
         width: parent.width
         height: 3
-        color: "#00f5d4"
+        color: "#00ffdd"
       }
       Rectangle {
         anchors.bottom: parent.bottom
@@ -72,7 +72,7 @@ ShellRoot {
           anchors.fill: parent
           gradient: Gradient {
             orientation: Gradient.Horizontal
-            GradientStop { position: 0.0; color: "#00f5d4" }  // Miku Cyan
+            GradientStop { position: 0.0; color: "#00ffdd" }  // Miku Cyan
             GradientStop { position: 0.5; color: "#00ff88" }  // Hacker Green
             GradientStop { position: 1.0; color: "#ffb7d5" }  // Sakura Pink
           }

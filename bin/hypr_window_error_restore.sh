@@ -47,7 +47,7 @@ sleep 0.055
 
 # Step 4: Full Miku Cyan / Hacker Green / Sakura Pink Theme Gradient & Restore Shadow
 hyprctl eval "
-  local d1 = hl.dsp.window.set_prop({ window = 'address:$addr', prop = 'active_border_color', value = 'rgba(00f5d4ee) rgba(00ff88dd) rgba(ffb7d5ee) 45deg' })
+  local d1 = hl.dsp.window.set_prop({ window = 'address:$addr', prop = 'active_border_color', value = 'rgba(00ffddee) rgba(00ff88dd) rgba(ffb7d5ee) 45deg' })
   local d2 = hl.dsp.window.set_prop({ window = 'address:$addr', prop = 'inactive_border_color', value = 'rgba(182833aa)' })
   local d3 = hl.dsp.window.set_prop({ window = 'address:$addr', prop = 'no_shadow', value = 'false' })
   hl.dispatch(d1)

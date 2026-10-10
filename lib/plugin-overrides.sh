@@ -161,7 +161,7 @@ po_apply_theme_colors() {
       po_patch_accent io.github.kristoferlund.webcam "$p/io.github.kristoferlund.webcam/BarWidget.qml" \
         "/id: button/,/text: \"\U000f0100\"/ { /bar: root.bar/ a\\
     //$PO_ACCENT_MARKER\\
-    foreground: root.bar ? root.bar.urgent : \"#00f5d4\"
+    foreground: root.bar ? root.bar.urgent : \"#00ffdd\"
     }"
     fi
   fi

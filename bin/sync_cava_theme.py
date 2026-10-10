@@ -13,7 +13,7 @@ def main():
     system_theme_colors = f"/usr/share/omarchy/themes/{theme_name}/colors.toml"
 
     if theme_name == "virtual-paradise":
-        c1 = c2 = c3 = "#00f5d4"
+        c1 = c2 = c3 = "#00ffdd"
         c4 = c5 = "#00ff88"
         c6 = c7 = c8 = "#ffb7d5"
     else:

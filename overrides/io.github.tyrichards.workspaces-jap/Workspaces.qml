@@ -48,7 +48,7 @@ BarWidget {
     height: root.vertical ? column.implicitHeight + outerPadding * 2 : 28
     radius: 14
     color: Qt.rgba(1.0, 1.0, 1.0, 0.04)
-    border.color: Qt.rgba(0.0, 0.96, 0.83, 0.28)
+    border.color: Qt.rgba(0.0, 1.0, 0.867, 0.28)
     border.width: 1
 
     Column {

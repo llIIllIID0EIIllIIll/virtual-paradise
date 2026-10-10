@@ -2,7 +2,7 @@
 """
 Virtual☆Paradise Gradient Matrix (virtual_matrix.py)
 Enhanced Matrix rain animation with continuous Tri-Color Gradient:
-Miku Cyan (#00f5d4) -> Hacker Green (#00ff88) -> Sakura Pastel Pink (#ffb7d5)
+Miku Cyan (#00ffdd) -> Hacker Green (#00ff88) -> Sakura Pastel Pink (#ffb7d5)
 Based on Unimatrix by William Mannard.
 """
 
@@ -114,7 +114,7 @@ def load_theme_gradient_colors():
 
     if active_theme == "virtual-paradise" or not active_theme:
         return (
-            (0, 960, 831),     # Miku Cyan (#00f5d4)
+            (0, 960, 831),     # Miku Cyan (#00ffdd)
             (0, 1000, 533),    # Hacker Green (#00ff88)
             (1000, 717, 835),  # Sakura Pink (#ffb7d5)
         )

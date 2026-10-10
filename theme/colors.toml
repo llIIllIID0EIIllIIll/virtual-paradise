@@ -2,12 +2,12 @@
 # Gradient Flow: Miku Cyan -> Hacker Green -> Sakura Pastel Pink on Deep Void Black
 
 # Accent and UI colors
-accent = "#00f5d4"
-active_border_color = "#00f5d4"
-active_tab_background = "#00f5d4"
+accent = "#00ffdd"
+active_border_color = "#00ffdd"
+active_tab_background = "#00ffdd"
 
 # Cursor colors
-cursor = "#00f5d4"
+cursor = "#00ffdd"
 
 # Primary colors
 foreground = "#eafbfa"
@@ -15,14 +15,14 @@ background = "#0f081d"
 
 # Selection colors
 selection_foreground = "#0f081d"
-selection_background = "#00f5d4"
+selection_background = "#00ffdd"
 
 # Normal colors (ANSI 0-7)
 color0 = "#0f081d"
-color1 = "#ff5287"
+color1 = "#ff00ff"
 color2 = "#00ff88"
 color3 = "#ffe066"
-color4 = "#00f5d4"
+color4 = "#00ffdd"
 color5 = "#ffb7d5"
 color6 = "#39c5bb"
 color7 = "#eafbfa"
@@ -41,7 +41,7 @@ color15 = "#ffffff"
 mode = "dark"
 bg = "#0f081d"
 lighter_bg = "#180e2e"
-selection = "#00f5d4"
+selection = "#00ffdd"
 muted = "#5a3e85"
 muted_fg = "#9684c0"
 dark_fg = "#3b255c"
@@ -49,10 +49,10 @@ fg = "#eafbfa"
 light_fg = "#eafbfa"
 soft_fg = "#c5e8ea"
 bright_fg = "#ffffff"
-red = "#ff5287"
+red = "#ff00ff"
 green = "#00ff88"
 yellow = "#ffe066"
-blue = "#00f5d4"
+blue = "#00ffdd"
 magenta = "#ffb7d5"
 cyan = "#39c5bb"
 orange = "#ff9966"
@@ -75,5 +75,5 @@ neon_red = "#ff003c"
 neon_warning = "#ff0055"
 
 # Quattro shares these gradients between Hyprland and shell surfaces.
-hyprland_active_border = "rgba(00f5d4ee) rgba(00ff88cc) rgba(ffb7d5ee) 45deg"
+hyprland_active_border = "rgba(00ffddee) rgba(00ff88cc) rgba(ffb7d5ee) 45deg"
 hyprland_inactive_border = "rgba(3b255caa)"
