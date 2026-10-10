@@ -65,11 +65,11 @@ Item {
   property bool gapEffects: true
   // Surface language. false (default) draws the V2 continuous strip in
   // BarSurface.qml; true brings back the floating pill islands.
-  property bool pillIslands: false
+  property bool pillIslands: true
   // Three separate islands, each shaped like a V2 notch tab hanging off the
   // screen edge. Takes precedence over shellVariant, which only applies to the
   // single continuous surface.
-  property bool notchIslands: true
+  property bool notchIslands: false
   // Extra window height, below the bar, for a cast shadow. Zero when the
   // shadow is off - a taller window only made it harder to keep the widgets
   // centred, because the centre lists centre on the window, not the bar.
@@ -77,6 +77,8 @@ Item {
   // The centre island carries the taller telemetry widgets (waveform, vitals),
   // so it hangs a little past the bar line where the sides do not.
   readonly property real centerIslandDrop: 3
+  // How far the neon backplate extends past the centre pill on each side.
+  readonly property real neonPad: Style.space(3)
   // How far the notch shoulder has withdrawn by the vertical middle of the bar.
   // A gap glow is a horizontal band at that midline, so its runs have to start
   // at the island edge there - which is inside the host rectangle, because the
@@ -1899,6 +1901,22 @@ Item {
 
         HoverHandler {
           onHoveredChanged: root.setCenterSectionHovered(hovered)
+        }
+
+        // Neon backplate, one layer under the centre pill and larger on every
+        // side so the pattern frames the pill rather than hiding behind it.
+        NeonBackdrop {
+          z: -2
+          visible: root.islandsEnabled && root.pillIslands
+            && hCenter.islandRight > hCenter.islandLeft
+          x: hCenter.islandLeft - root.islandPad - root.neonPad
+          width: hCenter.islandRight - hCenter.islandLeft + root.islandPad * 2
+            + root.neonPad * 2
+          height: Math.max(1, root.barSize - root.islandInset * 2) + root.neonPad * 2
+          anchors.verticalCenter: parent.verticalCenter
+          radius: root.islandRadius(height)
+          accent: Color.accent
+          base: Color.bar.background
         }
 
         IslandBackdrop {
