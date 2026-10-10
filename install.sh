@@ -1070,40 +1070,38 @@ if [[ "$REPO_DIR" != "$CONFIG_DIR/omarchy/themes/$THEME_NAME" ]]; then
   # Do not swallow this rsync: it is the step that actually delivers the theme.
   # A failure here used to be invisible and still printed the success banner.
   THEME_DEST="$CONFIG_DIR/omarchy/themes/$THEME_NAME"
-  if ! rsync -a --delete \
-    --exclude='.git' \
-    --exclude='__pycache__' \
-    --exclude='*.pyc' \
-    --exclude='tests' \
-    --exclude='.github' \
-    --exclude='.githooks' \
-    --exclude='docs' \
-    --exclude='tools' \
-    --exclude='CONTRIBUTING.md' \
-    --exclude='install.sh' \
-    --exclude='uninstall.sh' \
-    --exclude='README.md' \
-    --exclude='LICENSE' \
-    --exclude='.gitignore' \
-    "$REPO_DIR"/ "$THEME_DEST/"; then
+
+  # What the theme actually needs, and nothing else. `theme/` and `config/` are
+  # flattened into the root below; `hypr/*.css`, `assets/` and `overrides/` are
+  # read back by the theme-set hook; `backgrounds/` is what `omarchy theme bg
+  # next` cycles. Everything installed to its own place - plugins, bars, bin,
+  # lib, shell, systemd, sddm, plymouth, micro, cava, fastfetch - is delivered
+  # by its own step and would only be dead weight here.
+  #
+  # One list feeds both the rsync excludes and the cleanup below. --exclude also
+  # stops --delete removing a copy an earlier run placed, so the two must agree
+  # or a stripped directory would linger forever.
+  THEME_STRIP=(
+    .git .github .githooks .gitignore
+    tests tools docs
+    install.sh uninstall.sh README.md LICENSE CONTRIBUTING.md
+    plugins bars bin lib shell systemd sddm plymouth micro cava fastfetch
+  )
+
+  strip_args=()
+  for item in "${THEME_STRIP[@]}"; do strip_args+=(--exclude="$item"); done
+
+  if ! rsync -a --delete "${strip_args[@]}" "$REPO_DIR"/ "$THEME_DEST/"; then
     log_warn "Theme rsync failed. The theme may be incomplete — re-run the installer."
   fi
 
-  # `--exclude` stops rsync copying these, but it also stops --delete removing a
-  # copy an earlier run already placed here, so clean them explicitly. The theme
-  # is a payload, not a second checkout of this repository.
-  rm -rf "$THEME_DEST/tests" \
-         "$THEME_DEST/.github" \
-         "$THEME_DEST/.githooks" \
-         "$THEME_DEST/docs" \
-         "$THEME_DEST/tools" \
-         "$THEME_DEST/CONTRIBUTING.md" \
-         "$THEME_DEST/install.sh" \
-         "$THEME_DEST/uninstall.sh" \
-         "$THEME_DEST/README.md" \
-         "$THEME_DEST/LICENSE" \
-         "$THEME_DEST/.gitignore"
+  for item in "${THEME_STRIP[@]}"; do
+    rm -rf "${THEME_DEST:?}/$item"
+  done
+  rm -rf "$THEME_DEST/__pycache__"
+  find "$THEME_DEST" -name '*.pyc' -delete 2>/dev/null || true
 fi
+
 # Wavebar replaced the legacy media/Cava bar plugin. Remove any copy left in
 # the theme runtime from older Virtual Paradise installations.
 rm -rf "$CONFIG_DIR/omarchy/themes/$THEME_NAME/plugins/media"
