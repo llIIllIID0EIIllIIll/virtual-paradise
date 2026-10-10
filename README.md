@@ -118,7 +118,6 @@ Widgets draw from this palette by literal hex, so re-theming means editing
 | `<user>.island-bar` | Floating three-island bar | **in-repo** `bars/island-bar/` |
 | `io.github.erikburdett.wavebar` | CAVA waveform + MPRIS transport | [upstream](https://github.com/ErikBurdett/omarchy-wavebar) |
 | `io.github.woogy7.vitals` | CPU/RAM/disk/net/**GPU**/sensors/processes panel | [upstream](https://github.com/Woogy7/omarchy-vitals) |
-| `io.github.tyrichards.workspaces-jap` | Japanese numeral workspace indicators | [upstream](https://github.com/TyRichards/omarchy-workspaces-jap) |
 | `io.github.adamcbrewer.voxtype-aura` | Voice dictation HUD | [upstream](https://github.com/adamcbrewer/voxtype-aura) |
 | `crmne.hyprmoncfg` | Multi-monitor layout and scaling | [upstream](https://github.com/crmne/omarchy-hyprmoncfg) |
 | `onlyvishesh.power-manager` | Battery health and power profiles | [upstream](https://github.com/onlyVishesh/omarchy-power-manager) |
@@ -138,6 +137,7 @@ Omarchy's copies read their colours from the host API:
 | Widget | Replaces | Why it exists |
 | :--- | :--- | :--- |
 | `island-bar` | `omarchy.bar` | floating three-island layout, first-party so `serviceFor()` works |
+| `workspaces` | `omarchy.workspaces` | Japanese numeral workspace switcher |
 | `clock` | `omarchy.clock` | themed clock + date, panel |
 | `weather` | `omarchy.weather` | themed weather pill |
 | `network` | `omarchy.network` | themed network panel |
