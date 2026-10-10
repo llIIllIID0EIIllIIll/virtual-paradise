@@ -167,6 +167,8 @@ Item {
 
     // dock / full / fit: a rounded rectangle, optionally inset.
     Shape {
+      id: roundedShape
+
       anchors.fill: parent
       antialiasing: true
       preferredRendererType: Shape.CurveRenderer
@@ -201,35 +203,35 @@ Item {
         capStyle: ShapePath.FlatCap
         joinStyle: ShapePath.RoundJoin
 
-        startX: parent.x0 + parent.sr
-        startY: parent.screenY
-        PathLine { x: parent.x1 - parent.sr; y: parent.screenY }
+        startX: roundedShape.x0 + roundedShape.sr
+        startY: roundedShape.screenY
+        PathLine { x: roundedShape.x1 - roundedShape.sr; y: roundedShape.screenY }
         PathQuad {
-          x: parent.x1
-          y: parent.screenY + (root.atTop ? parent.sr : -parent.sr)
-          controlX: parent.x1
-          controlY: parent.screenY
+          x: roundedShape.x1
+          y: roundedShape.screenY + (root.atTop ? roundedShape.sr : -roundedShape.sr)
+          controlX: roundedShape.x1
+          controlY: roundedShape.screenY
         }
-        PathLine { x: parent.x1; y: parent.deskY + (root.atTop ? -parent.dr : parent.dr) }
+        PathLine { x: roundedShape.x1; y: roundedShape.deskY + (root.atTop ? -roundedShape.dr : roundedShape.dr) }
         PathQuad {
-          x: parent.x1 - parent.dr
-          y: parent.deskY
-          controlX: parent.x1
-          controlY: parent.deskY
+          x: roundedShape.x1 - roundedShape.dr
+          y: roundedShape.deskY
+          controlX: roundedShape.x1
+          controlY: roundedShape.deskY
         }
-        PathLine { x: parent.x0 + parent.dr; y: parent.deskY }
+        PathLine { x: roundedShape.x0 + roundedShape.dr; y: roundedShape.deskY }
         PathQuad {
-          x: parent.x0
-          y: parent.deskY + (root.atTop ? -parent.dr : parent.dr)
-          controlX: parent.x0
-          controlY: parent.deskY
+          x: roundedShape.x0
+          y: roundedShape.deskY + (root.atTop ? -roundedShape.dr : roundedShape.dr)
+          controlX: roundedShape.x0
+          controlY: roundedShape.deskY
         }
-        PathLine { x: parent.x0; y: parent.screenY + (root.atTop ? parent.sr : -parent.sr) }
+        PathLine { x: roundedShape.x0; y: roundedShape.screenY + (root.atTop ? roundedShape.sr : -roundedShape.sr) }
         PathQuad {
-          x: parent.x0 + parent.sr
-          y: parent.screenY
-          controlX: parent.x0
-          controlY: parent.screenY
+          x: roundedShape.x0 + roundedShape.sr
+          y: roundedShape.screenY
+          controlX: roundedShape.x0
+          controlY: roundedShape.screenY
         }
       }
     }
