@@ -1441,6 +1441,46 @@ Item {
           variant: root.shellVariant
         }
 
+        // Neon backplate spanning all three islands. It has to live here, not
+        // inside the centre: it needs the side hosts' geometry too, and those
+        // are siblings of the centre, not children of it.
+        NeonBackdrop {
+          id: neonPlate
+
+          z: -2
+          visible: root.islandsEnabled && root.pillIslands
+          readonly property real gap: Style.space(3)
+          readonly property var cRect: centerModules.islandRect
+          readonly property var edges: {
+            var out = { left: [], right: [] }
+            if (leftHost.leftContentWidth > 0) {
+              out.left.push(leftHost.x)
+              out.right.push(leftHost.x + leftHost.width)
+            }
+            if (cRect && cRect.width > 0) {
+              out.left.push(cRect.x)
+              out.right.push(cRect.x + cRect.width)
+            }
+            if (rightHost.rightContentWidth > 0) {
+              out.left.push(rightHost.x)
+              out.right.push(rightHost.x + rightHost.width)
+            }
+            return out
+          }
+          readonly property real backLeft: edges.left.length
+            ? Math.min.apply(null, edges.left) : 0
+          readonly property real backRight: edges.right.length
+            ? Math.max.apply(null, edges.right) : 0
+
+          x: Math.round(backLeft - gap)
+          width: Math.max(1, Math.round(backRight - backLeft + gap * 2))
+          height: Math.max(1, root.barSize)
+          anchors.verticalCenter: parent.verticalCenter
+          radius: root.islandRadius(height)
+          accent: Color.accent
+          base: Color.bar.background
+        }
+
         CenterModules { id: centerModules; anchors.fill: parent }
 
         // Each side section is wrapped in a host that measures its own
@@ -1901,30 +1941,6 @@ Item {
           onHoveredChanged: root.setCenterSectionHovered(hovered)
         }
 
-        // Neon backplate, one layer under the centre pill and larger on every
-        // side so the pattern frames the pill rather than hiding behind it.
-        NeonBackdrop {
-          id: neonPlate
-
-          z: -2
-          visible: root.islandsEnabled && root.pillIslands
-            && hCenter.islandRight > hCenter.islandLeft
-          readonly property real pillWidth: hCenter.islandRight - hCenter.islandLeft
-            + root.islandPad * 2
-          // Twice the pill, centred on it, so the pattern reads as a surface
-          // the pill sits on rather than a 3px rim the pill hides. Clamped to
-          // the bar so a wide pill cannot push it off screen.
-          readonly property real plateWidth: Math.min(parent.width,
-            pillWidth * 2)
-          x: Math.round(hCenter.islandLeft - root.islandPad
-            - (plateWidth - pillWidth) / 2)
-          width: plateWidth
-          height: Math.max(1, root.barSize)
-          anchors.verticalCenter: parent.verticalCenter
-          radius: root.islandRadius(height)
-          accent: Color.accent
-          base: Color.bar.background
-        }
 
         IslandBackdrop {
           z: -1

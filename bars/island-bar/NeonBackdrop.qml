@@ -22,6 +22,10 @@ Item {
   // Horizontal drift, in pixels per second.
   readonly property real driftPerSecond: 6
 
+  // Column spacing. The drift must wrap on exactly this, or the pattern jumps
+  // once per loop: a hex row repeats every column, not every cell.
+  readonly property real hexWidth: Math.sqrt(3) * Math.max(4, cell)
+
   property real phase: 0
 
   Rectangle {
@@ -50,15 +54,19 @@ Item {
     }
   }
 
-  Timer {
-    interval: 50
-    repeat: true
+  // Driven by an animation, not a timer: a timer advances in whole ticks and
+  // lands on a different sub-pixel offset each loop, which is what read as
+  // stutter. Linear and seamless, wrapping on the column width.
+  NumberAnimation on phase {
     running: root.animated && root.visible
-    onTriggered: {
-      root.phase = (root.phase + root.driftPerSecond * 0.05) % root.cell
-      canvas.requestPaint()
-    }
+    loops: Animation.Infinite
+    from: 0
+    to: root.hexWidth
+    duration: Math.max(1, root.hexWidth / root.driftPerSecond * 1000)
+    easing.type: Easing.Linear
   }
+
+  onPhaseChanged: canvas.requestPaint()
 
   Canvas {
     id: canvas
