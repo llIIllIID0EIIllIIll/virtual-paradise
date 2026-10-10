@@ -178,6 +178,19 @@ po_apply_theme_colors() {
     foreground: Color.accent
     }"
 
+  # projector-cast ships a Style.radius() helper that no longer exists, and its
+  # icon colour is a nested conditional on presentation state. Both are patched
+  # in place and tracked, so a plugin update is re-patched by the same layer
+  # rather than leaving the bar with a broken import or a non-themed icon.
+  if [[ -f $p/io.github.jeffcortez23.omarchy-projector-cast/Panel.qml ]]; then
+    po_touch_existing io.github.jeffcortez23.omarchy-projector-cast \
+      "$p/io.github.jeffcortez23.omarchy-projector-cast/Panel.qml"
+    sed -i \
+      -e 's/Style\.radius(6)/Style.cornerRadius/g' \
+      -e 's/foreground: root\.gndRunning ? Color\.accent : (root\.presentationMode ? Color\.accent : (root\.bar ? root\.bar\.foreground : Color\.foreground))/foreground: Color.accent/' \
+      "$p/io.github.jeffcortez23.omarchy-projector-cast/Panel.qml"
+  fi
+
   # omaproton draws its mark in the bar foreground, so it reads as white next
   # to the accent icons. Point its bar colour at the accent; the connected /
   # disconnected difference is carried by the glyph's opacity, not the hue.
