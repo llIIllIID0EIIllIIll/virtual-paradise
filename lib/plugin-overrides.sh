@@ -255,6 +255,9 @@ po_apply_repo_overrides() {
   local o="$PARADISE_REPO_DIR/overrides"
   [[ -d $o ]] || return 0
 
+  po_install_override io.github.tyrichards.workspaces-jap \
+    "$o/io.github.tyrichards.workspaces-jap/Workspaces.qml" \
+    "$(po_plugin_dir io.github.tyrichards.workspaces-jap)/Workspaces.qml"
 
   po_install_override io.github.adamcbrewer.voxtype-aura \
     "$o/io.github.adamcbrewer.voxtype-aura/Service.qml" \
