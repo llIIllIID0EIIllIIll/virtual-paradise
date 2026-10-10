@@ -47,7 +47,10 @@ done
 if (( EUID == 0 )); then
   if [[ -n "${SUDO_USER:-}" && "$SUDO_USER" != "root" ]]; then
     CURRENT_USER="$SUDO_USER"
-    USER_HOME="$(getent passwd "$CURRENT_USER" | cut -d: -f6)"
+    # getent can fail (no NSS entry, broken dir service); under set -e that
+    # would abort the installer on a machine it can otherwise configure.
+    USER_HOME="$(getent passwd "$CURRENT_USER" 2>/dev/null | cut -d: -f6 || true)"
+    [[ -n $USER_HOME ]] || USER_HOME="$HOME"
     export HOME="$USER_HOME"
   else
     CURRENT_USER="${USER:-$(id -un)}"
@@ -1447,7 +1450,7 @@ prune_backups "$HOME" ".zshrc.bak.*" 5
 
 # 10.3 Ensure default shell is Zsh
 if [[ $IS_HOOK -eq 0 ]] && command -v zsh &>/dev/null; then
-  CURRENT_LOGIN_SHELL=$(getent passwd "$CURRENT_USER" | cut -d: -f7)
+  CURRENT_LOGIN_SHELL="$(getent passwd "$CURRENT_USER" 2>/dev/null | cut -d: -f7 || true)"
   if [[ "$CURRENT_LOGIN_SHELL" != "$(command -v zsh)" ]]; then
     log_sub "Setting default login shell to Zsh for '${CURRENT_USER}'..."
     if [[ $HAVE_SUDO -eq 1 ]]; then

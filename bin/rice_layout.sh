@@ -13,7 +13,7 @@
 # 1. Auto-detect User Shell (zsh / bash / sh)
 DETECT_SHELL() {
   local db_shell
-  db_shell="$(getent passwd "${USER:-$(id -un)}" 2>/dev/null | cut -d: -f7)"
+  db_shell="$(getent passwd "${USER:-$(id -un)}" 2>/dev/null | cut -d: -f7 || true)"
   if [[ -n "$db_shell" ]] && [[ "$db_shell" =~ zsh$ ]] && command -v "$db_shell" &>/dev/null; then
     echo "$db_shell"
     return

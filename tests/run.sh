@@ -285,8 +285,9 @@ if want tc3; then
     "$(grep -q '__USER__' "$root/home/.config/omarchy/shell.json" && echo 1 || echo 0)"
 
   # A renamed or dropped widget file must not linger in the installed plugin
-  # dir, where Quickshell would keep loading it.
-  installed_clock="$root/home/.config/omarchy/plugins/doe.clock"
+  # dir, where Quickshell would keep loading it. Derive the user rather than
+  # assuming one, or the guard below silently skips the case on any other host.
+  installed_clock="$root/home/.config/omarchy/plugins/${USER:-$(id -un)}.clock"
   if [[ -d $installed_clock ]]; then
     touch "$installed_clock/Removed.qml" "$installed_clock/stale.json"
     run_installer "$root" >/dev/null 2>&1
