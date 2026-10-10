@@ -77,7 +77,7 @@ Item {
       widths: { top: 1, right: 1, bottom: 1, left: 1 },
       gradient: {
         enabled: true,
-        angle: root.parent && root.parent.vertical ? 90 : 0,
+        angle: root.parent && root.parent.vertical === true ? 90 : 0,
         colors: root.edge === "left"
           ? [Qt.alpha(Color.accent, 0.55), Qt.alpha(Color.muted, 0.22)]
           : root.edge === "right"

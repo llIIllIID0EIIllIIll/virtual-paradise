@@ -18,7 +18,8 @@ Item {
   // to right. Only the spans between consecutive entries are painted.
   property var runs: []
   property color accent: Color.accent
-  property bool enabled: true
+  // Not `enabled`: that shadows Item.enabled, which is a different concept.
+  property bool glowEnabled: true
   property real fade: 0.0
 
   // Two cadences, like the source: a fast dense layer and a slow sparse one.
@@ -27,7 +28,7 @@ Item {
   readonly property real fastSpeed: 70
   readonly property real slowSpeed: 38
 
-  readonly property bool active: enabled && runs.length > 1 && width > 0 && height > 0
+  readonly property bool active: glowEnabled && runs.length > 1 && width > 0 && height > 0
 
   visible: active
   opacity: fade

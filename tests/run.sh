@@ -96,6 +96,32 @@ PY
   # "Command ... is not executable: No such file or directory" is expected:
   # the units point at ~/.local/bin scripts that only exist after an install.
   # Anything else from systemd-analyze is a real defect.
+  # qmllint, when present. Catches QML type errors that otherwise only show up
+  # when the shell loads the file - a Gradient assigned where a ShapeGradient is
+  # required took the whole bar down to the stock one and only surfaced in the
+  # running shell's log.
+  qmllint_bin="$(command -v qmllint || echo /usr/lib/qt6/bin/qmllint)"
+  if [[ -x $qmllint_bin ]]; then
+    qmli="$(mktemp -d)"
+    mkdir -p "$qmli/qs"
+    for m in Commons Ui; do
+      [[ -d "/usr/share/omarchy/shell/$m" ]] \
+        && ln -s "/usr/share/omarchy/shell/$m" "$qmli/qs/$m"
+    done
+    qmlbad=""
+    while IFS= read -r f; do
+      out=$("$qmllint_bin" -I "$qmli" "$f" 2>&1 \
+        | grep -E 'incompatible-type|Cannot assign|unavailable' || true)
+      [[ -n $out ]] && qmlbad="$qmlbad
+$(basename "$f"): $out"
+    done < <(find "$REPO_DIR/bars/island-bar" -name '*.qml' 2>/dev/null)
+    rm -rf "$qmli"
+    check "qmllint reports no island-bar type errors" \
+      "$([[ -z $qmlbad ]] && echo 0 || echo 1)" "$qmlbad"
+  else
+    printf '  %sSKIP%s qmllint not installed\n' "$DIM" "$OFF"
+  fi
+
   # shellcheck, when present. Skipped rather than failed on machines without
   # it, so the suite stays usable outside CI.
   if command -v shellcheck >/dev/null 2>&1; then
