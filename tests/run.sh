@@ -227,6 +227,16 @@ EOF
     fail "override state records the audio plugin" "state file empty or missing"
   fi
 
+  # The update path reverts the layer, updates plugins, then re-applies it.
+  # If re-applying after a revert does not land the override again, every
+  # plugin update would quietly strip the theming.
+  po_cycle=$( HOME="$root/home" XDG_CONFIG_HOME="$root/home/.config" \
+    PARADISE_REPO_DIR="$REPO_DIR" PARADISE_CONFIG_DIR="$root/home/.config" \
+    bash -c ". '$REPO_DIR/lib/plugin-overrides.sh'; po_revert_all; po_apply_all; \
+      diff -q '$REPO_DIR/overrides/ssupt.audio-control/Panel.qml' \
+        '$A/runtime/$HASH/qml/panels/Panel.qml'" 2>&1 )
+  check "override layer survives revert then re-apply" "$?" "$po_cycle"
+
   # Revert must put the runtime file back to its pristine content.
   before=$(md5sum "$A/runtime/$HASH/qml/panels/Panel.qml" | cut -d' ' -f1)
   HOME="$root/home" XDG_CONFIG_HOME="$root/home/.config" \

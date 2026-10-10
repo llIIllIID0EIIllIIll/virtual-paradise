@@ -711,13 +711,6 @@ if [[ -f "$REPO_DIR/shell/shell.json" ]]; then
       log_warn "hyprmoncfg could not be enabled after shell layout sync."
     RUN_AS_INSTALL_USER omarchy plugin enable "io.github.jeffcortez23.omarchy-projector-cast" 2>/dev/null || \
       log_warn "Projector & Cast could not be enabled after shell layout sync."
-    projector_panel="$CONFIG_DIR/omarchy/plugins/io.github.jeffcortez23.omarchy-projector-cast/Panel.qml"
-    if [[ -f "$projector_panel" ]]; then
-      sed -i \
-        -e 's/Style\.radius(6)/Style.cornerRadius/g' \
-        -e 's/foreground: root\.gndRunning ? Color\.accent : (root\.presentationMode ? Color\.accent : (root\.bar ? root\.bar\.foreground : Color\.foreground))/foreground: Color.accent/' \
-        "$projector_panel"
-    fi
     RUN_AS_INSTALL_USER omarchy plugin enable "onlyvishesh.power-manager" 2>/dev/null || \
       log_warn "power manager could not be enabled after shell layout sync."
     RUN_AS_INSTALL_USER omarchy plugin disable "${CURRENT_USER}.monitor" 2>/dev/null || true
