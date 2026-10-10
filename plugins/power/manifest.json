@@ -1,0 +1,20 @@
+{
+  "schemaVersion": 1,
+  "id": "__USER__.power",
+  "name": "My Power",
+  "version": "1.0.0",
+  "author": "Virtual☆Paradise",
+  "description": "Battery level, charge state and power profile switcher",
+  "kinds": [
+    "bar-widget"
+  ],
+  "entryPoints": {
+    "barWidget": "BarWidget.qml"
+  },
+  "barWidget": {
+    "displayName": "Power",
+    "description": "Battery and power profile",
+    "category": "System",
+    "allowMultiple": false
+  }
+}
