@@ -6,7 +6,8 @@ THEME_NAME="virtual-paradise"
 
 if (( EUID == 0 )) && [[ -n "${SUDO_USER:-}" && "${SUDO_USER}" != "root" ]]; then
   CURRENT_USER="$SUDO_USER"
-  USER_HOME="$(getent passwd "$CURRENT_USER" | cut -d: -f6)"
+  USER_HOME="$(getent passwd "$CURRENT_USER" 2>/dev/null | cut -d: -f6 || true)"
+  [[ -n $USER_HOME ]] || USER_HOME="$HOME"
   export HOME="$USER_HOME"
 else
   CURRENT_USER="${USER:-$(id -un)}"
