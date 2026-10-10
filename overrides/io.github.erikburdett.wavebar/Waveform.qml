@@ -10,7 +10,7 @@ Item {
   property bool active: false
   property bool live: false
   property int frameSerial: 0
-  property color foreground: "#00f5d4"
+  property color foreground: "#00ffdd"
   property real gap: 1.5
   property real minimumBarHeight: 3
 
@@ -41,8 +41,8 @@ Item {
     GradientStop { position: 0.40; color: "#ffb7d5" }
     GradientStop { position: 0.48; color: "#00ff88" }
     GradientStop { position: 0.52; color: "#00ff88" }
-    GradientStop { position: 0.60; color: "#00f5d4" }
-    GradientStop { position: 1.00; color: "#00f5d4" }
+    GradientStop { position: 0.60; color: "#00ffdd" }
+    GradientStop { position: 1.00; color: "#00ffdd" }
   }
 
   readonly property Gradient idleGradient: Gradient {

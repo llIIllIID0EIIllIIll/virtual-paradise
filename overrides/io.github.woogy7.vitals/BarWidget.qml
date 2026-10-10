@@ -24,7 +24,7 @@ BarWidget {
   id: root
   moduleName: "io.github.woogy7.vitals"
 
-  readonly property color accent: "#00f5d4"
+  readonly property color accent: "#00ffdd"
   readonly property color live: "#00ff88"
   readonly property color ringColor: root.opened ? "#ffb7d5" : root.accent
 
@@ -189,8 +189,8 @@ BarWidget {
       height: 28
       radius: 14
       color: button.tooltipHovered || root.opened
-        ? Qt.rgba(0.0, 0.96, 0.83, 0.18)
-        : Qt.rgba(0.0, 0.96, 0.83, 0.08)
+        ? Qt.rgba(0.0, 1.0, 0.867, 0.18)
+        : Qt.rgba(0.0, 1.0, 0.867, 0.08)
       border.color: root.ringColor
       border.width: 1.6
       scale: button.tooltipHovered ? 1.05 : 1

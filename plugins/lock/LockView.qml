@@ -154,7 +154,7 @@ Item {
         id: timeDisplay
         anchors.horizontalCenter: parent.horizontalCenter
         text: Qt.formatDateTime(new Date(), "hh:mm")
-        color: "#00f5d4"
+        color: "#00ffdd"
         font.family: Style.font.family
         font.pixelSize: Math.round(Style.font.heading * 2.4) | 0
         font.bold: true
@@ -232,7 +232,7 @@ Item {
           cursorVisible: activeFocus && root.showPasswordCursor && text.length > 0
           cursorDelegate: Rectangle {
             width: 2
-            color: "#00f5d4"
+            color: "#00ffdd"
             visible: passwordInput.cursorVisible
           }
 
@@ -264,7 +264,7 @@ Item {
           anchors.fill: passwordInput
           text: root.authenticatingPassword ? "Checking…" : (root.failureMessage.length > 0 ? root.failureMessage : root.placeholderText)
           visible: passwordInput.text.length === 0
-          color: root.authenticatingPassword ? "#00f5d4" : (root.failureMessage.length > 0 ? Color.lock.textError : "#5a3e85")
+          color: root.authenticatingPassword ? "#00ffdd" : (root.failureMessage.length > 0 ? Color.lock.textError : "#5a3e85")
           font.family: Style.font.family
           font.pixelSize: root.fieldFontSize
           font.italic: !root.authenticatingPassword && root.failureMessage.length > 0
@@ -281,7 +281,7 @@ Item {
           anchors.verticalCenter: parent.verticalCenter
           visible: root.fingerprintConfigured
           text: "󰈷"
-          color: "#00f5d4"
+          color: "#00ffdd"
           font.family: Style.font.family
           font.pixelSize: Math.round(root.fieldFontSize * 1.1) | 0
           horizontalAlignment: Text.AlignHCenter

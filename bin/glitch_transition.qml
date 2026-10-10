@@ -113,7 +113,7 @@ ShellRoot {
         }
         Rectangle {
           anchors.fill: parent
-          color: "#00f5d4"
+          color: "#00ffdd"
           opacity: 0.15
         }
 
@@ -140,7 +140,7 @@ ShellRoot {
           id: slice1
           width: win.width; height: win.height * 0.14; y: win.height * 0.04; clip: true; x: 0
           Image { width: win.width; height: win.height; x: -slice1.x; y: -slice1.y; source: Qt.resolvedUrl("Glitch.jpg"); fillMode: Image.PreserveAspectCrop }
-          Rectangle { anchors.bottom: parent.bottom; width: parent.width; height: 2; color: "#00f5d4"; opacity: 0.8 }
+          Rectangle { anchors.bottom: parent.bottom; width: parent.width; height: 2; color: "#00ffdd"; opacity: 0.8 }
         }
 
         // Slice 2 (Upper middle)
@@ -156,7 +156,7 @@ ShellRoot {
           id: slice3
           width: win.width; height: win.height * 0.16; y: win.height * 0.44; clip: true; x: 0
           Image { width: win.width; height: win.height; x: -slice3.x; y: -slice3.y; source: Qt.resolvedUrl("Glitch.jpg"); fillMode: Image.PreserveAspectCrop }
-          Rectangle { anchors.top: parent.top; width: parent.width; height: 2; color: "#00f5d4"; opacity: 0.8 }
+          Rectangle { anchors.top: parent.top; width: parent.width; height: 2; color: "#00ffdd"; opacity: 0.8 }
         }
 
         // Slice 4 (Lower middle)
@@ -189,7 +189,7 @@ ShellRoot {
         // Intense Chromatic Laser Bars
         Rectangle {
           id: cyanBar1
-          width: parent.width; height: 10; y: win.height * 0.25; color: "#00f5d4"; opacity: 0
+          width: parent.width; height: 10; y: win.height * 0.25; color: "#00ffdd"; opacity: 0
         }
         Rectangle {
           id: pinkBar1
@@ -217,7 +217,7 @@ ShellRoot {
             color: "#0f081d"
             opacity: 0.94
             radius: 14
-            border.color: "#00f5d4"
+            border.color: "#00ffdd"
             border.width: 2
           }
 
@@ -234,10 +234,10 @@ ShellRoot {
           // Cyber Corner Accents
           Rectangle { anchors.top: parent.top; anchors.left: parent.left; width: 16; height: 3; color: "#ff007f" }
           Rectangle { anchors.top: parent.top; anchors.left: parent.left; width: 3; height: 16; color: "#ff007f" }
-          Rectangle { anchors.top: parent.top; anchors.right: parent.right; width: 16; height: 3; color: "#00f5d4" }
-          Rectangle { anchors.top: parent.top; anchors.right: parent.right; width: 3; height: 16; color: "#00f5d4" }
-          Rectangle { anchors.bottom: parent.bottom; anchors.left: parent.left; width: 16; height: 3; color: "#00f5d4" }
-          Rectangle { anchors.bottom: parent.bottom; anchors.left: parent.left; width: 3; height: 16; color: "#00f5d4" }
+          Rectangle { anchors.top: parent.top; anchors.right: parent.right; width: 16; height: 3; color: "#00ffdd" }
+          Rectangle { anchors.top: parent.top; anchors.right: parent.right; width: 3; height: 16; color: "#00ffdd" }
+          Rectangle { anchors.bottom: parent.bottom; anchors.left: parent.left; width: 16; height: 3; color: "#00ffdd" }
+          Rectangle { anchors.bottom: parent.bottom; anchors.left: parent.left; width: 3; height: 16; color: "#00ffdd" }
           Rectangle { anchors.bottom: parent.bottom; anchors.right: parent.right; width: 16; height: 3; color: "#ff007f" }
           Rectangle { anchors.bottom: parent.bottom; anchors.right: parent.right; width: 3; height: 16; color: "#ff007f" }
 
@@ -256,7 +256,7 @@ ShellRoot {
               }
               Text {
                 text: "VIRTUAL☆PARADISE // WALLPAPER LINK"
-                color: "#00f5d4"
+                color: "#00ffdd"
                 font.pixelSize: 14
                 font.bold: true
                 font.family: "JetBrainsMono Nerd Font, monospace"
@@ -294,7 +294,7 @@ ShellRoot {
                 gradient: Gradient {
                   orientation: Gradient.Horizontal
                   GradientStop { position: 0.0; color: "transparent" }
-                  GradientStop { position: 0.5; color: "#00f5d4" }
+                  GradientStop { position: 0.5; color: "#00ffdd" }
                   GradientStop { position: 1.0; color: "#ff007f" }
                 }
 

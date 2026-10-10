@@ -108,19 +108,19 @@ if [[ -z "$_ZSHRC_INITIALIZED" ]]; then
   typeset -A ZSH_HIGHLIGHT_STYLES
   ZSH_HIGHLIGHT_STYLES[command]='fg=#00ff88,bold'               # Valid command: Hacker Green
   ZSH_HIGHLIGHT_STYLES[unknown-token]='fg=#ff0055,bold'          # Unknown / invalid command: Neon Warning Red
-  ZSH_HIGHLIGHT_STYLES[alias]='fg=#00f5d4,bold'                  # Command Alias: Miku Cyan
+  ZSH_HIGHLIGHT_STYLES[alias]='fg=#00ffdd,bold'                  # Command Alias: Miku Cyan
   ZSH_HIGHLIGHT_STYLES[builtin]='fg=#ffb7d5,bold'                # Shell builtin command: Sakura Pink
-  ZSH_HIGHLIGHT_STYLES[function]='fg=#00f5d4,bold'               # Shell function: Miku Cyan
+  ZSH_HIGHLIGHT_STYLES[function]='fg=#00ffdd,bold'               # Shell function: Miku Cyan
   ZSH_HIGHLIGHT_STYLES[commandseparator]='fg=#5a3e85'            # Command separators (&&, ;, |): Muted Slate
-  ZSH_HIGHLIGHT_STYLES[path]='fg=#00f5d4,underline'              # File / directory paths: Underlined Cyan
-  ZSH_HIGHLIGHT_STYLES[path_prefix]='fg=#00f5d4'
+  ZSH_HIGHLIGHT_STYLES[path]='fg=#00ffdd,underline'              # File / directory paths: Underlined Cyan
+  ZSH_HIGHLIGHT_STYLES[path_prefix]='fg=#00ffdd'
   ZSH_HIGHLIGHT_STYLES[single-quoted-argument]='fg=#ffe066'      # Single-quoted string: Cyber Yellow
   ZSH_HIGHLIGHT_STYLES[double-quoted-argument]='fg=#ffe066'      # Double-quoted string: Cyber Yellow
   ZSH_HIGHLIGHT_STYLES[dollar-double-quoted-argument]='fg=#ffb7d5' # Environment variables ($VAR): Sakura Pink
   ZSH_HIGHLIGHT_STYLES[back-quoted-argument]='fg=#ffb7d5'        # Back-quoted command substitution: Sakura Pink
   ZSH_HIGHLIGHT_STYLES[single-hyphen-option]='fg=#39c5bb'        # Short options / flags (-a, -f): Cyan Blue
   ZSH_HIGHLIGHT_STYLES[double-hyphen-option]='fg=#39c5bb'        # Long options / flags (--help): Cyan Blue
-  ZSH_HIGHLIGHT_STYLES[cursor]='bg=#00f5d4'
+  ZSH_HIGHLIGHT_STYLES[cursor]='bg=#00ffdd'
 
   # Autosuggestion styling
   ZSH_AUTOSUGGEST_HIGHLIGHT_STYLE="fg=#5a3e85"
@@ -184,9 +184,9 @@ zstyle ':completion:*:warnings' format '%F{red}No matches found for:%f %d'
 
 # FZF (Fuzzy Finder) Cyberpunk Neon Palette Configuration:
 # Matches active Virtual☆Paradise colorway with rounded borders and glowing highlights
-# Border: Miku Cyan (#00f5d4), Match: Hacker Green (#00ff88), Pointer: Pink (#ffb7d5)
+# Border: Miku Cyan (#00ffdd), Match: Hacker Green (#00ff88), Pointer: Pink (#ffb7d5)
 if (( $+commands[fzf] )); then
-  export FZF_DEFAULT_OPTS='--height 40% --layout=reverse --border --color="fg:#eafbfa,bg:-1,hl:#00f5d4,fg+:#00ff88,bg+:#0e141d,hl+:#00ff88,info:#5a3e85,prompt:#00f5d4,pointer:#00ff88,marker:#ffb7d5,spinner:#ffe066,header:#5a3e85,border:#00f5d4"'
+  export FZF_DEFAULT_OPTS='--height 40% --layout=reverse --border --color="fg:#eafbfa,bg:-1,hl:#00ffdd,fg+:#00ff88,bg+:#0e141d,hl+:#00ff88,info:#5a3e85,prompt:#00ffdd,pointer:#00ff88,marker:#ffb7d5,spinner:#ffe066,header:#5a3e85,border:#00ffdd"'
 fi
 
 # =========================================================================
@@ -590,9 +590,9 @@ function f() {
     --info="inline-right"     # Inline-right match count display
     --pointer="󰅂"             # Clean Nerd Font directional pointer (nf-md-chevron_right)
     --marker="󰄲"              # Nerd Font multi-selection marker (nf-md-checkbox_marked)
-    --color="fg:#eafbfa,bg:-1,hl:#00ff88,fg+:#00f5d4,bg+:#180e2e,hl+:#00ff88"  # High contrast TrueColor palette
-    --color="info:#5a3e85,prompt:#00f5d4,pointer:#00f5d4,marker:#ffb7d5,spinner:#00ff88,header:#ffb7d5"  # Neon pointers & headers
-    --color="border:#00f5d4,label:#00f5d4"  # Miku Cyan border & title labels
+    --color="fg:#eafbfa,bg:-1,hl:#00ff88,fg+:#00ffdd,bg+:#180e2e,hl+:#00ff88"  # High contrast TrueColor palette
+    --color="info:#5a3e85,prompt:#00ffdd,pointer:#00ffdd,marker:#ffb7d5,spinner:#00ff88,header:#ffb7d5"  # Neon pointers & headers
+    --color="border:#00ffdd,label:#00ffdd"  # Miku Cyan border & title labels
   )
 
   # Helper to open files in default editor (micro falling back to nano)
@@ -869,7 +869,7 @@ function f() {
           sig_name="SIGKILL (Force Kill)"
         fi
         
-        print -P "%F{#ffb7d5}󰀪 [WARN]%f Are you sure you want to send %F{#00f5d4}$sig_name%f to PID %F{#00ff88}$pid%f? (y/N)"
+        print -P "%F{#ffb7d5}󰀪 [WARN]%f Are you sure you want to send %F{#00ffdd}$sig_name%f to PID %F{#00ff88}$pid%f? (y/N)"
         read -q "confirm?"
         echo ""
         if [[ "$confirm" == "y" || "$confirm" == "Y" ]]; then
@@ -891,12 +891,12 @@ function f() {
       _f_mode_process
       ;;
     --help|help)
-      print -P "%F{#00f5d4}󰍉  Ultimate Interactive Action Hub (f)%f"
+      print -P "%F{#00ffdd}󰍉  Ultimate Interactive Action Hub (f)%f"
       print -P "Usage: %F{#eafbfa}f [mode] [path]%f"
       print -P "Available Modes:"
-      print -P "  %F{#00f5d4}-e, search, cd, open%f  Explorer: Directories, Files & Text Search"
-      print -P "  %F{#00f5d4}-h, h, history%f       Search & insert command from deduplicated history"
-      print -P "  %F{#00f5d4}-p, p, process%f       Manage & terminate active processes ([Enter]/[Ctrl-X])"
+      print -P "  %F{#00ffdd}-e, search, cd, open%f  Explorer: Directories, Files & Text Search"
+      print -P "  %F{#00ffdd}-h, h, history%f       Search & insert command from deduplicated history"
+      print -P "  %F{#00ffdd}-p, p, process%f       Manage & terminate active processes ([Enter]/[Ctrl-X])"
       print -P "If called without arguments, an interactive FZF menu is displayed."
       ;;
     *)
@@ -1037,7 +1037,7 @@ _update_omarchy_theme_palette() {
   # virtual-paradise. Previously this theme took a hardcoded branch with its own
   # copy of the palette, so editing colors.toml never reached the prompt and the
   # two copies silently drifted apart.
-  THEME_ACCENT="$(_theme_color accent '#00f5d4')"
+  THEME_ACCENT="$(_theme_color accent '#00ffdd')"
   THEME_BG="$(_theme_color background '#0f081d')"
   THEME_FG="$(_theme_color foreground '#eafbfa')"
   THEME_GREEN="$(_theme_color green '#00ff88')"
@@ -1053,7 +1053,7 @@ _update_omarchy_theme_palette() {
 
   # Unreachable for a well-formed palette, but never leave a token empty or the
   # prompt renders unstyled gradient blocks.
-  [[ -z "$THEME_ACCENT" ]] && THEME_ACCENT="#00f5d4"
+  [[ -z "$THEME_ACCENT" ]] && THEME_ACCENT="#00ffdd"
   [[ -z "$THEME_BG" ]] && THEME_BG="#0f081d"
   [[ -z "$THEME_FG" ]] && THEME_FG="#eafbfa"
   [[ -z "$THEME_GREEN" ]] && THEME_GREEN="#00ff88"
@@ -1543,7 +1543,7 @@ ${C_DIM}${L_BOT} ${_CACHE_BOTTOM_STATUS}${_CACHE_ARROW_COLOR}${I_ARROW} ${C_RESE
 }
 
 # Generate powerline pill capsule with interpolated gradient
-# $1: Start background hex (e.g. #00f5d4)
+# $1: Start background hex (e.g. #00ffdd)
 # $2: End background hex (e.g. #00ff88)
 # $3: Foreground text hex (e.g. #0f081d)
 # $4: Content string inside capsule
@@ -1699,7 +1699,7 @@ function zsh_user_info() {
     elif [[ -n $SSH_CONNECTION ]]; then
       zsh_make_gradient_pill "#8b5cf6" "#06b6d4" "#ffffff" "${icon} ${expanded_name}"
     else
-      zsh_make_gradient_pill "${THEME_PILL_START:-#ffb7d5}" "${THEME_PILL_END:-#00f5d4}" "${THEME_PILL_TEXT:-#0f081d}" "${icon} ${expanded_name}"
+      zsh_make_gradient_pill "${THEME_PILL_START:-#ffb7d5}" "${THEME_PILL_END:-#00ffdd}" "${THEME_PILL_TEXT:-#0f081d}" "${icon} ${expanded_name}"
     fi
   else
     # Classic style
@@ -1730,7 +1730,7 @@ function zsh_dir_info() {
     if [[ ! -w . ]]; then
       zsh_make_gradient_pill "#ff0055" "#ff79a8" "#ffffff" "${I_DIR} ${expanded_path}${lock_str}"
     else
-      zsh_make_gradient_pill "${THEME_DIR_START:-#00ff88}" "${THEME_DIR_END:-#00f5d4}" "${THEME_DIR_TEXT:-#0f081d}" "${I_DIR} ${expanded_path}${lock_str}"
+      zsh_make_gradient_pill "${THEME_DIR_START:-#00ff88}" "${THEME_DIR_END:-#00ffdd}" "${THEME_DIR_TEXT:-#0f081d}" "${I_DIR} ${expanded_path}${lock_str}"
     fi
   else
     # Classic style

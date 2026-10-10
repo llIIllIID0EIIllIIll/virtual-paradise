@@ -17,8 +17,8 @@
 <br/>
 
 [![Platform](https://img.shields.io/badge/Arch_Linux-Omarchy_4.0+-1793D1?style=for-the-badge&logo=arch-linux&logoColor=white)](https://archlinux.org)
-[![Compositor](https://img.shields.io/badge/Hyprland-Wayland-00f5d4?style=for-the-badge&logo=wayland&logoColor=black)](https://hyprland.org)
-[![Palette](https://img.shields.io/badge/Palette-%230f081d_deep_violet-ff5287?style=for-the-badge)](#-palette)
+[![Compositor](https://img.shields.io/badge/Hyprland-Wayland-00ffdd?style=for-the-badge&logo=wayland&logoColor=black)](https://hyprland.org)
+[![Palette](https://img.shields.io/badge/Palette-%230f081d_deep_violet-ff00ff?style=for-the-badge)](#-palette)
 [![License](https://img.shields.io/badge/License-MIT-ffe066?style=for-the-badge)](LICENSE)
 
 <br/>
@@ -108,13 +108,13 @@ The two V2 shell forms the bar replaced — a continuous strip in `full` / `dock
 ## Palette
 
 Defined in `theme/colors.toml` and `theme/shell.toml`. The gradient runs
-**Miku cyan → hacker green → sakura pink** on a deep violet canvas.
+**Miku cyan → hacker green → neon magenta** on a deep violet canvas.
 
 | Colour | Hex | Used for |
 | :--- | :---: | :--- |
 | Cyber Dark Purple | `#0f081d` | Canvas: terminals, shell, panels, btop, editors |
-| Miku Cyan | `#00f5d4` | Accent: active borders, focus rings, visualizer peaks |
-| Sakura Pink | `#ff5287` | Urgent state, secondary gradients |
+| Miku Cyan | `#00ffdd` | Accent: active borders, focus rings, visualizer peaks |
+| Neon Magenta | `#ff00ff` | Urgent state, secondary gradients |
 | Hacker Green | `#00ff88` | Cooler Boost active, success badges |
 | Cyber Yellow | `#ffe066` | Charging, warnings, weather temperature |
 | Sakura Pastel | `#ffb7d5` | Inactive widget text, open-panel ring |

@@ -59,7 +59,7 @@ BarWidget {
     text: "\uf021"
     slotSize: Style.bar.statusSlot
     fontSize: Style.font.caption
-    foreground: button.tooltipHovered ? "#ffffff" : "#00f5d4"
+    foreground: button.tooltipHovered ? "#ffffff" : "#00ffdd"
     scale: button.tooltipHovered ? 1.15 : 1.0
     tooltipText: "System Updates: Pending Updates Available\nClick to Launch Omarchy Update"
 

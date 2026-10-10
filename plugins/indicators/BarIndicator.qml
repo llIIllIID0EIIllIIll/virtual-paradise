@@ -43,8 +43,8 @@ BarIconButton {
   concealed: false
   interactive: true
   useActiveColor: true
-  activeColor: "#00f5d4"
-  foreground: effectiveActive ? (tooltipHovered ? "#00ff88" : "#00f5d4") : (tooltipHovered ? "#ffffff" : "#9684c0")
+  activeColor: "#00ffdd"
+  foreground: effectiveActive ? (tooltipHovered ? "#00ff88" : "#00ffdd") : (tooltipHovered ? "#ffffff" : "#9684c0")
   maintainIndicatorReveal: indicatorBlock === "inactive"
   revealHost: indicatorHost
   fontSize: Style.font.caption + 1

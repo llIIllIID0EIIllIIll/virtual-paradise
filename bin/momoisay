@@ -57,12 +57,12 @@ case "$THEME_NAME" in
     if [[ -f "$COLORS_FILE" ]]; then
       ACCENT=$(grep -E '^\s*accent\s*=' "$COLORS_FILE" | head -1 | sed -E 's/.*"([^"]+)".*/\1/')
       case "$ACCENT" in
-        *00f5d4*|*cyan*) COLOR="cyan" ;;
+        *00ffdd*|*cyan*) COLOR="cyan" ;;
         *blue*|*89b4fa*|*7aa2f7*|*81a1c1*) COLOR="blue" ;;
         *green*|*a6e3a1*|*a7c080*|*b8bb26*|*73daca*) COLOR="green" ;;
         *magenta*|*f5c2e7*|*ebbcba*|*bb9af7*|*d699b6*) COLOR="magenta" ;;
         *yellow*|*ffe066*|*f9e2af*|*e5c07b*) COLOR="yellow" ;;
-        *red*|*ff5287*|*f38ba8*|*ff0055*) COLOR="red" ;;
+        *red*|*ff00ff*|*f38ba8*|*ff0055*) COLOR="red" ;;
         *) COLOR="white" ;;
       esac
     fi

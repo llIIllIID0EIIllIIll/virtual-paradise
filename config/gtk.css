@@ -7,10 +7,10 @@
 @define-color foreground #eafbfa;
 
 @define-color black #0f081d;
-@define-color red #ff5287;
+@define-color red #ff00ff;
 @define-color green #00ff88;
 @define-color yellow #ffe066;
-@define-color blue #00f5d4;
+@define-color blue #00ffdd;
 @define-color magenta #ffb7d5;
 @define-color cyan #39c5bb;
 @define-color white #eafbfa;
@@ -217,12 +217,12 @@ headerbar .title {
 .navigation-sidebar > row:hover,
 .nautilus-window .sidebar row:hover {
     background-color: rgba(0, 245, 212, 0.12);
-    color: #00f5d4;
+    color: #00ffdd;
 }
 
 .navigation-sidebar > row:selected,
 .nautilus-window .sidebar row:selected {
-    background-color: #00f5d4;
+    background-color: #00ffdd;
     color: #0f081d;
     font-weight: 600;
 }
@@ -245,7 +245,7 @@ gridview > child:hover {
 listview > row:selected,
 gridview > child:selected {
     background-color: rgba(0, 245, 212, 0.22);
-    border: 1px solid #00f5d4;
+    border: 1px solid #00ffdd;
     border-radius: 8px;
     color: #eafbfa;
 }
@@ -260,7 +260,7 @@ gridview > child:selected {
 .nautilus-window path-bar button:hover,
 .path-bar button:hover {
     background-color: rgba(0, 245, 212, 0.15);
-    color: #00f5d4;
+    color: #00ffdd;
 }
 
 entry,
@@ -273,13 +273,13 @@ searchentry {
 
 entry:focus,
 searchentry:focus {
-    border-color: #00f5d4;
-    box-shadow: 0 0 0 1px #00f5d4;
+    border-color: #00ffdd;
+    box-shadow: 0 0 0 1px #00ffdd;
 }
 
 /* Buttons */
 button.suggested-action {
-    background-color: #00f5d4;
+    background-color: #00ffdd;
     color: #0f081d;
     font-weight: bold;
     border-radius: 8px;
@@ -303,5 +303,5 @@ scrollbar slider {
 }
 
 scrollbar slider:hover {
-    background-color: #00f5d4;
+    background-color: #00ffdd;
 }

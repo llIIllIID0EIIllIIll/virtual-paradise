@@ -5,23 +5,23 @@
 background       = "#0f081d"
 background-alpha = 0.88
 text             = "#eafbfa"
-active           = "#00f5d4"
+active           = "#00ffdd"
 scale-with-font  = true
 size-horizontal  = 34
 size-vertical    = 34
 
 [hyprland]
-active-border            = "rgba(00f5d4ee) rgba(00f5d4ee) rgba(00ff88cc) rgba(ffb7d5ee) rgba(ffb7d5ee) 45deg"
-active-border-foreground = "rgb(00f5d4) rgb(00f5d4) rgb(00ff88) rgb(ffb7d5) rgb(ffb7d5) 45deg"
+active-border            = "rgba(00ffddee) rgba(00ffddee) rgba(00ff88cc) rgba(ffb7d5ee) rgba(ffb7d5ee) 45deg"
+active-border-foreground = "rgb(00ffdd) rgb(00ffdd) rgb(00ff88) rgb(ffb7d5) rgb(ffb7d5) 45deg"
 
 [controls]
 normal-color        = "#5a3e85"
 normal-fill-alpha   = 0.08
-normal-border       = "#00f5d4"
+normal-border       = "#00ffdd"
 normal-border-width = 0
 normal-border-alpha = 0.0
 
-hover-cursor-color        = "#00f5d4"
+hover-cursor-color        = "#00ffdd"
 hover-cursor-fill-alpha   = 0.18
 hover-cursor-border       = "#00ff88"
 hover-cursor-border-width = 1
@@ -35,7 +35,7 @@ focus-border-alpha = 0.88
 
 selected-color        = "#ffffff"
 selected-fill-alpha   = 0.25
-selected-border       = "#00f5d4"
+selected-border       = "#00ffdd"
 selected-border-width = "0 0 2 0"
 selected-border-alpha = 0.95
 
@@ -108,7 +108,7 @@ border-alpha              = 0.90
 border-width              = 2
 scrim                     = "#06030c"
 scrim-alpha               = 0.0
-selected-background       = "#00f5d4"
+selected-background       = "#00ffdd"
 selected-background-alpha = 0.20
 selected-text             = "#ffffff"
 selected-border           = "hyprland.active-border-foreground"
@@ -124,7 +124,7 @@ border-alpha              = 0.90
 border-width              = 2
 scrim                     = "#06030c"
 scrim-alpha               = 0.0
-selected-background       = "#00f5d4"
+selected-background       = "#00ffdd"
 selected-background-alpha = 0.20
 selected-text             = "#ffffff"
 selected-border           = "hyprland.active-border-foreground"
@@ -141,7 +141,7 @@ border-error     = "#ff0055"
 border-alpha     = 0.95
 scrim            = "#06030c"
 scrim-alpha      = 0.0
-accent           = "#00f5d4"
+accent           = "#00ffdd"
 
 [lock]
 background       = "#0f081d"
@@ -153,7 +153,7 @@ border           = "hyprland.active-border"
 border-active    = "hyprland.active-border"
 border-error     = "#ff0055"
 border-alpha     = 0.95
-selection        = "#00f5d4"
+selection        = "#00ffdd"
 selection-alpha  = 0.40
 
 [image-picker]
