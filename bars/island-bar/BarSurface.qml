@@ -118,8 +118,13 @@ Item {
         strokeColor: root.borderEnabled ? root.borderColor : "transparent"
         strokeWidth: root.borderEnabled ? 1.5 : 0
         fillColor: root.fillColor
-        fillGradient: Gradient {
-          orientation: Gradient.Vertical
+        // ShapePath wants a ShapeGradient, not a plain QtQuick Gradient -
+        // assigning the latter fails the whole file to load.
+        fillGradient: LinearGradient {
+          x1: 0
+          y1: 0
+          x2: 0
+          y2: root.height
           GradientStop {
             position: 0.0
             color: root.gradientEnabled ? root.gradientTopColor : root.fillColor
@@ -180,8 +185,13 @@ Item {
         strokeColor: root.borderEnabled ? root.borderColor : "transparent"
         strokeWidth: root.borderEnabled ? 1.5 : 0
         fillColor: root.fillColor
-        fillGradient: Gradient {
-          orientation: Gradient.Vertical
+        // ShapePath wants a ShapeGradient, not a plain QtQuick Gradient -
+        // assigning the latter fails the whole file to load.
+        fillGradient: LinearGradient {
+          x1: 0
+          y1: 0
+          x2: 0
+          y2: root.height
           GradientStop {
             position: 0.0
             color: root.gradientEnabled ? root.gradientTopColor : root.fillColor
