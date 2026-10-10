@@ -17,7 +17,7 @@ theme[hi_fg]="#00ff88"
 theme[selected_bg]="#180e2e"
 
 # Foreground color of selected item in processes box
-theme[selected_fg]="#00f5d4"
+theme[selected_fg]="#00ffdd"
 
 # Color of inactive/disabled text
 theme[inactive_fg]="#5a3e85"
@@ -26,41 +26,41 @@ theme[inactive_fg]="#5a3e85"
 theme[proc_misc]="#c5e8ea"
 
 # Box outline and divider line color
-theme[cpu_box]="#00f5d4"
+theme[cpu_box]="#00ffdd"
 theme[mem_box]="#ffb7d5"
 theme[net_box]="#00ff88"
-theme[proc_box]="#00f5d4"
+theme[proc_box]="#00ffdd"
 theme[div_line]="#3b255c"
 
 # Gradient for all meters and graphs (40% Cyan -> 20% Green -> 40% Sakura Pink)
-theme[temp_start]="#00f5d4"
+theme[temp_start]="#00ffdd"
 theme[temp_mid]="#00ff88"
 theme[temp_end]="#ffb7d5"
 
-theme[cpu_start]="#00f5d4"
+theme[cpu_start]="#00ffdd"
 theme[cpu_mid]="#00ff88"
 theme[cpu_end]="#ffb7d5"
 
-theme[free_start]="#00f5d4"
+theme[free_start]="#00ffdd"
 theme[free_mid]="#00ff88"
 theme[free_end]="#ffb7d5"
 
-theme[cached_start]="#00f5d4"
+theme[cached_start]="#00ffdd"
 theme[cached_mid]="#00ff88"
 theme[cached_end]="#ffb7d5"
 
-theme[available_start]="#00f5d4"
+theme[available_start]="#00ffdd"
 theme[available_mid]="#00ff88"
 theme[available_end]="#ffb7d5"
 
-theme[used_start]="#00f5d4"
+theme[used_start]="#00ffdd"
 theme[used_mid]="#00ff88"
 theme[used_end]="#ffb7d5"
 
-theme[download_start]="#00f5d4"
+theme[download_start]="#00ffdd"
 theme[download_mid]="#00ff88"
 theme[download_end]="#ffb7d5"
 
 theme[upload_start]="#ffb7d5"
 theme[upload_mid]="#00ff88"
-theme[upload_end]="#00f5d4"
+theme[upload_end]="#00ffdd"

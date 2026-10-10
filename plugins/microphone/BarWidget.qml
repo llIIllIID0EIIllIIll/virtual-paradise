@@ -69,12 +69,12 @@ BarWidget {
       color: root.inUse
         ? Qt.rgba(0.0, 1.0, 0.53, 0.28)
         : (!root.muted
-          ? Qt.rgba(0.0, 0.96, 0.83, 0.20)
+          ? Qt.rgba(0.0, 1.0, 0.867, 0.20)
           : (button.tooltipHovered ? Qt.rgba(1.0, 1.0, 1.0, 0.12) : "transparent"))
       border.color: root.inUse
         ? "#00ff88"
         : (!root.muted
-          ? (button.tooltipHovered ? "#00ff88" : "#00f5d4")
+          ? (button.tooltipHovered ? "#00ff88" : "#00ffdd")
           : (button.tooltipHovered ? "#ffffff" : Qt.rgba(1.0, 1.0, 1.0, 0.15)))
       border.width: (!root.muted || root.inUse) ? 2 : 1
       scale: button.tooltipHovered ? 1.04 : 1
@@ -90,7 +90,7 @@ BarWidget {
         anchors.margins: -3
         radius: micPill.radius + 3
         color: "transparent"
-        border.color: root.inUse ? "#00ff88" : "#00f5d4"
+        border.color: root.inUse ? "#00ff88" : "#00ffdd"
         border.width: 1.8
         opacity: 0.85
         visible: !root.muted || root.inUse || button.tooltipHovered
@@ -108,7 +108,7 @@ BarWidget {
         anchors.margins: -6
         radius: micPill.radius + 6
         color: "transparent"
-        border.color: root.inUse ? "#00ff88" : "#00f5d4"
+        border.color: root.inUse ? "#00ff88" : "#00ffdd"
         border.width: 1.5
         opacity: 0.60
         visible: !root.muted || root.inUse || button.tooltipHovered
@@ -126,7 +126,7 @@ BarWidget {
         text: root.muted ? "󰍭" : "󰍬"
         font.family: root.bar.fontFamily
         font.pixelSize: Style.font.icon
-        color: root.inUse ? "#00ff88" : (!root.muted ? (button.tooltipHovered ? "#00ff88" : "#00f5d4") : (button.tooltipHovered ? "#ffffff" : "#9684c0"))
+        color: root.inUse ? "#00ff88" : (!root.muted ? (button.tooltipHovered ? "#00ff88" : "#00ffdd") : (button.tooltipHovered ? "#ffffff" : "#9684c0"))
         scale: button.tooltipHovered ? 1.12 : 1.0
 
         Behavior on color { ColorAnimation { duration: 160 } }

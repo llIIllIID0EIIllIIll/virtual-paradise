@@ -968,7 +968,7 @@ Panel {
       ? "#00ff88"
       : (button.tooltipHovered
         ? "#ffffff"
-        : (root.isNetworkAlert ? "#ff0055" : (root.isConnected ? "#00f5d4" : "#556d7d")))
+        : (root.isNetworkAlert ? "#ff0055" : (root.isConnected ? "#00ffdd" : "#556d7d")))
     scale: button.tooltipHovered ? 1.15 : 1.0
     tooltipText: root.isNetworkAlert
       ? "󰤫 Network: Disconnected (Wi-Fi ON, No Connection / Alert)\nClick to Connect Wi-Fi"

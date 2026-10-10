@@ -149,12 +149,12 @@ BarWidget {
 
       // Playing → Miku Cyan glow / Idle → Neon Purple ghost
       color: root.playing
-        ? Qt.rgba(0.0, 0.96, 0.83, 0.22)            // #00f5d4 Miku Cyan active glow
+        ? Qt.rgba(0.0, 1.0, 0.867, 0.22)            // #00ffdd Miku Cyan active glow
         : (button.tooltipHovered
           ? Qt.rgba(0.68, 0.53, 1.0, 0.16)           // #ad88ff Purple hover glow
           : Qt.rgba(0.68, 0.53, 1.0, 0.09))          // #ad88ff Purple resting ghost
       border.color: root.playing
-        ? "#00f5d4"                                   // Miku Cyan border when playing
+        ? "#00ffdd"                                   // Miku Cyan border when playing
         : (root.opened
           ? "#ad88ff"                                 // Purple when panel open
           : (button.tooltipHovered ? "#ad88ff" : Qt.rgba(0.68, 0.53, 1.0, 0.40)))
@@ -172,7 +172,7 @@ BarWidget {
         anchors.margins: -3
         radius: mediaPill.radius + 3
         color: "transparent"
-        border.color: root.playing ? "#00f5d4" : "#ad88ff"
+        border.color: root.playing ? "#00ffdd" : "#ad88ff"
         border.width: 1.8
         opacity: 0.85
         visible: root.playing || root.opened || button.tooltipHovered
@@ -191,7 +191,7 @@ BarWidget {
         anchors.margins: -6
         radius: mediaPill.radius + 6
         color: "transparent"
-        border.color: root.playing ? "#00f5d4" : "#ad88ff"
+        border.color: root.playing ? "#00ffdd" : "#ad88ff"
         border.width: 1.5
         opacity: 0.60
         visible: root.playing || root.opened || button.tooltipHovered
@@ -223,7 +223,7 @@ BarWidget {
             enabled: root.actionEnabled("previous")
             opacity: enabled ? 1 : 0.35
             iconText: "󰒮"
-            foreground: root.playing ? "#00f5d4" : "#ad88ff"
+            foreground: root.playing ? "#00ffdd" : "#ad88ff"
             fontFamily: root.bar ? root.bar.fontFamily : Style.font.family
             iconSize: Style.font.body
             horizontalPadding: 2
@@ -241,7 +241,7 @@ BarWidget {
           frameSerial: root.waveformService ? root.waveformService.frameSerial : 0
           active: root.playing
           live: root.waveformService ? root.waveformService.receivingFrames : false
-          foreground: root.playing ? "#00f5d4" : "#ad88ff"
+          foreground: root.playing ? "#00ffdd" : "#ad88ff"
           anchors.verticalCenter: parent.verticalCenter
         }
 
@@ -304,7 +304,7 @@ BarWidget {
             enabled: root.actionEnabled("playPause")
             opacity: enabled ? 1 : 0.35
             iconText: root.playing ? "󰏤" : "󰐊"
-            foreground: root.playing ? "#00f5d4" : "#ad88ff"
+            foreground: root.playing ? "#00ffdd" : "#ad88ff"
             fontFamily: root.bar ? root.bar.fontFamily : Style.font.family
             iconSize: Style.font.body
             horizontalPadding: 2
@@ -326,7 +326,7 @@ BarWidget {
             enabled: root.actionEnabled("next")
             opacity: enabled ? 1 : 0.35
             iconText: "󰒭"
-            foreground: root.playing ? "#00f5d4" : "#ad88ff"
+            foreground: root.playing ? "#00ffdd" : "#ad88ff"
             fontFamily: root.bar ? root.bar.fontFamily : Style.font.family
             iconSize: Style.font.body
             horizontalPadding: 2
@@ -347,7 +347,7 @@ BarWidget {
         visible: root.showControls && root.hasMedia
         enabled: root.actionEnabled("playPause")
         iconText: root.playing ? "󰏤" : "󰐊"
-        foreground: root.playing ? "#00f5d4" : "#ad88ff"
+        foreground: root.playing ? "#00ffdd" : "#ad88ff"
         fontFamily: root.bar ? root.bar.fontFamily : Style.font.family
         iconSize: Style.font.body
         horizontalPadding: 3
@@ -369,7 +369,7 @@ BarWidget {
           frameSerial: root.waveformService ? root.waveformService.frameSerial : 0
           active: root.playing
           live: root.waveformService ? root.waveformService.receivingFrames : false
-          foreground: root.playing ? "#00f5d4" : "#ad88ff"
+          foreground: root.playing ? "#00ffdd" : "#ad88ff"
         }
 
         MouseArea {

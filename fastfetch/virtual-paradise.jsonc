@@ -12,7 +12,7 @@
   "display": {
     "separator": ": ",
     "color": {
-      "separator": "#00f5d4"
+      "separator": "#00ffdd"
     },
     "showErrors": false,
     "brightColor": true,
@@ -43,28 +43,28 @@
     {
       "type": "host",
       "key": "\uf109 PC",
-      "keyColor": "#00f5d4",
+      "keyColor": "#00ffdd",
       "outputColor": "#eafbfa",
       "format": "{name} ({version})"
     },
     {
       "type": "cpu",
       "key": "\u2502 \u251c\uf4bc",
-      "keyColor": "#00f5d4",
+      "keyColor": "#00ffdd",
       "outputColor": "#eafbfa",
       "format": "{name} ({cores-logical}) @ {freq-max}"
     },
     {
       "type": "gpu",
       "key": "\u2502 \u251c\ue266",
-      "keyColor": "#00f5d4",
+      "keyColor": "#00ffdd",
       "outputColor": "#eafbfa",
       "format": "{name}"
     },
     {
       "type": "display",
       "key": "\u2502 \u251c\udb84\udd04",
-      "keyColor": "#00f5d4",
+      "keyColor": "#00ffdd",
       "outputColor": "#eafbfa",
       "compactType": "original-with-refresh-rate",
       "preciseRefreshRate": false
@@ -72,7 +72,7 @@
     {
       "type": "disk",
       "key": "\u2502 \u251c\udb80\udeca",
-      "keyColor": "#00f5d4",
+      "keyColor": "#00ffdd",
       "outputColor": "#eafbfa",
       "folders": "/",
       "format": "{size-percentage-bar} {size-used} / {size-total} ({size-percentage})"
@@ -80,19 +80,19 @@
     {
       "type": "memory",
       "key": "\u2502 \u251c\uefc5",
-      "keyColor": "#00f5d4",
+      "keyColor": "#00ffdd",
       "outputColor": "#eafbfa"
     },
     {
       "type": "swap",
       "key": "\u2502 \u251c\udb81\udce1",
-      "keyColor": "#00f5d4",
+      "keyColor": "#00ffdd",
       "outputColor": "#eafbfa"
     },
     {
       "type": "battery",
       "key": "\u2514 \u2514\uf240",
-      "keyColor": "#00f5d4",
+      "keyColor": "#00ffdd",
       "outputColor": "#eafbfa"
     },
     {

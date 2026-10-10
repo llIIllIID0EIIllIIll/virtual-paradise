@@ -147,8 +147,8 @@ BarWidget {
       radius: 14
       color: root.opened
         ? Qt.rgba(0.0, 1.0, 0.53, 0.25)
-        : (button.tooltipHovered ? Qt.rgba(0.0, 0.96, 0.83, 0.16) : Qt.rgba(0.0, 0.96, 0.83, 0.09))
-      border.color: root.opened ? "#00ff88" : (button.tooltipHovered ? "#00f5d4" : Qt.rgba(0.0, 0.96, 0.83, 0.40))
+        : (button.tooltipHovered ? Qt.rgba(0.0, 1.0, 0.867, 0.16) : Qt.rgba(0.0, 1.0, 0.867, 0.09))
+      border.color: root.opened ? "#00ff88" : (button.tooltipHovered ? "#00ffdd" : Qt.rgba(0.0, 1.0, 0.867, 0.40))
       border.width: root.opened ? 2 : 1
       scale: button.tooltipHovered ? 1.04 : 1
 
@@ -203,7 +203,7 @@ BarWidget {
         Text {
           anchors.verticalCenter: parent.verticalCenter
           text: "󰥔"
-          color: "#00f5d4" // Miku Cyan
+          color: "#00ffdd" // Miku Cyan
           font.family: root.bar.fontFamily
           font.pixelSize: Style.font.body
         }
@@ -225,7 +225,7 @@ BarWidget {
           Text {
             anchors.verticalCenter: parent.verticalCenter
             text: ":" + Qt.formatDateTime(root.displayDate, "ss")
-            color: "#00f5d4" // Miku Cyan
+            color: "#00ffdd" // Miku Cyan
             font.family: root.bar.fontFamily
             font.pixelSize: Style.font.body
             font.bold: true

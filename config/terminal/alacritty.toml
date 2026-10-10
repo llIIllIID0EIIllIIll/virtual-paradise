@@ -9,11 +9,11 @@ foreground = "#eafbfa"
 
 [colors.cursor]
 text = "#0f081d"
-cursor = "#00f5d4"
+cursor = "#00ffdd"
 
 [colors.vi_mode_cursor]
 text = "#0f081d"
-cursor = "#00f5d4"
+cursor = "#00ffdd"
 
 [colors.search.matches]
 foreground = "#0f081d"
@@ -25,18 +25,18 @@ background = "#ffb7d5"
 
 [colors.footer_bar]
 foreground = "#0f081d"
-background = "#00f5d4"
+background = "#00ffdd"
 
 [colors.selection]
 text = "#0f081d"
-background = "#00f5d4"
+background = "#00ffdd"
 
 [colors.normal]
 black   = "#0f081d"
-red     = "#ff5287"
+red     = "#ff00ff"
 green   = "#00ff88"
 yellow  = "#ffe066"
-blue    = "#00f5d4"
+blue    = "#00ffdd"
 magenta = "#ffb7d5"
 cyan    = "#39c5bb"
 white   = "#eafbfa"
