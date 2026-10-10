@@ -10,7 +10,7 @@
 ```
 
 ### 🌸 Virtual☆Paradise
-**A neon cyber-purple Omarchy desktop rice, with an in-repo floating island bar.**
+**A neon cyberpunk Omarchy desktop rice, with an in-repo floating island bar.**
 
 *Built for Omarchy on Arch Linux · Hyprland · Quickshell · Wayland*
 
@@ -41,7 +41,8 @@ was removed from the repository.</em></p>
 - [Uninstall](#uninstall)
 - [Updating plugins](#updating-plugins)
 - [Repository layout](#repository-layout)
-- [How the override layer works](#how-the-override-layer-works)
+- [The override layer](#the-override-layer)
+- [Repository size](#repository-size)
 - [Tests](#tests)
 - [Troubleshooting](#troubleshooting)
 
@@ -60,7 +61,7 @@ upstream, because upstream could not do what they needed:
 | In-repo | Why |
 | :--- | :--- |
 | `bars/island-bar/` | A floating three-island bar. Third-party bars get a scoped plugin shell where `serviceFor()` only resolves the bar's own id, so every service-backed widget silently reported "unavailable" over a healthy backend. Installing it as a **first-party** plugin in `/usr/share/omarchy/shell/plugins` hands it the real `ShellRoot`. |
-| `overrides/` | QML patches for third-party widgets, reapplied after every plugin update. See [How the override layer works](#how-the-override-layer-works). |
+| `overrides/` | Patches for third-party widgets, reapplied after every plugin update. See [The override layer](#the-override-layer). |
 
 Everything else is an existing Omarchy or community plugin, coordinated from
 `install.sh`.
@@ -70,24 +71,37 @@ Everything else is an existing Omarchy or community plugin, coordinated from
 ## The bar
 
 ```
-┌─ left ─────────────┬──────────── center ────────────┬───────────── right ─────────────┐
-│ quick menu         │  ╭─ waveform ─╮  weather        │ tray      bell      camera       │
-│ 日本語 workspaces  │  │  clock      │  ╭─ Vitals ─╮    │ display   cast      bluetooth    │
-│ active window      │  ╰─────────────╯  │ C 12% G 8%│   │ wifi      volume    battery 100% │
-│                    │   temp  mic  indicators         │ projector audio     power       │
-└────────────────────┴───────────────────────────────┴─────────────────────────────────┘
+┌─ left ────────────┐ ┌──────────── center ────────────┐ ┌──────────── right ────────────┐
+│ quick menu        │ │ ╭ hex backplate ─────────────╮ │ │ tray   bell    camera         │
+│ 一二三四五        │ │ │ waveform  weather  clock   │ │ │ display cast   bluetooth      │
+│ active window     │ │ │ Vitals C 12% G 8%  temp    │ │ │ wifi   volume  battery 100%   │
+│                   │ │ ╰────────────────────────────╯ │ │ network audio  power          │
+└───────────────────┘ └────────────────────────────────┘ └───────────────────────────────┘
+        pill                  pill + neon plate                    pill
 ```
 
-- **Islands** — left, center and right sit in their own rounded surfaces. The
-  bar window itself is transparent, so the gaps between islands show the
-  desktop. `bar.transparent` in `shell/shell.json` must stay `true`; setting it
-  `false` paints an opaque strip through those gaps.
+- **Pills** — left, center and right are separate rounded surfaces. The bar
+  window itself is transparent, so the gaps between them show the desktop.
+  `bar.transparent` in `shell/shell.json` must stay `true`; `false` paints an
+  opaque strip through the gaps.
+- **Neon backplate** — the centre pill sits on a wider hex-grid plate in the
+  accent colour, drifting slowly. It extends past the pill on every side so the
+  pattern frames it rather than hiding under it. Drawn on a Canvas, so it
+  retints with the theme and needs no texture file.
+- **Gap glow** — a dot streak travels through the two gaps between the pills.
+  Its ends are trimmed to the island edges, measured from the same geometry the
+  surfaces use, so the streak starts at the bar rather than emerging from
+  nowhere.
 - **Icon colour** comes from `omarchy-bar-text-color`, which samples the
   wallpaper so icons stay legible against it.
 - **Vitals** shows CPU and GPU inside its capsule. CPU is differenced from
-  `/proc/stat`; GPU is polled from `nvidia-smi` every two seconds, because a
-  proprietary NVIDIA driver publishes nothing through sysfs. The GPU label hides
-  itself when no usable GPU is present.
+  `/proc/stat`; GPU is polled from `nvidia-smi`, because a proprietary NVIDIA
+  driver publishes nothing through sysfs. The GPU label hides itself when no
+  usable GPU is present.
+
+The two V2 shell forms the bar replaced — a continuous strip in `full` / `dock`
+/ `fit` / `notch` shapes — are still in `BarSurface.qml`. Set
+`notchIslands: true` or `pillIslands: false` on the bar to bring them back.
 
 ---
 
@@ -107,15 +121,20 @@ Defined in `theme/colors.toml` and `theme/shell.toml`. The gradient runs
 | Warning Red | `#ff0055` | CPU overheat |
 
 Widgets draw from this palette by literal hex, so re-theming means editing
-`theme/colors.toml` **and** the `plugins/` widgets together.
+`theme/colors.toml` **and** the `plugins/` widgets together. The shell's own
+`Color` singleton exposes only `accent`, `foreground`, `background`, `urgent`
+and a few surface roles — there is no `green`, for instance — so a widget that
+wants one of the other hues has to name it literally.
 
 ---
 
 ## Plugins
 
+Twelve third-party plugins sit on the bar. Every one is covered by the override
+layer, so its appearance follows this theme and survives a plugin update.
+
 | Plugin | Role | Source |
 | :--- | :--- | :--- |
-| `<user>.island-bar` | Floating three-island bar | **in-repo** `bars/island-bar/` |
 | `io.github.erikburdett.wavebar` | CAVA waveform + MPRIS transport | [upstream](https://github.com/ErikBurdett/omarchy-wavebar) |
 | `io.github.woogy7.vitals` | CPU/RAM/disk/net/**GPU**/sensors/processes panel | [upstream](https://github.com/Woogy7/omarchy-vitals) |
 | `io.github.tyrichards.workspaces-jap` | Japanese numeral workspace indicators | [upstream](https://github.com/TyRichards/omarchy-workspaces-jap) |
@@ -131,8 +150,8 @@ Widgets draw from this palette by literal hex, so re-theming means editing
 
 ### In-repo bar widgets
 
-Thirteen widgets under `plugins/` and `bars/` are authored here rather than
-pulled from upstream, because the theme restyles the bar's own widgets and
+Twelve widgets under `plugins/` plus the bar in `bars/` are authored here rather
+than pulled from upstream, because the theme restyles the bar's own widgets and
 Omarchy's copies read their colours from the host API:
 
 | Widget | Replaces | Why it exists |
@@ -206,8 +225,7 @@ cd virtual-paradise
 
 The installer is **idempotent** — run it as often as you like. It converges
 after the first run: repeated runs produce no diff other than timestamped
-backups, which are capped at the newest five plus your original pre-install
-copy.
+backups, which are capped at the newest few plus your original pre-install copy.
 
 ### What it needs
 
@@ -215,7 +233,10 @@ copy.
 persistence. Without it the installer skips those steps with a warning rather
 than failing partway. `--user-only` never asks.
 
-A custom `XDG_CONFIG_HOME` is honoured throughout.
+The user is resolved from `SUDO_USER` when run under sudo, else `$USER`. Every
+`<user>.*` plugin id and the `shell.json` layout are derived from it, so the
+same tree installs cleanly under any account. A custom `XDG_CONFIG_HOME` is
+honoured throughout.
 
 ---
 
@@ -230,10 +251,11 @@ A custom `XDG_CONFIG_HOME` is honoured throughout.
 | `--keep-backups` | Also keep `shell-default.json`. Implies you may want to reinstall later. |
 | `--purge-defaults` | Delete `shell-default.json`. Irreversible. |
 
-It switches to a fallback theme, restores `shell.json` from
-`shell-default.json`, reverts every patched plugin file, removes the theme,
-stops and deletes the systemd units, and removes the first-party bar from
-`/usr/share` (needs sudo; it prints the command if it cannot).
+It switches to a fallback theme, restores `shell.json`, `~/.zshrc`, and the
+ghostty, fcitx5 and micro configs from the copies the installer took, reverts
+every patched plugin file, removes the theme, stops and deletes the systemd
+units, and removes the first-party bar from `/usr/share` (needs sudo; it prints
+the command if it cannot).
 
 Everything it deletes is snapshotted first, and it prints the path:
 
@@ -255,15 +277,14 @@ paradise-plugin-update --apply       # revert overrides, update, re-apply, pin
 paradise-plugin-update --status      # installed vs locked revisions
 paradise-plugin-update --rollback    # return every plugin to its pinned SHA
 paradise-plugin-update --revert-only # drop the override layer, for bisecting
+paradise-plugin-update --pin         # record installed revisions, update nothing
 ```
 
 `--apply` only rewrites the lockfile when every plugin updated successfully. A
 partial failure keeps the previous pin and copies it to
 `plugin-versions.lock.last-good`, so `--rollback` still has somewhere known-good
-to go.
-
-`--check` also warns when an upstream change touches a file the override layer
-patches, since that override will need re-basing.
+to go. `--check` also warns when an upstream change touches a file the override
+layer patches, since that override will need re-basing.
 
 ### Two timers
 
@@ -283,9 +304,9 @@ reports "Audio service is unavailable" until the process is killed.
 
 ```text
 virtual-paradise/
-├── assets/          Preview and unlock artwork
+├── assets/          Unlock artwork (the preview shot is regenerated locally)
 ├── backgrounds/     Video loops and wallpapers
-├── bars/island-bar/ In-repo floating bar, installed first-party to /usr/share
+├── bars/island-bar/ The floating bar, installed first-party to /usr/share
 ├── bin/             Helper scripts: rice layout, wallpaper, cooler boost, updater
 ├── cava/            Visualiser configuration
 ├── config/          GTK 3/4 CSS and terminal configs
@@ -293,32 +314,34 @@ virtual-paradise/
 ├── hypr/            Hyprland config: look'n'feel, input, keybindings, monitors
 ├── lib/             Sourced modules: plugin-overrides.sh (the override
 │                    layer), system.sh (hardware detection and vendor setup)
-├── tools/           Maintenance scripts (shrink-history.sh)
 ├── micro/           Micro editor theme
-├── overrides/       QML patches applied to third-party plugin widgets
-├── plugins/         First-party bar widgets cloned into the user namespace
+├── overrides/       Patches applied to third-party plugin widgets
+├── plugins/         Themed bar widgets installed into the user namespace
 ├── plymouth/        Boot and shutdown splash assets
 ├── sddm/            Login theme
 ├── shell/           shell.json layout template
 ├── systemd/         User units for the update check and audio watchdog
 ├── tests/           Test suite (./tests/run.sh)
 ├── theme/           colors.toml, shell.toml and per-app theme config
+├── tools/           Maintenance scripts (shrink-history.sh)
 ├── install.sh
 └── uninstall.sh
 ```
 
 ---
 
-## How the override layer works
+## The override layer
 
-Omarchy themes cannot restyle a third-party bar widget, because widget QML
+An Omarchy theme cannot restyle a third-party bar widget, because widget QML
 reads its colours from the host theme API rather than from CSS. So this repo
 carries a small patch layer instead.
 
-1. `lib/plugin-overrides.sh` writes our QML over the plugin's real files.
-2. Files it touches are recorded in `~/.local/state/virtual-paradise/overrides.state`
-   as either `modified` (tracked upstream, restore with `git checkout`) or
-   `created` (our file, delete on revert).
+1. `lib/plugin-overrides.sh` writes our QML over the plugin's real files, or
+   edits them in place (an added `foreground: Color.accent`, for instance).
+2. Files it touches are recorded in
+   `~/.local/state/virtual-paradise/overrides.state` as either `modified`
+   (tracked upstream, restored with `git checkout`) or `created` (our file,
+   deleted on revert).
 3. `po_revert_all` walks that file and puts everything back.
 
 Entry points are resolved through each plugin's `manifest.json`, not hardcoded.
@@ -326,21 +349,29 @@ This matters: `ssupt.audio-control` ships its QML inside a versioned
 `runtime/<hash>/` tree, so an override copied to the plugin root would load
 nothing at all and fail silently.
 
+The layer only ever touches files **inside the plugins** — never `shell.json`,
+the theme directory, or anything under `/usr/share`. The outer UI is delivered
+by its own steps, so a plugin update can only ever cost the plugin's own
+theming, never the rest of the desktop.
+
 The layer is applied after every plugin add, because `omarchy plugin add` writes
-fresh upstream files over anything already patched. That is why `install.sh`
-calls it repeatedly rather than once at the end.
+fresh upstream files over anything already patched, and again after every update
+for the same reason. TC-2 asserts that revert-then-reapply lands the override
+again — without that, an update would strip the theming silently.
 
 Because these are edits to upstream files, an override can bit-rotate when its
 plugin updates. `--check` flags the overlap; re-basing means replaying your
-change onto the new upstream file.
+change onto the new upstream file. A patch whose anchor no longer matches simply
+does not apply, so an upstream rewrite costs a plain-coloured icon, not a broken
+bar.
 
 ---
 
 ## Repository size
 
-The wallpapers are large, and some early ones were committed and later
-replaced. Git keeps every version forever, so `.git` carries roughly 146 MB of
-media that no checkout can reach — a clone pays for all of it.
+The wallpapers are large, and some early ones were committed and later replaced.
+Git keeps every version forever, so `.git` carries media that no checkout can
+reach — a clone pays for all of it.
 
 `tools/shrink-history.sh` reclaims it:
 
@@ -351,16 +382,23 @@ media that no checkout can reach — a clone pays for all of it.
 
 It removes only blobs reachable from some commit but absent from the `HEAD`
 tree, so **file contents at `HEAD` are untouched** — afterwards `git ls-tree -r
-HEAD` is byte-identical, only the SHAs change. Measured on a clone: `.git` goes
+HEAD` is byte-identical, only the SHAs change. Measured on a clone: `.git` went
 from 266 MB to 134 MB.
 
 Rewriting history changes every commit SHA. It is deliberately not part of
-`install.sh`: it writes a safety bundle first, and publishing the result needs
-a force-push. Everyone else must re-clone.
+`install.sh`: it writes a safety bundle first, and publishing the result needs a
+force-push. Everyone else must re-clone.
 
-The remaining 134 MB is the current media itself. Converting the animated GIFs
+The theme directory carries only what the theme actually reads — the flattened
+colours and app configs, `overrides/`, and `backgrounds/`. The other
+directories are each installed to their own place by their own step, so they are
+stripped from the theme payload rather than copied twice.
+
+The remaining ~130 MB is the current media itself. Converting the animated GIFs
 to MP4 (`mpvpaper` plays both, and video is smaller) would cut roughly another
 60 MB, but it changes the artwork, so it is left as a manual decision.
+
+---
 
 ## Tests
 
@@ -370,33 +408,37 @@ to MP4 (`mpvpaper` plays both, and video is smaller) would cut roughly another
 ```
 
 Runs against a throwaway `HOME` with a `PATH` shim directory, so it never
-touches your real config, `/usr/share`, `systemctl` or `pacman`.
+touches your real config, `/usr/share`, `systemctl` or `pacman`. 79 assertions
+across eight cases.
 
 | Case | Covers |
 | :--- | :--- |
-| **TC-1** | Static checks: `bash -n` on every script, `py_compile`, JSON and TOML parse, `systemd-analyze verify` |
-| **TC-2** | Override layer: entry-point resolution, versioned `runtime/<hash>/` targets, state file shape, revert |
-| **TC-3** | Installer idempotency: three consecutive runs, no drift, capped backups, no unsubstituted `__USER__` |
+| **TC-1** | Static checks: `bash -n`, `py_compile`, JSON and TOML parse, `shellcheck`, `qmllint` on the bar, `systemd-analyze verify` |
+| **TC-2** | Override layer: entry-point resolution, versioned `runtime/<hash>/` targets, state shape, revert, and the revert-then-reapply update cycle |
+| **TC-3** | Installer idempotency: three consecutive runs, no drift, capped backups, stale plugin files pruned, no unsubstituted `__USER__` |
 | **TC-4** | Uninstaller: `shell.json` restored, theme and units gone, backup snapshot non-empty, flag precedence |
-| **TC-5** | Custom `XDG_CONFIG_HOME`: every path follows XDG, nothing leaks into `~/.config` |
+| **TC-5** | Custom `XDG_CONFIG_HOME`: every path follows XDG, nothing leaks, and the theme payload carries none of the stripped directories |
 | **TC-6** | No pristine Omarchy layout: the default snapshot is never faked from our own theme |
+| **TC-7** | Uninstall restores `~/.zshrc` and the ghostty, fcitx5 and micro configs from the installer's backups |
+| **TC-8** | The theme-set hook, both directions: entering the theme enables the custom widgets, leaving it restores the stock ones |
 
 CI runs the same suite on every push and pull request, and fails on any residue
 the tests leave behind.
 
-> TC-6 exists because of a bug it caught. With
-> `/usr/share/omarchy/config/omarchy/shell.json` missing, the installer fell back
-> to copying whatever `shell.json` it found — by then its own Paradise layout.
-> `shell-default.json` ended up holding the rice, so `uninstall.sh` "restored"
-> it. Every machine with a complete Omarchy install was immune; only CI saw it.
+> TC-6 and TC-7 exist because of bugs they caught. TC-6: with
+> `/usr/share/omarchy/config/omarchy/shell.json` missing, the installer fell
+> back to copying whatever `shell.json` it found — by then its own Paradise
+> layout — so uninstall "restored" the rice. TC-7: the installer overwrote the
+> shell, terminal, input-method and editor configs but uninstall restored none
+> of them, leaving the user's originals behind as orphaned backups.
 
 ---
 
 ## Troubleshooting
 
 **The bar is opaque and the islands look wrong.**
-`bar.transparent` must be `true` in `~/.config/omarchy/shell.json`. A
-reinstall restores it from the template.
+`bar.transparent` must be `true` in `~/.config/omarchy/shell.json`. A reinstall
+restores it from the template.
 
 **A widget says "Audio service is unavailable" but audio works.**
 The bar is probably not running as a first-party plugin, so `serviceFor()` is
@@ -412,6 +454,14 @@ sudo ./install.sh --user-only
 **The GPU label is missing from Vitals.**
 It needs `nvidia-smi` on `PATH`. The label hides itself rather than showing a
 dash when no GPU can be read. AMD and Intel are not wired up.
+
+**Battery shows `*Not tracked by hardware`.**
+The plugin reads the battery's cycle count from sysfs; some firmware — this one
+included — reports it as `0`. The note is the plugin being honest, not an error.
+
+**Audio shows "Some application routes could not be read".**
+The mixer backend could not map a stream to a target, usually because it is mid
+teardown. The other routes still read; nothing is lost.
 
 **Audio wedges after a few hours.**
 That is what `paradise-audio-watchdog.timer` is for. Check it is running:
