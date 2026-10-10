@@ -616,15 +616,11 @@ EXTRA_PLUGINS
       fi
       po_apply_all
 
-      # Workspaces (JAP) replaces the cloned Omarchy workspace widget.
-      if ! RUN_AS_INSTALL_USER omarchy plugin list --json 2>/dev/null | jq -e 'any(.[]; .id == "io.github.tyrichards.workspaces-jap")' >/dev/null; then
-        log_sub "Adding external Japanese workspace plugin from git..."
-        RUN_AS_INSTALL_USER omarchy plugin add https://github.com/TyRichards/omarchy-workspaces-jap.git --enable --yes 2>/dev/null || true
-      else
-        RUN_AS_INSTALL_USER omarchy plugin enable "io.github.tyrichards.workspaces-jap" 2>/dev/null || true
-      fi
-      RUN_AS_INSTALL_USER omarchy plugin disable "${CURRENT_USER}.workspaces" 2>/dev/null || true
+      # Workspaces come from the in-repo ${CURRENT_USER}.workspaces widget, which
+      # the plugin loop above installs and enables. Retire the stock widget and
+      # the previously cloned JAP plugin.
       RUN_AS_INSTALL_USER omarchy plugin disable "omarchy.workspaces" 2>/dev/null || true
+      RUN_AS_INSTALL_USER omarchy plugin disable "io.github.tyrichards.workspaces-jap" 2>/dev/null || true
       RUN_AS_INSTALL_USER omarchy plugin remove "${CURRENT_USER}.media" --yes 2>/dev/null || true
       po_apply_all
 
@@ -738,9 +734,8 @@ if [[ -f "$REPO_DIR/shell/shell.json" ]]; then
     RUN_AS_INSTALL_USER omarchy plugin enable "ssupt.bluetooth-audio" 2>/dev/null || \
       log_warn "Bluetooth audio could not be enabled after shell layout sync."
     RUN_AS_INSTALL_USER omarchy plugin disable "${CURRENT_USER}.bluetooth" 2>/dev/null || true
-    RUN_AS_INSTALL_USER omarchy plugin enable "io.github.tyrichards.workspaces-jap" 2>/dev/null || \
-      log_warn "Japanese workspace plugin could not be enabled after shell layout sync."
-    RUN_AS_INSTALL_USER omarchy plugin disable "${CURRENT_USER}.workspaces" 2>/dev/null || true
+    RUN_AS_INSTALL_USER omarchy plugin enable "${CURRENT_USER}.workspaces" 2>/dev/null || \
+      log_warn "Workspaces could not be enabled after shell layout sync."
     RUN_AS_INSTALL_USER omarchy plugin disable "omarchy.workspaces" 2>/dev/null || true
     RUN_AS_INSTALL_USER omarchy plugin enable "${CURRENT_USER}.island-bar" 2>/dev/null || \
       log_warn "Paradise Island Bar could not be enabled after shell layout sync."
@@ -1161,11 +1156,6 @@ fi
 
 # 2. Theme-specific setup
 if [[ "$THEME_NAME" == "virtual-paradise" ]]; then
-if [[ -f "$CFG/omarchy/themes/virtual-paradise/overrides/io.github.tyrichards.workspaces-jap/Workspaces.qml" \
-  && -d "$CFG/omarchy/plugins/io.github.tyrichards.workspaces-jap" ]]; then
-  cp "$CFG/omarchy/themes/virtual-paradise/overrides/io.github.tyrichards.workspaces-jap/Workspaces.qml" \
-    "$CFG/omarchy/plugins/io.github.tyrichards.workspaces-jap/Workspaces.qml"
-fi
 if [[ -f "$CFG/omarchy/themes/virtual-paradise/overrides/io.github.adamcbrewer.voxtype-aura/Service.qml" \
   && -d "$CFG/omarchy/plugins/io.github.adamcbrewer.voxtype-aura" ]]; then
   cp "$CFG/omarchy/themes/virtual-paradise/overrides/io.github.adamcbrewer.voxtype-aura/Service.qml" \
@@ -1254,8 +1244,8 @@ if command -v omarchy >/dev/null 2>&1; then
   omarchy plugin disable "omarchy.audio" >/dev/null 2>&1 || true
   omarchy plugin enable "ssupt.bluetooth-audio" >/dev/null 2>&1 || true
   omarchy plugin disable "${u}.bluetooth" >/dev/null 2>&1 || true
-  omarchy plugin enable "io.github.tyrichards.workspaces-jap" >/dev/null 2>&1 || true
-  omarchy plugin disable "${u}.workspaces" >/dev/null 2>&1 || true
+  omarchy plugin enable "${u}.workspaces" >/dev/null 2>&1 || true
+  omarchy plugin disable "io.github.tyrichards.workspaces-jap" >/dev/null 2>&1 || true
   omarchy plugin disable "omarchy.workspaces" >/dev/null 2>&1 || true
   omarchy plugin enable "io.github.adamcbrewer.voxtype-aura" >/dev/null 2>&1 || true
   omarchy plugin enable "${u}.island-bar" >/dev/null 2>&1 || true
@@ -1318,6 +1308,7 @@ else
     omarchy plugin disable "ssupt.bluetooth-audio" >/dev/null 2>&1 || true
     omarchy plugin enable "omarchy.bluetooth" >/dev/null 2>&1 || true
     omarchy plugin disable "io.github.tyrichards.workspaces-jap" >/dev/null 2>&1 || true
+    omarchy plugin disable "${u}.workspaces" >/dev/null 2>&1 || true
     omarchy plugin enable "omarchy.workspaces" >/dev/null 2>&1 || true
     omarchy plugin disable "io.github.adamcbrewer.voxtype-aura" >/dev/null 2>&1 || true
     omarchy plugin disable "mscurtescu.island-bar" >/dev/null 2>&1 || true
