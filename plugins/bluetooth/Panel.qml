@@ -857,14 +857,12 @@ Panel {
 
               PanelSeparator {
                 visible: index > 0 && sectionTitle !== ""
-                height: visible ? implicitHeight : 0
-                foreground: root.bar.foreground
+                                foreground: root.bar.foreground
               }
 
               PanelSectionHeader {
                 visible: sectionTitle !== ""
-                height: visible ? implicitHeight : 0
-                text: sectionTitle
+                                text: sectionTitle
                 foreground: root.bar.foreground
                 fontFamily: root.bar.fontFamily
               }
