@@ -120,6 +120,7 @@ Widgets draw from this palette by literal hex, so re-theming means editing
 | `io.github.woogy7.vitals` | CPU/RAM/disk/net/**GPU**/sensors/processes panel | [upstream](https://github.com/Woogy7/omarchy-vitals) |
 | `io.github.adamcbrewer.voxtype-aura` | Voice dictation HUD | [upstream](https://github.com/adamcbrewer/voxtype-aura) |
 | `crmne.hyprmoncfg` | Multi-monitor layout and scaling | [upstream](https://github.com/crmne/omarchy-hyprmoncfg) |
+| `onlyvishesh.power-manager` | Battery health and power profiles | [upstream](https://github.com/onlyVishesh/omarchy-power-manager) |
 | `ssupt.audio-control` | PipeWire mixer, device and volume curves | [upstream](https://github.com/ssupt/omarchy-audio-control) |
 | `ssupt.bluetooth-audio` | Bluetooth routing and codec selection | [upstream](https://github.com/ssupt/omarchy-bluetooth-audio) |
 | `io.github.jeffcortez23.omarchy-projector-cast` | Wireless display and presentation mode | [upstream](https://github.com/JeffCortez23/omarchy-projector-cast) |
@@ -148,7 +149,6 @@ Omarchy's copies read their colours from the host API:
 | `bluetooth` | `omarchy.bluetooth` | themed Bluetooth panel |
 | `lock` | `omarchy.lock` | themed lock screen |
 | `background` | `omarchy.background` | themed wallpaper picker |
-| `power` | `omarchy.power` | battery level, charge state and profile switcher |
 | `cputemp` | — | CPU temperature/fan pill, reads `cooler_boost_state` |
 
 **Maintenance cost, stated plainly:** each is a fork of an Omarchy widget. When
