@@ -77,8 +77,6 @@ Item {
   // The centre island carries the taller telemetry widgets (waveform, vitals),
   // so it hangs a little past the bar line where the sides do not.
   readonly property real centerIslandDrop: 3
-  // How far the neon backplate extends past the centre pill on each side.
-  readonly property real neonPad: Style.space(3)
   // How far the notch shoulder has withdrawn by the vertical middle of the bar.
   // A gap glow is a horizontal band at that midline, so its runs have to start
   // at the island edge there - which is inside the host rectangle, because the
@@ -1906,13 +1904,22 @@ Item {
         // Neon backplate, one layer under the centre pill and larger on every
         // side so the pattern frames the pill rather than hiding behind it.
         NeonBackdrop {
+          id: neonPlate
+
           z: -2
           visible: root.islandsEnabled && root.pillIslands
             && hCenter.islandRight > hCenter.islandLeft
-          x: hCenter.islandLeft - root.islandPad - root.neonPad
-          width: hCenter.islandRight - hCenter.islandLeft + root.islandPad * 2
-            + root.neonPad * 2
-          height: Math.max(1, root.barSize - root.islandInset * 2) + root.neonPad * 2
+          readonly property real pillWidth: hCenter.islandRight - hCenter.islandLeft
+            + root.islandPad * 2
+          // Twice the pill, centred on it, so the pattern reads as a surface
+          // the pill sits on rather than a 3px rim the pill hides. Clamped to
+          // the bar so a wide pill cannot push it off screen.
+          readonly property real plateWidth: Math.min(parent.width,
+            pillWidth * 2)
+          x: Math.round(hCenter.islandLeft - root.islandPad
+            - (plateWidth - pillWidth) / 2)
+          width: plateWidth
+          height: Math.max(1, root.barSize)
           anchors.verticalCenter: parent.verticalCenter
           radius: root.islandRadius(height)
           accent: Color.accent
