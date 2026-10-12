@@ -42,7 +42,10 @@ get_live_items() {
       items+=("$f")
     fi
   done
-  echo "${items[@]}"
+  # One path per line: every caller reads this with mapfile, which splits on
+  # newlines. Echoing the array joined the paths into a single line, so the
+  # cycle saw one item and only ever played the last of them.
+  printf '%s\n' "${items[@]}"
 }
 
 is_live_running() {

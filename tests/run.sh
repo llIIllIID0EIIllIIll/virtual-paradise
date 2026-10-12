@@ -616,4 +616,33 @@ if want tc8; then
   check "the restore path also runs for other themes" $?
 fi
 
+# ─────────────────────────────────────────────────────────────────────────────
+# TC-9  Wallpaper playlist.
+#
+# get_live_items used to echo the array joined onto one line. That was fine
+# while callers split with `items=($(...))`, but a shellcheck fix moved them to
+# `mapfile`, which splits on newlines - so every caller saw a single item and
+# the cycle only ever played the last wallpaper. The output format and the
+# reader have to agree.
+# ─────────────────────────────────────────────────────────────────────────────
+if want tc9; then
+  section "TC-9  Wallpaper playlist"
+
+  root="$(new_sandbox tc9)"
+  bg="$root/home/.config/omarchy/themes/virtual-paradise/backgrounds"
+  mkdir -p "$bg" "$root/home/.local/state/omarchy/current"
+  echo virtual-paradise >"$root/home/.local/state/omarchy/current/theme.name"
+  for f in Miku_live.mp4 Miku_missing.gif Miku_animated_full.gif \
+           Miku_animated1.gif Miku_animated2.gif Miku_animated3.gif \
+           Miku_animated4.gif; do
+    : >"$bg/$f"
+  done
+
+  out=$( HOME="$root/home" XDG_CONFIG_HOME="$root/home/.config" \
+    bash "$REPO_DIR/bin/toggle_live_wallpaper.sh" list 2>&1 )
+  count=$(printf '%s\n' "$out" | grep -c '•')
+  check "the playlist reports all 7 files, not just the last (got $count)" \
+    "$([[ $count -eq 7 ]] && echo 0 || echo 1)"
+fi
+
 summary
