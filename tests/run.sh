@@ -4,7 +4,7 @@
 #   ./tests/run.sh            run everything
 #   ./tests/run.sh tc2 tc4    run only the named cases
 #
-# Cases are numbered TC-1..TC-5 and each maps to one numbered section of the
+# Cases are numbered TC-1..TC-9 and each maps to one numbered section of the
 # README's test matrix, so the two cannot drift apart silently.
 
 set -uo pipefail
@@ -122,7 +122,7 @@ $(basename "$f"): $out"
     printf '  %sSKIP%s qmllint not installed\n' "$DIM" "$OFF"
   fi
 
-  # shellcheck, when present. Skipped rather than failed on machines without
+  # Shellcheck, when present. Skipped rather than failed on machines without
   # it, so the suite stays usable outside CI.
   if command -v shellcheck >/dev/null 2>&1; then
     scbad=$(cd "$REPO_DIR" && shellcheck -S warning -f gcc \
@@ -291,8 +291,8 @@ if want tc3; then
   if [[ -d $installed_clock ]]; then
     touch "$installed_clock/Removed.qml" "$installed_clock/stale.json"
     run_installer "$root" >/dev/null 2>&1
-    [[ ! -e "$installed_clock/Removed.qml" && ! -e "$installed_clock/stale.json" ]]
-    check "installer prunes stale files from installed plugins" $?
+    check "installer prunes stale files from installed plugins" \
+      "$([[ ! -e "$installed_clock/Removed.qml" && ! -e "$installed_clock/stale.json" ]] && echo 0 || echo 1)"
   fi
 
   python3 - "$root/home/.config/omarchy/shell.json" <<'PY'
@@ -343,12 +343,12 @@ if want tc4; then
     ok "no pristine default available; shell.json preserved instead"
     grep -q 'Preserving' "$root/uninstall.log"
     check "uninstall says it preserved shell.json" $?
-    [[ -f "$C/shell.json" ]]
-    check "shell.json still exists after uninstall" $?
+    check "shell.json still exists after uninstall" \
+      "$([[ -f "$C/shell.json" ]] && echo 0 || echo 1)"
   fi
 
-  [[ ! -d "$C/themes/virtual-paradise" ]]
-  check "theme directory removed" $?
+  check "theme directory removed" \
+    "$([[ ! -d "$C/themes/virtual-paradise" ]] && echo 0 || echo 1)"
 
   check "paradise systemd units removed" \
     "$(find "$root/home/.config/systemd/user" -name 'paradise-*' 2>/dev/null | grep -q . && echo 1 || echo 0)"
@@ -384,8 +384,8 @@ if want tc4; then
   check "uninstall with --keep-backups and --purge-defaults exits 0" $?
   # --keep-backups short-circuits the whole block, so nothing is printed; the
   # invariant is simply that the file survives despite --purge-defaults.
-  [[ -f "$C/shell-default.json" ]]
-  check "--keep-backups wins over --purge-defaults regardless of order" $?
+  check "--keep-backups wins over --purge-defaults regardless of order" \
+    "$([[ -f "$C/shell-default.json" ]] && echo 0 || echo 1)"
 
   run_installer "$root" >/dev/null 2>&1
   printf '{"seeded":true}\n' >"$C/shell-default.json"
@@ -518,11 +518,12 @@ if want tc7; then
   C="$H/.config"
 
   # Pre-seed files with recognisable content so restoration is provable.
-  mkdir -p "$C/ghostty" "$C/fcitx5" "$C/micro/colorschemes"
+  mkdir -p "$C/ghostty" "$C/fcitx5" "$C/micro/colorschemes" "$C/hypr"
   printf 'export ORIGINAL_ZSHRC=1\n' >"$H/.zshrc"
   printf '# user ghostty config\ntheme = user-theme\n' >"$C/ghostty/config"
   printf '[Groups/0]\nName=UserProfile\n' >"$C/fcitx5/profile"
   printf '{"user":"micro"}\n' >"$C/micro/settings.json"
+  printf '# user look and feel\n' >"$C/hypr/looknfeel.lua"
 
   run_installer "$root" >/dev/null 2>&1
   check "install exits 0" $?
@@ -541,18 +542,20 @@ if want tc7; then
   check "uninstall exits 0" $?
 
   grep -q 'ORIGINAL_ZSHRC' "$H/.zshrc" 2>/dev/null
-  check "~/.zshrc restored to the original" $?
+  check "the zshrc is restored to the original" $?
   grep -q 'user-theme' "$C/ghostty/config" 2>/dev/null
   check "ghostty config restored to the original" $?
   grep -q 'UserProfile' "$C/fcitx5/profile" 2>/dev/null
   check "fcitx5 profile restored to the original" $?
   grep -q '"user":"micro"' "$C/micro/settings.json" 2>/dev/null
   check "micro settings restored to the original" $?
+  grep -q 'user look and feel' "$C/hypr/looknfeel.lua" 2>/dev/null
+  check "hypr looknfeel restored to the original" $?
 
   # Backups are ours to clean up once consumed.
   check "consumed .paradise.bak files are removed" \
     "$(find "$C" -name '*.paradise.bak' 2>/dev/null | grep -q . && echo 1 || echo 0)"
-  check "~/.zshrc.zwc is removed" \
+  check "the zshrc.zwc cache is removed" \
     "$([[ -f "$H/.zshrc.zwc" ]] && echo 1 || echo 0)"
 
   # A zshrc the installer created from nothing must be removed, not left behind.
@@ -562,6 +565,18 @@ if want tc7; then
   run_uninstaller "$root2" >/dev/null 2>&1
   check "a zshrc created by the installer is removed" \
     "$([[ -f "$root2/home/.zshrc" ]] && echo 1 || echo 0)"
+
+  # Files the installer drops in with no user original must also be taken back
+  # out: a btop theme, the fastfetch config and logos, and the hypr files it
+  # ships verbatim would otherwise survive uninstall unnoticed.
+  check "the btop theme is removed" \
+    "$([[ -f "$root2/home/.config/btop/themes/virtual-paradise.theme" ]] && echo 1 || echo 0)"
+  check "the fastfetch config is removed" \
+    "$([[ -f "$root2/home/.config/fastfetch/config.jsonc" ]] && echo 1 || echo 0)"
+  check "the fastfetch logos are removed" \
+    "$([[ -f "$root2/home/.config/fastfetch/logo.txt" ]] && echo 1 || echo 0)"
+  check "a hypr config created by the installer is removed" \
+    "$([[ -f "$root2/home/.config/hypr/looknfeel.lua" ]] && echo 1 || echo 0)"
 fi
 
 # ─────────────────────────────────────────────────────────────────────────────
