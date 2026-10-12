@@ -135,6 +135,11 @@ po_patch_accent() {
   po_touch_existing "$plugin_id" "$file"
   grep -q "$PO_ACCENT_MARKER" "$file" && return 0
   sed -i "$script" "$file"
+  # A sed range that no longer matches upstream fails silently: the widget just
+  # stays on the default colour with nothing in the log to explain it. Say so,
+  # because the next upstream edit to this file is exactly how it happens.
+  grep -q "$PO_ACCENT_MARKER" "$file" \
+    || po_log "plugin-overrides: accent patch did not match $file (upstream changed?)"
 }
 
 po_apply_theme_colors() {
@@ -232,6 +237,7 @@ po_revert_all() {
   fi
 
   local action plugin_id rel abs dir reverted=0 skipped=0
+  local -a failed=()
   while IFS=$'\t' read -r action plugin_id rel; do
     [[ -n ${action:-} && -n ${plugin_id:-} && -n ${rel:-} ]] || continue
     dir="$(po_plugin_dir "$plugin_id")"
@@ -242,22 +248,46 @@ po_revert_all() {
     abs="$dir/$rel"
     case "$action" in
       created)
-        if [[ -e $abs ]]; then rm -f "$abs" && reverted=$((reverted + 1)); fi
+        if [[ -e $abs ]]; then
+          if rm -f "$abs" 2>/dev/null; then
+            reverted=$((reverted + 1))
+          else
+            failed+=("$plugin_id/$rel")
+          fi
+        fi
         ;;
       modified)
         # git checkout only if upstream actually tracks the path; otherwise the
         # file is one of ours and deleting it is the correct revert.
         if git -C "$dir" ls-files --error-unmatch -- "$rel" >/dev/null 2>&1; then
-          git -C "$dir" checkout -- "$rel" && reverted=$((reverted + 1))
+          if git -C "$dir" checkout -- "$rel" 2>/dev/null; then
+            reverted=$((reverted + 1))
+          else
+            failed+=("$plugin_id/$rel")
+          fi
         elif [[ -e $abs ]]; then
-          rm -f "$abs" && reverted=$((reverted + 1))
+          if rm -f "$abs" 2>/dev/null; then
+            reverted=$((reverted + 1))
+          else
+            failed+=("$plugin_id/$rel")
+          fi
         fi
         ;;
     esac
   done <"$state"
 
-  po_state_reset
-  po_log "Reverted $reverted file(s); $skipped non-git plugin dir(s) skipped."
+  # Resetting the state after a partial revert would drop the record of the
+  # files still patched, so no retry could ever reach them and the plugin would
+  # stay half-themed with nothing pointing at it. Keep the state and report.
+  if (( ${#failed[@]} == 0 )); then
+    po_state_reset
+    po_log "Reverted $reverted file(s); $skipped non-git plugin dir(s) skipped."
+  else
+    po_log "Reverted $reverted file(s); ${#failed[@]} could not be restored and remain recorded:"
+    local failed_path
+    for failed_path in "${failed[@]}"; do po_log "  $failed_path"; done
+    return 1
+  fi
 }
 
 # ---------------------------------------------------------------------------
@@ -340,6 +370,8 @@ po_apply_repo_overrides() {
     po_touch_existing io.github.jeffcortez23.omarchy-projector-cast "$proj"
     sed -i 's/Style\.radius(6)/Style.cornerRadius/g' "$proj"
     sed -i 's/foreground: root\.gndRunning ? Color\.accent : (root\.presentationMode ? Color\.accent : (root\.bar ? root\.bar\.foreground : Color\.foreground))/foreground: Color.accent/' "$proj"
+    grep -q 'Style\.radius(6)' "$proj" \
+      && po_log "plugin-overrides: projector-cast radius patch did not match $proj (upstream changed?)"
   fi
 }
 
