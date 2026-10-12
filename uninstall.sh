@@ -225,8 +225,90 @@ for pair in \
     cp "$pair.paradise.bak" "$pair"
     rm -f "$pair.paradise.bak"
     printf 'Restored %s\n' "${pair#"$HOME"/}"
+  elif [[ "$pair" != *"/ghostty/"* && -f $pair ]]; then
+    # No snapshot: fcitx5 and micro have no Omarchy default, so this file is one
+    # the installer created and removing it is the true revert. ghostty always
+    # pre-exists on Omarchy and is only edited in place, so it is left alone.
+    rm -f "$pair"
+    printf 'Removed %s\n' "${pair#"$HOME"/}"
   fi
 done
+
+# ------------------------------------------------------------------------------
+# Hypr config the installer rewrote. It snapshotted looknfeel/input/bindings and
+# monitors/autostart/hyprland into hypr/backup_<ts>/ before touching them, so
+# restore that snapshot. With no snapshot those files are ours: drop the ones we
+# ship outright and strip the blocks we appended, leaving any surrounding lines
+# the user added intact.
+# ------------------------------------------------------------------------------
+hypr_bak="$(ls -1d "$CONFIG_DIR"/hypr/backup_* 2>/dev/null | sort | tail -n 1 || true)"
+for file in looknfeel.lua input.lua bindings.lua; do
+  target="$CONFIG_DIR/hypr/$file"
+  [[ -e $target ]] || continue
+  if [[ -n $hypr_bak && -f "$hypr_bak/$file" ]]; then
+    cp "$hypr_bak/$file" "$target"
+    printf 'Restored hypr/%s\n' "$file"
+  else
+    rm -f "$target"
+    printf 'Removed hypr/%s\n' "$file"
+  fi
+done
+
+if [[ -n $hypr_bak ]]; then
+  for file in monitors.lua autostart.lua hyprland.lua; do
+    [[ -f "$hypr_bak/$file" ]] && cp "$hypr_bak/$file" "$CONFIG_DIR/hypr/$file"
+  done
+fi
+
+# monitors.lua and autostart.lua are shipped verbatim — the repo already carries
+# the toolkit envs and the wallpaper hook — so a snapshot-less file that now
+# matches the repo is one the installer created and can go. hyprland.lua has no
+# repo counterpart: the installer only ever appends a window-rule block to the
+# user's own file, so that block is stripped and the file itself is kept.
+for file in monitors.lua autostart.lua; do
+  target="$CONFIG_DIR/hypr/$file"
+  [[ -f $target ]] || continue
+  [[ -n $hypr_bak && -f "$hypr_bak/$file" ]] && continue
+  if [[ -f "$REPO_DIR/hypr/$file" ]] && cmp -s "$REPO_DIR/hypr/$file" "$target"; then
+    rm -f "$target"
+    printf 'Removed hypr/%s\n' "$file"
+  fi
+done
+
+hyprland="$CONFIG_DIR/hypr/hyprland.lua"
+if [[ -f $hyprland ]]; then
+  sed -i -e '/-- Virtual Paradise Add-on Window Rules/d' \
+         -e '/Btop Monitor/d' \
+         -e '/Voxtype Config/d' \
+         -e '/GNOME Network Displays/d' \
+         -e '/org\.gnome\.Nautilus/d' "$hyprland"
+fi
+
+# The preview-share-picker stylesheet is ours.
+rm -f "$CONFIG_DIR/hypr/hyprland-preview-share-picker.css"
+
+[[ -n $hypr_bak ]] && rm -rf "$hypr_bak"
+
+# btop theme is additive.
+rm -f "$CONFIG_DIR/btop/themes/virtual-paradise.theme"
+
+# fastfetch: drop the shipped logos and the generated config, restoring the
+# user's own config when the installer had to move it aside.
+if [[ -d "$REPO_DIR/fastfetch" ]]; then
+  for ff in "$REPO_DIR"/fastfetch/*; do
+    [[ -f $ff ]] || continue
+    case "$(basename "$ff")" in
+      logo*.txt) rm -f "$CONFIG_DIR/fastfetch/$(basename "$ff")" ;;
+    esac
+  done
+fi
+if [[ -f "$CONFIG_DIR/fastfetch/config.jsonc.paradise.bak" ]]; then
+  cp "$CONFIG_DIR/fastfetch/config.jsonc.paradise.bak" "$CONFIG_DIR/fastfetch/config.jsonc"
+  rm -f "$CONFIG_DIR/fastfetch/config.jsonc.paradise.bak"
+  printf 'Restored fastfetch/config.jsonc\n'
+else
+  rm -f "$CONFIG_DIR/fastfetch/config.jsonc"
+fi
 
 # Our micro colourschemes are additive, so drop only the ones this repo ships.
 if [[ -d "$REPO_DIR/micro/colorschemes" ]]; then
