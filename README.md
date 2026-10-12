@@ -408,8 +408,8 @@ to MP4 (`mpvpaper` plays both, and video is smaller) would cut roughly another
 ```
 
 Runs against a throwaway `HOME` with a `PATH` shim directory, so it never
-touches your real config, `/usr/share`, `systemctl` or `pacman`. 79 assertions
-across eight cases.
+touches your real config, `/usr/share`, `systemctl` or `pacman`. 85 assertions
+across nine cases.
 
 | Case | Covers |
 | :--- | :--- |
@@ -419,7 +419,7 @@ across eight cases.
 | **TC-4** | Uninstaller: `shell.json` restored, theme and units gone, backup snapshot non-empty, flag precedence |
 | **TC-5** | Custom `XDG_CONFIG_HOME`: every path follows XDG, nothing leaks, and the theme payload carries none of the stripped directories |
 | **TC-6** | No pristine Omarchy layout: the default snapshot is never faked from our own theme |
-| **TC-7** | Uninstall restores `~/.zshrc` and the ghostty, fcitx5 and micro configs from the installer's backups |
+| **TC-7** | Uninstall restores `~/.zshrc`, the ghostty, fcitx5, micro and hypr configs from the installer's backups, and removes the btop theme and fastfetch config it had dropped in |
 | **TC-8** | The theme-set hook, both directions: entering the theme enables the custom widgets, leaving it restores the stock ones |
 
 CI runs the same suite on every push and pull request, and fails on any residue
