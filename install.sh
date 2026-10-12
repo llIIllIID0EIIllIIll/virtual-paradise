@@ -15,7 +15,7 @@ REPO_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 # (bin/update-plugins.sh) can revert and re-apply exactly the same layer.
 # That matters because `omarchy plugin update` fast-forwards with --ff-only and
 # refuses to touch a checkout that this layer has left dirty.
-PARADISE_REPO_DIR="$REPO_DIR"
+export PARADISE_REPO_DIR="$REPO_DIR"
 # shellcheck source=lib/plugin-overrides.sh
 . "$REPO_DIR/lib/plugin-overrides.sh"
 THEME_NAME="virtual-paradise"
@@ -836,6 +836,7 @@ if [[ ! -f "$CONFIG_DIR/hypr/monitors.lua" && -f "$REPO_DIR/hypr/monitors.lua" ]
   log_sub "Initialized default display configuration"
 elif [[ -f "$CONFIG_DIR/hypr/monitors.lua" ]] && ! grep -q "ELECTRON_OZONE_PLATFORM_HINT" "$CONFIG_DIR/hypr/monitors.lua"; then
   # Preserve user custom monitor positions but ensure crisp Wayland toolkit variables
+  hypr_backup "$CONFIG_DIR/hypr/monitors.lua"
   cat << 'EOF' >> "$CONFIG_DIR/hypr/monitors.lua"
 
 -- Virtual☆Paradise Toolkit & Wayland Envs
@@ -849,6 +850,7 @@ fi
 # 5.5 Autostart: ensure live wallpaper hook is present
 if [[ -f "$CONFIG_DIR/hypr/autostart.lua" ]]; then
   if ! grep -q "toggle_live_wallpaper.sh" "$CONFIG_DIR/hypr/autostart.lua"; then
+    hypr_backup "$CONFIG_DIR/hypr/autostart.lua"
     echo 'o.launch_on_start("toggle_live_wallpaper.sh init")' >> "$CONFIG_DIR/hypr/autostart.lua"
     log_sub "Hooked live wallpaper to ~/.config/hypr/autostart.lua"
   fi
@@ -859,6 +861,7 @@ fi
 # 5.6 Window Rules (Btop, Voxtype, Cast Screen, Nautilus)
 if [[ -f "$CONFIG_DIR/hypr/hyprland.lua" ]]; then
   if ! grep -q "GNOME Network Displays" "$CONFIG_DIR/hypr/hyprland.lua"; then
+    hypr_backup "$CONFIG_DIR/hypr/hyprland.lua"
     cat << 'EOF' >> "$CONFIG_DIR/hypr/hyprland.lua"
 
 -- Virtual Paradise Add-on Window Rules
@@ -1025,6 +1028,14 @@ if [[ -d "$REPO_DIR/fastfetch" ]]; then
   # theme-specific asset that the theme hook re-applies on every theme change,
   # so publish it here too instead of shipping two diverging config files.
   if [[ -f "$CONFIG_DIR/fastfetch/virtual-paradise.jsonc" ]]; then
+    # Never silently clobber the user's fastfetch config: back up once.
+    if [[ -f "$CONFIG_DIR/fastfetch/config.jsonc" ]] \
+      && ! cmp -s "$CONFIG_DIR/fastfetch/virtual-paradise.jsonc" "$CONFIG_DIR/fastfetch/config.jsonc"; then
+      if [[ ! -f "$CONFIG_DIR/fastfetch/config.jsonc.paradise.bak" ]]; then
+        cp "$CONFIG_DIR/fastfetch/config.jsonc" \
+          "$CONFIG_DIR/fastfetch/config.jsonc.paradise.bak" || true
+      fi
+    fi
     cp "$CONFIG_DIR/fastfetch/virtual-paradise.jsonc" "$CONFIG_DIR/fastfetch/config.jsonc"
   fi
 fi
