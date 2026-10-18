@@ -176,7 +176,7 @@ for file in \
   toggle_cooler_boost.sh toggle_live_wallpaper.sh toggle_btop.sh toggle_voxtype_config.sh memory_detail_notify.sh \
   virtual_matrix virtual_matrix.py momoisay momoisay.real sync_cava_theme.py format-docx format-docx-vn.py vn-docx \
   hypr_window_error_shake.sh hypr_window_error_restore.sh logout_splash.qml curtain_transition.qml glitch_transition.qml \
-  Glitch.jpg Miku_missing.gif uninstall-virtual-paradise; do
+  Glitch.jpg Miku_missing.gif Miku_missing.mp4 uninstall-virtual-paradise; do
   rm -f "$LOCAL_BIN/$file"
 done
 

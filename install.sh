@@ -237,15 +237,15 @@ INSTALL_BOOT_ANIMATIONS() {
       fi
 
       # Extract intro frames (259 frames) if missing
-      if [[ ! -f "$plymouth_theme_dir/intro-259.png" ]] && [[ -f "$REPO_DIR/backgrounds/Miku_animated_full.gif" ]]; then
-        log_sub "Extracting 259 frames from Miku_animated_full.gif for Plymouth..."
-        run_privileged ffmpeg -y -loglevel error -i "$REPO_DIR/backgrounds/Miku_animated_full.gif" -vf "scale=1920:1080" "$plymouth_theme_dir/intro-%d.png"
+      if [[ ! -f "$plymouth_theme_dir/intro-259.png" ]] && [[ -f "$REPO_DIR/backgrounds/Miku_animated_full.mp4" ]]; then
+        log_sub "Extracting 259 frames from Miku_animated_full.mp4 for Plymouth..."
+        run_privileged ffmpeg -y -loglevel error -i "$REPO_DIR/backgrounds/Miku_animated_full.mp4" -vf "scale=1920:1080" "$plymouth_theme_dir/intro-%d.png"
       fi
 
       # Extract outro frames (72 frames) if missing
-      if [[ ! -f "$plymouth_theme_dir/outro-72.png" ]] && [[ -f "$REPO_DIR/backgrounds/Miku_missing.gif" ]]; then
-        log_sub "Extracting 72 frames from Miku_missing.gif for Plymouth..."
-        run_privileged ffmpeg -y -loglevel error -i "$REPO_DIR/backgrounds/Miku_missing.gif" -vf "scale=1920:1080" "$plymouth_theme_dir/outro-%d.png"
+      if [[ ! -f "$plymouth_theme_dir/outro-72.png" ]] && [[ -f "$REPO_DIR/backgrounds/Miku_missing.mp4" ]]; then
+        log_sub "Extracting 72 frames from Miku_missing.mp4 for Plymouth..."
+        run_privileged ffmpeg -y -loglevel error -i "$REPO_DIR/backgrounds/Miku_missing.mp4" -vf "scale=1920:1080" "$plymouth_theme_dir/outro-%d.png"
       fi
 
       # Fallback single frame images

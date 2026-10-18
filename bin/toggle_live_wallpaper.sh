@@ -29,12 +29,12 @@ mkdir -p "$STATE_DIR"
 get_live_items() {
   local playlist=(
     "$BG_DIR/Miku_live.mp4"
-    "$BG_DIR/Miku_missing.gif"
-    "$BG_DIR/Miku_animated_full.gif"
-    "$BG_DIR/Miku_animated1.gif"
-    "$BG_DIR/Miku_animated2.gif"
-    "$BG_DIR/Miku_animated3.gif"
-    "$BG_DIR/Miku_animated4.gif"
+    "$BG_DIR/Miku_missing.mp4"
+    "$BG_DIR/Miku_animated_full.mp4"
+    "$BG_DIR/Miku_animated1.mp4"
+    "$BG_DIR/Miku_animated2.mp4"
+    "$BG_DIR/Miku_animated3.mp4"
+    "$BG_DIR/Miku_animated4.mp4"
   )
   local items=()
   for f in "${playlist[@]}"; do
