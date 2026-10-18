@@ -647,9 +647,9 @@ if want tc9; then
   bg="$root/home/.config/omarchy/themes/virtual-paradise/backgrounds"
   mkdir -p "$bg" "$root/home/.local/state/omarchy/current"
   echo virtual-paradise >"$root/home/.local/state/omarchy/current/theme.name"
-  for f in Miku_live.mp4 Miku_missing.gif Miku_animated_full.gif \
-           Miku_animated1.gif Miku_animated2.gif Miku_animated3.gif \
-           Miku_animated4.gif; do
+  for f in Miku_live.mp4 Miku_missing.mp4 Miku_animated_full.mp4 \
+           Miku_animated1.mp4 Miku_animated2.mp4 Miku_animated3.mp4 \
+           Miku_animated4.mp4; do
     : >"$bg/$f"
   done
 

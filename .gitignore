@@ -1,2 +1,21 @@
 __pycache__/
 *.pyc
+
+# Editor & OS
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+*~
+.vscode/
+.idea/
+
+# Shell bytecode
+*.zwc
+
+# Build artifacts
+*.o
+*.so
+
+# Test sandboxes
+/tmp/vp-tests.*

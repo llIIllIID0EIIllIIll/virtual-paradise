@@ -8,7 +8,7 @@ on:
 
 jobs:
   suite:
-    name: TC-1..TC-5
+    name: TC-1..TC-9 (85 assertions)
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4

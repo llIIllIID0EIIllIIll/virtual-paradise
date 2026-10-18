@@ -394,9 +394,13 @@ colours and app configs, `overrides/`, and `backgrounds/`. The other
 directories are each installed to their own place by their own step, so they are
 stripped from the theme payload rather than copied twice.
 
-The remaining ~130 MB is the current media itself. Converting the animated GIFs
-to MP4 (`mpvpaper` plays both, and video is smaller) would cut roughly another
-60 MB, but it changes the artwork, so it is left as a manual decision.
+The remaining ~90 MB is the current media itself. The animated GIFs were
+converted to MP4 (`mpvpaper` plays both, and video is smaller), saving ~40 MB
+at the working-tree level. The SDDM login screen still carries a downscaled GIF
+because Qt's `AnimatedImage` does not support MP4; Plymouth extracts frames
+from the MP4 with `ffmpeg`. A further reduction would require running
+`tools/shrink-history.sh --apply` to purge the original GIF blobs from `.git`
+history (which needs a force-push and a re-clone for everyone).
 
 ---
 
