@@ -23,6 +23,7 @@ IS_HOOK=0
 ENABLE_BOOT=1
 BOOT_ONLY=0
 USER_ONLY=0
+DRY_RUN=0
 
 for arg in "$@"; do
   case "$arg" in
@@ -38,6 +39,10 @@ for arg in "$@"; do
       ;;
     --no-sudo|--user-only)
       USER_ONLY=1
+      ENABLE_BOOT=0
+      ;;
+    --dry-run)
+      DRY_RUN=1
       ENABLE_BOOT=0
       ;;
   esac
@@ -1152,219 +1157,16 @@ if [[ -d "$THEME_DEST/assets" ]]; then
 fi
 
 # Post-theme-set hook
-cat << 'EOF' > "$CONFIG_DIR/omarchy/hooks/theme-set.d/virtual-paradise.sh"
-#!/bin/bash
-# Omarchy runs this hook from its own shell; honour XDG_CONFIG_HOME the same
-# way install.sh does instead of assuming ~/.config.
-CFG="${XDG_CONFIG_HOME:-$HOME/.config}"
-THEME_NAME="$1"
-
-# 1. Sync Cava visualizer colors to the newly selected theme
-if [[ -x "$HOME/.local/bin/sync_cava_theme.py" ]]; then
-  python3 "$HOME/.local/bin/sync_cava_theme.py" "$THEME_NAME" >/dev/null 2>&1 || true
-fi
-
-# 2. Theme-specific setup
-if [[ "$THEME_NAME" == "virtual-paradise" ]]; then
-if [[ -f "$CFG/omarchy/themes/virtual-paradise/overrides/io.github.tyrichards.workspaces-jap/Workspaces.qml" \
-  && -d "$CFG/omarchy/plugins/io.github.tyrichards.workspaces-jap" ]]; then
-  cp "$CFG/omarchy/themes/virtual-paradise/overrides/io.github.tyrichards.workspaces-jap/Workspaces.qml" \
-    "$CFG/omarchy/plugins/io.github.tyrichards.workspaces-jap/Workspaces.qml"
-fi
-if [[ -f "$CFG/omarchy/themes/virtual-paradise/overrides/io.github.adamcbrewer.voxtype-aura/Service.qml" \
-  && -d "$CFG/omarchy/plugins/io.github.adamcbrewer.voxtype-aura" ]]; then
-  cp "$CFG/omarchy/themes/virtual-paradise/overrides/io.github.adamcbrewer.voxtype-aura/Service.qml" \
-    "$CFG/omarchy/plugins/io.github.adamcbrewer.voxtype-aura/Service.qml"
-fi
-if [[ -f "$CFG/omarchy/themes/virtual-paradise/overrides/io.github.woogy7.vitals/BarWidget.qml" \
-  && -d "$CFG/omarchy/plugins/io.github.woogy7.vitals" ]]; then
-  cp "$CFG/omarchy/themes/virtual-paradise/overrides/io.github.woogy7.vitals/BarWidget.qml" \
-    "$CFG/omarchy/plugins/io.github.woogy7.vitals/BarWidget.qml"
-fi
-if [[ -d "$CFG/omarchy/themes/virtual-paradise/overrides/io.github.erikburdett.wavebar" \
-  && -d "$CFG/omarchy/plugins/io.github.erikburdett.wavebar" ]]; then
-  cp "$CFG/omarchy/themes/virtual-paradise/overrides/io.github.erikburdett.wavebar/BarWidget.qml" \
-    "$CFG/omarchy/plugins/io.github.erikburdett.wavebar/BarWidget.qml" 2>/dev/null || true
-  cp "$CFG/omarchy/themes/virtual-paradise/overrides/io.github.erikburdett.wavebar/Waveform.qml" \
-    "$CFG/omarchy/plugins/io.github.erikburdett.wavebar/Waveform.qml" 2>/dev/null || true
-  cp "$CFG/omarchy/themes/virtual-paradise/overrides/io.github.erikburdett.wavebar/MediaModel.js" \
-    "$CFG/omarchy/plugins/io.github.erikburdett.wavebar/MediaModel.js" 2>/dev/null || true
-  cp "$CFG/omarchy/themes/virtual-paradise/overrides/io.github.erikburdett.wavebar/Service.qml" \
-    "$CFG/omarchy/plugins/io.github.erikburdett.wavebar/Service.qml" 2>/dev/null || true
-  cp "$CFG/omarchy/themes/virtual-paradise/overrides/io.github.erikburdett.wavebar/Panel.qml" \
-    "$CFG/omarchy/plugins/io.github.erikburdett.wavebar/Panel.qml" 2>/dev/null || true
-  cp "$CFG/omarchy/themes/virtual-paradise/overrides/io.github.erikburdett.wavebar/waveform.py" \
-    "$CFG/omarchy/plugins/io.github.erikburdett.wavebar/waveform.py" 2>/dev/null || true
-  chmod +x "$CFG/omarchy/plugins/io.github.erikburdett.wavebar/waveform.py" 2>/dev/null || true
-fi
-# Vitals ships upstream styling and reads the theme palette itself; the retired
-# harshith.system-monitor override is gone with the plugin.
-# mscurtescu.island-bar is no longer used: our own first-party
-# ${CURRENT_USER}.island-bar replaces it, and a stale override for a plugin we
-# do not load would only sit in the theme tree confusing later debugging.
-if [[ -d "$CFG/omarchy/themes/virtual-paradise/overrides/ssupt.audio-control" \
-  && -d "$CFG/omarchy/plugins/ssupt.audio-control" ]]; then
-  # Resolve the real entryPoint paths: this plugin ships its QML inside a
-  # versioned runtime/<hash>/ tree, so copying to the plugin root is a no-op.
-  _ap_dir="$CFG/omarchy/plugins/ssupt.audio-control"
-  _ap_panel_rel="$(python3 -c 'import json,sys
-try:
-    e=(json.load(open(sys.argv[1])).get("entryPoints") or {}).get("barWidget")
-except Exception:
-    e=None
-print(e or "")' "$_ap_dir/manifest.json" 2>/dev/null)"
-  _ap_svc_rel="$(python3 -c 'import json,sys
-try:
-    e=(json.load(open(sys.argv[1])).get("entryPoints") or {}).get("service")
-except Exception:
-    e=None
-print(e or "")' "$_ap_dir/manifest.json" 2>/dev/null)"
-  _ap_panel="${_ap_panel_rel:+$_ap_dir/$_ap_panel_rel}"
-  _ap_panel="${_ap_panel:-$_ap_dir/Panel.qml}"
-  _ap_model="${_ap_svc_rel:+$_ap_dir/$(dirname "$_ap_svc_rel")/Model.js}"
-  _ap_model="${_ap_model:-$_ap_dir/Model.js}"
-  mkdir -p "$(dirname "$_ap_panel")" "$(dirname "$_ap_model")" 2>/dev/null || true
-  [[ -f "$CFG/omarchy/themes/virtual-paradise/overrides/ssupt.audio-control/Panel.qml" ]] && \
-    cp "$CFG/omarchy/themes/virtual-paradise/overrides/ssupt.audio-control/Panel.qml" \
-      "$_ap_panel" 2>/dev/null || true
-  [[ -f "$CFG/omarchy/themes/virtual-paradise/overrides/ssupt.audio-control/Model.js" ]] && \
-    cp "$CFG/omarchy/themes/virtual-paradise/overrides/ssupt.audio-control/Model.js" \
-      "$_ap_model" 2>/dev/null || true
-  unset _ap_dir _ap_panel_rel _ap_svc_rel _ap_panel _ap_model
-fi
-# Use hyprmoncfg in place of the cloned Display & Scaling widget.
-if command -v omarchy >/dev/null 2>&1; then
-  u="${USER:-$(id -un)}"
-  omarchy plugin enable "crmne.hyprmoncfg" >/dev/null 2>&1 || true
-  omarchy plugin enable "io.github.jeffcortez23.omarchy-projector-cast" >/dev/null 2>&1 || true
-  omarchy plugin enable "io.github.woogy7.vitals" >/dev/null 2>&1 || true
-  omarchy plugin disable "harshith.system-monitor" >/dev/null 2>&1 || true
-  omarchy plugin disable "${u}.memory" >/dev/null 2>&1 || true
-  omarchy plugin disable "omarchy.memory" >/dev/null 2>&1 || true
-  projector_panel="$CFG/omarchy/plugins/io.github.jeffcortez23.omarchy-projector-cast/Panel.qml"
-  if [[ -f "$projector_panel" ]]; then
-    sed -i \
-      -e 's/Style\.radius(6)/Style.cornerRadius/g' \
-      -e 's/foreground: root\.gndRunning ? Color\.accent : (root\.presentationMode ? Color\.accent : (root\.bar ? root\.bar\.foreground : Color\.foreground))/foreground: Color.accent/' \
-      "$projector_panel"
-  fi
-  omarchy plugin disable "${u}.monitor" >/dev/null 2>&1 || true
-  omarchy plugin disable "omarchy.monitor" >/dev/null 2>&1 || true
-  omarchy plugin enable "onlyvishesh.power-manager" >/dev/null 2>&1 || true
-  omarchy plugin disable "${u}.power" >/dev/null 2>&1 || true
-  omarchy plugin disable "omarchy.power" >/dev/null 2>&1 || true
-  omarchy plugin enable "io.github.erikburdett.wavebar" >/dev/null 2>&1 || true
-  omarchy plugin enable "ssupt.audio-control" >/dev/null 2>&1 || true
-  omarchy plugin disable "${u}.audio" >/dev/null 2>&1 || true
-  omarchy plugin disable "omarchy.audio" >/dev/null 2>&1 || true
-  omarchy plugin enable "ssupt.bluetooth-audio" >/dev/null 2>&1 || true
-  omarchy plugin disable "${u}.bluetooth" >/dev/null 2>&1 || true
-  omarchy plugin enable "io.github.tyrichards.workspaces-jap" >/dev/null 2>&1 || true
-  omarchy plugin disable "${u}.workspaces" >/dev/null 2>&1 || true
-  omarchy plugin disable "omarchy.workspaces" >/dev/null 2>&1 || true
-  omarchy plugin enable "io.github.adamcbrewer.voxtype-aura" >/dev/null 2>&1 || true
-  omarchy plugin enable "${u}.island-bar" >/dev/null 2>&1 || true
-  omarchy plugin disable "omarchy.bar" >/dev/null 2>&1 || true
-  omarchy plugin disable "mscurtescu.island-bar" >/dev/null 2>&1 || true
-  for u_widget in clock weather cputemp indicators active-window menu system-update network microphone; do
-    omarchy plugin enable "${u}.${u_widget}" >/dev/null 2>&1 || true
-    omarchy plugin disable "omarchy.${u_widget}" >/dev/null 2>&1 || true
-  done
-fi
-
-  # Activate Virtual Paradise Fastfetch config
-  if [[ -f "$CFG/fastfetch/virtual-paradise.jsonc" ]]; then
-    cp "$CFG/fastfetch/virtual-paradise.jsonc" "$CFG/fastfetch/config.jsonc" 2>/dev/null || true
-  fi
-
-  # Apply Virtual Paradise Bar Layout only if it changed
-  if [[ -f "$CFG/omarchy/shell-paradise.json" ]]; then
-    if ! cmp -s "$CFG/omarchy/shell-paradise.json" "$CFG/omarchy/shell.json" 2>/dev/null; then
-      cp "$CFG/omarchy/shell-paradise.json" "$CFG/omarchy/shell.json"
-      omarchy-restart-shell >/dev/null 2>&1 || true
-      sleep 1
-    fi
-  fi
-
-  # Re-enable the service after a shell layout reload, which can rebuild the
-  # plugin registry from shell.json.
-  omarchy plugin enable "io.github.adamcbrewer.voxtype-aura" >/dev/null 2>&1 || true
-
-  # Apply Virtual Paradise GTK styling
-  if [[ -f "$CFG/omarchy/themes/virtual-paradise/config/gtk.css" ]]; then
-    mkdir -p "$CFG/gtk-4.0" "$CFG/gtk-3.0"
-    cp "$CFG/omarchy/themes/virtual-paradise/config/gtk.css" "$CFG/gtk-4.0/gtk.css" 2>/dev/null || true
-    cp "$CFG/omarchy/themes/virtual-paradise/config/gtk.css" "$CFG/gtk-3.0/gtk.css" 2>/dev/null || true
-  fi
-
-  # Start live video wallpaper (only if not already running)
-  if [[ -x "$HOME/.local/bin/toggle_live_wallpaper.sh" ]]; then
-    if ! pgrep -f mpvpaper >/dev/null 2>&1; then
-      ("$HOME/.local/bin/toggle_live_wallpaper.sh" init >/dev/null 2>&1 &)
-    fi
-  fi
+# Copy the hook template from lib/ to the Omarchy hooks directory.
+# The hook runs when the active theme changes and handles plugin state,
+# overrides, GTK styling, and live wallpaper lifecycle.
+if [[ -f "$REPO_DIR/lib/theme-set-hook.sh" ]]; then
+  cp "$REPO_DIR/lib/theme-set-hook.sh" "$CONFIG_DIR/omarchy/hooks/theme-set.d/virtual-paradise.sh"
+  chmod +x "$CONFIG_DIR/omarchy/hooks/theme-set.d/virtual-paradise.sh"
+  log_sub "Installed post-theme-set hook for plugin & widget lifecycle management"
 else
-  # Restore the Display & Scaling widget outside this theme.
-  if command -v omarchy >/dev/null 2>&1; then
-    u="${USER:-$(id -un)}"
-    omarchy plugin disable "crmne.hyprmoncfg" >/dev/null 2>&1 || true
-    omarchy plugin disable "io.github.jeffcortez23.omarchy-projector-cast" >/dev/null 2>&1 || true
-    omarchy plugin disable "harshith.system-monitor" >/dev/null 2>&1 || true
-    omarchy plugin enable "omarchy.memory" >/dev/null 2>&1 || true
-    omarchy plugin enable "omarchy.monitor" >/dev/null 2>&1 || true
-    omarchy plugin disable "onlyvishesh.power-manager" >/dev/null 2>&1 || true
-    omarchy plugin enable "omarchy.power" >/dev/null 2>&1 || true
-    omarchy plugin disable "io.github.erikburdett.wavebar" >/dev/null 2>&1 || true
-    # Disable ours, then enable the stock one. Chaining these with `||` meant
-    # the fallback only ran when the disable *failed*, so switching away from
-    # Virtual Paradise left the bar with no audio widget at all.
-    omarchy plugin disable "ssupt.audio-control" >/dev/null 2>&1 || true
-    omarchy plugin enable "omarchy.audio" >/dev/null 2>&1 || true
-    omarchy plugin disable "ssupt.bluetooth-audio" >/dev/null 2>&1 || true
-    omarchy plugin enable "omarchy.bluetooth" >/dev/null 2>&1 || true
-    omarchy plugin disable "io.github.tyrichards.workspaces-jap" >/dev/null 2>&1 || true
-    omarchy plugin enable "omarchy.workspaces" >/dev/null 2>&1 || true
-    omarchy plugin disable "io.github.adamcbrewer.voxtype-aura" >/dev/null 2>&1 || true
-    omarchy plugin disable "mscurtescu.island-bar" >/dev/null 2>&1 || true
-    omarchy plugin enable "omarchy.bar" >/dev/null 2>&1 || true
-    for u_widget in clock weather cputemp indicators active-window menu system-update network microphone; do
-      omarchy plugin disable "${u}.${u_widget}" >/dev/null 2>&1 || true
-      omarchy plugin enable "omarchy.${u_widget}" >/dev/null 2>&1 || true
-    done
-    omarchy plugin enable "omarchy.agents" >/dev/null 2>&1 || true
-    omarchy plugin enable "omarchy.keyboard-layout" >/dev/null 2>&1 || true
-    omarchy plugin enable "omarchy.tray" >/dev/null 2>&1 || true
-  fi
-
-  # Cleanly stop live video wallpaper so new theme background displays properly
-  pkill -f mpvpaper 2>/dev/null || true
-
-  # Restore default Fastfetch (Arch/Omarchy logo with native terminal colors)
-  rm -f "$CFG/fastfetch/config.jsonc" 2>/dev/null || true
-
-  # Restore default GTK CSS so other themes keep their native look
-  if [[ -f "$CFG/gtk-4.0/gtk.css.bak_default" ]] && ! grep -q "Virtual" "$CFG/gtk-4.0/gtk.css.bak_default"; then
-    cp "$CFG/gtk-4.0/gtk.css.bak_default" "$CFG/gtk-4.0/gtk.css" 2>/dev/null || true
-  else
-    rm -f "$CFG/gtk-4.0/gtk.css" "$CFG/gtk-4.0/gtk.css.bak_default" 2>/dev/null || true
-  fi
-  if [[ -f "$CFG/gtk-3.0/gtk.css.bak_default" ]] && ! grep -q "Virtual" "$CFG/gtk-3.0/gtk.css.bak_default"; then
-    cp "$CFG/gtk-3.0/gtk.css.bak_default" "$CFG/gtk-3.0/gtk.css" 2>/dev/null || true
-  else
-    rm -f "$CFG/gtk-3.0/gtk.css" "$CFG/gtk-3.0/gtk.css.bak_default" 2>/dev/null || true
-  fi
-
-  # Restore canonical default Omarchy Bar Layout only if it changed
-  if [[ -f "$CFG/omarchy/shell-default.json" ]]; then
-    if ! cmp -s "$CFG/omarchy/shell-default.json" "$CFG/omarchy/shell.json" 2>/dev/null; then
-      cp "$CFG/omarchy/shell-default.json" "$CFG/omarchy/shell.json"
-      omarchy-restart-shell >/dev/null 2>&1 || true
-    fi
-  fi
+  log_warn "Theme-set hook template not found at $REPO_DIR/lib/theme-set-hook.sh"
 fi
-EOF
-chmod +x "$CONFIG_DIR/omarchy/hooks/theme-set.d/virtual-paradise.sh"
-log_sub "Theme assets & automatic synchronization hooks ready"
 
 # Daily read-only update check. Deliberately does NOT update: applying an
 # update restarts the shell, so that stays a deliberate, typed action.
