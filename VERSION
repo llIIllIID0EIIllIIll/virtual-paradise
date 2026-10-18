@@ -1,0 +1,8 @@
+# Virtual☆Paradise Version
+#
+# Semantic versioning: MAJOR.MINOR.PATCH
+# - MAJOR: Breaking changes (plugin API changes, major refactors)
+# - MINOR: New features (new widgets, new wallpapers, new functionality)
+# - PATCH: Bug fixes and minor improvements
+
+1.1.0
