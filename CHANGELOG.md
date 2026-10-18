@@ -114,3 +114,11 @@ Conventional Commits.
 First public release of Virtual☆Paradise: a neon cyberpunk Omarchy desktop rice
 with animated wallpapers, themed bar widgets, Plymouth/SDDM boot splash, and
 full installer/uninstaller.
+
+---
+
+## Links
+
+- [Unreleased]: https://github.com/llIIllIID0EIIllIIll/virtual-paradise/compare/v1.2.0...HEAD
+- [1.2.0]: https://github.com/llIIllIID0EIIllIIll/virtual-paradise/compare/v1.1.0...v1.2.0
+- [1.1.0]: https://github.com/llIIllIID0EIIllIIll/virtual-paradise/compare/v1.0.0...v1.1.0
