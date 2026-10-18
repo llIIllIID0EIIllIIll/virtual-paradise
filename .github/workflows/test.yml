@@ -1,3 +1,12 @@
+# ==============================================================================
+#  Virtual☆Paradise — CI Test Matrix
+# ==============================================================================
+#  Runs the 85-assertion test suite on Ubuntu and Arch Linux, plus a static
+#  lint pass. Arch is where most users install this theme, so it matters for
+#  catching package name and path drift. Ubuntu is the GitHub-hosted runner
+#  and keeps CI fast for PRs.
+# ==============================================================================
+
 name: test
 
 on:
@@ -7,8 +16,83 @@ on:
   workflow_dispatch:
 
 jobs:
-  suite:
-    name: TC-1..TC-9 (85 assertions)
+  # --------------------------------------------------------------------------
+  #  Lint: static analysis on every shell, JSON and TOML file.
+  # --------------------------------------------------------------------------
+  lint:
+    name: Lint (shellcheck + JSON/TOML)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install linters
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y shellcheck python3
+
+      - name: ShellCheck — install.sh
+        run: shellcheck -x -S warning install.sh
+
+      - name: ShellCheck — uninstall.sh
+        run: shellcheck -x -S warning uninstall.sh
+
+      - name: ShellCheck — lib/*.sh
+        run: shellcheck -x -S warning lib/*.sh
+
+      - name: ShellCheck — bin/*.sh (warnings only)
+        run: shellcheck -x -S warning bin/*.sh || true
+
+      - name: ShellCheck — tools/*.sh
+        run: shellcheck -x -S warning tools/*.sh
+
+      - name: Validate JSON files
+        run: |
+          python3 -c "
+          import json, sys
+          from pathlib import Path
+          errors = []
+          for f in Path('.').rglob('*.json'):
+              if '.git' in f.parts:
+                  continue
+              try:
+                  json.loads(f.read_text())
+              except Exception as e:
+                  errors.append(f'{f}: {e}')
+          if errors:
+              for e in errors: print(f'  ✗ {e}')
+              sys.exit(1)
+          print('✓ All JSON files valid')
+          "
+
+      - name: Validate TOML files
+        run: |
+          python3 -c "
+          import sys
+          from pathlib import Path
+          try:
+              import tomllib
+          except ModuleNotFoundError:
+              print('tomllib not available (Python < 3.11), skipping')
+              sys.exit(0)
+          errors = []
+          for f in Path('.').rglob('*.toml'):
+              if '.git' in f.parts:
+                  continue
+              try:
+                  tomllib.loads(f.read_text())
+              except Exception as e:
+                  errors.append(f'{f}: {e}')
+          if errors:
+              for e in errors: print(f'  ✗ {e}')
+              sys.exit(1)
+          print('✓ All TOML files valid')
+          "
+
+  # --------------------------------------------------------------------------
+  #  Test suite on Ubuntu (GitHub-hosted runner, fast).
+  # --------------------------------------------------------------------------
+  ubuntu:
+    name: Ubuntu — TC-1..TC-9 (85 assertions)
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -17,6 +101,37 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y zsh python3 systemd shellcheck
+
+      - name: Run test suite
+        run: ./tests/run.sh
+
+      - name: Fail on untracked build residue
+        run: |
+          if [ -n "$(git status --porcelain)" ]; then
+            echo "::error::tests left the working tree dirty"
+            git status --porcelain
+            git --no-pager diff
+            exit 1
+          fi
+
+  # --------------------------------------------------------------------------
+  #  Test suite on Arch Linux (container, slower but production-like).
+  # --------------------------------------------------------------------------
+  arch:
+    name: Arch Linux — TC-1..TC-9 (85 assertions)
+    runs-on: ubuntu-latest
+    container:
+      image: archlinux:latest
+    steps:
+      - name: Install git (required for checkout)
+        run: pacman -Syu --noconfirm && pacman -S --noconfirm git
+
+      - uses: actions/checkout@v4
+
+      - name: Install test dependencies
+        run: |
+          pacman -S --noconfirm \
+            zsh bash python systemd shellcheck
 
       - name: Run test suite
         run: ./tests/run.sh
