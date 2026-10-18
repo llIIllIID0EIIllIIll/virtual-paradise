@@ -45,28 +45,29 @@ hl.config({
     -- Multi-pass Frosted Glass Acrylic Blur
     blur = {
       enabled = true,
-      size = 6,
+      size = 8,
       passes = 3,
       ignore_opacity = true,
       new_optimizations = true,
-      xray = false,
-      noise = 0.02,
-      contrast = 0.95,
-      brightness = 0.85,
-      vibrancy = 0.35,
-      vibrancy_darkness = 0.5,
+      xray = true,              -- Better performance, renders blur behind windows
+      noise = 0.015,            -- Reduced grain for cleaner look
+      contrast = 0.92,
+      brightness = 0.82,
+      vibrancy = 0.40,          -- Enhanced color saturation
+      vibrancy_darkness = 0.55,
       popups = true,
       popups_ignorealpha = 0.6,
     },
 
-    -- 3D Shadows
+    -- 3D Shadows with Neon Accent
     shadow = {
       enabled = true,
-      range = 20,
+      range = 25,               -- Extended range for deeper depth
       render_power = 3,
-      color = "rgba(00000066)",
-      color_inactive = "rgba(00000044)",
-      offset = "0 2",
+      color = "rgba(00000088)",  -- Stronger shadow
+      color_inactive = "rgba(00000055)",
+      offset = "0 4",            -- Slightly deeper offset
+      scale = 0.97,              -- Shadow scales down slightly
     },
 
     -- Subtle dimming for non-focused windows & overlays
@@ -190,4 +191,52 @@ local urgentInactiveGradient = {
 o.window({ tag = "error-window" }, {
   border_color = urgentBorderGradient,
   border_size = 4,
+})
+
+-- ==============================================================================
+--  11. FLOATING WINDOWS ENHANCEMENTS
+-- ==============================================================================
+-- Floating windows get extra polish: larger rounding, enhanced shadows,
+-- and special opacity treatment for that premium floating island feel
+
+o.window({ floating = true, fullscreen = false }, {
+  rounding = 16,                 -- Softer corners on floating windows
+  shadow_offset = "0 6",         -- Deeper shadow for elevation
+  shadow_range = 30,
+})
+
+-- Dialog boxes and popups get special treatment
+o.window({ class = "dialog" }, {
+  rounding = 14,
+  dim_around = 0.3,              -- Subtle dim of background
+})
+
+-- ==============================================================================
+--  12. WINDOW RESIZE ANIMATIONS
+-- ==============================================================================
+-- Smooth resize animations that follow the window movement curves
+hl.animation({ leaf = "windowsResize", enabled = true, speed = 4.5, bezier = "fluentDecel" })
+
+-- ==============================================================================
+--  13. NEON GLOW EFFECT FOR ACTIVE WINDOWS
+-- ==============================================================================
+-- Active windows get a subtle neon glow effect through enhanced border rendering
+-- The multi-stop gradient creates a flowing cyberpunk aesthetic
+local activeBorderGradient = {
+  colors = { "rgba(00ffdddd)", "rgba(00ff88cc)", "rgba(ffb7d5dd)" },
+  angle = 135,
+}
+
+o.window({ focus = true, fullscreen = false }, {
+  border_color = activeBorderGradient,
+})
+
+-- ==============================================================================
+--  14. SPECIAL WORKSPACE ENHANCEMENTS
+-- ==============================================================================
+-- Scratchpad and special workspaces get distinct visual treatment
+o.window({ workspace = "special:.*" }, {
+  rounding = 18,
+  border_size = 3,
+  opacity = 0.98,
 })
