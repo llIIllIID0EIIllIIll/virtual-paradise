@@ -299,13 +299,13 @@ gradient_color_8 = '#ffb7d5'
 ; integral = 77
 
 # Disables or enables the so-called "Monstercat smoothing" with or without "waves". Set to 0 to disable.
-; monstercat = 0
-; waves = 0
+monstercat = 1
+waves = 1
 
 # Set gravity percentage for "drop off". Higher values means bars will drop faster.
 # Accepts only non-negative values. 50 means half gravity, 200 means double. Set to 0 to disable "drop off".
 # DEPRECATED as of 0.8.0, use noise_reduction instead
-; gravity = 100
+gravity = 120
 
 
 # In bar height, bars that would have been lower that this will not be drawn.
@@ -315,7 +315,7 @@ gradient_color_8 = '#ffb7d5'
 # Noise reduction, int 0 - 100. default 77
 # the raw visualization is very noisy, this factor adjusts the integral and gravity filters to keep the signal smooth
 # 100 will be very slow and smooth, 0 will be fast but noisy.
-; noise_reduction = 77
+noise_reduction = 85
 
 
 [eq]

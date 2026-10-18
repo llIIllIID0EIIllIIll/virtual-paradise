@@ -1,11 +1,85 @@
-# Virtual☆Paradise alacritty configuration
+# ==============================================================================
+#  Virtual☆Paradise — Alacritty Configuration
+# ==============================================================================
+#  A neon cyberpunk terminal with smooth animations, frosted glass transparency,
+#  and Miku cyan accents on a deep void purple canvas.
+# ==============================================================================
 
+# --- Window -------------------------------------------------------------------
 [window]
 opacity = 0.85
+blur = true
+padding = { x = 10, y = 6 }
+dynamic_padding = true
+decorations = "Full"
+decorations_theme_variant = "Dark"
+startup_mode = "Windowed"
+dynamic_title = true
+class = { instance = "Alacritty", general = "Alacritty" }
 
+# --- Scrolling ----------------------------------------------------------------
+[scrolling]
+history = 100000
+multiplier = 4
+
+# --- Font ---------------------------------------------------------------------
+[font]
+normal = { family = "JetBrainsMono Nerd Font", style = "Regular" }
+bold = { family = "JetBrainsMono Nerd Font", style = "Bold" }
+italic = { family = "JetBrainsMono Nerd Font", style = "Italic" }
+bold_italic = { family = "JetBrainsMono Nerd Font", style = "Bold Italic" }
+size = 12.0
+offset = { x = 0, y = 2 }
+glyph_offset = { x = 0, y = 1 }
+
+# --- Cursor -------------------------------------------------------------------
+[cursor]
+style = { shape = "Beam", blinking = "On" }
+vi_mode_style = { shape = "Block", blinking = "Off" }
+blink_interval = 500
+blink_timeout = 5
+unfocused_hollow = true
+thickness = 0.2
+
+# --- Selection ----------------------------------------------------------------
+[selection]
+save_to_clipboard = true
+
+# --- Terminal -----------------------------------------------------------------
+[terminal]
+osc52 = "CopyPaste"
+
+# --- Mouse --------------------------------------------------------------------
+[mouse]
+hide_when_typing = true
+bindings = [
+  { mouse = "Middle", action = "PasteSelection" },
+]
+
+# --- Keybindings --------------------------------------------------------------
+[keyboard]
+bindings = [
+  # Font size
+  { key = "Equals", mods = "Super", action = "IncreaseFontSize" },
+  { key = "Minus", mods = "Super", action = "DecreaseFontSize" },
+  { key = "Key0", mods = "Super", action = "ResetFontSize" },
+  
+  # Clipboard
+  { key = "C", mods = "Super|Shift", action = "Copy" },
+  { key = "V", mods = "Super|Shift", action = "Paste" },
+  
+  # Quick actions
+  { key = "N", mods = "Super", action = "CreateNewWindow" },
+  { key = "Q", mods = "Super", action = "Quit" },
+  { key = "F11", action = "ToggleFullscreen" },
+]
+
+# --- Colors -------------------------------------------------------------------
 [colors.primary]
 background = "#0f081d"
 foreground = "#eafbfa"
+bright_foreground = "#ffffff"
+dim_foreground = "#9684c0"
 
 [colors.cursor]
 text = "#0f081d"
@@ -24,6 +98,18 @@ foreground = "#0f081d"
 background = "#ffb7d5"
 
 [colors.footer_bar]
+foreground = "#0f081d"
+background = "#00ffdd"
+
+[colors.hints.start]
+foreground = "#0f081d"
+background = "#ffe066"
+
+[colors.hints.end]
+foreground = "#0f081d"
+background = "#ff00ff"
+
+[colors.line_indicator]
 foreground = "#0f081d"
 background = "#00ffdd"
 
@@ -50,3 +136,19 @@ blue    = "#5effeb"
 magenta = "#ffd6e7"
 cyan    = "#70f3ff"
 white   = "#ffffff"
+
+[colors.dim]
+black   = "#0a0515"
+red     = "#cc00cc"
+green   = "#00cc6e"
+yellow  = "#ccb352"
+blue    = "#00ccaa"
+magenta = "#cc92aa"
+cyan    = "#2e9e96"
+white   = "#c5e8ea"
+
+# --- Bell ---------------------------------------------------------------------
+[bell]
+animation = "EaseOutExpo"
+duration = 150
+color = "#00ffdd"
