@@ -19,6 +19,31 @@ Conventional Commits.
 
 ---
 
+## 1.2.0 — 2026-10-18
+
+### Added
+- **Theme Variants**: 5 color schemes with live switching (cyberpunk, cozy, monochrome, neon, sakura)
+  - `bin/theme-switcher.sh` — interactive variant selector with fzf support
+  - Automatic reload of Hyprland, terminals, GTK, and widgets
+  - Custom variant support via `VARIANTS` array
+- **Floating Desktop Widgets**: eww-based widgets with toggle controls
+  - `bin/widgets.sh` — clock, system stats, weather widgets
+  - Auto-generated configs on first run
+  - Individual widget toggle or all-at-once
+- **Visual Effects Suite**: enhanced animations and feedback
+  - `bin/effects.sh` — rainbow borders, glow effect, blur toggle, shake animation
+  - Focus pulse animation on window change
+  - Non-blocking continuous effects support
+- **KEYBINDINGS.md**: comprehensive keybinding documentation
+  - New bindings: `SUPER + SHIFT + T` (theme switcher), `SUPER + W` (widgets), `SUPER + SHIFT + E` (blur toggle)
+- **README.md**: updated with new features section and usage examples
+
+### Changed
+- Bumped version to 1.2.0 (minor release with new features)
+- Enhanced README with visual effects and widget documentation
+
+---
+
 ## 2026-10-12
 
 ### Fixed
