@@ -54,6 +54,40 @@ Every surface follows the same neon pastel palette:
 - **Boot**: Plymouth splash with Miku animation, SDDM login theme
 - **Editors**: Micro, VS Code, btop all follow the palette
 
+### 🎭 Theme Variants (NEW!)
+
+Switch between 5 color schemes on-the-fly with `SUPER + SHIFT + T`:
+
+- **Cyberpunk** (default) — Miku cyan, neon magenta, hacker green on deep void
+- **Cozy** — Warm peach, cream, soft yellow for relaxed sessions
+- **Monochrome** — Pure white, grays, black for minimal aesthetic
+- **Neon** — Bright cyan, magenta, yellow for maximum vibrancy
+- **Sakura** — Pink variants for cherry blossom vibes
+
+Theme switching is live — no restart needed. Colors update across Hyprland, terminals, GTK, and all widgets instantly.
+
+### 🏝️ Floating Desktop Widgets (NEW!)
+
+Add floating widgets to your desktop with `SUPER + W`:
+
+- **Clock Widget** — Large time/date display (customizable position)
+- **System Stats** — Real-time CPU, RAM, temperature monitoring
+- **Weather Widget** — Current weather with auto-updates
+
+Widgets use `eww` for lightweight, fast rendering. Auto-generated configs on first run. Toggle all at once or select individually from the widget menu (`SUPER + SHIFT + W`).
+
+### ✨ Visual Effects (NEW!)
+
+Enhanced animations and visual feedback:
+
+- **Rainbow Borders** — Animated cycling gradient borders (run `effects.sh rainbow`)
+- **Glow Effect** — Pulsing shadow glow on active window (run `effects.sh glow`)
+- **Toggle Blur** — Switch between performance and aesthetic modes (`SUPER + SHIFT + E`)
+- **Shake Animation** — Window shake on error (`SUPER + ALT + E`)
+- **Focus Pulse** — Flash border on window focus change
+
+All effects are non-blocking and can run continuously in the background.
+
 ### 🔧 Smart Installer
 
 Idempotent, XDG-compliant, and respects your existing config:
