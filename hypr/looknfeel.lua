@@ -125,6 +125,12 @@ hl.config({
     animate_manual_resizes = true,
     animate_mouse_windowdragging = true,
     vrr = 1,                    -- Variable refresh rate for gaming / low latency
+    mouse_move_enables_dpms = true,  -- Wake display on mouse move
+    key_press_enables_dpms = true,   -- Wake display on key press
+    always_follow_on_dnd = true,     -- Follow windows during drag-and-drop
+    layers_hog_keyboard_focus = true, -- Layers keep keyboard focus
+    middle_click_paste = true,       -- Middle click paste (Wayland native)
+    render_unfocused_fps = 15,       -- Reduce FPS for unfocused windows
   },
 
   -- 7. ANIMATIONS SWITCH
