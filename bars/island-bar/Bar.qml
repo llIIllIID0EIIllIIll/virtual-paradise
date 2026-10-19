@@ -1370,8 +1370,14 @@ Item {
       anchor {
         id: tooltipAnchor
         window: barWindow
+        // Flag enums are declared as Flags in Quickshell but qmllint only
+        // accepts a single enumerator here, so it reports the (valid at
+        // runtime) bit-or as a type error. Silence just that diagnostic.
+        // qmllint disable incompatible-type
         adjustment: PopupAdjustment.Slide
+        // qmllint disable incompatible-type
         edges: Edges.Top | Edges.Left
+        // qmllint disable incompatible-type
         gravity: Edges.Bottom | Edges.Right
         rect.width: 1
         rect.height: 1
