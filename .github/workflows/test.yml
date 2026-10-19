@@ -112,7 +112,24 @@ jobs:
           sudo apt-get install -y zsh python3 systemd shellcheck
 
       - name: Run test suite
-        run: ./tests/run.sh
+        run: |
+          set -o pipefail
+          ./tests/run.sh 2>&1 | tee "$RUNNER_TEMP/tests.log"
+
+      - name: Annotate failing assertions
+        if: failure()
+        run: |
+          # The raw job log needs repository authentication to read, while
+          # check-run annotations are readable through the public API. Emit one
+          # annotation per failing assertion so a red run stays diagnosable by
+          # anyone (and by tooling) without a token.
+          [ -f "$RUNNER_TEMP/tests.log" ] || exit 0
+          sed -e 's/\x1b\[[0-9;]*m//g' "$RUNNER_TEMP/tests.log" \
+            | grep -a 'FAIL' \
+            | head -40 \
+            | while IFS= read -r line; do
+                printf '::error::%s\n' "${line#*FAIL }"
+              done || true
 
       - name: Fail on untracked build residue
         run: |
@@ -143,7 +160,24 @@ jobs:
             zsh bash python systemd shellcheck foot lua
 
       - name: Run test suite
-        run: ./tests/run.sh
+        run: |
+          set -o pipefail
+          ./tests/run.sh 2>&1 | tee "$RUNNER_TEMP/tests.log"
+
+      - name: Annotate failing assertions
+        if: failure()
+        run: |
+          # The raw job log needs repository authentication to read, while
+          # check-run annotations are readable through the public API. Emit one
+          # annotation per failing assertion so a red run stays diagnosable by
+          # anyone (and by tooling) without a token.
+          [ -f "$RUNNER_TEMP/tests.log" ] || exit 0
+          sed -e 's/\x1b\[[0-9;]*m//g' "$RUNNER_TEMP/tests.log" \
+            | grep -a 'FAIL' \
+            | head -40 \
+            | while IFS= read -r line; do
+                printf '::error::%s\n' "${line#*FAIL }"
+              done || true
 
       - name: Fail on untracked build residue
         run: |
