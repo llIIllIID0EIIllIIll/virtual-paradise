@@ -202,26 +202,29 @@ o.window({ tag = "error-window" }, {
 -- ==============================================================================
 --  11. FLOATING WINDOWS ENHANCEMENTS
 -- ==============================================================================
--- Floating windows get extra polish: larger rounding, enhanced shadows,
--- and special opacity treatment for that premium floating island feel
-
-o.window({ floating = true, fullscreen = false }, {
-  rounding = 16,                 -- Softer corners on floating windows
-  shadow_offset = "0 6",         -- Deeper shadow for elevation
-  shadow_range = 30,
+-- Floating windows get extra polish: larger rounding for that premium floating
+-- island feel. Depth/elevation is owned by decoration:shadow in the config
+-- above — `shadow_offset` / `shadow_range` are not window-rule fields, so
+-- declaring them here only produced "unknown field" config errors.
+o.window({ float = true, fullscreen = false }, {
+  rounding = 16,
 })
 
--- Dialog boxes and popups get special treatment
+-- Dialog boxes and popups get special treatment. A window rule can only turn
+-- the dim on or off (boolean); the strength itself is decoration:dim_around.
 o.window({ class = "dialog" }, {
   rounding = 14,
-  dim_around = 0.3,              -- Subtle dim of background
+  dim_around = true,
 })
 
 -- ==============================================================================
---  12. WINDOW RESIZE ANIMATIONS
+--  12. WINDOW RESIZE BEHAVIOUR
 -- ==============================================================================
--- Smooth resize animations that follow the window movement curves
-hl.animation({ leaf = "windowsResize", enabled = true, speed = 4.5, bezier = "fluentDecel" })
+-- Hyprland has no dedicated "resize" animation leaf (valid leaves are
+-- windows/windowsIn/windowsOut/windowsMove, border, fade*, layers*,
+-- workspaces*, specialWorkspace, zoomFactor, borderangle). Interactive resizes
+-- follow the windowsMove curve and misc:animate_manual_resizes above, so an
+-- extra leaf here was both invalid and redundant.
 
 -- ==============================================================================
 --  13. NEON GLOW EFFECT FOR ACTIVE WINDOWS
