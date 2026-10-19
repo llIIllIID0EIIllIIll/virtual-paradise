@@ -250,6 +250,27 @@ run_privileged() {
   fi
 }
 
+# Mirror or merge a directory tree. rsync is in the package list and step 1
+# installs it, but --user-only runs, containers and non-Omarchy distros may not
+# have it; a missing tool must not turn into a silent half-install.
+sync_tree() {
+  local src="$1" dst="$2" mode="${3:-merge}"
+  mkdir -p "$dst"
+  if command -v rsync >/dev/null 2>&1; then
+    if [[ $mode == mirror ]]; then
+      rsync -a --delete "$src"/ "$dst"/
+    else
+      rsync -a "$src"/ "$dst"/
+    fi
+    return 0
+  fi
+  if [[ $mode == mirror ]]; then
+    rm -rf "${dst:?}"
+    mkdir -p "$dst"
+  fi
+  cp -a "$src"/. "$dst"/
+}
+
 # Hardware detection, package installation and per-vendor setup. Sourced here so
 # those functions exist before step 1 calls them, and after the helpers above,
 # which they use.
@@ -519,7 +540,7 @@ INSTALL_AND_ENABLE_PLUGINS() {
         # --delete, not cp: a file we rename or drop upstream would otherwise
         # linger here forever and keep loading, reintroducing removed widgets or
         # double-registering an IPC handler against the current one.
-        rsync -a --delete "$pdir"/ "$target_dir"/
+        sync_tree "$pdir" "$target_dir" mirror
 
         # Dynamically update __USER__. to active username (${CURRENT_USER}.)
         find "$target_dir" -type f \( -name "*.json" -o -name "*.qml" -o -name "*.js" \) -exec sed -i \
@@ -1008,7 +1029,8 @@ rm -f "$LOCAL_BIN/omarchy-agent" \
 if [[ -d "$REPO_DIR/bin" ]]; then
   rm -rf "$LOCAL_BIN/__pycache__" 2>/dev/null || true
   rm -f "$LOCAL_BIN/paradise_agent.py" "$LOCAL_BIN/paradise-agent" "$LOCAL_BIN/offline-agent" 2>/dev/null || true
-  rsync -a --exclude='__pycache__' "$REPO_DIR"/bin/ "$LOCAL_BIN/"
+  sync_tree "$REPO_DIR/bin" "$LOCAL_BIN"
+  rm -rf "$LOCAL_BIN/__pycache__"
   chmod +x "$LOCAL_BIN"/*.sh "$LOCAL_BIN"/*.py "$LOCAL_BIN"/momoisay "$LOCAL_BIN"/momoisay.real 2>/dev/null || true
   ln -nsf "$LOCAL_BIN/paradise_banner.py" "$LOCAL_BIN/paradise-banner" 2>/dev/null || true
   ln -nsf "$LOCAL_BIN/virtual_matrix.py" "$LOCAL_BIN/virtual_matrix" 2>/dev/null || true
@@ -1149,8 +1171,17 @@ if [[ "$REPO_DIR" != "$CONFIG_DIR/omarchy/themes/$THEME_NAME" ]]; then
   strip_args=()
   for item in "${THEME_STRIP[@]}"; do strip_args+=(--exclude="$item"); done
 
-  if ! rsync -a --delete "${strip_args[@]}" "$REPO_DIR"/ "$THEME_DEST/"; then
-    log_warn "Theme rsync failed. The theme may be incomplete — re-run the installer."
+  if command -v rsync &>/dev/null; then
+    if ! rsync -a --delete "${strip_args[@]}" "$REPO_DIR"/ "$THEME_DEST/"; then
+      log_warn "Theme rsync failed. The theme may be incomplete — re-run the installer."
+    fi
+  else
+    # No rsync: copy everything, then let the cleanup loop below strip the repo
+    # boilerplate. The theme is what the whole install delivers, so a missing
+    # tool must not leave it half-populated.
+    rm -rf "${THEME_DEST:?}"
+    mkdir -p "$THEME_DEST"
+    cp -a "$REPO_DIR"/. "$THEME_DEST"/
   fi
 
   for item in "${THEME_STRIP[@]}"; do

@@ -9,6 +9,19 @@ Conventional Commits.
 ## [Unreleased]
 
 ### Fixed
+- **The installer no longer aborts when `rsync` is missing.** `rsync` is in the
+  package list, but a `--user-only` run, a container or a non-Omarchy distro may
+  not have it. The theme, `bin/` and plugin copies now fall back to `cp -a`
+  (the theme copy used to fail and still print the success banner).
+- **The test suite now runs as root.** `systemd-analyze verify --user` prints
+  "Failed to lookup RuntimeDirectory path" / "Failed to initialize manager" when
+  there is no user systemd manager (systemd 262; systemd 255 stays quiet), and
+  TC-2 called `po_apply_all`/`update-plugins.sh` without the shim `PATH`, so it
+  needed a real `/usr/bin/omarchy` on the host. Both are environment noise, not
+  theme defects.
+- **The Arch CI job installs `rsync` and `diffutils`**, and every failing
+  assertion is now published as a check-run annotation, so a red run can be
+  diagnosed through the public API without a repository token.
 - **`install.sh --user-only` is now honoured even when running as root.**
   `EUID == 0` used to imply "sudo is available", so the flag was ignored and a
   user-space install wrote real `/etc/udev` rules, `/usr/lib/systemd` units and
