@@ -1,10 +1,16 @@
 # ==============================================================================
 #  Virtual☆Paradise — CI Test Matrix
 # ==============================================================================
-#  Runs the 85-assertion test suite on Ubuntu and Arch Linux, plus a static
+#  Runs the 89-assertion test suite on Ubuntu and Arch Linux, plus a static
 #  lint pass. Arch is where most users install this theme, so it matters for
 #  catching package name and path drift. Ubuntu is the GitHub-hosted runner
 #  and keeps CI fast for PRs.
+#
+#  The Arch job installs foot and lua on purpose: those make the config
+#  validators in TC-1 (foot --check-config, luac -p) run for real on a second
+#  machine instead of self-skipping, which is how the foot 1.28 [colors-dark]
+#  rename and the invalid Lua dispatchers were caught. ghostty is AUR-only, so
+#  its validator stays a local-only check.
 # ==============================================================================
 
 name: test
@@ -39,11 +45,14 @@ jobs:
       - name: ShellCheck — lib/*.sh
         run: shellcheck -x -S warning lib/*.sh
 
-      - name: ShellCheck — bin/*.sh (warnings only)
-        run: shellcheck -x -S warning bin/*.sh || true
+      - name: ShellCheck — bin/*.sh
+        run: shellcheck -x -S warning bin/*.sh
 
       - name: ShellCheck — tools/*.sh
         run: shellcheck -x -S warning tools/*.sh
+
+      - name: ShellCheck — tests/*.sh
+        run: shellcheck -x -S warning tests/*.sh
 
       - name: Validate JSON files
         run: |
@@ -92,7 +101,7 @@ jobs:
   #  Test suite on Ubuntu (GitHub-hosted runner, fast).
   # --------------------------------------------------------------------------
   ubuntu:
-    name: Ubuntu — TC-1..TC-9 (85 assertions)
+    name: Ubuntu — TC-1..TC-9 (89 assertions)
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -118,7 +127,7 @@ jobs:
   #  Test suite on Arch Linux (container, slower but production-like).
   # --------------------------------------------------------------------------
   arch:
-    name: Arch Linux — TC-1..TC-9 (85 assertions)
+    name: Arch Linux — TC-1..TC-9 (89 assertions)
     runs-on: ubuntu-latest
     container:
       image: archlinux:latest
@@ -131,7 +140,7 @@ jobs:
       - name: Install test dependencies
         run: |
           pacman -S --noconfirm \
-            zsh bash python systemd shellcheck
+            zsh bash python systemd shellcheck foot lua
 
       - name: Run test suite
         run: ./tests/run.sh

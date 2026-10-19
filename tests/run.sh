@@ -162,10 +162,12 @@ $(basename "$f"): $out"
   fi
 
   # Shellcheck, when present. Skipped rather than failed on machines without
-  # it, so the suite stays usable outside CI.
+  # it, so the suite stays usable outside CI. The file list mirrors the lint
+  # job in .github/workflows/test.yml; if they drift, one of the two starts
+  # reporting things the other never sees.
   if command -v shellcheck >/dev/null 2>&1; then
     scbad=$(cd "$REPO_DIR" && shellcheck -S warning -f gcc \
-      install.sh uninstall.sh lib/*.sh bin/*.sh tools/*.sh 2>&1)
+      install.sh uninstall.sh lib/*.sh bin/*.sh tools/*.sh tests/*.sh 2>&1)
     check "shellcheck reports no warnings" \
       "$([[ -z $scbad ]] && echo 0 || echo 1)" "$scbad"
   else

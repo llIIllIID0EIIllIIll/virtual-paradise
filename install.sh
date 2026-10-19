@@ -23,7 +23,6 @@ IS_HOOK=0
 ENABLE_BOOT=1
 BOOT_ONLY=0
 USER_ONLY=0
-DRY_RUN=0
 
 for arg in "$@"; do
   case "$arg" in
@@ -42,8 +41,11 @@ for arg in "$@"; do
       ENABLE_BOOT=0
       ;;
     --dry-run)
-      DRY_RUN=1
-      ENABLE_BOOT=0
+      # There is no preview mode: the installer writes to ~/.config, ~/.local
+      # and /usr/share and restarts the shell. Refuse loudly rather than look
+      # like it did nothing while changing the machine anyway.
+      printf 'install.sh: --dry-run is not supported — nothing was installed.\n' >&2
+      exit 2
       ;;
   esac
 done
@@ -136,9 +138,11 @@ RUN_AS_INSTALL_USER() {
 # failure is reported with its cause instead of a bare warning.
 LAST_PLUGIN_ERROR=""
 enable_plugin_retry() {
-  local plugin_id="$1" attempt out
+  local plugin_id="$1" out
+  local attempt=0
   LAST_PLUGIN_ERROR=""
-  for attempt in $(seq 1 15); do
+  while (( attempt < 15 )); do
+    attempt=$((attempt + 1))
     if out=$(RUN_AS_INSTALL_USER omarchy plugin enable "$plugin_id" 2>&1); then
       return 0
     fi

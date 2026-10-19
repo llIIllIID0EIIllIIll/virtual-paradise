@@ -1,29 +1,20 @@
+#!/usr/bin/env bash
 # ==============================================================================
 #  Virtual☆Paradise — Enhanced Animations & Effects
 # ==============================================================================
-#  Rainbow borders, smooth animations, and visual effects
+#  Rainbow borders, smooth animations, and visual effects.
+#
+#  Run as `effects.sh <effect>`; the functions are also safe to source.
 # ==============================================================================
 
 # Rainbow animated border (cycles through theme colors)
 # Usage: Add to hyprland.conf
 # windowrulev2 = animation rainbow, class:^(.*)$
 
-# Animation curves (smooth, spring-like)
-# Bezier curves for fluid motion
-bezier = overshot, 0.05, 0.9, 0.1, 1.05
-bezier = smoothOut, 0.36, 0, 0.66, -0.56
-bezier = smoothIn, 0.25, 1, 0.5, 1
-bezier = bounce, 0.68, -0.55, 0.265, 1.55
-bezier = easeOutCubic, 0.215, 0.61, 0.355, 1
-
-# Window animations
-animation = windows, 1, 4, overshot, slide
-animation = windowsOut, 1, 3, smoothOut, slide
-animation = windowsMove, 1, 4, easeOutCubic, slide
-animation = border, 1, 6, easeOutCubic
-animation = fade, 1, 4, smoothIn
-animation = fadeDim, 1, 4, smoothIn
-animation = workspaces, 1, 4, easeOutCubic, slidefadevert -100%
+# NOTE: the bezier curves and the window animations that used to be pasted in
+# here were hyprlang, not shell, so running this script printed a dozen
+# "command not found" errors before doing anything. They live in
+# hypr/looknfeel.lua now, which is the config Hyprland actually loads.
 
 # Rainbow border script (call this periodically)
 # This creates a cycling gradient effect
@@ -52,7 +43,8 @@ glow_effect() {
     fi
     
     # Convert to hex (50-100 range = 0.2-0.4 opacity)
-    local hex=$(printf "%02x" $((intensity * 255 / 100)))
+    local hex
+    hex=$(printf "%02x" $((intensity * 255 / 100)))
     hyprctl keyword decoration:shadow_color "rgba(00ffdd${hex})" 2>/dev/null
     
     sleep 0.1
@@ -80,7 +72,8 @@ workspace_slide() {
 
 # Focus animation (pulse border on focus change)
 focus_pulse() {
-  local current_border=$(hyprctl getoption general:col.active_border -j | jq -r '.str')
+  local current_border
+  current_border=$(hyprctl getoption general:col.active_border -j | jq -r '.str')
   
   # Flash to bright white then back
   hyprctl keyword general:col.active_border "rgb(ffffff)" 2>/dev/null
@@ -103,7 +96,8 @@ spawn_animation() {
 
 # Blur toggle (enable/disable blur for performance)
 toggle_blur() {
-  local current=$(hyprctl getoption decoration:blur:enabled -j | jq -r '.int')
+  local current
+  current=$(hyprctl getoption decoration:blur:enabled -j | jq -r '.int')
   
   if [[ "$current" == "1" ]]; then
     hyprctl keyword decoration:blur:enabled false
