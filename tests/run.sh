@@ -174,9 +174,17 @@ $(basename "$f"): $out"
     printf '  %sSKIP%s shellcheck not installed\n' "$DIM" "$OFF"
   fi
 
+  # Two kinds of line are environment noise, not unit defects:
+  #   - "Command ... is not executable": the units point at ~/.local/bin
+  #     scripts that only exist after an install.
+  #   - "Failed to lookup RuntimeDirectory path" / "Failed to initialize
+  #     manager": there is no user systemd manager in a container or a bare CI
+  #     runner. systemd 255 stays quiet there, systemd 262 (Arch) does not.
   unitbad=$(systemd-analyze verify \
     --user "$REPO_DIR"/systemd/*.service "$REPO_DIR"/systemd/*.timer 2>&1 \
-    | grep -v 'is not executable: No such file or directory')
+    | grep -v -e 'is not executable: No such file or directory' \
+                -e 'Failed to lookup RuntimeDirectory path' \
+                -e 'Failed to initialize manager')
   check "systemd units verify" "$([[ -z $unitbad ]] && echo 0 || echo 1)" "$unitbad"
 
   # A file missing its trailing newline is legal but systemd-lint-clean tools
@@ -210,7 +218,7 @@ if want tc2; then
                 "service":"runtime/$HASH/qml/core/Service.qml"}}
 EOF
 
-  out=$( HOME="$root/home" XDG_CONFIG_HOME="$root/home/.config" \
+  out=$( PATH="$root/bin:$PATH" HOME="$root/home" XDG_CONFIG_HOME="$root/home/.config" \
          PARADISE_REPO_DIR="$REPO_DIR" PARADISE_CONFIG_DIR="$root/home/.config" \
          bash -c ". '$REPO_DIR/lib/plugin-overrides.sh'; po_apply_all" 2>&1 )
   check "po_apply_all exits cleanly" "$?" "$out"
@@ -233,7 +241,7 @@ EOF
 
   # A plugin that is not installed yet must degrade, not abort. Under `set -e`
   # the old code killed the whole installer here.
-  absent=$( HOME="$root/home" XDG_CONFIG_HOME="$root/home/.config" \
+  absent=$( PATH="$root/bin:$PATH" HOME="$root/home" XDG_CONFIG_HOME="$root/home/.config" \
             PARADISE_REPO_DIR="$REPO_DIR" PARADISE_CONFIG_DIR="$root/home/.config" \
             bash -c "set -euo pipefail; . '$REPO_DIR/lib/plugin-overrides.sh'; po_resolve_entrypoint '$root/home/.config/omarchy/plugins/nope' barWidget || true" 2>&1 )
   check "po_resolve_entrypoint on a missing plugin is survivable" 0 "$absent"
@@ -244,7 +252,7 @@ EOF
   mkdir -p "$G"
   ( cd "$G" && git init -q && git config user.email t@t && git config user.name t \
     && echo a >a.qml && git add -A && git commit -qm one )
-  pinout=$( HOME="$root/home" XDG_CONFIG_HOME="$root/home/.config" \
+  pinout=$( PATH="$root/bin:$PATH" HOME="$root/home" XDG_CONFIG_HOME="$root/home/.config" \
             PARADISE_REPO_DIR="$REPO_DIR" PARADISE_CONFIG_DIR="$root/home/.config" \
             PARADISE_STATE_DIR="$root/home/.local/state/virtual-paradise" \
             bash "$REPO_DIR/bin/update-plugins.sh" --pin 2>&1 )
@@ -271,7 +279,7 @@ EOF
   # The update path reverts the layer, updates plugins, then re-applies it.
   # If re-applying after a revert does not land the override again, every
   # plugin update would quietly strip the theming.
-  po_cycle=$( HOME="$root/home" XDG_CONFIG_HOME="$root/home/.config" \
+  po_cycle=$( PATH="$root/bin:$PATH" HOME="$root/home" XDG_CONFIG_HOME="$root/home/.config" \
     PARADISE_REPO_DIR="$REPO_DIR" PARADISE_CONFIG_DIR="$root/home/.config" \
     bash -c ". '$REPO_DIR/lib/plugin-overrides.sh'; po_revert_all; po_apply_all; \
       diff -q '$REPO_DIR/overrides/ssupt.audio-control/Panel.qml' \
@@ -280,7 +288,7 @@ EOF
 
   # Revert must put the runtime file back to its pristine content.
   before=$(md5sum "$A/runtime/$HASH/qml/panels/Panel.qml" | cut -d' ' -f1)
-  HOME="$root/home" XDG_CONFIG_HOME="$root/home/.config" \
+  PATH="$root/bin:$PATH" HOME="$root/home" XDG_CONFIG_HOME="$root/home/.config" \
     PARADISE_REPO_DIR="$REPO_DIR" PARADISE_CONFIG_DIR="$root/home/.config" \
     bash -c ". '$REPO_DIR/lib/plugin-overrides.sh'; po_revert_all" >/dev/null 2>&1
   if [[ -f "$A/runtime/$HASH/qml/panels/Panel.qml" ]]; then

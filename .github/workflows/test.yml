@@ -124,12 +124,22 @@ jobs:
           # annotation per failing assertion so a red run stays diagnosable by
           # anyone (and by tooling) without a token.
           [ -f "$RUNNER_TEMP/tests.log" ] || exit 0
+          # The suite prints the failure name followed by an indented detail
+          # block; fold both into the annotation, otherwise a red run only says
+          # "install exits 0" and not why.
           sed -e 's/\x1b\[[0-9;]*m//g' "$RUNNER_TEMP/tests.log" \
-            | grep -a 'FAIL' \
-            | head -40 \
-            | while IFS= read -r line; do
-                printf '::error::%s\n' "${line#*FAIL }"
-              done || true
+            | awk '
+                /^  FAIL / {
+                  msg = $0
+                  sub(/^  FAIL /, "", msg)
+                  print "::error::" msg
+                  detail = 1
+                  next
+                }
+                /^  (PASS|SKIP) / { detail = 0 }
+                detail { print "::error::    " $0 }
+              ' \
+            | head -80 || true
 
       - name: Fail on untracked build residue
         run: |
@@ -172,12 +182,22 @@ jobs:
           # annotation per failing assertion so a red run stays diagnosable by
           # anyone (and by tooling) without a token.
           [ -f "$RUNNER_TEMP/tests.log" ] || exit 0
+          # The suite prints the failure name followed by an indented detail
+          # block; fold both into the annotation, otherwise a red run only says
+          # "install exits 0" and not why.
           sed -e 's/\x1b\[[0-9;]*m//g' "$RUNNER_TEMP/tests.log" \
-            | grep -a 'FAIL' \
-            | head -40 \
-            | while IFS= read -r line; do
-                printf '::error::%s\n' "${line#*FAIL }"
-              done || true
+            | awk '
+                /^  FAIL / {
+                  msg = $0
+                  sub(/^  FAIL /, "", msg)
+                  print "::error::" msg
+                  detail = 1
+                  next
+                }
+                /^  (PASS|SKIP) / { detail = 0 }
+                detail { print "::error::    " $0 }
+              ' \
+            | head -80 || true
 
       - name: Fail on untracked build residue
         run: |
