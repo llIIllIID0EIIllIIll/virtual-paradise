@@ -63,7 +63,15 @@ if (( EUID == 0 )); then
     CURRENT_USER="${USER:-$(id -un)}"
   fi
   SUDO_CMD=""
-  HAVE_SUDO=1
+  # --user-only is a promise not to touch system paths, and it has to hold even
+  # when the script runs as root (CI containers, `su`, the test suite). Without
+  # this, EUID==0 silently turns user-only runs into real installs: /etc/udev,
+  # /usr/lib/systemd, SDDM and Plymouth all get written.
+  if (( USER_ONLY == 1 )); then
+    HAVE_SUDO=0
+  else
+    HAVE_SUDO=1
+  fi
 else
   CURRENT_USER="${USER:-$(id -un)}"
   HAVE_SUDO=0
@@ -211,6 +219,13 @@ fi
 # hook, --user-only), so bare "$SUDO_CMD cmd" would silently run unprivileged
 # and fail halfway through the boot setup instead of being skipped cleanly.
 run_privileged() {
+  # USER_ONLY is checked before EUID: root does not override an explicit
+  # request to leave the system alone. Not going through sudo here is what
+  # keeps `install.sh --user-only` safe to run inside a container or as root.
+  if (( USER_ONLY == 1 )); then
+    log_warn "Skipping privileged step: --user-only was requested."
+    return 1
+  fi
   local can_sudo=0
   if (( EUID == 0 )); then
     can_sudo=1

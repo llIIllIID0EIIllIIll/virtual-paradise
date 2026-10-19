@@ -384,7 +384,7 @@ CONFIGURE_AI_AGENT_ENGINE() {
     log_sub "Configuring Ollama AI service for Paradise Agent..."
     if [[ -n "$SUDO_CMD" ]] && command -v sudo &>/dev/null && sudo -n true 2>/dev/null; then
       sudo systemctl enable --now ollama.service 2>/dev/null || true
-    elif (( EUID == 0 )); then
+    elif (( EUID == 0 && USER_ONLY == 0 )); then
       systemctl enable --now ollama.service 2>/dev/null || true
     elif command -v systemctl &>/dev/null; then
       systemctl --user enable --now ollama.service 2>/dev/null || true

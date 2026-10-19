@@ -9,6 +9,12 @@ Conventional Commits.
 ## [Unreleased]
 
 ### Fixed
+- **`install.sh --user-only` is now honoured even when running as root.**
+  `EUID == 0` used to imply "sudo is available", so the flag was ignored and a
+  user-space install wrote real `/etc/udev` rules, `/usr/lib/systemd` units and
+  SDDM/Plymouth themes. The Arch CI job runs the suite as root inside a
+  container, which is why Ubuntu passed and Arch failed the same tests.
+  `run_privileged` now refuses immediately when `--user-only` was requested.
 - **CI was red on every push since v1.2.0** (all three jobs). The lint job
   failed on `install.sh`, and the Ubuntu and Arch jobs failed because TC-1 runs
   shellcheck too:
