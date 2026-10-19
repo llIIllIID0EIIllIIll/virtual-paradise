@@ -8,6 +8,8 @@ Conventional Commits.
 
 ## [Unreleased]
 
+## [1.2.1] — 2026-10-19
+
 ### Fixed
 - **The installer no longer aborts when `rsync` is missing.** `rsync` is in the
   package list, but a `--user-only` run, a container or a non-Omarchy distro may
@@ -77,16 +79,15 @@ Conventional Commits.
 ### Added
 - Test coverage for the above: `luac -p` on every Lua file, `ghostty
   +validate-config`, `foot --check-config` and `hyprctl configerrors` (each
-  skipped when the tool/instance is unavailable). 88 checks, all green.
+  skipped when the tool/instance is unavailable). 89 checks with the optional
+  linters installed, 88 without `shellcheck`.
+- `CHANGELOG.md` — this file
+- `SECURITY.md` — vulnerability reporting policy
+- `tools/convert-gifs-to-mp4.sh` — optional background compression (~60 MB savings)
 
 ### Changed
 - `.gitignore` expanded: editor swap files, shell bytecode, test sandboxes
 - CI workflow name corrected to reflect the full TC-1..TC-9 matrix (was TC-1..TC-5)
-
-### Added
-- `CHANGELOG.md` — this file
-- `SECURITY.md` — vulnerability reporting policy
-- `tools/convert-gifs-to-mp4.sh` — optional background compression (~60 MB savings)
 
 ---
 
@@ -190,6 +191,7 @@ full installer/uninstaller.
 
 ## Links
 
-- [Unreleased]: https://github.com/llIIllIID0EIIllIIll/virtual-paradise/compare/v1.2.0...HEAD
+- [Unreleased]: https://github.com/llIIllIID0EIIllIIll/virtual-paradise/compare/v1.2.1...HEAD
+- [1.2.1]: https://github.com/llIIllIID0EIIllIIll/virtual-paradise/compare/v1.2.0...v1.2.1
 - [1.2.0]: https://github.com/llIIllIID0EIIllIIll/virtual-paradise/compare/v1.1.0...v1.2.0
 - [1.1.0]: https://github.com/llIIllIID0EIIllIIll/virtual-paradise/compare/v1.0.0...v1.1.0
