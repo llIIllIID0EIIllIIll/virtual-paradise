@@ -87,19 +87,23 @@ o.bind("SUPER + SHIFT + J", "Move Window Down", "hyprctl dispatch movewindow d")
 
 -- 8. WINDOW RESIZE
 --------------------------------------------------------------------------------
--- Resize mode (hold SUPER + R, then use HJKL or arrows)
-o.bind("SUPER + R", "Resize Mode", "submap, resize")
-o.submap("resize", function()
-  o.bind("H", "Resize Left", "hyprctl dispatch resizeactive -20 0")
-  o.bind("L", "Resize Right", "hyprctl dispatch resizeactive 20 0")
-  o.bind("K", "Resize Up", "hyprctl dispatch resizeactive 0 -20")
-  o.bind("J", "Resize Down", "hyprctl dispatch resizeactive 0 20")
-  o.bind("LEFT", "Resize Left", "hyprctl dispatch resizeactive -20 0")
-  o.bind("RIGHT", "Resize Right", "hyprctl dispatch resizeactive 20 0")
-  o.bind("UP", "Resize Up", "hyprctl dispatch resizeactive 0 -20")
-  o.bind("DOWN", "Resize Down", "hyprctl dispatch resizeactive 0 20")
-  o.bind("ESCAPE", "Exit Resize", "submap, reset")
-  o.bind("RETURN", "Exit Resize", "submap, reset")
+-- Resize mode (press SUPER + R, then HJKL or arrows, ESC/RETURN to leave).
+-- Submaps are first-class in the Lua config: entering one is a dispatcher
+-- (hl.dsp.submap) and the binds live in hl.define_submap. The old hyprlang
+-- strings ("submap, resize") are not dispatchers here — they were being
+-- executed as shell commands, so the submap never actually opened.
+o.bind("SUPER + R", "Resize Mode", hl.dsp.submap("resize"))
+hl.define_submap("resize", function()
+  o.bind("H", "Resize Left", hl.dsp.window.resize({ x = -20, y = 0, relative = true }), { repeating = true })
+  o.bind("L", "Resize Right", hl.dsp.window.resize({ x = 20, y = 0, relative = true }), { repeating = true })
+  o.bind("K", "Resize Up", hl.dsp.window.resize({ x = 0, y = -20, relative = true }), { repeating = true })
+  o.bind("J", "Resize Down", hl.dsp.window.resize({ x = 0, y = 20, relative = true }), { repeating = true })
+  o.bind("LEFT", "Resize Left", hl.dsp.window.resize({ x = -20, y = 0, relative = true }), { repeating = true })
+  o.bind("RIGHT", "Resize Right", hl.dsp.window.resize({ x = 20, y = 0, relative = true }), { repeating = true })
+  o.bind("UP", "Resize Up", hl.dsp.window.resize({ x = 0, y = -20, relative = true }), { repeating = true })
+  o.bind("DOWN", "Resize Down", hl.dsp.window.resize({ x = 0, y = 20, relative = true }), { repeating = true })
+  o.bind("ESCAPE", "Exit Resize", hl.dsp.submap("reset"))
+  o.bind("RETURN", "Exit Resize", hl.dsp.submap("reset"))
 end)
 
 -- 9. SCRATCHPAD & SPECIAL WORKSPACES
