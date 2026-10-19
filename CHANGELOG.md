@@ -9,6 +9,23 @@ Conventional Commits.
 ## [Unreleased]
 
 ### Fixed
+- **CI was red on every push since v1.2.0** (all three jobs). The lint job
+  failed on `install.sh`, and the Ubuntu and Arch jobs failed because TC-1 runs
+  shellcheck too:
+  - `bin/effects.sh` was a shell script with twelve hyprlang lines (`bezier = …`,
+    `animation = …`) pasted at the top and no shebang, so running
+    `effects.sh rainbow` printed a dozen "command not found" errors first.
+    The animations now live only in `hypr/looknfeel.lua`.
+  - `bin/theme-switcher.sh`: `echo "Available: ${!VARIANTS[@]}"` mixed a string
+    with an array (SC2145) plus three masked `local x=$(…)` assignments.
+  - `install.sh`: the `--dry-run` flag set a variable nothing read, and a retry
+    loop's counter was unused. `--dry-run` is gone — it now says so and exits 2
+    rather than looking like a preview while installing for real.
+- The lint job no longer tolerates `bin/*.sh` with `|| true` (it hid real
+  errors), and lints `tests/*.sh` as well; TC-1 checks the same file list.
+- The Arch CI job installs `foot` and `lua` so the `foot --check-config` and
+  `luac -p` validators run on a second machine instead of self-skipping — that
+  is what would have caught the foot 1.28 rename before a user did.
 - **Hyprland config errors** (`hyprctl configerrors` is now empty):
   - `hypr/bindings.lua`: the resize submap used the retired hyprlang strings
     (`"submap, resize"`), which the Lua config executes as a shell command, so

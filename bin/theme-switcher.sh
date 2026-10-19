@@ -37,7 +37,8 @@ get_current_variant() {
 
 list_variants() {
   echo "Available theme variants:"
-  local current=$(get_current_variant)
+  local current
+  current=$(get_current_variant)
   for variant in "${!VARIANTS[@]}"; do
     if [[ "$variant" == "$current" ]]; then
       echo "  ✓ $variant (current)"
@@ -52,7 +53,7 @@ apply_variant() {
   
   if [[ -z "${VARIANTS[$variant]:-}" ]]; then
     echo "Unknown variant: $variant"
-    echo "Available: ${!VARIANTS[@]}"
+    echo "Available: ${!VARIANTS[*]}"
     exit 1
   fi
   
@@ -111,7 +112,8 @@ apply_variant() {
 }
 
 interactive_menu() {
-  local current=$(get_current_variant)
+  local current
+  current=$(get_current_variant)
   
   echo "Virtual☆Paradise Theme Switcher"
   echo "================================"
@@ -138,7 +140,8 @@ interactive_menu() {
   
   # Try to use fzf if available
   if command -v fzf &>/dev/null; then
-    local selected=$(printf '%s\n' "${options[@]}" | fzf --prompt="Select variant: " --height=40% --reverse)
+    local selected
+    selected=$(printf '%s\n' "${options[@]}" | fzf --prompt="Select variant: " --height=40% --reverse)
     if [[ -n "$selected" ]]; then
       apply_variant "$selected"
     fi
