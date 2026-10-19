@@ -370,9 +370,15 @@ po_apply_repo_overrides() {
     po_touch_existing io.github.jeffcortez23.omarchy-projector-cast "$proj"
     sed -i 's/Style\.radius(6)/Style.cornerRadius/g' "$proj"
     sed -i 's/foreground: root\.gndRunning ? Color\.accent : (root\.presentationMode ? Color\.accent : (root\.bar ? root\.bar\.foreground : Color\.foreground))/foreground: Color.accent/' "$proj"
-    grep -q 'Style\.radius(6)' "$proj" \
-      && po_log "plugin-overrides: projector-cast radius patch did not match $proj (upstream changed?)"
+    if grep -q 'Style\.radius(6)' "$proj"; then
+      po_log "plugin-overrides: projector-cast radius patch did not match $proj (upstream changed?)"
+    fi
   fi
+
+  # Never let a no-op patch (grep found nothing, file missing, ...) propagate a
+  # non-zero status: install.sh runs under `set -e`, so a stray `1` from the
+  # last command in this function used to abort the whole install mid-way.
+  return 0
 }
 
 # Applied after every plugin add so that a freshly cloned plugin directory gets
