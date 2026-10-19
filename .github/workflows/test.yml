@@ -166,8 +166,13 @@ jobs:
 
       - name: Install test dependencies
         run: |
+          # rsync and diffutils are part of a normal Omarchy install (rsync is
+          # in lib/system.sh's package list, diff is used by the suite), but the
+          # archlinux image is minimal. Without them the installer's rsync calls
+          # and TC-2's diff -q fail for reasons that have nothing to do with the
+          # theme.
           pacman -S --noconfirm \
-            zsh bash python systemd shellcheck foot lua
+            zsh bash python systemd shellcheck foot lua rsync diffutils
 
       - name: Run test suite
         run: |
