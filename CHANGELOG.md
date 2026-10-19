@@ -8,6 +8,35 @@ Conventional Commits.
 
 ## [Unreleased]
 
+### Fixed
+- **Hyprland config errors** (`hyprctl configerrors` is now empty):
+  - `hypr/bindings.lua`: the resize submap used the retired hyprlang strings
+    (`"submap, resize"`), which the Lua config executes as a shell command, so
+    the submap never opened. Rewritten with `hl.dsp.submap` /
+    `hl.define_submap` and native `hl.dsp.window.resize` dispatchers.
+  - `hypr/looknfeel.lua`: `floating` is not a window-rule matcher (it is
+    `float`), `shadow_offset` / `shadow_range` are decoration options rather
+    than rule fields, `dim_around` is a boolean rule, and `windowsResize` is
+    not a valid animation leaf. All four produced entries in Hyprland's
+    config-error overlay.
+- **Terminal configs**: `ghostty.conf` declared three fields Ghostty does not
+  have (`cursor-click-to-place`, `letter-spacing`, `line-height`) — Ghostty
+  showed its "Configuration Errors" dialog on every start. `foot.ini` used the
+  pre-1.28 `[colors]` section (now `[colors-dark]`/`[colors-light]`), plus the
+  removed `protocols`/`uri-characters` options and a non-existent `center`.
+- **Installer**: `po_apply_repo_overrides()` ended on a `grep -q … && po_log`
+  list, so a correctly patched (or absent) file returned 1 and `set -e` aborted
+  `install.sh` in the middle of the plugin step.
+- **Installer**: plugin enablement right after `omarchy restart shell` could
+  race plugin discovery and fail once; it now retries before warning.
+- `bars/island-bar/Bar.qml`: annotated the `PopupAnchor` flag-enum assignments
+  so qmllint no longer flags valid runtime code.
+
+### Added
+- Test coverage for the above: `luac -p` on every Lua file, `ghostty
+  +validate-config`, `foot --check-config` and `hyprctl configerrors` (each
+  skipped when the tool/instance is unavailable). 88 checks, all green.
+
 ### Changed
 - `.gitignore` expanded: editor swap files, shell bytecode, test sandboxes
 - CI workflow name corrected to reflect the full TC-1..TC-9 matrix (was TC-1..TC-5)

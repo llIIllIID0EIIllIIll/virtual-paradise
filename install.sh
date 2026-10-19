@@ -129,6 +129,22 @@ RUN_AS_INSTALL_USER() {
   fi
 }
 
+# `omarchy restart shell` returns as soon as the old shell is signalled, so a
+# plugin enable issued straight afterwards can hit a shell that does not answer
+# IPC yet and fail once with something like "unknown plugin". Retry briefly
+# instead of reporting a spurious failure (and leaving the notification centre
+# off until the next theme switch).
+enable_plugin_retry() {
+  local plugin_id="$1" attempt
+  for attempt in 1 2 3 4 5; do
+    if RUN_AS_INSTALL_USER omarchy plugin enable "$plugin_id" >/dev/null 2>&1; then
+      return 0
+    fi
+    sleep 1
+  done
+  return 1
+}
+
 
 # Color helpers
 C_CYAN="\033[38;2;0;245;212m"
@@ -713,7 +729,7 @@ if [[ -f "$REPO_DIR/shell/shell.json" ]]; then
   # external notification center after the layout is installed.
   if command -v omarchy &>/dev/null; then
     po_apply_all
-    RUN_AS_INSTALL_USER omarchy plugin enable "jankeesvw.notification-center" 2>/dev/null || \
+    enable_plugin_retry "jankeesvw.notification-center" || \
       log_warn "Notification center could not be enabled after shell layout sync."
     RUN_AS_INSTALL_USER omarchy plugin enable "crmne.hyprmoncfg" 2>/dev/null || \
       log_warn "hyprmoncfg could not be enabled after shell layout sync."
@@ -1403,10 +1419,10 @@ if [[ $IS_HOOK -eq 0 ]]; then
 
     # Theme activation can restart the shell and briefly race plugin
     # discovery, so enforce the notification center state last.
-    RUN_AS_INSTALL_USER omarchy plugin enable "jankeesvw.notification-center" 2>/dev/null || \
+    enable_plugin_retry "jankeesvw.notification-center" || \
       log_warn "Notification center could not be enabled after theme activation."
-    RUN_AS_INSTALL_USER omarchy plugin enable "crmne.hyprmoncfg" 2>/dev/null || true
-    RUN_AS_INSTALL_USER omarchy plugin enable "onlyvishesh.power-manager" 2>/dev/null || true
+    enable_plugin_retry "crmne.hyprmoncfg" || true
+    enable_plugin_retry "onlyvishesh.power-manager" || true
     RUN_AS_INSTALL_USER omarchy plugin disable "${CURRENT_USER}.power" 2>/dev/null || true
     RUN_AS_INSTALL_USER omarchy plugin disable "omarchy.power" 2>/dev/null || true
   fi

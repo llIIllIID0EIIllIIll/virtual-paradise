@@ -35,13 +35,20 @@ if want tc1; then
   check "every shell script parses under bash -n" \
     "$([[ ${#bad[@]} -eq 0 ]] && echo 0 || echo 1)" "${bad[*]:-}"
 
-  bad=()
-  while IFS= read -r f; do
-    zsh -n "$f" 2>/dev/null || bad+=("$f")
-  done < <(find "$REPO_DIR" -path "$REPO_DIR/.git" -prune -o -name "*.lua" -print)
-  # bindings.lua and friends are Hyprland config, not shell; only check the
-  # shell-adjacent ones we actually own.
-  check "hyprland lua files are parseable" 0
+  # Hyprland's config is Lua, so "parseable" means a real Lua syntax check, not
+  # `zsh -n`. A syntax error here is exactly what lands the user in Hyprland's
+  # config-error overlay. luac ships with lua/luajit; without one we skip.
+  luac_bin="$(command -v luac || command -v luac5.4 || command -v luac5.1 || true)"
+  if [[ -n $luac_bin ]]; then
+    luabad=()
+    while IFS= read -r f; do
+      "$luac_bin" -p "$f" 2>/dev/null || luabad+=("$f")
+    done < <(find "$REPO_DIR" -path "$REPO_DIR/.git" -prune -o -name "*.lua" -print)
+    check "hyprland lua files are parseable" \
+      "$([[ ${#luabad[@]} -eq 0 ]] && echo 0 || echo 1)" "${luabad[*]:-}"
+  else
+    printf '  %sSKIP%s luac not installed\n' "$DIM" "$OFF"
+  fi
 
   pybad=()
   while IFS= read -r f; do
@@ -120,6 +127,38 @@ $(basename "$f"): $out"
       "$([[ -z $qmlbad ]] && echo 0 || echo 1)" "$qmlbad"
   else
     printf '  %sSKIP%s qmllint not installed\n' "$DIM" "$OFF"
+  fi
+
+  # Terminal emulator configs, validated by the emulator that reads them. These
+  # are hand-written and the failure mode is a GUI dialog ("Configuration
+  # Errors") rather than a broken build, so check them here. Ghostty prints
+  # unknown fields on stdout and still exits 0, and foot stops at the first bad
+  # option, so parse the output instead of the exit status.
+  if command -v ghostty >/dev/null 2>&1; then
+    gbad=$(ghostty +validate-config --config-file="$REPO_DIR/config/terminal/ghostty.conf" 2>&1)
+    check "ghostty.conf has no unknown fields" \
+      "$([[ -z $gbad ]] && echo 0 || echo 1)" "$gbad"
+  else
+    printf '  %sSKIP%s ghostty not installed\n' "$DIM" "$OFF"
+  fi
+
+  if command -v foot >/dev/null 2>&1; then
+    fbad=$(foot --check-config --config="$REPO_DIR/config/terminal/foot.ini" 2>&1)
+    check "foot.ini has no invalid options" \
+      "$([[ -z $fbad ]] && echo 0 || echo 1)" "$fbad"
+  else
+    printf '  %sSKIP%s foot not installed\n' "$DIM" "$OFF"
+  fi
+
+  # Hyprland itself is the authority on its own Lua config: `hyprctl
+  # configerrors` returns everything it rejected on the last load. Only
+  # meaningful while a compositor instance is running, so skip otherwise.
+  if command -v hyprctl >/dev/null 2>&1 && [[ -n ${HYPRLAND_INSTANCE_SIGNATURE:-} ]]; then
+    hbad=$(hyprctl configerrors 2>/dev/null | sed '/^[[:space:]]*$/d' || true)
+    check "the running Hyprland reports no config errors" \
+      "$([[ -z $hbad ]] && echo 0 || echo 1)" "$hbad"
+  else
+    printf '  %sSKIP%s no running Hyprland instance\n' "$DIM" "$OFF"
   fi
 
   # Shellcheck, when present. Skipped rather than failed on machines without
