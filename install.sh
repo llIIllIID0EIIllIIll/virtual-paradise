@@ -129,17 +129,20 @@ RUN_AS_INSTALL_USER() {
   fi
 }
 
-# `omarchy restart shell` returns as soon as the old shell is signalled, so a
-# plugin enable issued straight afterwards can hit a shell that does not answer
-# IPC yet and fail once with something like "unknown plugin". Retry briefly
-# instead of reporting a spurious failure (and leaving the notification centre
-# off until the next theme switch).
+# `omarchy restart shell` returns as soon as the old shell is signalled, and the
+# replacement answers "omarchy-shell is not responding" for the first few
+# seconds, so a plugin enable issued straight afterwards fails even though the
+# plugin exists. Retry for up to ~15s, and keep the last error message so a real
+# failure is reported with its cause instead of a bare warning.
+LAST_PLUGIN_ERROR=""
 enable_plugin_retry() {
-  local plugin_id="$1" attempt
-  for attempt in 1 2 3 4 5; do
-    if RUN_AS_INSTALL_USER omarchy plugin enable "$plugin_id" >/dev/null 2>&1; then
+  local plugin_id="$1" attempt out
+  LAST_PLUGIN_ERROR=""
+  for attempt in $(seq 1 15); do
+    if out=$(RUN_AS_INSTALL_USER omarchy plugin enable "$plugin_id" 2>&1); then
       return 0
     fi
+    LAST_PLUGIN_ERROR="$out"
     sleep 1
   done
   return 1
@@ -357,17 +360,21 @@ po_install_island_bar() {
   # Substitute the repo's __USER__ placeholder so the deployed manifest carries
   # the installing user's plugin id. Stage through a user-owned temp dir: the
   # destination may be root-owned and not writable without elevation.
-  local stage f
+  local stage f src
   stage="$(mktemp -d)" || {
     log_warn "Could not create staging dir — skipping Paradise Island Bar."
     return 1
   }
 
-  for f in manifest.json Bar.qml BarModel.js IslandBackdrop.qml; do
-    [[ -f "$src_dir/$f" ]] || continue
-    sed "s/__USER__/${CURRENT_USER}/g" "$src_dir/$f" >"$stage/$f" 2>/dev/null || {
+  # Every file the bundle ships, rather than a hand-maintained subset: a QML
+  # component added to bars/island-bar/ has to reach the deployed copy, or the
+  # bar ends up importing a component that is not installed alongside it.
+  for src in "$src_dir"/*.qml "$src_dir"/*.js "$src_dir"/*.json; do
+    [[ -f $src ]] || continue
+    f="$(basename "$src")"
+    sed "s/__USER__/${CURRENT_USER}/g" "$src" >"$stage/$f" 2>/dev/null || {
       rm -rf "$stage"
-      log_warn "Could not render $src_dir/$f"
+      log_warn "Could not render $src"
       return 1
     }
     if ! run_privileged cp "$stage/$f" "$dest_dir/$f" 2>/dev/null; then
@@ -671,8 +678,8 @@ EXTRA_PLUGINS
       po_install_island_bar || true
       # The stock tray reserves its whole drawer width by design; shrinking it
       # is not a one-line change, see patch_system_tray.
-      RUN_AS_INSTALL_USER omarchy plugin enable "${CURRENT_USER}.island-bar" 2>/dev/null || \
-        log_warn "Paradise Island Bar could not be enabled."
+      enable_plugin_retry "${CURRENT_USER}.island-bar" || \
+        log_warn "Paradise Island Bar could not be enabled: ${LAST_PLUGIN_ERROR:-unknown error}"
       RUN_AS_INSTALL_USER omarchy plugin disable "omarchy.bar" 2>/dev/null || true
       RUN_AS_INSTALL_USER omarchy plugin disable "mscurtescu.island-bar" 2>/dev/null || true
       po_apply_all
@@ -730,37 +737,37 @@ if [[ -f "$REPO_DIR/shell/shell.json" ]]; then
   if command -v omarchy &>/dev/null; then
     po_apply_all
     enable_plugin_retry "jankeesvw.notification-center" || \
-      log_warn "Notification center could not be enabled after shell layout sync."
-    RUN_AS_INSTALL_USER omarchy plugin enable "crmne.hyprmoncfg" 2>/dev/null || \
-      log_warn "hyprmoncfg could not be enabled after shell layout sync."
-    RUN_AS_INSTALL_USER omarchy plugin enable "io.github.jeffcortez23.omarchy-projector-cast" 2>/dev/null || \
-      log_warn "Projector & Cast could not be enabled after shell layout sync."
-    RUN_AS_INSTALL_USER omarchy plugin enable "onlyvishesh.power-manager" 2>/dev/null || \
-      log_warn "power manager could not be enabled after shell layout sync."
+      log_warn "Notification center could not be enabled after shell layout sync: ${LAST_PLUGIN_ERROR:-unknown error}"
+    enable_plugin_retry "crmne.hyprmoncfg" || \
+      log_warn "hyprmoncfg could not be enabled after shell layout sync: ${LAST_PLUGIN_ERROR:-unknown error}"
+    enable_plugin_retry "io.github.jeffcortez23.omarchy-projector-cast" || \
+      log_warn "Projector & Cast could not be enabled after shell layout sync: ${LAST_PLUGIN_ERROR:-unknown error}"
+    enable_plugin_retry "onlyvishesh.power-manager" || \
+      log_warn "power manager could not be enabled after shell layout sync: ${LAST_PLUGIN_ERROR:-unknown error}"
     RUN_AS_INSTALL_USER omarchy plugin disable "${CURRENT_USER}.monitor" 2>/dev/null || true
     RUN_AS_INSTALL_USER omarchy plugin disable "omarchy.monitor" 2>/dev/null || true
-    RUN_AS_INSTALL_USER omarchy plugin enable "io.github.woogy7.vitals" 2>/dev/null || \
-      log_warn "Vitals could not be enabled after shell layout sync."
+    enable_plugin_retry "io.github.woogy7.vitals" || \
+      log_warn "Vitals could not be enabled after shell layout sync: ${LAST_PLUGIN_ERROR:-unknown error}"
     RUN_AS_INSTALL_USER omarchy plugin disable "harshith.system-monitor" 2>/dev/null || true
     RUN_AS_INSTALL_USER omarchy plugin disable "${CURRENT_USER}.memory" 2>/dev/null || true
     RUN_AS_INSTALL_USER omarchy plugin disable "omarchy.memory" 2>/dev/null || true
     RUN_AS_INSTALL_USER omarchy plugin disable "${CURRENT_USER}.power" 2>/dev/null || true
     RUN_AS_INSTALL_USER omarchy plugin disable "omarchy.power" 2>/dev/null || true
-    RUN_AS_INSTALL_USER omarchy plugin enable "io.github.erikburdett.wavebar" 2>/dev/null || \
-      log_warn "Wavebar could not be enabled after shell layout sync."
-    RUN_AS_INSTALL_USER omarchy plugin enable "ssupt.audio-control" 2>/dev/null || \
-      log_warn "audio control could not be enabled after shell layout sync."
+    enable_plugin_retry "io.github.erikburdett.wavebar" || \
+      log_warn "Wavebar could not be enabled after shell layout sync: ${LAST_PLUGIN_ERROR:-unknown error}"
+    enable_plugin_retry "ssupt.audio-control" || \
+      log_warn "audio control could not be enabled after shell layout sync: ${LAST_PLUGIN_ERROR:-unknown error}"
     RUN_AS_INSTALL_USER omarchy plugin disable "${CURRENT_USER}.audio" 2>/dev/null || true
     RUN_AS_INSTALL_USER omarchy plugin disable "omarchy.audio" 2>/dev/null || true
-    RUN_AS_INSTALL_USER omarchy plugin enable "ssupt.bluetooth-audio" 2>/dev/null || \
-      log_warn "Bluetooth audio could not be enabled after shell layout sync."
+    enable_plugin_retry "ssupt.bluetooth-audio" || \
+      log_warn "Bluetooth audio could not be enabled after shell layout sync: ${LAST_PLUGIN_ERROR:-unknown error}"
     RUN_AS_INSTALL_USER omarchy plugin disable "${CURRENT_USER}.bluetooth" 2>/dev/null || true
-    RUN_AS_INSTALL_USER omarchy plugin enable "io.github.tyrichards.workspaces-jap" 2>/dev/null || \
-      log_warn "Japanese workspace plugin could not be enabled after shell layout sync."
+    enable_plugin_retry "io.github.tyrichards.workspaces-jap" || \
+      log_warn "Japanese workspace plugin could not be enabled after shell layout sync: ${LAST_PLUGIN_ERROR:-unknown error}"
     RUN_AS_INSTALL_USER omarchy plugin disable "${CURRENT_USER}.workspaces" 2>/dev/null || true
     RUN_AS_INSTALL_USER omarchy plugin disable "omarchy.workspaces" 2>/dev/null || true
-    RUN_AS_INSTALL_USER omarchy plugin enable "${CURRENT_USER}.island-bar" 2>/dev/null || \
-      log_warn "Paradise Island Bar could not be enabled after shell layout sync."
+    enable_plugin_retry "${CURRENT_USER}.island-bar" || \
+      log_warn "Paradise Island Bar could not be enabled after shell layout sync: ${LAST_PLUGIN_ERROR:-unknown error}"
     RUN_AS_INSTALL_USER omarchy plugin disable "omarchy.bar" 2>/dev/null || true
     RUN_AS_INSTALL_USER omarchy plugin disable "mscurtescu.island-bar" 2>/dev/null || true
     po_apply_all
@@ -1420,7 +1427,7 @@ if [[ $IS_HOOK -eq 0 ]]; then
     # Theme activation can restart the shell and briefly race plugin
     # discovery, so enforce the notification center state last.
     enable_plugin_retry "jankeesvw.notification-center" || \
-      log_warn "Notification center could not be enabled after theme activation."
+      log_warn "Notification center could not be enabled after theme activation: ${LAST_PLUGIN_ERROR:-unknown error}"
     enable_plugin_retry "crmne.hyprmoncfg" || true
     enable_plugin_retry "onlyvishesh.power-manager" || true
     RUN_AS_INSTALL_USER omarchy plugin disable "${CURRENT_USER}.power" 2>/dev/null || true
