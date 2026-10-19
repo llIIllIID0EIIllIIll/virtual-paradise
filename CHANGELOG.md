@@ -8,6 +8,18 @@ Conventional Commits.
 
 ## [Unreleased]
 
+### Fixed
+- **`tools/shrink-history.sh` could delete commits.** It stripped *every* blob
+  that is reachable from history but absent from the HEAD tree — which includes
+  every previous revision of every text file, not just the dead wallpapers. Any
+  commit whose changes were all such blobs became empty, and `git-filter-repo`
+  prunes empty commits by default: a run on this repository dropped 51 of 111
+  commits (including installer and CI fixes) while still reporting success. The
+  strip list is now limited to blobs of at least 1 MB (`SHRINK_MIN_BYTES`
+  overrides it), the rewrite runs with `--prune-empty=never`, and the script
+  fails loudly if the commit count or the HEAD tree changes. It also tells you
+  to force-push tags, which the previous instructions omitted.
+
 ## [1.2.1] — 2026-10-19
 
 ### Fixed
