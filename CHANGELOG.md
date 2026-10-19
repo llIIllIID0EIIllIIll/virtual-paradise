@@ -28,7 +28,13 @@ Conventional Commits.
   list, so a correctly patched (or absent) file returned 1 and `set -e` aborted
   `install.sh` in the middle of the plugin step.
 - **Installer**: plugin enablement right after `omarchy restart shell` could
-  race plugin discovery and fail once; it now retries before warning.
+  race plugin discovery and fail with "omarchy-shell is not responding" —
+  including the Paradise Island Bar itself and the whole post-layout plugin
+  block. All of them now retry for up to ~15s and report the underlying error
+  when they finally give up.
+- **Installer**: the Island Bar bundle now deploys *every* file under
+  `bars/island-bar/` instead of a hard-coded four-file subset, so a component
+  added to the bar cannot be left behind.
 - `bars/island-bar/Bar.qml`: annotated the `PopupAnchor` flag-enum assignments
   so qmllint no longer flags valid runtime code.
 
