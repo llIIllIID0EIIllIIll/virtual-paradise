@@ -547,7 +547,8 @@ fi
 # 2. Prepare Target Directories
 # ------------------------------------------------------------------------------
 log_step "2" "$TOTAL_STEPS" "Creating configuration and runtime directories..."
-mkdir -p "$CONFIG_DIR/omarchy/themes/$THEME_NAME/backgrounds"
+mkdir -p "$CONFIG_DIR/omarchy/themes/$THEME_NAME"
+mkdir -p "$CONFIG_DIR/omarchy/backgrounds/$THEME_NAME"
 mkdir -p "$CONFIG_DIR/omarchy/plugins"
 mkdir -p "$CONFIG_DIR/omarchy/hooks/theme-set.d"
 mkdir -p "$CONFIG_DIR/omarchy/extensions"
@@ -1264,12 +1265,12 @@ if [[ -d "$REPO_DIR/bin" ]]; then
   sync_tree "$REPO_DIR/bin" "$LOCAL_BIN"
   rm -rf "$LOCAL_BIN/__pycache__"
   chmod +x "$LOCAL_BIN"/*.sh "$LOCAL_BIN"/*.py "$LOCAL_BIN"/momoisay "$LOCAL_BIN"/momoisay.real 2>/dev/null || true
-  ln -nsf "$LOCAL_BIN/paradise_banner.py" "$LOCAL_BIN/paradise-banner" 2>/dev/null || true
+  ln -nsf "$LOCAL_BIN/paradise_banner.sh" "$LOCAL_BIN/paradise-banner" 2>/dev/null || true
   ln -nsf "$LOCAL_BIN/virtual_matrix.py" "$LOCAL_BIN/virtual_matrix" 2>/dev/null || true
   ln -nsf "$LOCAL_BIN/cast_screen.sh" "$LOCAL_BIN/cast-screen" 2>/dev/null || true
   ln -nsf "$LOCAL_BIN/format-docx-vn.py" "$LOCAL_BIN/format-docx" 2>/dev/null || true
   ln -nsf "$LOCAL_BIN/format-docx-vn.py" "$LOCAL_BIN/vn-docx" 2>/dev/null || true
-  chmod +x "$LOCAL_BIN/sync_cava_theme.py" "$LOCAL_BIN/virtual_matrix.py" "$LOCAL_BIN/cast_screen.sh" "$LOCAL_BIN/format-docx-vn.py" "$LOCAL_BIN/paradise_banner.py" 2>/dev/null || true
+  chmod +x "$LOCAL_BIN/sync_cava_theme.py" "$LOCAL_BIN/virtual_matrix.py" "$LOCAL_BIN/cast_screen.sh" "$LOCAL_BIN/format-docx-vn.py" "$LOCAL_BIN/paradise_banner.py" "$LOCAL_BIN/paradise_banner.sh" 2>/dev/null || true
   cp "$REPO_DIR/uninstall.sh" "$LOCAL_BIN/uninstall-virtual-paradise"
   chmod +x "$LOCAL_BIN/uninstall-virtual-paradise"
   log_sub "Installed helper tools (rice_layout, momoisay, toggle_live_wallpaper, logout_splash, paradise-banner, etc.)"
@@ -1389,17 +1390,24 @@ if [[ "$REPO_DIR" != "$CONFIG_DIR/omarchy/themes/$THEME_NAME" ]]; then
 
   # What the theme actually needs, and nothing else. `theme/` and `config/` are
   # flattened into the root below; `hypr/*.css`, `assets/` and `overrides/` are
-  # read back by the theme-set hook; `backgrounds/` is what `omarchy theme bg
-  # next` cycles. Everything installed to its own place - plugins, bars, bin,
-  # lib, shell, systemd, sddm, plymouth, micro, cava, fastfetch - is delivered
-  # by its own step and would only be dead weight here.
+  # read back by the theme-set hook. Everything installed to its own place -
+  # plugins, bars, bin, lib, shell, systemd, sddm, plymouth, micro, cava,
+  # fastfetch - is delivered by its own step and would only be dead weight
+  # here.
+  #
+  # `backgrounds/` is excluded on purpose. The wallpapers are ~95 MB of video,
+  # and Omarchy stages the whole theme directory into
+  # ~/.local/state/omarchy/current/theme on every theme switch - copying 95 MB
+  # of video took ~15 seconds, on every login. They live in
+  # ~/.config/omarchy/backgrounds/virtual-paradise instead, which Omarchy
+  # scans for wallpapers as well.
   #
   # One list feeds both the rsync excludes and the cleanup below. --exclude also
   # stops --delete removing a copy an earlier run placed, so the two must agree
   # or a stripped directory would linger forever.
   THEME_STRIP=(
     .git .github .githooks .gitignore
-    tests tools docs
+    tests tools docs backgrounds
     install.sh uninstall.sh README.md LICENSE CONTRIBUTING.md
     plugins bars bin lib shell systemd sddm plymouth micro cava fastfetch
   )
@@ -1431,6 +1439,49 @@ if [[ "$REPO_DIR" != "$CONFIG_DIR/omarchy/themes/$THEME_NAME" ]]; then
   rm -rf "$HOME/.local/state/virtual-paradise/theme-variant-orig"
   rm -f "$HOME/.local/state/virtual-paradise/current_variant" \
         "$HOME/.local/state/virtual-paradise/theme-variant-map"
+fi
+
+# The wallpapers live outside the theme directory.
+#
+# Omarchy stages the whole theme into ~/.local/state/omarchy/current/theme on
+# every theme switch, and the wallpapers are ~95 MB of video: copying them
+# took about 15 seconds of every login and every theme switch. Omarchy scans
+# ~/.config/omarchy/backgrounds/<theme>/ for wallpapers as well, so they go
+# there - the theme directory stays small and the switch is instant.
+WALLPAPER_DEST="$CONFIG_DIR/omarchy/backgrounds/$THEME_NAME"
+if [[ -d "$REPO_DIR/backgrounds" ]]; then
+  mkdir -p "$WALLPAPER_DEST"
+  if command -v rsync &>/dev/null; then
+    rsync -a --delete "$REPO_DIR/backgrounds"/ "$WALLPAPER_DEST"/ 2>/dev/null || true
+  else
+    rm -rf "${WALLPAPER_DEST:?}"/* 2>/dev/null || true
+    cp -a "$REPO_DIR/backgrounds"/. "$WALLPAPER_DEST"/ 2>/dev/null || true
+  fi
+
+  # The animated GIFs are not wallpapers here: they are the SDDM login
+  # animation, and the login theme reads them straight from the repository.
+  # As a wallpaper they were pure cost - Omarchy picks the bar's text color
+  # with ImageMagick, and rendering 250 animation frames took over a minute
+  # on every theme switch. The first frame of each is kept instead, so the
+  # wallpaper cycle still has the same pictures.
+  for wallpaper_gif in "$WALLPAPER_DEST"/*.gif; do
+    [[ -f $wallpaper_gif ]] || continue
+    if command -v ffmpeg &>/dev/null; then
+      ffmpeg -y -loglevel error -i "$wallpaper_gif" -frames:v 1 \
+        "${wallpaper_gif%.gif}.jpg" 2>/dev/null || true
+    fi
+    rm -f "$wallpaper_gif"
+  done
+
+  log_sub "Installed wallpapers to $WALLPAPER_DEST"
+fi
+
+# The theme needs a preview image: without one the theme switcher falls back
+# to the first wallpaper it finds, which is the slow path this theme just
+# avoided.
+if [[ -f "$REPO_DIR/backgrounds/Glitch.jpg" && -d "$CONFIG_DIR/omarchy/themes/$THEME_NAME" ]]; then
+  cp -f "$REPO_DIR/backgrounds/Glitch.jpg" \
+    "$CONFIG_DIR/omarchy/themes/$THEME_NAME/preview.jpg" 2>/dev/null || true
 fi
 
 # Wavebar replaced the legacy media/Cava bar plugin. Remove any copy left in
@@ -1633,6 +1684,13 @@ configure_shell_file() {
   # Purge any legacy agy or paradise-agent aliases
   sed -i '/alias agy=/d; /alias pa=/d; /alias offline-agent=/d' "$file" 2>/dev/null || true
 
+  # The banner is printed by a cached shell wrapper now. Rendering it with
+  # Python cost the interpreter startup - about 30 ms - on every interactive
+  # shell, which is the difference between a terminal that feels instant and
+  # one that does not.
+  sed -i 's|\$HOME/\.local/bin/paradise_banner\.py|$HOME/.local/bin/paradise_banner.sh|g' \
+    "$file" 2>/dev/null || true
+
   # Add Virtual Paradise aliases
   if ! grep -q "paradise_banner" "$file" && ! grep -q "paradise-banner" "$file"; then
     cat << 'EOF' >> "$file"
@@ -1640,16 +1698,18 @@ configure_shell_file() {
 # ==============================================================================
 #  Virtual☆Paradise Add-on Aliases & Integration
 # ==============================================================================
-alias banner="$HOME/.local/bin/paradise_banner.py"
+alias banner="$HOME/.local/bin/paradise_banner.sh"
 alias rice="$HOME/.local/bin/rice_layout.sh"
 alias matrix="$HOME/.local/bin/virtual_matrix.py"
 alias boost="$HOME/.local/bin/toggle_cooler_boost.sh"
 alias cast="$HOME/.local/bin/cast_screen.sh"
 
 # Run Virtual Paradise Cyberpunk Banner on terminal startup (only in interactive shells)
+# The banner is cached and printed from the shell: rendering it with Python
+# cost ~30 ms of every shell start.
 if [[ -o interactive ]] 2>/dev/null || [[ "$-" == *i* ]]; then
-  if [[ -z "$VIRTUAL_PARADISE_NO_BANNER" && -x "$HOME/.local/bin/paradise_banner.py" ]]; then
-    "$HOME/.local/bin/paradise_banner.py"
+  if [[ -z "$VIRTUAL_PARADISE_NO_BANNER" && -x "$HOME/.local/bin/paradise_banner.sh" ]]; then
+    "$HOME/.local/bin/paradise_banner.sh"
   fi
 fi
 EOF

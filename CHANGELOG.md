@@ -9,6 +9,32 @@ Conventional Commits.
 ## [Unreleased]
 
 ### Fixed
+- **Switching themes (and logging in) is several times faster.** Three
+  things were costing seconds on every login and every theme switch:
+  - The wallpapers (~95 MB of video) lived *inside* the theme directory.
+    Omarchy stages the whole theme into
+    `~/.local/state/omarchy/current/theme` on every switch, so copying them
+    took about 15 seconds. They now live in
+    `~/.config/omarchy/backgrounds/virtual-paradise/`, which Omarchy scans
+    for wallpapers as well. The theme directory shrank from 96 MB to 1 MB.
+  - The animated GIFs were wallpapers too. Omarchy picks the bar's text
+    colour with ImageMagick, and rendering 250 animation frames of a GIF took
+    over a minute per switch. The GIFs are the SDDM login animation and are
+    read from the repository; as wallpapers only their first frame is kept.
+  - The theme-set hook made about thirty `omarchy plugin` calls, each of
+    which walks the whole plugin catalogue, to assert a state that was
+    already correct. It now reads the state once and only touches the
+    difference: 19.5 s became 2.8 s.
+- **The terminal banner no longer costs a Python start-up per shell.** The
+  art is static and its colors follow the theme, so it is rendered once and
+  cached; the shell prints the cached copy in about 6 ms instead of paying
+  ~30 ms of interpreter start-up in every interactive shell.
+- **The boot image carries a third less.** The Plymouth animation was
+  encoded as 1920x1080 PNGs - ~97 MB of frames inside the initramfs, which
+  the kernel has to read and Plymouth has to decode. The frames are now
+  1600x900 with a 256 colour palette: the same picture once Plymouth
+  stretches it over the screen (Plymouth converts palette PNGs through
+  `png_set_palette_to_rgb`), about a third of the data.
 - **The compositor can read the Hyprland config the installer writes.** A
   `mktemp` file is created with mode 600 and `mv` keeps that mode, so moving
   a freshly built `hyprland.lua` into place turned it into `-rw-------`. In a

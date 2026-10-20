@@ -144,6 +144,9 @@ restore_or_remove "$CONFIG_DIR/omarchy/shell.json" "$CONFIG_DIR/omarchy/shell-de
 rm -f "$CONFIG_DIR/omarchy/shell-paradise.json" "$CONFIG_DIR/omarchy/extensions/paradise.json"
 snapshot "$CONFIG_DIR/omarchy/themes/$THEME_NAME"
 rm -rf "$CONFIG_DIR/omarchy/themes/$THEME_NAME"
+# The wallpapers were moved out of the theme directory so Omarchy does not
+# copy ~95 MB of video on every theme switch. Remove them from both places.
+rm -rf "$CONFIG_DIR/omarchy/backgrounds/$THEME_NAME"
 rm -f "$CONFIG_DIR/omarchy/hooks/theme-set.d/virtual-paradise.sh"
 
 # Plugin update check + audio backend watchdog. Stop the timers before removing
