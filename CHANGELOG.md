@@ -36,12 +36,10 @@ Conventional Commits.
   stretches it over the screen (Plymouth converts palette PNGs through
   `png_set_palette_to_rgb`), about a third of the data.
 - **The boot splash is centred and decorated.** The 1600x900 picture sits in
-  the middle of the screen, the bars around it are filled with a dark violet
-  gradient instead of flat black, a neon border with pink corner brackets
-  marks the edge of the picture, and a tiled cyber pattern - a diagonal
-  circuit line with a node and a pink dash - runs through the four bars.
-  The tiles that would land on the animation are skipped, so the pattern
-  always stays in the empty space, and the layout follows the screen size.
+  the middle of the screen, a cyber backdrop fills the whole screen behind
+  it - the blue circuitry on the left and the pink HUD on the right show
+  through the bars around the picture - and a neon border with pink corner
+  brackets marks the edge of the picture.
 - **The compositor can read the Hyprland config the installer writes.** A
   `mktemp` file is created with mode 600 and `mv` keeps that mode, so moving
   a freshly built `hyprland.lua` into place turned it into `-rw-------`. In a
