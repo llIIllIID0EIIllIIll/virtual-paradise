@@ -1252,4 +1252,64 @@ EOF
     "$(grep -q 'o.window({ initial_title = "Btop Monitor"' "$installed_hyprland" && echo 0 || echo 1)"
 fi
 
+# ─────────────────────────────────────────────────────────────────────────────
+# TC-14  Omarchy environment: the installer works with a reset environment.
+#
+# Omarchy sets OMARCHY_PATH in the user's shell. sudo resets the environment,
+# and the systemd user manager does not carry it either, so `sudo ./install.sh`
+# and the daily plugin-update timer both ran every `omarchy ...` command
+# without it. The answers are "OMARCHY_PATH is not set" and "shell config not
+# found: /shell", and the installer ignored those errors - the run looked
+# successful while no plugin was enabled and the shell never restarted.
+# ─────────────────────────────────────────────────────────────────────────────
+if want tc14; then
+  section "TC-14  Omarchy environment under sudo and systemd"
+
+  root="$(new_sandbox tc14)"
+
+  # The resolver: the packaged path by default, the dev checkout when
+  # /etc/omarchy.conf points somewhere else.
+  check "the resolver falls back to the packaged Omarchy" \
+    "$( . "$REPO_DIR/lib/omarchy-env.sh"; omarchy_resolve_path | grep -qx '/usr/share/omarchy' && echo 0 || echo 1)"
+
+  # install.sh and uninstall.sh must hand the variable to the commands they
+  # start, because sudo strips it.
+  check "the installer exports OMARCHY_PATH" \
+    "$(grep -q 'omarchy_export_env' "$REPO_DIR/install.sh" && echo 0 || echo 1)"
+  check "the uninstaller exports OMARCHY_PATH" \
+    "$(grep -q 'omarchy_export_env' "$REPO_DIR/uninstall.sh" && echo 0 || echo 1)"
+  check "the installer hands OMARCHY_PATH to the user commands" \
+    "$(grep -q 'OMARCHY_PATH="\$OMARCHY_PATH"' "$REPO_DIR/install.sh" && echo 0 || echo 1)"
+  check "the plugin updater resolves OMARCHY_PATH for the timer" \
+    "$(grep -q 'omarchy-env.sh' "$REPO_DIR/bin/update-plugins.sh" && echo 0 || echo 1)"
+
+  # Functional: run the installer with a completely stripped environment and
+  # an omarchy that records the variable it was given.
+  mkdir -p "$root/bin"
+  cat >"$root/bin/omarchy" <<'STUB'
+#!/usr/bin/env bash
+printf '%s OMARCHY_PATH=%s\n' "$*" "${OMARCHY_PATH:-<UNSET>}" >>"${SHIM_LOG:-/dev/null}"
+exit 0
+STUB
+  cat >"$root/bin/omarchy-shell" <<'STUB'
+#!/usr/bin/env bash
+printf 'omarchy-shell %s OMARCHY_PATH=%s\n' "$*" "${OMARCHY_PATH:-<UNSET>}" >>"${SHIM_LOG:-/dev/null}"
+exit 0
+STUB
+  chmod +x "$root/bin/omarchy" "$root/bin/omarchy-shell"
+
+  ( cd "$REPO_DIR" \
+    && env -i PATH="$root/bin:/usr/bin:/bin" HOME="$root/home" \
+       XDG_CONFIG_HOME="$root/home/.config" SHIM_LOG="$root/shim.log" \
+       timeout 600 bash ./install.sh --user-only --no-boot \
+       >"$root/install.log" 2>&1 )
+  check "the installer runs with a stripped environment" $? "$(strip_ansi "$root/install.log" | tail -2)"
+
+  check "the installer ran the omarchy commands" \
+    "$([[ -s $root/shim.log ]] && echo 0 || echo 1)"
+  check "every omarchy command got OMARCHY_PATH" \
+    "$([[ -s $root/shim.log ]] && ! grep -q 'OMARCHY_PATH=<UNSET>' "$root/shim.log" && echo 0 || echo 1)" \
+    "$(grep -m3 'OMARCHY_PATH=<UNSET>' "$root/shim.log" 2>/dev/null)"
+fi
+
 summary

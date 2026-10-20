@@ -23,6 +23,22 @@ export GIT_SSH_COMMAND="${GIT_SSH_COMMAND:-ssh -o BatchMode=yes}"
 SELF="$(readlink -f "${BASH_SOURCE[0]}")"
 SELF_DIR="$(dirname "$SELF")"
 
+# Omarchy's environment. The daily update check runs from a systemd timer,
+# and the user manager's environment has no OMARCHY_PATH: without it every
+# `omarchy plugin ...` call answers "OMARCHY_PATH is not set" and the check
+# reports nothing. Resolve it the way Omarchy does.
+for _env_lib in \
+  "$SELF_DIR/../share/virtual-paradise/omarchy-env.sh" \
+  "$SELF_DIR/../lib/omarchy-env.sh"; do
+  if [[ -f $_env_lib ]]; then
+    # shellcheck source=../lib/omarchy-env.sh
+    . "$_env_lib"
+    omarchy_export_env
+    break
+  fi
+done
+export OMARCHY_PATH="${OMARCHY_PATH:-/usr/share/omarchy}"
+
 # Locate the override layer: explicit override, installed copy, then repo copy.
 _resolve_lib() {
   local candidate

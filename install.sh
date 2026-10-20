@@ -85,6 +85,7 @@ if (( EUID == 0 )); then
   else
     CURRENT_USER="${USER:-$(id -un)}"
   fi
+
   SUDO_CMD=""
   # --user-only is a promise not to touch system paths, and it has to hold even
   # when the script runs as root (CI containers, `su`, the test suite). Without
@@ -130,6 +131,19 @@ else
   fi
 fi
 
+# Omarchy's own environment. OMARCHY_PATH is set by the user's shell
+# bootstrap, but sudo resets the environment: without it every
+# `omarchy ...` call answers "OMARCHY_PATH is not set" (or looks for the
+# shell config in "/shell"), so the plugin, theme and shell steps fail
+# silently. Resolve it the way Omarchy does and keep it for every command
+# this installer starts.
+#
+# This has to run for a plain run as well: the systemd timers and the
+# user manager's environment do not carry OMARCHY_PATH either.
+# shellcheck source=lib/omarchy-env.sh
+. "$REPO_DIR/lib/omarchy-env.sh"
+omarchy_export_env
+
 cleanup_install() {
   local ec=$?
   if [[ -n "${SUDO_KEEP_ALIVE_PID:-}" ]]; then
@@ -156,6 +170,7 @@ RUN_AS_INSTALL_USER() {
       WAYLAND_DISPLAY="${WAYLAND_DISPLAY:-}" \
       HYPRLAND_INSTANCE_SIGNATURE="${HYPRLAND_INSTANCE_SIGNATURE:-}" \
       DBUS_SESSION_BUS_ADDRESS="${DBUS_SESSION_BUS_ADDRESS:-}" \
+      OMARCHY_PATH="$OMARCHY_PATH" \
       "$@"
   else
     "$@"
@@ -269,7 +284,10 @@ run_privileged() {
   if (( EUID == 0 )); then
     "$@"
   else
-    $SUDO_CMD "$@"
+    # sudo resets the environment, so OMARCHY_PATH has to be handed over
+    # explicitly: the commands that run as root (the boot setup, the theme
+    # libraries) call omarchy themselves.
+    $SUDO_CMD env OMARCHY_PATH="$OMARCHY_PATH" "$@"
   fi
 }
 
@@ -1233,6 +1251,10 @@ fi
 if [[ -f "$REPO_DIR/bin/update-plugins.sh" && -f "$REPO_DIR/lib/plugin-overrides.sh" ]]; then
   mkdir -p "$HOME/.local/share/virtual-paradise"
   cp "$REPO_DIR/lib/plugin-overrides.sh" "$HOME/.local/share/virtual-paradise/plugin-overrides.sh"
+  # The updater runs from a systemd timer whose environment has no
+  # OMARCHY_PATH, so it needs the same helper the installer uses.
+  [[ -f "$REPO_DIR/lib/omarchy-env.sh" ]] &&
+    cp "$REPO_DIR/lib/omarchy-env.sh" "$HOME/.local/share/virtual-paradise/omarchy-env.sh"
   # The installed updater has no repo in sight, so mirror overrides/ next to the
   # lib; it re-applies this rice after every update.
   rm -rf "$HOME/.local/share/virtual-paradise/overrides"
