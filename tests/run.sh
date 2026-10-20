@@ -850,14 +850,29 @@ if want tc10; then
     "$([[ -f $theme/Main.qml ]] && echo 0 || echo 1)"
   check "theme.conf and metadata.desktop are installed" \
     "$([[ -f $theme/theme.conf && -f $theme/metadata.desktop ]] && echo 0 || echo 1)"
-  check "the animated background is installed" \
-    "$([[ -f $theme/Miku_animated_full.gif ]] && echo 0 || echo 1)"
+  check "the splash picture is installed" \
+    "$([[ -f $theme/still.png ]] && echo 0 || echo 1)"
+  check "the Plymouth backdrop and frame come along" \
+    "$([[ -f $theme/backdrop.png && -f $theme/frame.png ]] && echo 0 || echo 1)"
   check "every asset referenced by Main.qml exists" \
     "$(vp_sddm sddm_theme_verify "$sys" >/dev/null 2>&1 && echo 0 || echo 1)"
   check "Main.qml is marked as ours (so uninstall can be safe)" \
     "$(grep -qF 'Virtual☆Paradise SDDM theme' "$theme/Main.qml" && echo 0 || echo 1)"
   check "the drop-in selects virtual-paradise" \
     "$(grep -qx 'Current=virtual-paradise' "$conf" && echo 0 || echo 1)"
+
+  # The greeter has to continue the Plymouth splash, not start a new picture.
+  check "the greeter uses the Plymouth backdrop" \
+    "$(grep -q 'source: "backdrop.png"' "$theme/Main.qml" && echo 0 || echo 1)"
+  check "the greeter uses the Plymouth frame" \
+    "$(grep -q 'source: "frame.png"' "$theme/Main.qml" && echo 0 || echo 1)"
+  check "the greeter uses the splash still" \
+    "$(grep -q 'source: "still.png"' "$theme/Main.qml" && echo 0 || echo 1)"
+  check "the greeter fades in and out" \
+    "$(grep -q 'onLoginSucceeded' "$theme/Main.qml" && echo 0 || echo 1)"
+  # The password field is the one thing the user has to look at.
+  check "the password field is a labelled neon panel" \
+    "$(grep -q 'ENTER PASSWORD' "$theme/Main.qml" && grep -q 'border.color' "$theme/Main.qml" && echo 0 || echo 1)"
 
   got_theme="$(vp_sddm sddm_effective_theme "$sys")"
   check "SDDM would load virtual-paradise, not omarchy (got ${got_theme:-none})" \
