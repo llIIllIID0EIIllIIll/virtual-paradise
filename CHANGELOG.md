@@ -6,7 +6,7 @@ Conventional Commits.
 
 ---
 
-## [Unreleased]
+## [1.2.2] — 2026-10-20
 
 ### Fixed
 - **`SUPER + RETURN` no longer launches two terminals.** Hyprland runs every
