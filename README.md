@@ -14,7 +14,7 @@
 [![Arch Linux](https://img.shields.io/badge/Arch_Linux-1793D1?style=flat-square&logo=arch-linux&logoColor=white)](https://archlinux.org)
 [![Omarchy 4.0+](https://img.shields.io/badge/Omarchy-4.0+-8A2BE2?style=flat-square)](https://omarchy.org)
 [![Hyprland](https://img.shields.io/badge/Hyprland-Wayland-00ffdd?style=flat-square)](https://hyprland.org)
-[![Tests](https://img.shields.io/badge/tests-171%20passed-00ff88?style=flat-square)](tests/)
+[![Tests](https://img.shields.io/badge/tests-186%20passed-00ff88?style=flat-square)](tests/)
 [![License](https://img.shields.io/badge/license-MIT-ffe066?style=flat-square)](LICENSE)
 [![Version](https://img.shields.io/badge/version-1.2.2-ff00ff?style=flat-square)](VERSION)
 
@@ -195,6 +195,21 @@ Omarchy's own bindings are unchanged: `SUPER + RETURN` opens the terminal,
 only adds bindings on free chords, because Hyprland runs *every* bind for a
 chord — a duplicate performs both actions.
 
+### Text Size & Display Layout
+
+The theme deliberately leaves both to you and to the tools that do them well:
+
+- **Font size** is never set by the theme. Ghostty applies a `config-file`
+  include *after* the file that pulls it in, so a size in the theme's config
+  would override your own — that is how a fresh install turned 9pt text into
+  12pt text. Change the size in your terminal's own config
+  (`~/.config/ghostty/config`, `~/.config/foot/foot.ini`, …) and every
+  terminal scales it with the display's DPI.
+- **Monitor layout** is not touched either. hyprmoncfg applies a profile per
+  setup and switches between them on hotplug, lid open and suspend; the
+  theme only ships the toolkit environment variables, so the scale follows
+  the panel instead of being pinned to 1.
+
 ### Changing Colors
 
 Edit `theme/colors.toml` to adjust the palette. The installer will reapply overrides on next run.
@@ -282,7 +297,7 @@ The uninstaller will:
 
 ### Running Tests
 
-The test suite has twelve test cases and 171 assertions; optional tools
+The test suite has thirteen test cases and 186 assertions; optional tools
 (`shellcheck`, `qmllint`, `hyprctl`) enable extra checks when present, so the
 exact count varies between machines (171 with `shellcheck`, 170 without). It
 runs in a sandbox and never touches your real system.
@@ -305,6 +320,7 @@ Test cases:
 - **TC-10**: SDDM theme (standalone install, selection, legacy repair, uninstall)
 - **TC-11**: Plymouth theme (standalone install, selection, legacy repair, uninstall)
 - **TC-12**: Theme variants (every palette-carrying file stays in sync, reset)
+- **TC-13**: Responsive typography and display layout (no pinned font size, no monitor rules)
 
 ### Project Structure
 

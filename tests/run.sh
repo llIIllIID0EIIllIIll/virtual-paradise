@@ -1132,4 +1132,99 @@ STUB
     "$(grep -q 'rgba(ffb7d5ee)' "$root/hyprctl.log" 2>/dev/null && echo 0 || echo 1)"
 fi
 
+# ─────────────────────────────────────────────────────────────────────────────
+# TC-13  Responsive typography and display layout.
+#
+# Two things the theme must not do:
+#   - pin a font size. Ghostty applies a config-file include after the file
+#     that pulls it in, so a size in the theme's ghostty.conf beats the
+#     user's own config: a fresh install turned 9pt text into 12pt text.
+#   - own the display layout. hyprmoncfg applies a profile per monitor setup
+#     and switches between them on hotplug; static rules for eDP-1/HDMI-A-1/
+#     DP-1/DP-2 with a fixed scale of 1.0 kept the laptop panel alive and
+#     made every HiDPI display render at 1x.
+# ─────────────────────────────────────────────────────────────────────────────
+if want tc13; then
+  section "TC-13  Responsive typography and display layout"
+
+  # 1. No terminal config may pin a font size or inflate the line box.
+  for terminal in ghostty.conf kitty.conf foot.ini alacritty.toml; do
+    check "$terminal does not pin a font size" \
+      "$(grep -qEi '^(font-size|font_size|size)[[:space:]]*=' "$REPO_DIR/config/terminal/$terminal" && echo 1 || echo 0)"
+  done
+  check "no terminal config inflates the line box" \
+    "$(grep -rqEi '^(adjust-cell-height|adjust_line_height)' "$REPO_DIR/config/terminal" && echo 1 || echo 0)"
+
+  # 2. The theme must not ship rules for a specific output.
+  check "the theme ships no rule for a named output" \
+    "$(grep -qE 'output[[:space:]]*=[[:space:]]*"(eDP-1|HDMI-A-1|DP-1|DP-2)"' "$REPO_DIR/hypr/monitors.lua" && echo 1 || echo 0)"
+  check "the theme does not pin a scale for an output" \
+    "$(grep -qE 'scale[[:space:]]*=[[:space:]]*1\.0' "$REPO_DIR/hypr/monitors.lua" && echo 1 || echo 0)"
+
+  # 3. Functional: a machine that ran the old installer has the static
+  #    presets in monitors.lua and the window rules behind hyprmoncfg's
+  #    "load last" line. Both have to be repaired.
+  root="$(new_sandbox tc13)"
+  build_shims "$root/bin"
+  mkdir -p "$root/home/.config/hypr"
+  cat >"$root/home/.config/hypr/hyprland.lua" <<'EOF'
+require("default.hypr.omarchy")
+
+-- Added by hyprmoncfg: its generated monitor rules load last, so nothing before this can override the applied layout.
+do local path = os.getenv("HOME") .. "/.config/hypr/hyprmoncfg-monitors.lua"; local file = io.open(path, "r"); if file then file:close(); dofile(path) end end
+
+-- Virtual Paradise Add-on Window Rules
+o.window({ initial_title = "Btop Monitor" }, { float = true, size = { 1050, 650 }, center = true })
+o.window({ class = "org.gnome.Nautilus", title = ".*Properties.*" }, { float = true })
+EOF
+  cat >"$root/home/.config/hypr/monitors.lua" <<'EOF'
+-- BEGIN hyprmoncfg wake settings
+hl.monitor({ output = "eDP-1", mode = "preferred", position = "0x0", scale = 1 })
+-- END hyprmoncfg wake settings
+
+hl.monitor({
+  output = "eDP-1",
+  mode = "preferred",
+  position = "0x0",
+  scale = 1.0,
+  transform = 0,
+})
+
+hl.monitor({
+  output = "HDMI-A-1",
+  mode = "preferred",
+  position = "auto-right",
+  scale = 1.0,
+})
+
+hl.monitor({
+  output = "",
+  mode = "preferred",
+  position = "auto",
+  scale = "auto",
+})
+EOF
+
+  run_installer "$root" >/dev/null 2>&1
+  check "the installer exits 0" $?
+
+  installed_monitors="$root/home/.config/hypr/monitors.lua"
+  check "the static eDP-1 preset was removed" \
+    "$(grep -q 'transform = 0' "$installed_monitors" && echo 1 || echo 0)"
+  check "the static HDMI preset was removed" \
+    "$(grep -q 'auto-right' "$installed_monitors" && echo 1 || echo 0)"
+  check "hyprmoncfg's own wake rule was kept" \
+    "$(grep -q 'BEGIN hyprmoncfg wake settings' "$installed_monitors" && echo 0 || echo 1)"
+  check "the generic output fallback was kept" \
+    "$(grep -q 'position = "auto"' "$installed_monitors" && echo 0 || echo 1)"
+
+  installed_hyprland="$root/home/.config/hypr/hyprland.lua"
+  rules_line="$(grep -n 'Virtual Paradise Add-on Window Rules' "$installed_hyprland" | head -n 1 | cut -d: -f1)"
+  moncfg_line="$(grep -n 'hyprmoncfg-monitors.lua' "$installed_hyprland" | head -n 1 | cut -d: -f1)"
+  check "the window rules load before hyprmoncfg's rules (rules line ${rules_line:-none}, hyprmoncfg line ${moncfg_line:-none})" \
+    "$([[ -n $rules_line && -n $moncfg_line && $rules_line -lt $moncfg_line ]] && echo 0 || echo 1)"
+  check "the window rules are still installed" \
+    "$(grep -q 'o.window({ initial_title = "Btop Monitor"' "$installed_hyprland" && echo 0 || echo 1)"
+fi
+
 summary
