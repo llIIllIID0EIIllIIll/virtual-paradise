@@ -496,6 +496,18 @@ if [[ -f "$REPO_DIR/lib/sddm.sh" ]]; then
   fi
 fi
 
+# The autologin the installer may have turned off, so the login screen shows
+# again.
+autologin_conf="/etc/sddm.conf.d/autologin.conf"
+if [[ -f "$autologin_conf.paradise.bak" ]]; then
+  if run_privileged cp -a "$autologin_conf.paradise.bak" "$autologin_conf" 2>/dev/null; then
+    run_privileged rm -f "$autologin_conf.paradise.bak" 2>/dev/null || true
+    printf 'Restored the automatic login.\n'
+  else
+    printf 'Could not restore the automatic login (needs sudo).\n'
+  fi
+fi
+
 # Plymouth: remove our own theme and restore the previous selection. The old
 # installer replaced /usr/share/plymouth/themes/omarchy/omarchy.script and left
 # ~330 generated PNGs in that package-owned directory; repairing that here

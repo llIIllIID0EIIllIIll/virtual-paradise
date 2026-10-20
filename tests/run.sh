@@ -874,6 +874,22 @@ if want tc10; then
   check "the password field is a labelled neon panel" \
     "$(grep -q 'ENTER PASSWORD' "$theme/Main.qml" && grep -q 'border.color' "$theme/Main.qml" && echo 0 || echo 1)"
 
+  # A rebuild of the boot image that fails silently leaves the old splash on
+  # screen, and the installer used to report success anyway.
+  check "the installer tries both boot image rebuilds" \
+    "$(grep -q 'limine-mkinitcpio' "$REPO_DIR/install.sh" && grep -q 'mkinitcpio -P' "$REPO_DIR/install.sh" && echo 0 || echo 1)"
+  check "the installer checks the boot image was really rebuilt" \
+    "$(grep -q 'boot_image_path' "$REPO_DIR/install.sh" && echo 0 || echo 1)"
+  check "the installer shows the rebuild output" \
+    "$(grep -qE 'run_privileged (limine-mkinitcpio|mkinitcpio -P)[;"]' "$REPO_DIR/install.sh" && echo 0 || echo 1)"
+
+  # The greeter is on screen for less than a second while Omarchy logs in
+  # automatically, so the login screen needs a way to be shown.
+  check "the installer can turn the autologin off" \
+    "$(grep -q 'disable_autologin' "$REPO_DIR/install.sh" && echo 0 || echo 1)"
+  check "the uninstaller restores the autologin" \
+    "$(grep -q 'autologin.conf.paradise.bak' "$REPO_DIR/uninstall.sh" && echo 0 || echo 1)"
+
   got_theme="$(vp_sddm sddm_effective_theme "$sys")"
   check "SDDM would load virtual-paradise, not omarchy (got ${got_theme:-none})" \
     "$([[ $got_theme == virtual-paradise ]] && echo 0 || echo 1)"
