@@ -9,6 +9,54 @@ Conventional Commits.
 ## [Unreleased]
 
 ### Fixed
+- **`SUPER + RETURN` no longer launches two terminals.** Hyprland runs every
+  binding registered for a chord; it does not replace an earlier one. This theme
+  re-bound many Omarchy defaults in `hypr/bindings.lua` (terminal, workspaces,
+  floating/fullscreen, clipboard, browser, Email, screenshots, window groups,
+  vim HJKL), so a single press ran both actions — and the file even bound
+  `SUPER + SHIFT + K` and `SUPER + SHIFT + L` twice on its own. The theme now
+  only binds chords Omarchy leaves free: the live-wallpaper controls moved to
+  `SUPER + ALT + W` / `SUPER + ALT + N` / `SUPER + ALT + SHIFT + N`, and stale
+  aliases that shadowed defaults (or called removed commands such as
+  `omarchy-capture-screen`, `omarchy-capture-color` and `omarchy menu logout`)
+  were dropped. `tools/check-bindings.py` fails on repeated chords and on any
+  chord that shadows an Omarchy default, using the installed tree or a
+  committed fixture in CI.
+- **Uninstall restores the pre-install Hypr config after re-installs.** Each
+  install snapshotted the already-themed files, and uninstall restored the
+  newest snapshot — which was ours. `bindings.lua` and `looknfeel.lua` therefore
+  survived an uninstall (the leftover bindings are what made `SUPER + RETURN`
+  double up after the theme had been removed). Install now records the first
+  snapshot of the cycle in `~/.local/state/virtual-paradise/hypr-backup-dir`;
+  uninstall restores that, falls back to the oldest snapshot for machines
+  installed before the state file existed, removes the state file, and no
+  longer deletes a user-edited file just because no snapshot exists.
+- **Uninstall removes the window rules and live-wallpaper autostart hook.** The
+  installer appended its window rules under a “Virtual Paradise Add-on Window
+  Rules” marker, but uninstall matched only the individual strings and missed
+  `org.gnome.NetworkDisplays`, leaving one rule behind. The installer also
+  guarded on the string “GNOME Network Displays”, so a user comment mentioning
+  that app could suppress the whole block. The guard now uses the marker, and
+  uninstall strips the exact rules, the autostart hook and the snapshot
+  directory.
+- **SDDM: the login theme is no longer patched into Omarchy's theme.**
+  `install.sh` copied its `Main.qml` and a 13 MB GIF over
+  `/usr/share/sddm/themes/omarchy/`, a directory owned by the
+  `omarchy-settings` package. An Omarchy update silently replaced half of it,
+  and `uninstall.sh` did not restore the theme at all, so the login screen
+  could end up pointing at a theme that no longer worked. The theme is now
+  installed self-contained in `/usr/share/sddm/themes/virtual-paradise/` and
+  selected by `/etc/sddm.conf.d/zz-virtual-paradise-theme.conf`; install backs
+  up a conflicting drop-in, uninstall restores the previous selection, and both
+  repair machines that still carry the old in-place patch. A theme directory
+  that was not installed by this project is never deleted.
+- **SDDM: the installer no longer sets a login shell that PAM rejects.** It
+  called `chsh -s "$(command -v zsh)"`; with `/usr/sbin` before `/usr/bin` in
+  PATH that is `/usr/sbin/zsh`, while `pam_shells` compares the passwd field
+  against `/etc/shells` as a string, so both password login and autologin failed
+  with "Authentication error". The installer now resolves the canonical
+  `/usr/bin/zsh`, registers it in `/etc/shells` when needed, refuses to change
+  the shell otherwise, and records the old shell so uninstall can restore it.
 - **`tools/shrink-history.sh` could delete commits.** It stripped *every* blob
   that is reachable from history but absent from the HEAD tree — which includes
   every previous revision of every text file, not just the dead wallpapers. Any
@@ -89,10 +137,16 @@ Conventional Commits.
   so qmllint no longer flags valid runtime code.
 
 ### Added
+- `install.sh --sddm-only` reinstalls just the login theme, without touching
+  Plymouth or rebuilding the initramfs.
 - Test coverage for the above: `luac -p` on every Lua file, `ghostty
   +validate-config`, `foot --check-config` and `hyprctl configerrors` (each
-  skipped when the tool/instance is unavailable). 89 checks with the optional
-  linters installed, 88 without `shellcheck`.
+  skipped when the tool/instance is unavailable). 116 checks with the optional
+  linters installed, 115 without `shellcheck`.
+- **TC-10** exercises the SDDM code against a throwaway system root: standalone
+  install, asset completeness, drop-in selection, legacy-patch repair, a second
+  install that changes nothing, uninstall restoring the previous theme, foreign
+  files left alone, and the login-shell resolver.
 - `CHANGELOG.md` — this file
 - `SECURITY.md` — vulnerability reporting policy
 - `tools/convert-gifs-to-mp4.sh` — optional background compression (~60 MB savings)

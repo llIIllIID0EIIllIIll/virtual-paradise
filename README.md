@@ -14,7 +14,7 @@
 [![Arch Linux](https://img.shields.io/badge/Arch_Linux-1793D1?style=flat-square&logo=arch-linux&logoColor=white)](https://archlinux.org)
 [![Omarchy 4.0+](https://img.shields.io/badge/Omarchy-4.0+-8A2BE2?style=flat-square)](https://omarchy.org)
 [![Hyprland](https://img.shields.io/badge/Hyprland-Wayland-00ffdd?style=flat-square)](https://hyprland.org)
-[![Tests](https://img.shields.io/badge/tests-89%20passed-00ff88?style=flat-square)](tests/)
+[![Tests](https://img.shields.io/badge/tests-131%20passed-00ff88?style=flat-square)](tests/)
 [![License](https://img.shields.io/badge/license-MIT-ffe066?style=flat-square)](LICENSE)
 [![Version](https://img.shields.io/badge/version-1.2.1-ff00ff?style=flat-square)](VERSION)
 
@@ -40,9 +40,9 @@ Three transparent pills with a neon hex backplate, animated gap glow, and live t
 
 ### 🎬 Animated Wallpapers
 
-Live video wallpapers with cyberpunk glitch transitions. Cycle through 7 animated backgrounds with `SUPER + ALT + RIGHT/LEFT`, or toggle between live and static with `SUPER + ALT + UP`.
+Live video wallpapers with cyberpunk glitch transitions. Cycle through 7 animated backgrounds with `SUPER + ALT + N` / `SUPER + ALT + SHIFT + N`, or toggle between live and static with `SUPER + ALT + W`.
 
-Wallpapers are H.264 MP4 (not GIF) for better performance and smaller file size. SDDM and Plymouth extract frames with ffmpeg during install.
+Wallpapers are H.264 MP4 (not GIF) for better performance and smaller file size. Plymouth extracts its animation frames with ffmpeg during install; the SDDM login theme plays the GIF directly.
 
 ### 🎨 Complete Theme Coverage
 
@@ -54,39 +54,28 @@ Every surface follows the same neon pastel palette:
 - **Boot**: Plymouth splash with Miku animation, SDDM login theme
 - **Editors**: Micro, VS Code, btop all follow the palette
 
-### 🎭 Theme Variants (NEW!)
+### 🎭 Theme Menu
 
-Switch between 5 color schemes on-the-fly with `SUPER + SHIFT + T`:
+`SUPER + SHIFT + T` opens Omarchy's theme menu (the same menu as
+`SUPER + SHIFT + CTRL + SPACE`), where Virtual☆Paradise can be selected
+alongside any other installed theme. Switching themes does not require a
+restart.
 
-- **Cyberpunk** (default) — Miku cyan, neon magenta, hacker green on deep void
-- **Cozy** — Warm peach, cream, soft yellow for relaxed sessions
-- **Monochrome** — Pure white, grays, black for minimal aesthetic
-- **Neon** — Bright cyan, magenta, yellow for maximum vibrancy
-- **Sakura** — Pink variants for cherry blossom vibes
+The repository also ships `theme-switcher.sh` for changing the Virtual☆Paradise
+palette from a terminal (`theme-switcher.sh list` shows the variants). It is a
+terminal tool, not bound to a key.
 
-Theme switching is live — no restart needed. Colors update across Hyprland, terminals, GTK, and all widgets instantly.
+### ✨ Visual Effects
 
-### 🏝️ Floating Desktop Widgets (NEW!)
+Optional effects are available as scripts:
 
-Add floating widgets to your desktop with `SUPER + W`:
+- **Rainbow Borders** — `effects.sh rainbow`
+- **Glow Effect** — `effects.sh glow`
+- **Toggle Blur** — `effects.sh toggle-blur`
+- **Window Shake** — `effects.sh shake`
 
-- **Clock Widget** — Large time/date display (customizable position)
-- **System Stats** — Real-time CPU, RAM, temperature monitoring
-- **Weather Widget** — Current weather with auto-updates
-
-Widgets use `eww` for lightweight, fast rendering. Auto-generated configs on first run. Toggle all at once or select individually from the widget menu (`SUPER + SHIFT + W`).
-
-### ✨ Visual Effects (NEW!)
-
-Enhanced animations and visual feedback:
-
-- **Rainbow Borders** — Animated cycling gradient borders (run `effects.sh rainbow`)
-- **Glow Effect** — Pulsing shadow glow on active window (run `effects.sh glow`)
-- **Toggle Blur** — Switch between performance and aesthetic modes (`SUPER + SHIFT + E`)
-- **Shake Animation** — Window shake on error (`SUPER + ALT + E`)
-- **Focus Pulse** — Flash border on window focus change
-
-All effects are non-blocking and can run continuously in the background.
+They run in the foreground or background as you choose; the theme does not bind
+them to keys of their own.
 
 ### 🔧 Smart Installer
 
@@ -97,6 +86,7 @@ Idempotent, XDG-compliant, and respects your existing config:
 - Detects hardware and installs vendor-specific drivers (MSI, ASUS, Acer, Lenovo)
 - Supports `--user-only` for sudo-free installs
 - Supports `--no-boot` to skip Plymouth/SDDM
+- Supports `--sddm-only` to reinstall just the login theme
 
 ### 🛡️ Override Layer
 
@@ -143,7 +133,7 @@ The installer will:
 3. Install 12+ Omarchy plugins (wavebar, vitals, audio-control, etc.)
 4. Install the floating island bar as a first-party plugin
 5. Apply theme overrides to all plugins
-6. Install Plymouth/SDDM themes (if sudo available)
+6. Install the Plymouth splash and the SDDM login theme (if sudo available)
 7. Set up systemd timers for plugin updates and audio watchdog
 8. Restart the shell to apply changes
 
@@ -154,6 +144,7 @@ The installer will:
 | `./install.sh` | Full install with Plymouth/SDDM (requires sudo) |
 | `./install.sh --user-only` | Skip Plymouth/SDDM, no sudo needed |
 | `./install.sh --no-boot` | Skip Plymouth/SDDM even with sudo |
+| `./install.sh --sddm-only` | Install only the SDDM login theme (requires sudo) |
 | `./install.sh --hook` | Re-apply overrides only (for scripts) |
 
 The installer is **idempotent**: run it as many times as you want. It will only update what changed.
@@ -168,7 +159,7 @@ The installer is **idempotent**: run it as many times as you want. It will only 
 | Hyprland | `~/.config/hypr/` | Animations, window rules, keybindings |
 | Terminal | `~/.config/ghostty/`, `~/.config/alacritty/`, etc. | Terminal themes |
 | Plymouth | `/usr/share/plymouth/themes/omarchy/` | Boot splash (if sudo) |
-| SDDM | `/usr/share/sddm/themes/omarchy/` | Login theme (if sudo) |
+| SDDM | `/usr/share/sddm/themes/virtual-paradise/` | Login theme; selected in `/etc/sddm.conf.d/zz-virtual-paradise-theme.conf` (if sudo) |
 | Systemd | `~/.config/systemd/user/` | Plugin update timer, audio watchdog |
 
 ---
@@ -181,14 +172,25 @@ The installer is **idempotent**: run it as many times as you want. It will only 
 |----------|--------|
 | `SUPER + Q` | Launch rice layout (btop, cava, matrix, fastfetch) |
 | `SUPER + N` | Next static wallpaper |
-| `SUPER + ALT + UP` | Toggle live/static wallpaper |
-| `SUPER + ALT + RIGHT` | Next live wallpaper |
-| `SUPER + ALT + LEFT` | Previous live wallpaper |
+| `SUPER + ALT + W` | Toggle live/static wallpaper |
+| `SUPER + ALT + N` | Next live wallpaper |
+| `SUPER + ALT + SHIFT + N` | Previous live wallpaper |
 | `SUPER + ALT + C` | Toggle cooler boost (laptop fan) |
-| `SUPER + SHIFT + T` | Theme switcher |
+| `SUPER + SHIFT + T` | Omarchy theme menu |
 | `SUPER + E` | File manager |
 | `SUPER + B` | Web browser |
+| `SUPER + SHIFT + K` | Cast screen (wireless display) |
+| `SUPER + SHIFT + L` | Lock screen |
+| `SUPER + SHIFT + V` | VS Code |
+| `SUPER + PERIOD` | Emoji picker |
+| `SUPER + SHIFT + R` | Reload Hyprland config |
+| `SUPER + R` | Resize mode (H/J/K/L or arrows, ESC/RETURN to exit) |
 | `SUPER + BACKSLASH` | Matrix screensaver |
+
+Omarchy's own bindings are unchanged: `SUPER + RETURN` opens the terminal,
+`SUPER + K` lists keybindings, `SUPER + F` is fullscreen, and so on. The theme
+only adds bindings on free chords, because Hyprland runs *every* bind for a
+chord — a duplicate performs both actions.
 
 ### Changing Colors
 
@@ -260,7 +262,7 @@ The uninstaller will:
 1. Switch to the default Omarchy theme
 2. Remove all Virtual Paradise files
 3. Restore backups of your original configs
-4. Remove Plymouth/SDDM themes (if sudo available)
+4. Remove the SDDM login theme and restore the previous theme selection (if sudo available)
 5. Disable systemd timers
 6. Leave a snapshot in `~/.local/share/virtual-paradise/uninstall-snapshots/`
 
@@ -268,9 +270,8 @@ The uninstaller will:
 
 | Flag | Description |
 |------|-------------|
-| `--purge` | Remove all snapshots and backups |
-| `--keep-snapshots` | Keep uninstall snapshots for manual recovery |
-| `--skip-plugins` | Don't remove Omarchy plugins |
+| `--keep-backups` | Keep `shell-default.json` and the snapshot dir |
+| `--purge-defaults` | Also delete `shell-default.json` (irreversible) |
 
 ---
 
@@ -278,15 +279,14 @@ The uninstaller will:
 
 ### Running Tests
 
-The test suite has nine test cases and about 90 assertions; optional tools
+The test suite has ten test cases and 131 assertions; optional tools
 (`shellcheck`, `qmllint`, `hyprctl`) enable extra checks when present, so the
-exact count varies between machines (89 with `shellcheck`, 88 without). It runs
-in a sandbox and never touches your real system.
+exact count varies between machines (131 with `shellcheck`, 130 without). It
+runs in a sandbox and never touches your real system.
 
 ```bash
 ./tests/run.sh          # Run all tests
-./tests/run.sh tc1      # Run specific test case
-./tests/run.sh --fast   # Skip slow tests (qmllint, qmlformat)
+./tests/run.sh tc1 tc10 # Run specific test cases
 ```
 
 Test cases:
@@ -299,6 +299,7 @@ Test cases:
 - **TC-7**: User config restoration (zshrc, ghostty, fcitx5, micro)
 - **TC-8**: Theme-set hook (both directions, plugin state)
 - **TC-9**: Wallpaper playlist (all files detected)
+- **TC-10**: SDDM theme (standalone install, selection, legacy repair, uninstall)
 
 ### Project Structure
 
@@ -317,12 +318,13 @@ virtual-paradise/
 ├── hypr/                 # Hyprland config (animations, keybindings, rules)
 ├── lib/
 │   ├── plugin-overrides.sh    # Override layer implementation
+│   ├── sddm.sh                # SDDM theme install/remove/legacy repair
 │   ├── system.sh              # Hardware detection
 │   └── theme-set-hook.sh      # Theme-set hook (extracted from install.sh)
 ├── micro/                # Micro editor theme
 ├── overrides/            # Plugin overrides (QML patches)
 ├── plymouth/             # Plymouth boot splash
-├── sddm/                 # SDDM login theme
+├── sddm/                 # SDDM login theme (standalone, self-contained)
 ├── shell/                # shell.json template, zshrc
 ├── systemd/              # Systemd unit files
 ├── tests/                # Test suite

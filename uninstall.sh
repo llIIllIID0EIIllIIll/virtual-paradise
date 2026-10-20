@@ -216,6 +216,24 @@ elif [[ -f "$HOME/.zshrc" ]]; then
 fi
 rm -f "$HOME/.zshrc.zwc"
 
+# Put the recorded login shell back. install.sh only writes this file after a
+# successful chsh, and only with a path that /etc/shells accepts verbatim.
+prev_login_shell_file="$HOME/.local/state/virtual-paradise/login-shell.previous"
+if [[ -f "$prev_login_shell_file" ]]; then
+  prev_login_shell="$(head -n1 "$prev_login_shell_file" 2>/dev/null || true)"
+  if [[ -n $prev_login_shell && -x $prev_login_shell ]] \
+      && grep -qxF "$prev_login_shell" /etc/shells 2>/dev/null; then
+    if run_privileged chsh -s "$prev_login_shell" "$CURRENT_USER" 2>/dev/null; then
+      rm -f "$prev_login_shell_file"
+      printf 'Restored the login shell to %s\n' "$prev_login_shell"
+    else
+      printf 'Could not restore the login shell to %s (needs sudo).\n' "$prev_login_shell"
+    fi
+  else
+    printf 'Not restoring login shell "%s": it is not a valid entry in /etc/shells.\n' "$prev_login_shell"
+  fi
+fi
+
 # Files the installer edited in place, each with a .paradise.bak sibling.
 for pair in \
   "$CONFIG_DIR/ghostty/config" \
@@ -241,14 +259,28 @@ done
 # ship outright and strip the blocks we appended, leaving any surrounding lines
 # the user added intact.
 # ------------------------------------------------------------------------------
-hypr_bak="$(ls -1d "$CONFIG_DIR"/hypr/backup_* 2>/dev/null | sort | tail -n 1 || true)"
+# Prefer the snapshot recorded by install.sh: the first backup of a cycle is the
+# user's pre-install config. The newest one is the themed file from the last
+# re-install, so restoring it (as this used to) leaves Virtual☆Paradise
+# bindings behind after uninstall. Falling back to the oldest directory also
+# repairs machines that were installed before the state file existed.
+hypr_state="$HOME/.local/state/virtual-paradise/hypr-backup-dir"
+hypr_bak=""
+if [[ -f "$hypr_state" ]]; then
+  hypr_bak="$(head -n1 "$hypr_state" 2>/dev/null || true)"
+  [[ -d $hypr_bak ]] || hypr_bak=""
+fi
+[[ -n $hypr_bak ]] || hypr_bak="$(ls -1d "$CONFIG_DIR"/hypr/backup_* 2>/dev/null | sort | head -n 1 || true)"
+
 for file in looknfeel.lua input.lua bindings.lua; do
   target="$CONFIG_DIR/hypr/$file"
   [[ -e $target ]] || continue
   if [[ -n $hypr_bak && -f "$hypr_bak/$file" ]]; then
     cp "$hypr_bak/$file" "$target"
     printf 'Restored hypr/%s\n' "$file"
-  else
+  elif [[ -f "$REPO_DIR/hypr/$file" ]] && cmp -s "$REPO_DIR/hypr/$file" "$target"; then
+    # No snapshot: only remove a file that is byte-for-byte ours. A file the
+    # user edited is left alone instead of being deleted.
     rm -f "$target"
     printf 'Removed hypr/%s\n' "$file"
   fi
@@ -275,19 +307,36 @@ for file in monitors.lua autostart.lua; do
   fi
 done
 
+# The live-wallpaper hook is ours even when the snapshot predates it, so strip
+# it from an autostart.lua that the user owned.
+autostart="$CONFIG_DIR/hypr/autostart.lua"
+if [[ -f $autostart ]]; then
+  sed -i '/o\.launch_on_start("toggle_live_wallpaper\.sh init")/d' "$autostart"
+fi
+
 hyprland="$CONFIG_DIR/hypr/hyprland.lua"
 if [[ -f $hyprland ]]; then
-  sed -i -e '/-- Virtual Paradise Add-on Window Rules/d' \
-         -e '/Btop Monitor/d' \
-         -e '/Voxtype Config/d' \
-         -e '/GNOME Network Displays/d' \
-         -e '/org\.gnome\.Nautilus/d' "$hyprland"
+  # Remove the exact rules install.sh appends (plus the single leftover class
+  # rule older versions failed to strip). Patterns are anchored so a user rule
+  # for the same app, written differently, is preserved.
+  sed -i \
+    -e '/^-- Virtual Paradise Add-on Window Rules$/d' \
+    -e '/^o\.window({ initial_title = "Btop Monitor"/d' \
+    -e '/^o\.window({ title = "Btop Monitor"/d' \
+    -e '/^o\.window({ initial_title = "Voxtype Config"/d' \
+    -e '/^o\.window({ title = "Voxtype Config"/d' \
+    -e '/^o\.window({ initial_title = "GNOME Network Displays"/d' \
+    -e '/^o\.window({ title = "GNOME Network Displays"/d' \
+    -e '/^o\.window({ class = "org\.gnome\.NetworkDisplays"/d' \
+    -e '/^o\.window({ class = "org\.gnome\.Nautilus"/d' \
+    "$hyprland"
 fi
 
 # The preview-share-picker stylesheet is ours.
 rm -f "$CONFIG_DIR/hypr/hyprland-preview-share-picker.css"
 
 [[ -n $hypr_bak ]] && rm -rf "$hypr_bak"
+rm -f "$hypr_state" 2>/dev/null || true
 
 # btop theme is additive.
 rm -f "$CONFIG_DIR/btop/themes/virtual-paradise.theme"
@@ -390,6 +439,20 @@ if [[ -f "$tray_qml.paradise.orig" ]]; then
     printf 'Restored the stock system tray.\n'
   else
     printf 'Could not restore the stock system tray (needs sudo).\n'
+  fi
+fi
+
+# SDDM: remove our own theme and restore the previous selection. The old
+# installer patched /usr/share/sddm/themes/omarchy in place; repairing that here
+# means even a machine that never re-runs install.sh gets a stock login screen.
+if [[ -f "$REPO_DIR/lib/sddm.sh" ]]; then
+  if run_privileged bash -c \
+      '. "$1/lib/sddm.sh" && { sddm_theme_remove "/" && sddm_repair_legacy_theme "/"; }' _ "$REPO_DIR"; then
+    printf 'Removed the Virtual Paradise SDDM theme.\n'
+  else
+    printf 'Could not remove the SDDM theme (needs sudo). If the login screen still shows Virtual Paradise, run:\n'
+    printf '  sudo rm -rf /usr/share/sddm/themes/virtual-paradise\n'
+    printf '  sudo rm -f /etc/sddm.conf.d/zz-virtual-paradise-theme.conf\n'
   fi
 fi
 

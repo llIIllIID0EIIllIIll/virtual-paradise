@@ -1,8 +1,19 @@
 -- ==============================================================================
---  Virtual☆Paradise — Full-Topping Keybindings Configuration
+--  Virtual☆Paradise — extra keybindings
 -- ==============================================================================
---  Documentation: https://wiki.hypr.land/Configuring/Binds/
---  View all active bindings anytime: omarchy menu keybindings --print
+--  Omarchy 4 already ships a complete set of default bindings. Binding a chord
+--  that is already bound does not replace it: Hyprland runs both. SUPER + RETURN
+--  used to launch two terminals that way, SUPER + SHIFT + K moved a window and
+--  opened the cast dialog, and so on.
+--
+--  Keep this file to additions on chords Omarchy leaves free. If a default
+--  really has to be replaced, call hl.unbind("...") first, on the line before
+--  the new bind.
+--
+--  Check for conflicts before committing:
+--    python3 tools/check-bindings.py
+--  See every active binding:
+--    omarchy-menu-keybindings --print   (SUPER + K)
 -- ==============================================================================
 
 -- 1. HARDWARE CONTROLS
@@ -17,81 +28,34 @@ o.bind("SUPER + Q", "Rice Layout", "~/.local/bin/rice_layout.sh")
 -- Cycle to next wallpaper in Virtual☆Paradise theme
 o.bind("SUPER + N", "Next Wallpaper", "omarchy theme bg next")
 
--- Toggle Live Video Wallpaper (mpvpaper GPU playback)
-o.bind("SUPER + ALT + UP", "Toggle Live Wallpaper", "~/.local/bin/toggle_live_wallpaper.sh")
-o.bind("SUPER + ALT + RIGHT", "Next Live Wallpaper", "~/.local/bin/toggle_live_wallpaper.sh next")
-o.bind("SUPER + ALT + LEFT", "Prev Live Wallpaper", "~/.local/bin/toggle_live_wallpaper.sh prev")
+-- Live video wallpapers. Omarchy binds SUPER + ALT + arrows to window groups,
+-- so these use free chords: W toggles, N cycles forward, SHIFT + N backward.
+o.bind("SUPER + ALT + W", "Toggle Live Wallpaper", "~/.local/bin/toggle_live_wallpaper.sh")
+o.bind("SUPER + ALT + N", "Next Live Wallpaper", "~/.local/bin/toggle_live_wallpaper.sh next")
+o.bind("SUPER + ALT + SHIFT + N", "Previous Live Wallpaper", "~/.local/bin/toggle_live_wallpaper.sh prev")
 
--- Quick theme picker menu
-o.bind("SUPER + SHIFT + T", "Theme Switcher", "omarchy-menu toggle theme")
+-- Omarchy theme menu (the theme-variant script is a separate terminal tool)
+o.bind("SUPER + SHIFT + T", "Theme Menu", "omarchy-menu toggle theme")
 
 -- Launch Matrix screensaver in terminal
 o.bind("SUPER + backslash", "Matrix Screensaver", "omarchy launch screensaver")
 
 -- 3. ERGONOMIC APP LAUNCHERS
 --------------------------------------------------------------------------------
+-- Free chords: Omarchy uses SUPER + SHIFT + F / B / N for the same apps.
 -- Default File Manager (Auto-detects Nautilus, Dolphin, Thunar, Nemo, Yazi, etc.)
 o.bind("SUPER + E", "File Manager", "setsid uwsm-app -- xdg-open ~")
 
 -- Default Web Browser (Auto-detects default browser)
 o.bind("SUPER + B", "Web Browser", "omarchy launch browser")
 
--- Color Picker (Magnifier + Hex Copy)
-hl.unbind("SUPER + SHIFT + C")
-o.bind("SUPER + SHIFT + C", "Color Picker", "omarchy-capture-color")
-
--- 4. WIRELESS PROJECTION / CAST SCREEN (Cast Screen)
+-- 4. WIRELESS PROJECTION / CAST SCREEN
 --------------------------------------------------------------------------------
 o.bind("SUPER + SHIFT + K", "Cast Screen (Wireless Display)", "~/.local/bin/cast_screen.sh")
 
--- 5. WINDOW MANAGEMENT ENHANCEMENTS
---------------------------------------------------------------------------------
--- Center floating window
-o.bind("SUPER + SHIFT + SPACE", "Center Window", "hyprctl dispatch centerwindow")
-
--- Toggle floating
-o.bind("SUPER + F", "Toggle Floating", "hyprctl dispatch togglefloating")
-
--- Toggle fullscreen (keep decorations)
-o.bind("SUPER + SHIFT + F", "Fake Fullscreen", "hyprctl dispatch fakefullscreen")
-
--- Pin window (keep on all workspaces)
-o.bind("SUPER + P", "Pin Window", "hyprctl dispatch pin")
-
--- Toggle opaque (force no transparency)
-o.bind("SUPER + O", "Toggle Opaque", "hyprctl dispatch toggleopaque")
-
--- 6. WORKSPACE NAVIGATION
---------------------------------------------------------------------------------
--- Move to next/prev workspace with wrap
-o.bind("SUPER + TAB", "Next Workspace", "hyprctl dispatch workspace +1")
-o.bind("SUPER + SHIFT + TAB", "Prev Workspace", "hyprctl dispatch workspace -1")
-
--- Move window to next/prev workspace
-o.bind("SUPER + ALT + TAB", "Move Window Next WS", "hyprctl dispatch movetoworkspace +1")
-o.bind("SUPER + ALT + SHIFT + TAB", "Move Window Prev WS", "hyprctl dispatch movetoworkspace -1")
-
--- 7. WINDOW FOCUS & MOVEMENT
---------------------------------------------------------------------------------
--- Focus navigation (vim-style)
-o.bind("SUPER + H", "Focus Left", "hyprctl dispatch movefocus l")
-o.bind("SUPER + L", "Focus Right", "hyprctl dispatch movefocus r")
-o.bind("SUPER + K", "Focus Up", "hyprctl dispatch movefocus u")
-o.bind("SUPER + J", "Focus Down", "hyprctl dispatch movefocus d")
-
--- Move window (vim-style)
-o.bind("SUPER + SHIFT + H", "Move Window Left", "hyprctl dispatch movewindow l")
-o.bind("SUPER + SHIFT + L", "Move Window Right", "hyprctl dispatch movewindow r")
-o.bind("SUPER + SHIFT + K", "Move Window Up", "hyprctl dispatch movewindow u")
-o.bind("SUPER + SHIFT + J", "Move Window Down", "hyprctl dispatch movewindow d")
-
--- 8. WINDOW RESIZE
+-- 5. WINDOW RESIZE SUBMAP
 --------------------------------------------------------------------------------
 -- Resize mode (press SUPER + R, then HJKL or arrows, ESC/RETURN to leave).
--- Submaps are first-class in the Lua config: entering one is a dispatcher
--- (hl.dsp.submap) and the binds live in hl.define_submap. The old hyprlang
--- strings ("submap, resize") are not dispatchers here — they were being
--- executed as shell commands, so the submap never actually opened.
 o.bind("SUPER + R", "Resize Mode", hl.dsp.submap("resize"))
 hl.define_submap("resize", function()
   o.bind("H", "Resize Left", hl.dsp.window.resize({ x = -20, y = 0, relative = true }), { repeating = true })
@@ -106,54 +70,16 @@ hl.define_submap("resize", function()
   o.bind("RETURN", "Exit Resize", hl.dsp.submap("reset"))
 end)
 
--- 9. SCRATCHPAD & SPECIAL WORKSPACES
+-- 6. UTILITIES
 --------------------------------------------------------------------------------
--- Toggle scratchpad (special workspace)
-o.bind("SUPER + MINUS", "Toggle Scratchpad", "hyprctl dispatch togglespecialworkspace scratchpad")
-
--- Move window to scratchpad
-o.bind("SUPER + SHIFT + MINUS", "Move to Scratchpad", "hyprctl dispatch movetoworkspace special:scratchpad")
-
--- 10. SCREENSHOT & RECORDING
---------------------------------------------------------------------------------
--- Screenshot region
-o.bind("SUPER + SHIFT + S", "Screenshot Region", "omarchy-capture-screen region")
-
--- Screenshot window
-o.bind("SUPER + SHIFT + W", "Screenshot Window", "omarchy-capture-screen window")
-
--- Screenshot full screen
-o.bind("SUPER + SHIFT + PRINT", "Screenshot Full", "omarchy-capture-screen full")
-
--- Screen recording
-o.bind("SUPER + ALT + R", "Toggle Recording", "omarchy-capture-screen record")
-
--- 11. CLIPBOARD & HISTORY
---------------------------------------------------------------------------------
--- Clipboard manager
-o.bind("SUPER + V", "Clipboard History", "omarchy-menu clipboard")
-
--- Emoji picker
-o.bind("SUPER + PERIOD", "Emoji Picker", "omarchy-menu emojis")
-
--- 12. SYSTEM CONTROLS
---------------------------------------------------------------------------------
--- Lock screen
-o.bind("SUPER + SHIFT + L", "Lock Screen", "omarchy lock")
-
--- Logout menu
-o.bind("SUPER + SHIFT + E", "Logout Menu", "omarchy menu logout")
-
--- Reload Hyprland config
-o.bind("SUPER + SHIFT + R", "Reload Config", "hyprctl reload")
-
--- 13. DEVELOPMENT TOOLS
---------------------------------------------------------------------------------
--- Launch terminal
-o.bind("SUPER + RETURN", "Terminal", "omarchy launch terminal")
+-- Emoji picker (Omarchy's default is SUPER + CTRL + E; this is a shorter alias)
+o.bind("SUPER + PERIOD", "Emoji Picker", "omarchy-shell shell toggle omarchy.emojis")
 
 -- Launch editor (VS Code)
 o.bind("SUPER + SHIFT + V", "VS Code", "setsid uwsm-app -- code")
 
--- Launch system monitor (btop)
-o.bind("SUPER + SHIFT + B", "System Monitor", "omarchy launch terminal btop")
+-- Lock screen (Omarchy's default is SUPER + CTRL + L)
+o.bind("SUPER + SHIFT + L", "Lock Screen", "omarchy-system-lock")
+
+-- Reload Hyprland config
+o.bind("SUPER + SHIFT + R", "Reload Config", "hyprctl reload")

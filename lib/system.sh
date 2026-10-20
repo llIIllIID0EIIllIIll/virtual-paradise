@@ -11,6 +11,42 @@
 # 500-line block of detection and vendor branches in the middle of its step
 # sequence, which made the sequencing hard to follow.
 
+# Resolve the zsh path that PAM will accept as a login shell.
+#
+# `command -v zsh` is not reliable here: when /usr/sbin comes before /usr/bin
+# in PATH (which is the case for root's environment on some setups) it returns
+# /usr/sbin/zsh. pam_shells compares the passwd field against /etc/shells as a
+# string, so that value is rejected even though it points at the same binary —
+# the user then cannot log in with a password and autologin fails too.
+#
+# The optional first argument is a shells file, so the test suite can exercise
+# the selection without touching /etc/shells.
+resolve_login_shell() {
+  local shells_file="${1:-/etc/shells}"
+  local candidate
+
+  # Prefer a canonical path that is already registered.
+  for candidate in /usr/bin/zsh /bin/zsh; do
+    [[ -x $candidate ]] || continue
+    if grep -qxF "$candidate" "$shells_file" 2>/dev/null; then
+      printf '%s\n' "$candidate"
+      return 0
+    fi
+  done
+
+  # Not registered yet: still return the canonical path so the caller can add
+  # it to /etc/shells. Never return a /usr/sbin alias just because it is first
+  # in PATH.
+  for candidate in /usr/bin/zsh /bin/zsh; do
+    if [[ -x $candidate ]]; then
+      printf '%s\n' "$candidate"
+      return 0
+    fi
+  done
+
+  command -v zsh 2>/dev/null || true
+}
+
 detect_hardware_vendor() {
   local raw_vendor=""
   if [[ -r /sys/devices/virtual/dmi/id/sys_vendor ]]; then

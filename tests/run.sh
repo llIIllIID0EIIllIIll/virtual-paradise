@@ -4,7 +4,7 @@
 #   ./tests/run.sh            run everything
 #   ./tests/run.sh tc2 tc4    run only the named cases
 #
-# Cases are numbered TC-1..TC-9 and each maps to one numbered section of the
+# Cases are numbered TC-1..TC-10 and each maps to one numbered section of the
 # README's test matrix, so the two cannot drift apart silently.
 
 set -uo pipefail
@@ -194,6 +194,33 @@ $(basename "$f"): $out"
          done)
   check "systemd units end with a newline" \
     "$([[ -z $nonl ]] && echo 0 || echo 1)" "$nonl"
+
+  # Hyprland runs every bind that matches a chord, so a repeat is a double
+  # action: SUPER + RETURN used to launch two terminals. Compare against the
+  # installed Omarchy tree, or the committed fixture in CI.
+  if command -v python3 >/dev/null 2>&1; then
+    python3 "$REPO_DIR/tools/check-bindings.py" >/dev/null 2>&1
+    check "keybindings do not repeat or shadow Omarchy defaults" $?
+
+    shadow="$SANDBOX/bindings-shadow.lua"
+    printf 'o.bind("SUPER + RETURN", "Terminal", "true")\n' >"$shadow"
+    VP_BINDINGS_FILE="$shadow" OMARCHY_BINDINGS_DIR="$SANDBOX/no-omarchy" \
+      python3 "$REPO_DIR/tools/check-bindings.py" >/dev/null 2>&1
+    rc=$?
+    check "the binding checker rejects a shadowed Omarchy chord" \
+      "$([[ $rc -ne 0 ]] && echo 0 || echo 1)"
+
+    duplicate="$SANDBOX/bindings-duplicate.lua"
+    printf 'o.bind("SUPER + ALT + F24", "A", "true")\no.bind("SUPER + ALT + F24", "B", "true")\n' \
+      >"$duplicate"
+    VP_BINDINGS_FILE="$duplicate" OMARCHY_BINDINGS_DIR="$SANDBOX/no-omarchy" \
+      python3 "$REPO_DIR/tools/check-bindings.py" >/dev/null 2>&1
+    rc=$?
+    check "the binding checker rejects a repeated chord" \
+      "$([[ $rc -ne 0 ]] && echo 0 || echo 1)"
+  else
+    printf '  %sSKIP%s python3 not installed\n' "$DIM" "$OFF"
+  fi
 fi
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -573,6 +600,13 @@ if want tc7; then
   printf '[Groups/0]\nName=UserProfile\n' >"$C/fcitx5/profile"
   printf '{"user":"micro"}\n' >"$C/micro/settings.json"
   printf '# user look and feel\n' >"$C/hypr/looknfeel.lua"
+  printf -- '-- user bindings\n' >"$C/hypr/bindings.lua"
+  printf -- '-- user input tuning\n' >"$C/hypr/input.lua"
+  printf -- '-- user autostart\n' >"$C/hypr/autostart.lua"
+  # The note contains "GNOME Network Displays": an older guard keyed on that
+  # string and skipped installing the window rules because of a user comment.
+  printf -- '-- user hyprland config\n-- my own GNOME Network Displays note\nrequire("default.hypr.omarchy")\n' \
+    >"$C/hypr/hyprland.lua"
 
   run_installer "$root" >/dev/null 2>&1
   check "install exits 0" $?
@@ -586,6 +620,16 @@ if want tc7; then
     "$([[ -f "$C/fcitx5/profile.paradise.bak" ]] && echo 0 || echo 1)"
   check "installer backed up micro settings" \
     "$([[ -f "$C/micro/settings.json.paradise.bak" ]] && echo 0 || echo 1)"
+  check "installer added the window-rule block despite the user's note" \
+    "$(grep -q 'Virtual Paradise Add-on Window Rules' "$C/hypr/hyprland.lua" && echo 0 || echo 1)"
+
+  # A second run must be safe. Uninstall used to restore the newest snapshot
+  # (which is the themed file from the re-install), leaving Paradise bindings
+  # behind after the theme was removed — the SUPER+RETURN double-terminal bug.
+  run_installer "$root" >/dev/null 2>&1
+  check "a second install exits 0" $?
+  check "re-install keeps a single window-rule block" \
+    "$([[ $(grep -c 'Virtual Paradise Add-on Window Rules' "$C/hypr/hyprland.lua") -eq 1 ]] && echo 0 || echo 1)"
 
   run_uninstaller "$root" >/dev/null 2>&1
   check "uninstall exits 0" $?
@@ -600,6 +644,19 @@ if want tc7; then
   check "micro settings restored to the original" $?
   grep -q 'user look and feel' "$C/hypr/looknfeel.lua" 2>/dev/null
   check "hypr looknfeel restored to the original" $?
+  grep -q -- '-- user bindings' "$C/hypr/bindings.lua" 2>/dev/null
+  check "hypr bindings restored to the original after a re-install" $?
+  grep -q -- '-- user input tuning' "$C/hypr/input.lua" 2>/dev/null
+  check "hypr input restored to the original after a re-install" $?
+  check "the wallpaper hook is gone from the user's autostart" \
+    "$(grep -q -- '-- user autostart' "$C/hypr/autostart.lua" 2>/dev/null \
+       && ! grep -q 'toggle_live_wallpaper' "$C/hypr/autostart.lua" && echo 0 || echo 1)"
+  check "the window-rule block is removed" \
+    "$(grep -q 'Virtual Paradise Add-on Window Rules' "$C/hypr/hyprland.lua" && echo 1 || echo 0)"
+  check "the user's own hyprland line survives" \
+    "$(grep -q 'my own GNOME Network Displays note' "$C/hypr/hyprland.lua" && echo 0 || echo 1)"
+  check "the hypr snapshot state file is removed" \
+    "$([[ ! -f "$H/.local/state/virtual-paradise/hypr-backup-dir" ]] && echo 0 || echo 1)"
 
   # Backups are ours to clean up once consumed.
   check "consumed .paradise.bak files are removed" \
@@ -626,6 +683,18 @@ if want tc7; then
     "$([[ -f "$root2/home/.config/fastfetch/logo.txt" ]] && echo 1 || echo 0)"
   check "a hypr config created by the installer is removed" \
     "$([[ -f "$root2/home/.config/hypr/looknfeel.lua" ]] && echo 1 || echo 0)"
+
+  # Without a snapshot, a hypr file the user edited must survive uninstall. The
+  # old code treated "no snapshot" as "the file is ours" and deleted it.
+  root3="$(new_sandbox tc7c)"
+  build_shims "$root3/bin"
+  run_installer "$root3" >/dev/null 2>&1
+  printf -- '-- user addition\n' >>"$root3/home/.config/hypr/bindings.lua"
+  rm -rf "$root3/home/.config/hypr"/backup_*
+  rm -f "$root3/home/.local/state/virtual-paradise/hypr-backup-dir"
+  run_uninstaller "$root3" >/dev/null 2>&1
+  check "a user-edited hypr file with no snapshot is preserved" \
+    "$(grep -q -- '-- user addition' "$root3/home/.config/hypr/bindings.lua" 2>/dev/null && echo 0 || echo 1)"
 fi
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -707,6 +776,153 @@ if want tc9; then
   count=$(printf '%s\n' "$out" | grep -c '•')
   check "the playlist reports all 7 files, not just the last (got $count)" \
     "$([[ $count -eq 7 ]] && echo 0 || echo 1)"
+fi
+
+# ─────────────────────────────────────────────────────────────────────────────
+# TC-10  SDDM theme: installed on its own, never patched into Omarchy's theme.
+#
+# install.sh used to copy its QML and a 13 MB gif over
+# /usr/share/sddm/themes/omarchy, a directory owned by the omarchy-settings
+# package. Package updates reverted half of it, and uninstall.sh had nothing to
+# restore, so users were left with a broken login screen. The theme now lives in
+# /usr/share/sddm/themes/virtual-paradise and the selection in a drop-in; these
+# checks run the real lib/sddm.sh against a throwaway system root.
+# ─────────────────────────────────────────────────────────────────────────────
+if want tc10; then
+  section "TC-10  SDDM theme install/remove"
+
+  root="$(new_sandbox tc10)"
+  sys="$root/sys"
+  theme="$sys/usr/share/sddm/themes/virtual-paradise"
+  conf="$sys/etc/sddm.conf.d/zz-virtual-paradise-theme.conf"
+  stock_dir="$sys/usr/share/omarchy/default/sddm/omarchy"
+  legacy_dir="$sys/usr/share/sddm/themes/omarchy"
+
+  mkdir -p "$stock_dir" "$legacy_dir" "$sys/etc/sddm.conf.d" "$sys/usr/lib/sddm/sddm.conf.d"
+  printf '// stock omarchy theme\n' >"$stock_dir/Main.qml"
+  cp "$stock_dir/Main.qml" "$legacy_dir/Main.qml"
+  printf '[General]\n' >"$legacy_dir/theme.conf"
+  printf '[Theme]\nCurrent=omarchy\n' >"$sys/etc/sddm.conf.d/99-omarchy-login.conf"
+
+  # Reproduce what the old installer left behind: our QML and the gif copied
+  # into the package-owned omarchy theme.
+  cp "$REPO_DIR/sddm/Main.qml" "$legacy_dir/Main.qml"
+  printf 'gif\n' >"$legacy_dir/Miku_animated_full.gif"
+
+  vp_sddm() { ( . "$REPO_DIR/lib/sddm.sh"; "$@" ); }
+
+  vp_sddm sddm_theme_install "$sys" "$REPO_DIR" >"$root/sddm-install.log" 2>&1
+  check "SDDM theme install exits 0" $? "$(tail -3 "$root/sddm-install.log")"
+
+  check "the theme is installed in its own directory" \
+    "$([[ -f $theme/Main.qml ]] && echo 0 || echo 1)"
+  check "theme.conf and metadata.desktop are installed" \
+    "$([[ -f $theme/theme.conf && -f $theme/metadata.desktop ]] && echo 0 || echo 1)"
+  check "the animated background is installed" \
+    "$([[ -f $theme/Miku_animated_full.gif ]] && echo 0 || echo 1)"
+  check "every asset referenced by Main.qml exists" \
+    "$(vp_sddm sddm_theme_verify "$sys" >/dev/null 2>&1 && echo 0 || echo 1)"
+  check "Main.qml is marked as ours (so uninstall can be safe)" \
+    "$(grep -qF 'Virtual☆Paradise SDDM theme' "$theme/Main.qml" && echo 0 || echo 1)"
+  check "the drop-in selects virtual-paradise" \
+    "$(grep -qx 'Current=virtual-paradise' "$conf" && echo 0 || echo 1)"
+
+  got_theme="$(vp_sddm sddm_effective_theme "$sys")"
+  check "SDDM would load virtual-paradise, not omarchy (got ${got_theme:-none})" \
+    "$([[ $got_theme == virtual-paradise ]] && echo 0 || echo 1)"
+
+  check "the old in-place patch was repaired (gif removed)" \
+    "$([[ ! -e $legacy_dir/Miku_animated_full.gif ]] && echo 0 || echo 1)"
+  check "the stock omarchy Main.qml was restored" \
+    "$(cmp -s "$stock_dir/Main.qml" "$legacy_dir/Main.qml" && echo 0 || echo 1)"
+
+  # Repeated installs must converge: the theme is swapped in, not appended to.
+  first="$(find "$theme" -type f -print0 | sort -z | xargs -0 sha256sum | sed "s|$theme/||" | sha256sum)"
+  vp_sddm sddm_theme_install "$sys" "$REPO_DIR" >/dev/null 2>&1
+  check "a second SDDM install exits 0" $?
+  second="$(find "$theme" -type f -print0 | sort -z | xargs -0 sha256sum | sed "s|$theme/||" | sha256sum)"
+  check "a second SDDM install rewrites nothing" \
+    "$([[ $first == "$second" ]] && echo 0 || echo 1)"
+
+  vp_sddm sddm_theme_remove "$sys" >"$root/sddm-remove.log" 2>&1
+  check "SDDM theme remove exits 0" $?
+  check "the theme directory is removed" "$([[ ! -e $theme ]] && echo 0 || echo 1)"
+  check "the drop-in is removed" "$([[ ! -e $conf ]] && echo 0 || echo 1)"
+  check "the stock omarchy theme is still stock" \
+    "$(cmp -s "$stock_dir/Main.qml" "$legacy_dir/Main.qml" && echo 0 || echo 1)"
+
+  got_theme="$(vp_sddm sddm_effective_theme "$sys")"
+  check "uninstall restores the previous theme selection (got ${got_theme:-none})" \
+    "$([[ $got_theme == omarchy ]] && echo 0 || echo 1)"
+
+  # A foreign file at our drop-in path is preserved and put back.
+  sys2="$root/sys2"
+  mkdir -p "$sys2/etc/sddm.conf.d" "$sys2/usr/share/omarchy/default/sddm/omarchy"
+  printf '# local admin override\n[Theme]\nCurrent=elarun\n' \
+    >"$sys2/etc/sddm.conf.d/zz-virtual-paradise-theme.conf"
+  vp_sddm sddm_theme_install "$sys2" "$REPO_DIR" >/dev/null 2>&1
+  check "install backs up a foreign drop-in with the same name" \
+    "$(grep -q 'Current=elarun' "$sys2/var/lib/virtual-paradise/sddm/previous-theme.conf" && echo 0 || echo 1)"
+  vp_sddm sddm_theme_remove "$sys2" >/dev/null 2>&1
+  check "remove restores the foreign drop-in" \
+    "$(grep -q 'Current=elarun' "$sys2/etc/sddm.conf.d/zz-virtual-paradise-theme.conf" && echo 0 || echo 1)"
+
+  # A directory with our theme name that we did not create is never deleted.
+  sys3="$root/sys3"
+  mkdir -p "$sys3/usr/share/sddm/themes/virtual-paradise"
+  printf '// not ours\n' >"$sys3/usr/share/sddm/themes/virtual-paradise/Main.qml"
+  vp_sddm sddm_theme_remove "$sys3" >/dev/null 2>&1
+  check "remove leaves a theme it does not own alone" \
+    "$([[ -f $sys3/usr/share/sddm/themes/virtual-paradise/Main.qml ]] && echo 0 || echo 1)"
+
+  vp_sddm sddm_theme_install "$sys3" "$REPO_DIR" >"$root/sddm-foreign.log" 2>&1
+  rc=$?
+  check "install refuses to replace a theme it does not own" \
+    "$([[ $rc -ne 0 ]] && echo 0 || echo 1)" "$(tail -2 "$root/sddm-foreign.log")"
+  check "the foreign theme survives the refused install" \
+    "$(grep -qx '// not ours' "$sys3/usr/share/sddm/themes/virtual-paradise/Main.qml" && echo 0 || echo 1)"
+
+  check "install.sh installs SDDM through lib/sddm.sh" \
+    "$(grep -q 'lib/sddm.sh' "$REPO_DIR/install.sh" && echo 0 || echo 1)"
+  check "install.sh no longer patches the omarchy theme" \
+    "$(grep -vE '^[[:space:]]*#' "$REPO_DIR/install.sh" | grep -q 'sddm/themes/omarchy' && echo 1 || echo 0)"
+  check "uninstall.sh removes the SDDM theme" \
+    "$(grep -q 'sddm_theme_remove' "$REPO_DIR/uninstall.sh" && echo 0 || echo 1)"
+
+  # --sddm-only must reach the installer without touching Plymouth or the
+  # initramfs. sudo is a shim here, so this checks the wiring, not the files.
+  # Skipped as root: run_privileged would then execute the real install
+  # against /, which the suite must never do.
+  if (( EUID != 0 )); then
+    mkdir -p "$root/bin" "$root/home-sddm"
+    build_shims "$root/bin"
+    ( cd "$REPO_DIR" \
+      && PATH="$root/bin:$PATH" HOME="$root/home-sddm" \
+         XDG_CONFIG_HOME="$root/home-sddm/.config" SHIM_LOG="$root/shim-sddm.log" \
+         timeout 300 bash ./install.sh --sddm-only >"$root/sddm-only.log" 2>&1 )
+    check "install.sh --sddm-only exits 0" $? "$(tail -3 "$root/sddm-only.log")"
+    check "--sddm-only does not invoke Plymouth or mkinitcpio" \
+      "$(grep -qE 'plymouth-set-default-theme|mkinitcpio|limine-mkinitcpio' "$root/shim-sddm.log" && echo 1 || echo 0)"
+  else
+    printf '  %sSKIP%s --sddm-only runs privileged commands (root)\n' "$DIM" "$OFF"
+  fi
+
+  # The login shell must be a path PAM accepts verbatim. `command -v zsh` can
+  # return /usr/sbin/zsh, which pam_shells rejects when only the canonical path
+  # is listed — a real login loop on this machine.
+  if [[ -x /usr/bin/zsh ]]; then
+    printf '/usr/sbin/zsh\n' >"$root/shells-sbin"
+    got_shell="$( . "$REPO_DIR/lib/system.sh"; resolve_login_shell "$root/shells-sbin" )"
+    check "the login-shell resolver never picks /usr/sbin/zsh (got ${got_shell:-none})" \
+      "$([[ $got_shell == /usr/bin/zsh ]] && echo 0 || echo 1)"
+
+    printf '/bin/zsh\n/usr/bin/zsh\n' >"$root/shells-ok"
+    got_shell="$( . "$REPO_DIR/lib/system.sh"; resolve_login_shell "$root/shells-ok" )"
+    check "a registered canonical zsh is kept (got ${got_shell:-none})" \
+      "$([[ $got_shell == /usr/bin/zsh ]] && echo 0 || echo 1)"
+  else
+    printf '  %sSKIP%s zsh not installed\n' "$DIM" "$OFF"
+  fi
 fi
 
 summary

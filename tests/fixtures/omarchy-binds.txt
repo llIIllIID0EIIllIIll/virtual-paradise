@@ -1,0 +1,189 @@
+# Omarchy default keybindings (literal o.bind / o.bind_toggle keys).
+# Used only when the Omarchy tree is not installed, e.g. in CI.
+# Refresh after an Omarchy update: tools/check-bindings.py --write-fixture
+SUPER + SHIFT + ALT + 
+SUPER + SHIFT + 
+SUPER + 
+SUPER + SHIFT + ALT + A
+SUPER + SHIFT + CTRL + A
+SUPER + CTRL + A
+SUPER + SHIFT + A
+SUPER + CTRL + ALT + B
+SUPER + SHIFT + ALT + B
+SUPER + ALT + code:
+SUPER + SHIFT + ALT + code:20
+SUPER + ALT + code:20
+SUPER + SHIFT + ALT + code:21
+SUPER + ALT + code:21
+SUPER + ALT + code:34
+SUPER + ALT + code:35
+SUPER + SHIFT + ALT + comma
+SUPER + ALT + comma
+SUPER + CTRL + ALT + D
+CTRL + ALT + DELETE
+SUPER + CTRL + ALT + Delete
+SUPER + CTRL + ALT + R
+CTRL + ALT + SHIFT + TAB
+SUPER + CTRL + ALT + T
+SUPER + CTRL + ALT + W
+SUPER + CTRL + ALT + Z
+CTRL + ALT + TAB
+SUPER + SHIFT + ALT + DOWN
+SUPER + ALT + DOWN
+SUPER + SHIFT + ALT + E
+SUPER + ALT + SHIFT + F
+SUPER + ALT + F
+SUPER + SHIFT + ALT + G
+SUPER + ALT + G
+SUPER + ALT + Home
+SUPER + ALT + K
+SUPER + SHIFT + ALT + LEFT
+SUPER + ALT + LEFT
+SUPER + SHIFT + ALT + M
+SUPER + ALT + mouse_down
+SUPER + ALT + mouse_up
+ALT + PRINT
+SUPER + ALT + RETURN
+SUPER + SHIFT + ALT + RIGHT
+SUPER + ALT + RIGHT
+SUPER + ALT + S
+SUPER + ALT + SHIFT + TAB
+SUPER + SHIFT + ALT + UP
+SUPER + SHIFT + ALT + X
+ALT + SHIFT + TAB
+ALT + SHIFT + XF86AudioPlay
+SUPER + ALT + SLASH
+SUPER + ALT + SPACE
+SUPER + ALT + TAB
+SUPER + ALT + UP
+ALT + TAB
+ALT + XF86AudioLowerVolume
+ALT + XF86AudioPlay
+ALT + XF86AudioRaiseVolume
+ALT + XF86MonBrightnessDown
+ALT + XF86MonBrightnessUp
+SUPER + CTRL + B
+SUPER + SHIFT + B
+SUPER + CTRL + BACKSPACE
+SUPER + SHIFT + BACKSPACE
+SUPER + BACKSPACE
+SUPER + CTRL + C
+SUPER + SHIFT + C
+SUPER + C
+SUPER + CTRL + code:
+SUPER + CTRL + SHIFT + code:20
+SUPER + CTRL + code:20
+SUPER + SHIFT + code:20
+SUPER + code:20
+SUPER + SHIFT + code:201
+SUPER + CTRL + SHIFT + code:21
+SUPER + CTRL + code:21
+SUPER + SHIFT + code:21
+SUPER + code:21
+SUPER + CTRL + comma
+SUPER + SHIFT + comma
+SUPER + comma
+SUPER + CTRL + D
+SUPER + CTRL + Delete
+SUPER + CTRL + E
+SUPER + CTRL + F
+SUPER + SHIFT + CTRL + G
+SUPER + CTRL + H
+SUPER + CTRL + I
+SUPER + CTRL + K
+SUPER + CTRL + L
+SUPER + CTRL + LEFT
+SUPER + CTRL + N
+SUPER + CTRL + O
+SUPER + CTRL + P
+SUPER + CTRL + PERIOD
+SUPER + CTRL + PRINT
+SUPER + CTRL + Q
+SUPER + SHIFT + CTRL + R
+SUPER + CTRL + R
+SUPER + CTRL + RETURN
+SUPER + CTRL + RIGHT
+SUPER + CTRL + S
+SUPER + SHIFT + CTRL + SPACE
+SUPER + CTRL + SPACE
+SUPER + CTRL + T
+SUPER + CTRL + TAB
+SUPER + CTRL + V
+SUPER + CTRL + W
+SUPER + CTRL + X
+SUPER + CTRL + Z
+SUPER + SHIFT + D
+SUPER + SHIFT + DOWN
+SUPER + DOWN
+SUPER + SHIFT + E
+SUPER + ESCAPE
+SUPER + SHIFT + F
+SUPER + F
+F9
+SUPER + SHIFT + G
+SUPER + G
+SUPER + Home
+SUPER + J
+SUPER + K
+SUPER + L
+SUPER + SHIFT + LEFT
+SUPER + LEFT
+SUPER + SHIFT + M
+SUPER + mouse:272
+SUPER + mouse:273
+SUPER + mouse_down
+SUPER + mouse_up
+SUPER + SHIFT + N
+SUPER + SHIFT + O
+SUPER + O
+SUPER + SHIFT + P
+SUPER + P
+PRINT
+SUPER + PRINT
+SUPER + SHIFT + RETURN
+SUPER + RETURN
+SUPER + SHIFT + RIGHT
+SUPER + RIGHT
+SUPER + SHIFT + S
+SUPER + S
+SUPER + SHIFT + SLASH
+SUPER + SHIFT + SPACE
+SUPER + SHIFT + TAB
+SUPER + SHIFT + UP
+SUPER + SHIFT + W
+SUPER + SHIFT + X
+SUPER + SHIFT + Y
+SHIFT + XF86AudioMute
+SHIFT + XF86AudioPause
+SHIFT + XF86AudioPlay
+SHIFT + XF86MonBrightnessDown
+SHIFT + XF86MonBrightnessUp
+SUPER + SLASH
+SUPER + SPACE
+SUPER + T
+SUPER + TAB
+SUPER + UP
+SUPER + V
+SUPER + W
+SUPER + X
+switch:off:Lid Switch
+switch:on:Lid Switch
+XF86AudioLowerVolume
+XF86AudioMicMute
+XF86AudioMute
+XF86AudioNext
+XF86AudioPause
+XF86AudioPlay
+XF86AudioPrev
+XF86AudioRaiseVolume
+XF86Calculator
+XF86Eject
+XF86KbdBrightnessDown
+XF86KbdBrightnessUp
+XF86KbdLightOnOff
+XF86MonBrightnessDown
+XF86MonBrightnessUp
+XF86PowerOff
+XF86TouchpadOff
+XF86TouchpadOn
+XF86TouchpadToggle
