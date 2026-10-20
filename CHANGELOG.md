@@ -9,6 +9,21 @@ Conventional Commits.
 ## [Unreleased]
 
 ### Fixed
+- **`sudo ./install.sh` no longer fails with "OMARCHY_PATH is not set".**
+  Omarchy sets `OMARCHY_PATH` in the user's shell, but sudo resets the
+  environment, so every `omarchy ...` command the installer started ran
+  without it: `omarchy plugin list` answered "OMARCHY_PATH is not set",
+  `omarchy restart shell` looked for the shell config in "/shell", and
+  `omarchy-shell shell rescanPlugins` failed the same way. The installer
+  ignores those errors, so the run *looked* successful while no plugin was
+  enabled, the theme was never applied and the shell never restarted. The
+  path is now resolved the way Omarchy does (`/etc/omarchy.conf` for a dev
+  checkout, otherwise `/usr/share/omarchy`) and handed to every command the
+  installer, the uninstaller and the plugin updater start.
+- **The daily plugin update check works again.** It runs from a systemd
+  timer, and the user manager's environment carries no `OMARCHY_PATH` either,
+  so the check answered "OMARCHY_PATH is not set" and reported nothing. The
+  updater resolves the path itself now.
 - **`SUPER + ALT + ←` / `→` switch the live wallpaper again.** The theme
   bound those two chords to the live wallpaper while Omarchy bound them to
   "move window into the group on the left/right". Hyprland runs every bind of

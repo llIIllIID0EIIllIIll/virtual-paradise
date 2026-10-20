@@ -17,6 +17,18 @@ CONFIG_DIR="${XDG_CONFIG_HOME:-$HOME/.config}"
 LOCAL_BIN="$HOME/.local/bin"
 BACKUP_DIR="$HOME/.local/state/virtual-paradise/uninstall-backup-$(date +%Y%m%d_%H%M%S)"
 
+# Omarchy's own environment. sudo resets the environment, so OMARCHY_PATH is
+# missing when the uninstaller runs as root: every `omarchy ...` call would
+# answer "OMARCHY_PATH is not set" and the plugins, theme and shell would
+# never be touched. Resolve it the way Omarchy does.
+# shellcheck source=lib/omarchy-env.sh
+if [[ -f "$REPO_DIR/lib/omarchy-env.sh" ]]; then
+  . "$REPO_DIR/lib/omarchy-env.sh"
+  omarchy_export_env
+else
+  export OMARCHY_PATH="${OMARCHY_PATH:-/usr/share/omarchy}"
+fi
+
 RUN_AS_INSTALL_USER() {
   if (( EUID == 0 )) && [[ -n "${SUDO_USER:-}" && "$SUDO_USER" != "root" ]]; then
     sudo -u "$CURRENT_USER" \
@@ -26,6 +38,7 @@ RUN_AS_INSTALL_USER() {
       WAYLAND_DISPLAY="${WAYLAND_DISPLAY:-}" \
       HYPRLAND_INSTANCE_SIGNATURE="${HYPRLAND_INSTANCE_SIGNATURE:-}" \
       DBUS_SESSION_BUS_ADDRESS="${DBUS_SESSION_BUS_ADDRESS:-}" \
+      OMARCHY_PATH="$OMARCHY_PATH" \
       "$@"
   else
     "$@"
@@ -68,7 +81,8 @@ run_privileged() {
   if (( EUID == 0 )); then
     "$@"
   else
-    sudo "$@"
+    # sudo resets the environment: hand OMARCHY_PATH over explicitly.
+    sudo env OMARCHY_PATH="$OMARCHY_PATH" "$@"
   fi
 }
 
