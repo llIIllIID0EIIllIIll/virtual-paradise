@@ -149,6 +149,10 @@ omarchy_export_env
 # at the next login.
 omarchy_resolve_session_env "$CURRENT_USER" || true
 
+# File helpers: replacing a config must not change its mode or its owner.
+# shellcheck source=lib/file-ops.sh
+. "$REPO_DIR/lib/file-ops.sh"
+
 cleanup_install() {
   local ec=$?
   if [[ -n "${SUDO_KEEP_ALIVE_PID:-}" ]]; then
@@ -1069,6 +1073,15 @@ extract_rules_block() {
   return 0
 }
 
+# Replace a file without changing who owns it or how it may be read.
+#
+# A mktemp file is created with mode 600 and `mv` keeps that mode, so the
+# Hyprland config ended up as -rw------- : the compositor answered "cannot
+# open ~/.config/hypr/hyprland.lua: Permission denied", and during a root run
+# the file was root-owned on top of that until the installer cleaned up. The
+# original mode and owner are restored here.
+# (lib/file-ops.sh, so the test suite can exercise it directly.)
+
 # Put the block back, in front of hyprmoncfg's "load last" line.
 insert_rules_block() {
   local file="$1" block merged
@@ -1088,7 +1101,10 @@ insert_rules_block() {
       { print }
     ' "$file" >"$merged"
     if [[ -s $merged ]]; then
-      mv "$merged" "$file"
+      replace_file_preserving "$file" "$merged" || {
+        rm -f "$merged"
+        cat "$block" >>"$file"
+      }
     else
       rm -f "$merged"
       cat "$block" >>"$file"
@@ -1132,6 +1148,17 @@ EOF
     log_sub "Configured floating window rules for Btop, Voxtype, Cast Screen & Nautilus"
   fi
 fi
+
+# 5.7 Config files the compositor has to read
+#
+# The compositor runs as the user, so a config file that ended up unreadable
+# (mode 600 - a mktemp file that was moved into place - or owned by root
+# during a `sudo ./install.sh` run) shows up in the error overlay as
+# "cannot open ~/.config/hypr/hyprland.lua: Permission denied". Every file
+# the theme writes is made readable and owned by the user again.
+for hypr_file in looknfeel.lua input.lua bindings.lua monitors.lua autostart.lua hyprland.lua; do
+  ensure_readable_file "$CONFIG_DIR/hypr/$hypr_file" "$CURRENT_USER" || true
+done
 
 # NOTE: hypr/hyprland.lua and hypr/hyprland.conf were removed. Omarchy loads
 # hyprland.lua as its own entry point which require()s monitors -> input ->
