@@ -38,9 +38,10 @@ Conventional Commits.
 - **The boot splash is centred and decorated.** The 1600x900 picture sits in
   the middle of the screen, the bars around it are filled with a dark violet
   gradient instead of flat black, a neon border with pink corner brackets
-  marks the edge of the picture, and the "VIRTUAL◈PARADISE" caption sits in
-  the bar above it. The caption hides itself on a screen too small to have a
-  bar, so it never lands on the animation.
+  marks the edge of the picture, and a tiled cyber pattern - a diagonal
+  circuit line with a node and a pink dash - runs through the four bars.
+  The tiles that would land on the animation are skipped, so the pattern
+  always stays in the empty space, and the layout follows the screen size.
 - **The compositor can read the Hyprland config the installer writes.** A
   `mktemp` file is created with mode 600 and `mv` keeps that mode, so moving
   a freshly built `hyprland.lua` into place turned it into `-rw-------`. In a
