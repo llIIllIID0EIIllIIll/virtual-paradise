@@ -1,108 +1,64 @@
-# Virtual☆Paradise Keybindings (New Features)
+# Virtual☆Paradise Keybindings
 
-## Theme Variants
-- `SUPER + SHIFT + T` — Open theme variant switcher (interactive menu)
-- Switch between: cyberpunk, cozy, monochrome, neon, sakura
+Omarchy already ships a full set of default bindings. Hyprland does **not**
+replace a binding when the same chord is bound again — it runs every matching
+bind. The theme therefore only adds bindings on chords Omarchy leaves free.
 
-## Floating Widgets
-- `SUPER + W` — Toggle all floating widgets
-- `SUPER + SHIFT + W` — Widget menu (select individual widgets)
-  - Clock widget (large time/date)
-  - System stats (CPU, RAM, temp)
-  - Weather widget
+If a default really has to be replaced, call `hl.unbind("...")` on the line
+before the new bind. `tools/check-bindings.py` fails when a chord is repeated or
+shadows an Omarchy default.
 
-## Visual Effects
-- `SUPER + SHIFT + E` — Toggle blur (performance vs aesthetic)
-- `SUPER + ALT + E` — Shake active window (error feedback)
+See every active binding with `SUPER + K` (or
+`omarchy-menu-keybindings --print`).
 
-## Usage Examples
+## Theme additions
 
-### Theme Switcher
-```bash
-# Interactive menu (requires fzf for best experience)
-theme-switcher.sh
+| Shortcut | Action |
+|----------|--------|
+| `SUPER + Q` | Rice layout (fastfetch → btop → cava → unimatrix) |
+| `SUPER + N` | Next static wallpaper |
+| `SUPER + ALT + W` | Toggle live video wallpaper |
+| `SUPER + ALT + N` | Next live wallpaper |
+| `SUPER + ALT + SHIFT + N` | Previous live wallpaper |
+| `SUPER + ALT + C` | Toggle cooler boost |
+| `SUPER + SHIFT + T` | Open the Omarchy theme menu |
+| `SUPER + E` | File manager (default app) |
+| `SUPER + B` | Web browser (default app) |
+| `SUPER + SHIFT + K` | Cast screen (wireless display) |
+| `SUPER + SHIFT + L` | Lock screen |
+| `SUPER + SHIFT + V` | VS Code |
+| `SUPER + PERIOD` | Emoji picker |
+| `SUPER + SHIFT + R` | Reload the Hyprland config |
+| `SUPER + BACKSLASH` | Matrix screensaver |
 
-# Direct switch
-theme-switcher.sh cyberpunk
-theme-switcher.sh cozy
-theme-switcher.sh monochrome
+### Resize mode
 
-# List available variants
-theme-switcher.sh list
-```
+Press `SUPER + R`, then use `H`/`J`/`K`/`L` or the arrow keys. `ESC` or `RETURN`
+leaves the mode.
 
-### Floating Widgets
-```bash
-# Toggle all widgets
-widgets.sh all
+## Omarchy defaults
 
-# Toggle individual widgets
-widgets.sh clock
-widgets.sh stats
-widgets.sh weather
+These are intentionally **not** rebound by the theme:
 
-# Stop all widgets
-widgets.sh stop
-```
+- `SUPER + RETURN` — terminal
+- `SUPER + K` — keybindings menu
+- `SUPER + F` — fullscreen, `SUPER + T` — toggle floating
+- `SUPER + P` — pseudo window, `SUPER + O` — pop window out (float & pin)
+- `SUPER + TAB` / `SUPER + SHIFT + TAB` — next/previous workspace
+- `SUPER + SHIFT + SPACE` — toggle the top bar
+- `SUPER + ALT + arrows` — window groups
+- `SUPER + V` — universal paste, `SUPER + CTRL + V` — clipboard history
+- `SUPER + SHIFT + B` — browser, `SUPER + SHIFT + F` — file manager
+- `SUPER + SHIFT + S` — Google Maps web app, `SUPER + SHIFT + W` — Omawrite
+- `SUPER + SHIFT + E` — email web app (system menu is `SUPER + ESCAPE`)
+- `SUPER + CTRL + L` — lock screen
+- `PRINT`, `SUPER + PRINT`, `SUPER + CTRL + C` — screenshots
 
-### Visual Effects
-```bash
-# Toggle blur
-effects.sh toggle-blur
+## Scripts (not bound)
 
-# Shake window (error feedback)
-effects.sh shake
+These live in `~/.local/bin` after installation and are run from a terminal:
 
-# Start rainbow borders (continuous)
-effects.sh rainbow
-
-# Start glow effect (continuous)
-effects.sh glow
-
-# Flash border on focus
-effects.sh focus-pulse
-```
-
-## Requirements
-
-### For Theme Switcher
-- `fzf` (optional, for interactive menu)
-- `omarchy-shell` (for live reload)
-
-### For Floating Widgets
-- `eww` (Elkowar's Wacky Widgets)
-- Widget configs auto-generated on first run
-
-### For Visual Effects
-- `hyprctl` (included with Hyprland)
-- `jq` (for JSON parsing)
-
-## Customization
-
-### Add Custom Theme Variants
-Edit `bin/theme-switcher.sh` and add to `VARIANTS` array:
-```bash
-VARIANTS["mytheme"]="ff0000:00ff00:0000ff:000000"
-# Format: accent:secondary:tertiary:background
-```
-
-### Add Custom Widgets
-Create new widget config in `~/.config/virtual-paradise/widgets/`:
-```bash
-# Example: custom.yuck
-(defwindow custom
-  :geometry (geometry :x "100px" :y "100px" :width "200px" :height "100px")
-  :stacking "fg"
-  :window-type "dock"
-  (box :class "custom-widget"
-    (label :text "Hello World")))
-```
-
-Then add toggle function in `widgets.sh`.
-
-## Notes
-
-- Widgets use `eww` for rendering (lightweight, fast)
-- Theme variants update `colors.toml` and reload automatically
-- Effects are non-blocking (run in background)
-- All scripts support `--help` for usage info
+- `theme-switcher.sh` — switch the Virtual☆Paradise palette variant
+- `effects.sh` — `rainbow`, `glow`, `toggle-blur`, `shake`
+- `widgets.sh` — optional Quickshell/eww widgets
+- `toggle_live_wallpaper.sh` — `init`, `next`, `prev` (also used by the keys above)

@@ -1,3 +1,5 @@
+// Virtual☆Paradise SDDM theme. Installed into its own theme directory by
+// lib/sddm.sh; the distro's omarchy theme is never patched in place.
 import QtQuick 2.0
 import SddmComponents 2.0
 

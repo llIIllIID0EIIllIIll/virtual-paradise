@@ -1,0 +1,7 @@
+[SddmGreeterTheme]
+Name=Virtual Paradise
+Description=Animated Miku login screen matching the Virtual Paradise desktop
+Author=Virtual Paradise
+Type=sddm-theme
+Version=1.0
+QtVersion=6

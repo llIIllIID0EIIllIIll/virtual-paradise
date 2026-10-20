@@ -22,6 +22,7 @@ THEME_NAME="virtual-paradise"
 IS_HOOK=0
 ENABLE_BOOT=1
 BOOT_ONLY=0
+SDDM_ONLY=0
 USER_ONLY=0
 
 for arg in "$@"; do
@@ -35,6 +36,11 @@ for arg in "$@"; do
       ;;
     --boot-only)
       BOOT_ONLY=1
+      ;;
+    --sddm-only)
+      # Reinstall just the login theme; no Plymouth, no initramfs rebuild.
+      SDDM_ONLY=1
+      ENABLE_BOOT=0
       ;;
     --no-sudo|--user-only)
       USER_ONLY=1
@@ -277,20 +283,29 @@ sync_tree() {
 # shellcheck source=lib/system.sh
 . "$REPO_DIR/lib/system.sh"
 
+# Install (or reinstall) only the SDDM login theme. Shared by the full install,
+# --boot-only and --sddm-only so all three use exactly the same code path.
+INSTALL_SDDM_THEME() {
+  [[ -f "$REPO_DIR/lib/sddm.sh" ]] || return 1
+  run_privileged bash -c \
+    '. "$1/lib/sddm.sh" && sddm_theme_install "/" "$1"' _ "$REPO_DIR"
+}
+
 INSTALL_BOOT_ANIMATIONS() {
   log_step "9" "$TOTAL_STEPS" "Configuring Plymouth Boot Animation, SDDM Display Manager & UKI Kernel..."
 
   if [[ $ENABLE_BOOT -eq 1 ]] && run_privileged true; then
     # 1. SDDM Setup
-    local sddm_theme_dir="/usr/share/sddm/themes/omarchy"
-    if [[ -d "$sddm_theme_dir" ]]; then
-      if [[ -f "$REPO_DIR/sddm/Main.qml" ]]; then
-        run_privileged cp "$REPO_DIR/sddm/Main.qml" "$sddm_theme_dir/Main.qml"
-      fi
-      if [[ -f "$REPO_DIR/backgrounds/Miku_animated_full.gif" ]]; then
-        run_privileged cp "$REPO_DIR/backgrounds/Miku_animated_full.gif" "$sddm_theme_dir/Miku_animated_full.gif"
-      fi
-      log_sub "Configured SDDM login theme with animated Miku_animated_full.gif"
+    #
+    # The theme goes into its own directory and is selected with a drop-in;
+    # patching /usr/share/sddm/themes/omarchy (owned by omarchy-settings) meant
+    # a package update reverted half of it and uninstall.sh had nothing to
+    # restore. sddm_theme_install also repairs machines that ran the old
+    # in-place patch.
+    if INSTALL_SDDM_THEME; then
+      log_sub "Installed SDDM theme 'virtual-paradise' (Omarchy's theme left untouched)"
+    else
+      log_warn "SDDM theme was not installed; the login screen is unchanged."
     fi
 
     # 2. Plymouth Theme Setup
@@ -356,6 +371,15 @@ if [[ $BOOT_ONLY -eq 1 ]]; then
     exit 1
   fi
   exit 0
+fi
+
+if [[ $SDDM_ONLY -eq 1 ]]; then
+  if INSTALL_SDDM_THEME; then
+    echo -e "\n${C_BOLD}${C_GREEN}✨ SDDM login theme installed.${C_RESET}\n"
+    exit 0
+  fi
+  echo -e "\n${C_BOLD}${C_PINK}⚠ SDDM login theme was not installed (see warnings above).${C_RESET}\n"
+  exit 1
 fi
 
 # ------------------------------------------------------------------------------
@@ -838,7 +862,7 @@ cat << 'EOF' > "$CONFIG_DIR/omarchy/extensions/paradise.json"
   "paradise.livewallpaper": {
     "icon": "󰸌",
     "label": "Toggle Live Video Wallpaper",
-    "description": "Play/pause live wallpaper (SUPER + ALT + UP)",
+    "description": "Play/pause live wallpaper (SUPER + ALT + W)",
     "action": "bash -c ~/.local/bin/toggle_live_wallpaper.sh"
   },
   "paradise.cooler": {
@@ -867,6 +891,18 @@ log_step "5" "$TOTAL_STEPS" "Deploying Hyprland look'n'feel, gestures, rules & s
 # ~/.config/hypr/backup_<epoch>/ was created on every single run and never
 # cleaned up by uninstall.sh.
 HYPR_BAK_DIR=""
+hypr_state_dir="$HOME/.local/state/virtual-paradise"
+hypr_state_file="$hypr_state_dir/hypr-backup-dir"
+
+# Record one snapshot directory per install cycle, even on a fresh machine with
+# no Hypr files yet: a later re-install must not mistake its own files for the
+# user's originals. Uninstall reads this path (and removes the file).
+if [[ ! -f "$hypr_state_file" ]]; then
+  HYPR_BAK_DIR="$CONFIG_DIR/hypr/backup_$BACKUP_TIMESTAMP"
+  mkdir -p "$HYPR_BAK_DIR" "$hypr_state_dir" 2>/dev/null || true
+  printf '%s\n' "$HYPR_BAK_DIR" >"$hypr_state_file" 2>/dev/null || true
+fi
+
 hypr_backup() {
   local src="$1"
   [[ -f "$src" ]] || return 0
@@ -928,7 +964,10 @@ fi
 
 # 5.6 Window Rules (Btop, Voxtype, Cast Screen, Nautilus)
 if [[ -f "$CONFIG_DIR/hypr/hyprland.lua" ]]; then
-  if ! grep -q "GNOME Network Displays" "$CONFIG_DIR/hypr/hyprland.lua"; then
+  # Guard on our own marker, not on "GNOME Network Displays": a user comment
+  # mentioning that app must not suppress the rules, and the marker is what
+  # uninstall.sh removes.
+  if ! grep -q "Virtual Paradise Add-on Window Rules" "$CONFIG_DIR/hypr/hyprland.lua"; then
     hypr_backup "$CONFIG_DIR/hypr/hyprland.lua"
     cat << 'EOF' >> "$CONFIG_DIR/hypr/hyprland.lua"
 
@@ -1311,7 +1350,7 @@ fi
 # kept; only the middle copies (all identical post-install snapshots) are
 # trimmed, newest ones surviving.
 prune_backups() (
-  local dir="$1" pattern="$2" keep="$3" f n=0 total=0
+  local dir="$1" pattern="$2" keep="$3" protect="${4:-}" f n=0 total=0
   # nullglob matters: with `set -o pipefail`, a non-matching glob makes `ls`
   # exit 2 and would abort the install on a first-ever run. Running in a
   # subshell keeps the caller's shell options untouched.
@@ -1326,25 +1365,51 @@ prune_backups() (
     n=$((n + 1))
     if (( n == 1 )); then continue; fi          # newest snapshot
     if (( n == total )); then continue; fi     # original pre-install state
+    if [[ -n $protect && $f == "$protect" ]]; then continue; fi  # uninstall target
     if (( n > keep )); then rm -rf "$f"; fi
   done
 )
 prune_backups "$HOME" ".zshrc.bak.*" 5
-[[ -n $HYPR_BAK_DIR ]] && prune_backups "$CONFIG_DIR/hypr" "backup_*" 5
+[[ -n $HYPR_BAK_DIR ]] && prune_backups "$CONFIG_DIR/hypr" "backup_*" 5 \
+  "$(head -n1 "$hypr_state_file" 2>/dev/null || true)"
 
 # 10.3 Ensure default shell is Zsh
+#
+# The shell must be listed in /etc/shells verbatim: pam_shells compares strings,
+# and a path like /usr/sbin/zsh (the /usr/sbin → /usr/bin symlink) is rejected
+# even though it is the same binary. That was a real login loop — SDDM reported
+# "Authentication error" for both password login and autologin.
 if [[ $IS_HOOK -eq 0 ]] && command -v zsh &>/dev/null; then
+  LOGIN_SHELL="$(resolve_login_shell)"
   CURRENT_LOGIN_SHELL="$(getent passwd "$CURRENT_USER" 2>/dev/null | cut -d: -f7 || true)"
-  if [[ "$CURRENT_LOGIN_SHELL" != "$(command -v zsh)" ]]; then
-    log_sub "Setting default login shell to Zsh for '${CURRENT_USER}'..."
-    if [[ $HAVE_SUDO -eq 1 ]]; then
-      run_privileged chsh -s "$(command -v zsh)" "$CURRENT_USER" 2>/dev/null || chsh -s "$(command -v zsh)" 2>/dev/null || true
-    else
-      chsh -s "$(command -v zsh)" 2>/dev/null || true
+  VP_STATE_DIR="$HOME/.local/state/virtual-paradise"
+
+  if [[ -n $LOGIN_SHELL ]]; then
+    if ! grep -qxF "$LOGIN_SHELL" /etc/shells 2>/dev/null; then
+      log_sub "Registering ${LOGIN_SHELL} as a login shell..."
+      run_privileged sh -c 'grep -qxF "$1" /etc/shells || printf "%s\n" "$1" >> /etc/shells' \
+        _ "$LOGIN_SHELL" 2>/dev/null || true
     fi
+
+    if ! grep -qxF "$LOGIN_SHELL" /etc/shells 2>/dev/null; then
+      log_warn "Leaving the login shell unchanged: ${LOGIN_SHELL} is not listed in /etc/shells (PAM would reject it)."
+    elif [[ "$CURRENT_LOGIN_SHELL" != "$LOGIN_SHELL" ]]; then
+      log_sub "Setting default login shell to ${LOGIN_SHELL} for '${CURRENT_USER}'..."
+      if run_privileged chsh -s "$LOGIN_SHELL" "$CURRENT_USER" 2>/dev/null; then
+        # Remember the previous shell so uninstall.sh can put it back. Never
+        # overwrite the first recorded value on a re-install.
+        if [[ -n $CURRENT_LOGIN_SHELL && ! -f "$VP_STATE_DIR/login-shell.previous" ]]; then
+          mkdir -p "$VP_STATE_DIR" 2>/dev/null || true
+          printf '%s\n' "$CURRENT_LOGIN_SHELL" >"$VP_STATE_DIR/login-shell.previous" 2>/dev/null || true
+        fi
+      else
+        log_warn "Could not change the login shell to ${LOGIN_SHELL}."
+      fi
+    fi
+
+    systemctl --user set-environment SHELL="$LOGIN_SHELL" 2>/dev/null || true
+    hyprctl eval "hl.env('SHELL', '$LOGIN_SHELL')" 2>/dev/null || true
   fi
-  systemctl --user set-environment SHELL="$(command -v zsh)" 2>/dev/null || true
-  hyprctl eval "hl.env('SHELL', '$(command -v zsh)')" 2>/dev/null || true
   if [[ -f "$CONFIG_DIR/ghostty/config" ]] && ! grep -q "^command = " "$CONFIG_DIR/ghostty/config"; then
     # Back up before editing in place, so uninstall.sh has something to restore.
     [[ -f "$CONFIG_DIR/ghostty/config.paradise.bak" ]] \
@@ -1488,9 +1553,10 @@ if [[ $IS_HOOK -eq 0 ]]; then
     RUN_AS_INSTALL_USER hyprctl reload 2>/dev/null || true
   fi
 
-  # Auto-trigger SUPER + ALT + UP: Initialize and launch live video wallpaper immediately
+  # Initialize and launch the live video wallpaper immediately (SUPER + ALT + W
+  # toggles it later).
   if [[ -x "$LOCAL_BIN/toggle_live_wallpaper.sh" ]]; then
-    log_sub "Triggering SUPER + ALT + UP: Initializing Live Video Wallpaper..."
+    log_sub "Initializing live video wallpaper (toggle with SUPER + ALT + W)..."
     (sleep 0.4; RUN_AS_INSTALL_USER "$LOCAL_BIN/toggle_live_wallpaper.sh" init >/dev/null 2>&1 &)
   fi
 
@@ -1498,9 +1564,9 @@ if [[ $IS_HOOK -eq 0 ]]; then
   echo -e "${C_CYAN}───────────────────────────────────────────────────────────────────${C_RESET}"
   echo -e " ${C_BOLD}Useful shortcuts:${C_RESET}"
   echo -e "   ${C_GREEN}SUPER + Q${C_RESET}             ➔ Launch 5-terminal Rice layout"
-  echo -e "   ${C_GREEN}SUPER + ALT + UP${C_RESET}      ➔ Toggle Live Video / Static Wallpaper"
-  echo -e "   ${C_GREEN}SUPER + ALT + RIGHT${C_RESET}   ➔ Next Live Wallpaper (Cyberpunk Glitch Transition)"
-  echo -e "   ${C_GREEN}SUPER + ALT + LEFT${C_RESET}    ➔ Prev Live Wallpaper (Cyberpunk Glitch Transition)"
+  echo -e "   ${C_GREEN}SUPER + ALT + W${C_RESET}       ➔ Toggle Live Video / Static Wallpaper"
+  echo -e "   ${C_GREEN}SUPER + ALT + N${C_RESET}       ➔ Next Live Wallpaper (Cyberpunk Glitch Transition)"
+  echo -e "   ${C_GREEN}SUPER + ALT + SHIFT + N${C_RESET} ➔ Previous Live Wallpaper (Cyberpunk Glitch Transition)"
   echo -e "   ${C_GREEN}SUPER + N${C_RESET}             ➔ Cycle next wallpaper"
   echo -e "   ${C_GREEN}SUPER + ALT + C${C_RESET}       ➔ Toggle Cooler Boost fan cooling"
   echo -e "   ${C_GREEN}SUPER + SHIFT + K${C_RESET}     ➔ Cast Screen (Wireless Display)"
