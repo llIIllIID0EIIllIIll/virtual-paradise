@@ -46,6 +46,11 @@ VP_PLYMOUTH_FRAME_PIXEL_FORMAT="pal8"
 # Stock assets the script needs next to the animation frames.
 VP_PLYMOUTH_ASSETS="bullet.png entry.png lock.png logo.png progress_bar.png progress_box.png"
 
+# The theme's own decoration: the neon frame around the picture and the
+# caption in the bar above it. They are shipped in plymouth/ and copied into
+# the theme directory like the rest of the payload.
+VP_PLYMOUTH_DECORATION="frame.png caption.png"
+
 plymouth_theme_path() {
   printf '%s/usr/share/plymouth/themes/%s\n' "${1%/}" "$VP_PLYMOUTH_THEME_NAME"
 }
@@ -121,7 +126,7 @@ plymouth_theme_verify() {
     fi
   done
 
-  for asset in intro-1.png outro-1.png $VP_PLYMOUTH_ASSETS; do
+  for asset in intro-1.png outro-1.png $VP_PLYMOUTH_ASSETS $VP_PLYMOUTH_DECORATION; do
     if [[ ! -f "$dir/$asset" ]]; then
       printf 'plymouth: missing %s\n' "$dir/$asset" >&2
       missing=1
@@ -327,6 +332,21 @@ plymouth_theme_install() {
     rm -rf "$stage"
     return 1
   fi
+
+  # The theme's own decoration: the neon frame and the caption.
+  local decoration
+  for decoration in $VP_PLYMOUTH_DECORATION; do
+    if [[ -f "$repo/plymouth/$decoration" ]]; then
+      cp "$repo/plymouth/$decoration" "$stage/$decoration" || {
+        rm -rf "$stage"
+        return 1
+      }
+    else
+      printf 'plymouth: %s/plymouth/%s is missing\n' "$repo" "$decoration" >&2
+      rm -rf "$stage"
+      return 1
+    fi
+  done
 
   if [[ -f "$stage/intro-1.png" ]]; then
     cp "$stage/intro-1.png" "$stage/background.png" 2>/dev/null || true

@@ -35,6 +35,12 @@ Conventional Commits.
   1600x900 with a 256 colour palette: the same picture once Plymouth
   stretches it over the screen (Plymouth converts palette PNGs through
   `png_set_palette_to_rgb`), about a third of the data.
+- **The boot splash is centred and decorated.** The 1600x900 picture sits in
+  the middle of the screen, the bars around it are filled with a dark violet
+  gradient instead of flat black, a neon border with pink corner brackets
+  marks the edge of the picture, and the "VIRTUAL◈PARADISE" caption sits in
+  the bar above it. The caption hides itself on a screen too small to have a
+  bar, so it never lands on the animation.
 - **The compositor can read the Hyprland config the installer writes.** A
   `mktemp` file is created with mode 600 and `mv` keeps that mode, so moving
   a freshly built `hyprland.lua` into place turned it into `-rw-------`. In a

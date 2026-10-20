@@ -1,11 +1,21 @@
 # Omarchy Plymouth Theme Script — Instant Lazy Loading & Full Animation
+#
+# The animation frames are 1600x900 (see lib/plymouth.sh) and are centred on
+# the screen. The window background fills the bars around them with a dark
+# violet gradient, a neon frame marks the edge of the picture and the caption
+# sits in the bar above it.
 
-Window.SetBackgroundTopColor(0.027, 0.031, 0.051);
-Window.SetBackgroundBottomColor(0.027, 0.031, 0.051);
+Window.SetBackgroundTopColor(0.059, 0.031, 0.114);
+Window.SetBackgroundBottomColor(0.020, 0.012, 0.063);
 
 global.intro_count = 259;
 global.outro_count = 72;
+global.frame_width = 1600;
+global.frame_height = 900;
 global.mode = Plymouth.GetMode();
+
+global.left = Window.GetWidth() / 2 - global.frame_width / 2;
+global.top = Window.GetHeight() / 2 - global.frame_height / 2;
 
 # Instant 0ms initial frame setup:
 if (global.mode == "shutdown" || global.mode == "reboot") {
@@ -16,8 +26,26 @@ if (global.mode == "shutdown" || global.mode == "reboot") {
   bg.sprite = Sprite(intro_frames[1]);
 }
 
-bg.sprite.SetPosition(Window.GetWidth() / 2 - 1920 / 2, Window.GetHeight() / 2 - 1080 / 2, -10000);
+bg.sprite.SetPosition(global.left, global.top, -10000);
 bg.sprite.SetOpacity(1);
+
+# Neon frame around the picture. The middle of the image is transparent, so it
+# only draws the border and the corner brackets.
+frame.image = Image("frame.png");
+frame.sprite = Sprite(frame.image);
+frame.sprite.SetPosition(global.left, global.top, -9999);
+frame.sprite.SetOpacity(1);
+
+# Caption in the bar above the picture - and only when there is such a bar,
+# so it never lands on top of the animation.
+caption.image = Image("caption.png");
+caption.sprite = Sprite(caption.image);
+caption.sprite.SetPosition(Window.GetWidth() / 2 - caption.image.GetWidth() / 2, global.top / 2 - caption.image.GetHeight() / 2, -9998);
+if (global.top > caption.image.GetHeight()) {
+  caption.sprite.SetOpacity(1);
+} else {
+  caption.sprite.SetOpacity(0);
+}
 
 # Progress bar animation variables
 global.animation_frame = 0;
