@@ -879,7 +879,7 @@ if want tc10; then
   check "the installer tries both boot image rebuilds" \
     "$(grep -q 'limine-mkinitcpio' "$REPO_DIR/install.sh" && grep -q 'mkinitcpio -P' "$REPO_DIR/install.sh" && echo 0 || echo 1)"
   check "the installer checks the boot image was really rebuilt" \
-    "$(grep -q 'boot_image_path' "$REPO_DIR/install.sh" && echo 0 || echo 1)"
+    "$(grep -q 'boot_image_age' "$REPO_DIR/install.sh" && echo 0 || echo 1)"
   check "the installer shows the rebuild output" \
     "$(grep -qE 'run_privileged (limine-mkinitcpio|mkinitcpio -P)[;"]' "$REPO_DIR/install.sh" && echo 0 || echo 1)"
 
