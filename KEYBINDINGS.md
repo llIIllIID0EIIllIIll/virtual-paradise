@@ -58,7 +58,6 @@ These are intentionally **not** rebound by the theme:
 
 These live in `~/.local/bin` after installation and are run from a terminal:
 
-- `theme-switcher.sh` — switch the Virtual☆Paradise palette variant
-- `effects.sh` — `rainbow`, `glow`, `toggle-blur`, `shake`
-- `widgets.sh` — optional Quickshell/eww widgets
+- `theme-switcher.sh` — switch the Virtual☆Paradise palette variant (`list`, `reset`)
+- `effects.sh` — `rainbow`, `glow`, `toggle-blur`, `shake`, `focus-pulse`
 - `toggle_live_wallpaper.sh` — `init`, `next`, `prev` (also used by the keys above)
