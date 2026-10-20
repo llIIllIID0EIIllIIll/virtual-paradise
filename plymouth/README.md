@@ -19,3 +19,10 @@ the install. The lock, entry, bullet and progress-bar images come from
 Omarchy's own Plymouth theme (`omarchy-settings`, MIT licensed) and are
 copied into the theme directory, so the splash does not depend on that
 directory at runtime.
+
+The frames are 1600×900 with a 256 colour palette, which is the same picture
+once Plymouth stretches it over the screen (Plymouth converts palette PNGs
+through `png_set_palette_to_rgb`) and about a third of the image data. The
+picture is centred on the screen; the bars around it are filled with a dark
+violet gradient, `frame.png` draws a neon border with corner brackets around
+the picture, and `caption.png` sits in the bar above it.

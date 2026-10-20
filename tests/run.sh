@@ -1471,6 +1471,28 @@ if want tc16; then
     "$(grep -q 'VP_PLYMOUTH_FRAME_WIDTH=1600' "$REPO_DIR/lib/plymouth.sh" && echo 0 || echo 1)"
   check "the Plymouth frames use a palette" \
     "$(grep -q 'VP_PLYMOUTH_FRAME_PIXEL_FORMAT="pal8"' "$REPO_DIR/lib/plymouth.sh" && echo 0 || echo 1)"
+
+  # The picture is centred and the bars around it are decorated, so a smaller
+  # frame does not leave a black rectangle around the animation.
+  check "the Plymouth script centres the picture" \
+    "$(grep -q 'global.left = Window.GetWidth() / 2 - global.frame_width / 2' "$REPO_DIR/plymouth/virtual-paradise.script" && echo 0 || echo 1)"
+  check "the Plymouth script draws the neon frame" \
+    "$(grep -q 'Image("frame.png")' "$REPO_DIR/plymouth/virtual-paradise.script" && echo 0 || echo 1)"
+  check "the Plymouth script draws the caption" \
+    "$(grep -q 'Image("caption.png")' "$REPO_DIR/plymouth/virtual-paradise.script" && echo 0 || echo 1)"
+  check "the neon frame ships with the theme" \
+    "$([[ -f $REPO_DIR/plymouth/frame.png ]] && echo 0 || echo 1)"
+  check "the caption ships with the theme" \
+    "$([[ -f $REPO_DIR/plymouth/caption.png ]] && echo 0 || echo 1)"
+  check "the decoration is installed with the theme" \
+    "$(grep -q 'VP_PLYMOUTH_DECORATION' "$REPO_DIR/lib/plymouth.sh" && echo 0 || echo 1)"
+  # The frame and the picture have to be the same size, or the neon border
+  # does not sit on the edge of the animation.
+  if [[ -f $REPO_DIR/plymouth/frame.png ]]; then
+    frame_size="$(magick identify -format '%wx%h' "$REPO_DIR/plymouth/frame.png" 2>/dev/null || echo none)"
+    check "the neon frame matches the animation size (${frame_size})" \
+      "$([[ $frame_size == "1600x900" ]] && echo 0 || echo 1)"
+  fi
 fi
 
 summary
