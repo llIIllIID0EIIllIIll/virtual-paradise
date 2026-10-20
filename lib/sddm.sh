@@ -81,10 +81,10 @@ sddm_theme_verify() {
     )
   fi
 
-  if [[ ! -f "$theme_dir/Miku_animated_full.gif" ]]; then
-    # Caught by the loop above, but name it explicitly: it is the one large
-    # asset users are most likely to delete while cleaning up disk space.
-    printf 'sddm: the animated background Miku_animated_full.gif is missing\n' >&2
+  if [[ ! -f "$theme_dir/still.png" ]]; then
+    # Caught by the loop above, but name it explicitly: without it the greeter
+    # has no picture at all, which is the one thing users would notice.
+    printf 'sddm: the splash picture still.png is missing\n' >&2
     missing=1
   fi
 
@@ -101,9 +101,12 @@ sddm_repair_legacy_theme() {
   local main="$theme/Main.qml" gif="$theme/Miku_animated_full.gif"
 
   [[ -d $theme && -f $gif ]] || return 0
-  # Only touch the directory if it really carries the old patch. A stock theme
-  # has no reason to reference a Miku wallpaper.
-  grep -qs 'Miku_animated_full\.gif' "$main" || return 0
+  # Only touch the directory if it really carries the old patch: either it
+  # still points at the Miku gif, or it is one of our own themes. The old
+  # installer copied the QML over, so the marker is the reliable tell.
+  if ! grep -qs 'Miku_animated_full\.gif' "$main" && ! grep -qsF "$VP_SDDM_MARKER" "$main"; then
+    return 0
+  fi
 
   rm -f "$gif" || return 1
   if [[ -f "$stock/Main.qml" ]] && ! grep -qs 'Miku_animated_full\.gif' "$stock/Main.qml"; then
@@ -131,8 +134,8 @@ sddm_theme_install() {
     printf 'sddm: %s/sddm/Main.qml not found\n' "$repo" >&2
     return 1
   fi
-  if [[ ! -f "$repo/backgrounds/Miku_animated_full.gif" ]]; then
-    printf 'sddm: %s/backgrounds/Miku_animated_full.gif not found\n' "$repo" >&2
+  if [[ ! -f "$repo/sddm/assets/still.png" ]]; then
+    printf 'sddm: %s/sddm/assets/still.png not found\n' "$repo" >&2
     return 1
   fi
   if [[ -e "$theme_dir" ]] && ! grep -qsF "$VP_SDDM_MARKER" "$theme_dir/Main.qml" 2>/dev/null; then
@@ -162,11 +165,15 @@ sddm_theme_install() {
       printf 'sddm: warning: no PNG assets found in %s/sddm/assets\n' "$repo" >&2
     fi
   fi
-  if ! cp "$repo/backgrounds/Miku_animated_full.gif" "$stage/"; then
-    printf 'sddm: cannot install the animated background\n' >&2
-    rm -rf "$stage"
-    return 1
-  fi
+  # The same backdrop and neon frame the Plymouth splash uses, so the greeter
+  # is the boot animation continued instead of a different screen.
+  for f in backdrop.png frame.png; do
+    if [[ ! -f "$repo/plymouth/$f" ]] || ! cp "$repo/plymouth/$f" "$stage/$f"; then
+      printf 'sddm: cannot install plymouth/%s\n' "$f" >&2
+      rm -rf "$stage"
+      return 1
+    fi
+  done
   find "$stage" -type f -exec chmod 644 {} + 2>/dev/null || true
   chmod 755 "$stage" 2>/dev/null || true
 

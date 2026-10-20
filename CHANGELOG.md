@@ -35,6 +35,16 @@ Conventional Commits.
   1600x900 with a 256 colour palette: the same picture once Plymouth
   stretches it over the screen (Plymouth converts palette PNGs through
   `png_set_palette_to_rgb`), about a third of the data.
+- **The login screen continues the boot splash.** The greeter showed a
+  different picture than the boot animation: a blurry 480x268 GIF stretched
+  over the whole screen. It now uses the same cyber backdrop, the same
+  centred still of the animation at 1600x900 and the same neon frame, so the
+  handover from Plymouth into the login screen keeps the picture. The screen
+  fades in when the greeter appears and fades out when the login succeeds.
+- **The password field stands out.** It was a one-pixel line with seven-pixel
+  dots at the bottom of the screen. It is now a wide neon panel with an
+  accent border and glow, the lock icon, the username above it, an
+  "ENTER PASSWORD" label and a blinking neon caret.
 - **The boot splash is centred and decorated.** The 1600x900 picture sits in
   the middle of the screen, a cyber backdrop fills the whole screen behind
   it - the blue circuitry on the left and the pink HUD on the right show
