@@ -44,8 +44,11 @@ get_live_items() {
   done
   # One path per line: every caller reads this with mapfile, which splits on
   # newlines. Echoing the array joined the paths into a single line, so the
-  # cycle saw one item and only ever played the last of them.
-  printf '%s\n' "${items[@]}"
+  # cycle saw one item and only ever played the last of them. An empty array
+  # printed one empty line, which the callers then counted as a wallpaper.
+  if [[ ${#items[@]} -gt 0 ]]; then
+    printf '%s\n' "${items[@]}"
+  fi
 }
 
 is_live_running() {
