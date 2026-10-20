@@ -1091,6 +1091,12 @@ rm -f "$LOCAL_BIN/omarchy-agent" \
 if [[ -d "$REPO_DIR/bin" ]]; then
   rm -rf "$LOCAL_BIN/__pycache__" 2>/dev/null || true
   rm -f "$LOCAL_BIN/paradise_agent.py" "$LOCAL_BIN/paradise-agent" "$LOCAL_BIN/offline-agent" 2>/dev/null || true
+
+  # Scripts that used to be part of the theme. sync_tree merges, so a file the
+  # repository no longer ships would stay in ~/.local/bin forever and keep
+  # answering to a name the documentation dropped.
+  rm -f "$LOCAL_BIN/widgets.sh" "$LOCAL_BIN/rice" "$LOCAL_BIN/Miku_missing.mp4" 2>/dev/null || true
+
   sync_tree "$REPO_DIR/bin" "$LOCAL_BIN"
   rm -rf "$LOCAL_BIN/__pycache__"
   chmod +x "$LOCAL_BIN"/*.sh "$LOCAL_BIN"/*.py "$LOCAL_BIN"/momoisay "$LOCAL_BIN"/momoisay.real 2>/dev/null || true

@@ -138,9 +138,14 @@ set_shadow_color() {
 
 # Restore the border gradient that was active before an effect ran.
 # restore_active_border <gradient string from hyprctl getoption>
+#
+# Hyprland reports a gradient stop as AARRGGBB ("ee00ffdd" is #00ffdd with an
+# ee alpha), while its config syntax wants RRGGBBAA. The first byte therefore
+# has to move to the end, or the restored border comes back with its red and
+# blue channels swapped.
 restore_active_border() {
   local gradient="$1"
-  local angle=45 token color expr="" sep=""
+  local angle=45 token css expr="" sep=""
   local -a tokens=()
 
   read -ra tokens <<<"$gradient"
@@ -148,7 +153,12 @@ restore_active_border() {
     if [[ $token == *deg ]]; then
       angle="${token%deg}"
     else
-      expr+="${sep}\"rgba($token)\""
+      if [[ ${#token} -eq 8 ]]; then
+        css="${token:2}${token:0:2}"
+      else
+        css="$token"
+      fi
+      expr+="${sep}\"rgba($css)\""
       sep=", "
     fi
   done
