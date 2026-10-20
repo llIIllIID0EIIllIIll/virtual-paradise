@@ -24,6 +24,11 @@ Conventional Commits.
   timer, and the user manager's environment carries no `OMARCHY_PATH` either,
   so the check answered "OMARCHY_PATH is not set" and reported nothing. The
   updater resolves the path itself now.
+- **`sudo ./install.sh` can still reach the compositor.** sudo resets the
+  Hyprland instance, the Wayland display and the session bus as well, so
+  `hyprctl reload` found no compositor and the theme's Hyprland changes only
+  landed at the next login. Those variables are now read back from the user's
+  runtime directory.
 - **`SUPER + ALT + ←` / `→` switch the live wallpaper again.** The theme
   bound those two chords to the live wallpaper while Omarchy bound them to
   "move window into the group on the left/right". Hyprland runs every bind of

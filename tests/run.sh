@@ -1283,6 +1283,23 @@ if want tc14; then
   check "the plugin updater resolves OMARCHY_PATH for the timer" \
     "$(grep -q 'omarchy-env.sh' "$REPO_DIR/bin/update-plugins.sh" && echo 0 || echo 1)"
 
+  # sudo resets the Hyprland instance and the session bus as well: without
+  # them `hyprctl reload` cannot find the compositor and the theme's Hyprland
+  # changes would only land at the next login.
+  check "the installer restores the session variables" \
+    "$(grep -q 'omarchy_resolve_session_env' "$REPO_DIR/install.sh" && echo 0 || echo 1)"
+  check "the uninstaller restores the session variables" \
+    "$(grep -q 'omarchy_resolve_session_env' "$REPO_DIR/uninstall.sh" && echo 0 || echo 1)"
+
+  runtime="/run/user/$(id -u)"
+  if [[ -d "$runtime/hypr" ]]; then
+    got_signature="$( . "$REPO_DIR/lib/omarchy-env.sh"; omarchy_resolve_session_env "$(id -un)" >/dev/null 2>&1; printf '%s' "${HYPRLAND_INSTANCE_SIGNATURE:-}" )"
+    check "the resolver finds the running Hyprland instance" \
+      "$([[ -n $got_signature ]] && echo 0 || echo 1)" "got ${got_signature:-none}"
+  else
+    printf '  %sSKIP%s no Hyprland runtime directory\n' "$DIM" "$OFF"
+  fi
+
   # Functional: run the installer with a completely stripped environment and
   # an omarchy that records the variable it was given.
   mkdir -p "$root/bin"

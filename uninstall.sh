@@ -25,6 +25,9 @@ BACKUP_DIR="$HOME/.local/state/virtual-paradise/uninstall-backup-$(date +%Y%m%d_
 if [[ -f "$REPO_DIR/lib/omarchy-env.sh" ]]; then
   . "$REPO_DIR/lib/omarchy-env.sh"
   omarchy_export_env
+  # The Hyprland instance, the Wayland display and the session bus are reset
+  # by sudo too; without them the shell and the compositor cannot be reached.
+  omarchy_resolve_session_env "$CURRENT_USER" || true
 else
   export OMARCHY_PATH="${OMARCHY_PATH:-/usr/share/omarchy}"
 fi
