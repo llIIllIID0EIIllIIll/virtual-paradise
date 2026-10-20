@@ -27,6 +27,16 @@ USER_ONLY=0
 
 for arg in "$@"; do
   case "$arg" in
+    -h|--help)
+      printf 'Usage: %s [--no-boot] [--boot-only] [--sddm-only] [--user-only|--no-sudo]\n' "$0"
+      printf '\nInstalls the Virtual☆Paradise theme.\n\n'
+      printf '  --no-boot        skip the Plymouth/SDDM setup (needs sudo)\n'
+      printf '  --boot-only      install only the boot and login themes (needs sudo)\n'
+      printf '  --sddm-only      install only the SDDM login theme (needs sudo)\n'
+      printf '  --user-only      install nothing outside your home directory\n'
+      printf '  --no-sudo        alias for --user-only\n'
+      exit 0
+      ;;
     --hook)
       IS_HOOK=1
       ENABLE_BOOT=0
@@ -51,6 +61,13 @@ for arg in "$@"; do
       # and /usr/share and restarts the shell. Refuse loudly rather than look
       # like it did nothing while changing the machine anyway.
       printf 'install.sh: --dry-run is not supported — nothing was installed.\n' >&2
+      exit 2
+      ;;
+    *)
+      # An unknown option used to be ignored, so a typo ("--user-onyl") ran a
+      # full install with the wrong privileges instead of failing.
+      printf 'install.sh: unknown option: %s\n' "$arg" >&2
+      printf 'Run "%s --help" for the supported options.\n' "$0" >&2
       exit 2
       ;;
   esac
@@ -291,6 +308,15 @@ INSTALL_SDDM_THEME() {
     '. "$1/lib/sddm.sh" && sddm_theme_install "/" "$1"' _ "$REPO_DIR"
 }
 
+# Install (or reinstall) only the Plymouth boot theme. Same contract as
+# INSTALL_SDDM_THEME: the theme goes into its own directory and is selected
+# by name, so the package-owned omarchy theme is never written to.
+INSTALL_PLYMOUTH_THEME() {
+  [[ -f "$REPO_DIR/lib/plymouth.sh" ]] || return 1
+  run_privileged bash -c \
+    '. "$1/lib/plymouth.sh" && plymouth_theme_install "/" "$1"' _ "$REPO_DIR"
+}
+
 INSTALL_BOOT_ANIMATIONS() {
   log_step "9" "$TOTAL_STEPS" "Configuring Plymouth Boot Animation, SDDM Display Manager & UKI Kernel..."
 
@@ -309,51 +335,35 @@ INSTALL_BOOT_ANIMATIONS() {
     fi
 
     # 2. Plymouth Theme Setup
-    local plymouth_theme_dir="/usr/share/plymouth/themes/omarchy"
-    if [[ -d "$plymouth_theme_dir" ]]; then
-      if [[ -f "$REPO_DIR/plymouth/omarchy.script" ]]; then
-        run_privileged cp "$REPO_DIR/plymouth/omarchy.script" "$plymouth_theme_dir/omarchy.script"
-      fi
+    #
+    # The theme goes into its own directory and is selected by name. The old
+    # installer overwrote /usr/share/plymouth/themes/omarchy/omarchy.script and
+    # dropped ~330 generated PNGs into that package-owned directory: a package
+    # update reverted the animation and uninstall.sh had nothing to restore.
+    # plymouth_theme_install also repairs machines that ran the old in-place
+    # patch.
+    if INSTALL_PLYMOUTH_THEME; then
+      log_sub "Installed Plymouth theme 'virtual-paradise' (Omarchy's theme left untouched)"
+    else
+      log_warn "Plymouth theme was not installed; the boot splash is unchanged."
+    fi
 
-      # Extract intro frames (259 frames) if missing
-      if [[ ! -f "$plymouth_theme_dir/intro-259.png" ]] && [[ -f "$REPO_DIR/backgrounds/Miku_animated_full.mp4" ]]; then
-        log_sub "Extracting 259 frames from Miku_animated_full.mp4 for Plymouth..."
-        run_privileged ffmpeg -y -loglevel error -i "$REPO_DIR/backgrounds/Miku_animated_full.mp4" -vf "scale=1920:1080" "$plymouth_theme_dir/intro-%d.png"
-      fi
+    # Systemd overrides for instant Plymouth handover (no SDDM delay). These
+    # are our own drop-ins; uninstall.sh removes them again.
+    run_privileged mkdir -p /etc/systemd/system/plymouth-poweroff.service.d /etc/systemd/system/plymouth-reboot.service.d
+    if [[ -f "$REPO_DIR/plymouth/override.conf" ]]; then
+      run_privileged cp "$REPO_DIR/plymouth/override.conf" "/etc/systemd/system/plymouth-poweroff.service.d/override.conf"
+      run_privileged cp "$REPO_DIR/plymouth/override.conf" "/etc/systemd/system/plymouth-reboot.service.d/override.conf"
+      run_privileged systemctl daemon-reload
+    fi
 
-      # Extract outro frames (72 frames) if missing
-      if [[ ! -f "$plymouth_theme_dir/outro-72.png" ]] && [[ -f "$REPO_DIR/backgrounds/Miku_missing.mp4" ]]; then
-        log_sub "Extracting 72 frames from Miku_missing.mp4 for Plymouth..."
-        run_privileged ffmpeg -y -loglevel error -i "$REPO_DIR/backgrounds/Miku_missing.mp4" -vf "scale=1920:1080" "$plymouth_theme_dir/outro-%d.png"
-      fi
-
-      # Fallback single frame images
-      if [[ -f "$plymouth_theme_dir/intro-1.png" ]]; then
-        run_privileged cp "$plymouth_theme_dir/intro-1.png" "$plymouth_theme_dir/background.png" 2>/dev/null || true
-      fi
-      if [[ -f "$plymouth_theme_dir/outro-1.png" ]]; then
-        run_privileged cp "$plymouth_theme_dir/outro-1.png" "$plymouth_theme_dir/background-shutdown.png" 2>/dev/null || true
-      fi
-
-      # Systemd overrides for instant Plymouth handover (no SDDM delay)
-      run_privileged mkdir -p /etc/systemd/system/plymouth-poweroff.service.d /etc/systemd/system/plymouth-reboot.service.d
-      if [[ -f "$REPO_DIR/plymouth/override.conf" ]]; then
-        run_privileged cp "$REPO_DIR/plymouth/override.conf" "/etc/systemd/system/plymouth-poweroff.service.d/override.conf"
-        run_privileged cp "$REPO_DIR/plymouth/override.conf" "/etc/systemd/system/plymouth-reboot.service.d/override.conf"
-        run_privileged systemctl daemon-reload
-      fi
-
-      run_privileged plymouth-set-default-theme omarchy >/dev/null 2>&1 || true
-      log_sub "Configured Plymouth theme with instant lazy-loading animation engine"
-
-      # Rebuild UKI / initramfs
-      if command -v limine-mkinitcpio &>/dev/null; then
-        log_sub "Rebuilding UKI image with limine-mkinitcpio..."
-        run_privileged limine-mkinitcpio >/dev/null 2>&1 || log_warn "limine-mkinitcpio failed; check boot partition."
-      elif command -v mkinitcpio &>/dev/null; then
-        log_sub "Rebuilding initramfs with mkinitcpio -P..."
-        run_privileged mkinitcpio -P >/dev/null 2>&1 || log_warn "mkinitcpio failed."
-      fi
+    # Rebuild UKI / initramfs
+    if command -v limine-mkinitcpio &>/dev/null; then
+      log_sub "Rebuilding UKI image with limine-mkinitcpio..."
+      run_privileged limine-mkinitcpio >/dev/null 2>&1 || log_warn "limine-mkinitcpio failed; check boot partition."
+    elif command -v mkinitcpio &>/dev/null; then
+      log_sub "Rebuilding initramfs with mkinitcpio -P..."
+      run_privileged mkinitcpio -P >/dev/null 2>&1 || log_warn "mkinitcpio failed."
     fi
   else
     log_warn "Sudo privileges not available. Skipping system-wide Plymouth/SDDM setup."
@@ -995,6 +1005,19 @@ if [[ -f "$REPO_DIR/hypr/hyprland-preview-share-picker.css" ]]; then
   cp "$REPO_DIR/hypr/hyprland-preview-share-picker.css" "$CONFIG_DIR/hypr/hyprland-preview-share-picker.css" 2>/dev/null || true
 fi
 
+# Older releases shipped their own hyprland.conf. Hyprland ignores it while
+# hyprland.lua exists, but it looks like a live config and hides the real one,
+# so drop it when it is clearly ours.
+legacy_hypr_conf="$CONFIG_DIR/hypr/hyprland.conf"
+if [[ -f $legacy_hypr_conf ]] && grep -qF 'Virtual☆Paradise Hyprland Config' "$legacy_hypr_conf"; then
+  if [[ -f "$CONFIG_DIR/hypr/hyprland.lua" ]]; then
+    rm -f "$legacy_hypr_conf"
+    log_sub "Removed the legacy hyprland.conf (Omarchy loads hyprland.lua)"
+  else
+    log_warn "Keeping $legacy_hypr_conf: it is the only Hyprland config on this machine."
+  fi
+fi
+
 # 5.5 Fcitx5 Vietnamese Input Method (Unikey) Configuration
 CONFIGURE_FCITX_UNIKEY() {
   command -v fcitx5 &>/dev/null || return 0
@@ -1228,6 +1251,12 @@ if [[ "$REPO_DIR" != "$CONFIG_DIR/omarchy/themes/$THEME_NAME" ]]; then
   done
   rm -rf "$THEME_DEST/__pycache__"
   find "$THEME_DEST" -name '*.pyc' -delete 2>/dev/null || true
+
+  # A fresh install replaces the theme files with the repository's originals,
+  # so the palette baseline the variant switcher keeps has to go with them.
+  rm -rf "$HOME/.local/state/virtual-paradise/theme-variant-orig"
+  rm -f "$HOME/.local/state/virtual-paradise/current_variant" \
+        "$HOME/.local/state/virtual-paradise/theme-variant-map"
 fi
 
 # Wavebar replaced the legacy media/Cava bar plugin. Remove any copy left in

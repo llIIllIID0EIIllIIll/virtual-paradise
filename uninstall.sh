@@ -151,8 +151,13 @@ if [[ -f "$HOME/.local/share/virtual-paradise/plugin-overrides.sh" ]]; then
 fi
 rm -rf "$HOME/.local/share/virtual-paradise"
 rm -f "$HOME/.local/state/virtual-paradise/overrides.state" \
-      "$HOME/.local/state/virtual-paradise/plugin-versions.lock"
-rm -rf "$HOME/.local/state/virtual-paradise/plugin-backups"
+      "$HOME/.local/state/virtual-paradise/plugin-versions.lock" \
+      "$HOME/.local/state/virtual-paradise/current_variant" \
+      "$HOME/.local/state/virtual-paradise/current_live_wallpaper" \
+      "$HOME/.local/state/virtual-paradise/theme-variant-map"
+rm -rf "$HOME/.local/state/virtual-paradise/plugin-backups" \
+       "$HOME/.local/state/virtual-paradise/theme-variant-orig"
+rm -f /tmp/virtual_paradise_wallpaper_ready /tmp/mpv-live.sock 2>/dev/null || true
 rm -f "$HOME/.local/bin/paradise-plugin-update" \
       "$HOME/.local/bin/update-plugins.sh" \
       "$HOME/.local/bin/notify-plugin-updates.sh" \
@@ -176,7 +181,7 @@ for file in \
   toggle_cooler_boost.sh toggle_live_wallpaper.sh toggle_btop.sh toggle_voxtype_config.sh memory_detail_notify.sh \
   virtual_matrix virtual_matrix.py momoisay momoisay.real sync_cava_theme.py format-docx format-docx-vn.py vn-docx \
   hypr_window_error_shake.sh hypr_window_error_restore.sh logout_splash.qml curtain_transition.qml glitch_transition.qml \
-  Glitch.jpg Miku_missing.gif Miku_missing.mp4 uninstall-virtual-paradise; do
+  Glitch.jpg Miku_missing.gif Miku_missing.mp4 uninstall-virtual-paradise widgets.sh; do
   rm -f "$LOCAL_BIN/$file"
 done
 
@@ -335,6 +340,19 @@ fi
 # The preview-share-picker stylesheet is ours.
 rm -f "$CONFIG_DIR/hypr/hyprland-preview-share-picker.css"
 
+# Before Omarchy moved to Lua, the theme shipped a hyprland.conf of its own.
+# Hyprland ignores it while hyprland.lua exists, but it is dead weight that
+# looks like a live config, so remove it when it is clearly ours.
+legacy_hypr_conf="$CONFIG_DIR/hypr/hyprland.conf"
+if [[ -f $legacy_hypr_conf ]] && grep -qF 'Virtual☆Paradise Hyprland Config' "$legacy_hypr_conf"; then
+  if [[ -f "$CONFIG_DIR/hypr/hyprland.lua" ]]; then
+    rm -f "$legacy_hypr_conf"
+    printf 'Removed the legacy hyprland.conf (Omarchy loads hyprland.lua).\n'
+  else
+    printf 'Keeping %s: it is the only Hyprland config on this machine.\n' "$legacy_hypr_conf"
+  fi
+fi
+
 [[ -n $hypr_bak ]] && rm -rf "$hypr_bak"
 rm -f "$hypr_state" 2>/dev/null || true
 
@@ -455,6 +473,39 @@ if [[ -f "$REPO_DIR/lib/sddm.sh" ]]; then
     printf '  sudo rm -f /etc/sddm.conf.d/zz-virtual-paradise-theme.conf\n'
   fi
 fi
+
+# Plymouth: remove our own theme and restore the previous selection. The old
+# installer replaced /usr/share/plymouth/themes/omarchy/omarchy.script and left
+# ~330 generated PNGs in that package-owned directory; repairing that here
+# means even a machine that never re-runs install.sh gets a stock boot splash.
+if [[ -f "$REPO_DIR/lib/plymouth.sh" ]]; then
+  if run_privileged bash -c \
+      '. "$1/lib/plymouth.sh" && { plymouth_theme_remove "/" && plymouth_repair_legacy_theme "/"; }' _ "$REPO_DIR"; then
+    printf 'Removed the Virtual Paradise Plymouth theme.\n'
+    printf 'Rebuild the initramfs to drop the splash from the boot image: sudo mkinitcpio -P\n'
+  else
+    printf 'Could not remove the Plymouth theme (needs sudo). If the boot splash still shows Virtual Paradise, run:\n'
+    printf '  sudo rm -rf /usr/share/plymouth/themes/virtual-paradise\n'
+    printf '  sudo sed -i "s/^Theme=.*/Theme=omarchy/" /etc/plymouth/plymouthd.conf\n'
+  fi
+fi
+
+# The Plymouth systemd drop-ins are ours. Remove them only when the file is
+# byte-for-byte the one we shipped, so a local edit is never thrown away.
+for plymouth_unit in plymouth-poweroff.service plymouth-reboot.service; do
+  plymouth_dropin="/etc/systemd/system/$plymouth_unit.d/override.conf"
+  [[ -f $plymouth_dropin ]] || continue
+  if [[ -f "$REPO_DIR/plymouth/override.conf" ]] \
+      && cmp -s "$REPO_DIR/plymouth/override.conf" "$plymouth_dropin"; then
+    if run_privileged rm -f "$plymouth_dropin"; then
+      run_privileged rmdir "/etc/systemd/system/$plymouth_unit.d" 2>/dev/null || true
+      printf 'Removed the Plymouth systemd drop-in for %s.\n' "$plymouth_unit"
+    else
+      printf 'Could not remove %s (needs sudo).\n' "$plymouth_dropin"
+    fi
+  fi
+done
+run_privileged systemctl daemon-reload >/dev/null 2>&1 || true
 
 # shell-default.json is the pristine Omarchy layout restored above and the only
 # remaining copy of it. --keep-backups implies keeping that too, since without
