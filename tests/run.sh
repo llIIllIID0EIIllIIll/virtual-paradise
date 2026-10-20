@@ -371,6 +371,13 @@ if want tc3; then
       "$([[ ! -e "$installed_clock/Removed.qml" && ! -e "$installed_clock/stale.json" ]] && echo 0 || echo 1)"
   fi
 
+  # The same for helper scripts: a script the repository no longer ships must
+  # not keep answering to a name the documentation dropped.
+  printf '#!/bin/sh\n' >"$root/home/.local/bin/widgets.sh"
+  run_installer "$root" >/dev/null 2>&1
+  check "installer removes helper scripts the theme no longer ships" \
+    "$([[ ! -e "$root/home/.local/bin/widgets.sh" ]] && echo 0 || echo 1)"
+
   python3 - "$root/home/.config/omarchy/shell.json" <<'PY'
 import json, sys
 d = json.load(open(sys.argv[1]))
@@ -1105,6 +1112,24 @@ if want tc12; then
     "$(grep -q 'hyprctl eval' "$REPO_DIR/bin/effects.sh" && echo 0 || echo 1)"
   check "the effects script uses the Lua config API" \
     "$(grep -q 'hl.config' "$REPO_DIR/bin/effects.sh" && echo 0 || echo 1)"
+
+  # Hyprland reports a gradient stop as AARRGGBB, its config syntax wants
+  # RRGGBBAA. Restoring the border without swapping the bytes brings it back
+  # with its red and blue channels exchanged.
+  mkdir -p "$root/bin"
+  cat >"$root/bin/hyprctl" <<'STUB'
+#!/usr/bin/env bash
+printf '%s\n' "$*" >>"$HYPRCTL_LOG"
+STUB
+  chmod +x "$root/bin/hyprctl"
+  HYPRCTL_LOG="$root/hyprctl.log" PATH="$root/bin:$PATH" \
+    bash -c '. "$1/bin/effects.sh"; restore_active_border "ee00ffdd cc00ff88 eeffb7d5 45deg"' \
+    _ "$REPO_DIR" >/dev/null 2>&1
+  check "the border gradient is restored with the right channel order" \
+    "$(grep -q 'rgba(00ffddee)' "$root/hyprctl.log" 2>/dev/null && echo 0 || echo 1)" \
+    "$(cat "$root/hyprctl.log" 2>/dev/null)"
+  check "every gradient stop is restored" \
+    "$(grep -q 'rgba(ffb7d5ee)' "$root/hyprctl.log" 2>/dev/null && echo 0 || echo 1)"
 fi
 
 summary

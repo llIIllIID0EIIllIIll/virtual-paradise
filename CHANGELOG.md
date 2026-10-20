@@ -39,6 +39,9 @@ Conventional Commits.
   e+1` is legacy syntax and is parsed as Lua (`hl.dispatch(workspace e+1)` →
   syntax error); the script now uses `hl.dsp.focus({ workspace = "e+1" })`,
   the same call Omarchy's own bindings use.
+- **The focus pulse restores the border it found.** Hyprland reports a
+  gradient stop as `AARRGGBB` while its config syntax wants `RRGGBBAA`, so
+  the restored border came back with its red and blue channels swapped.
 - **The theme switcher applies the palette it writes.** It edited
   `~/.config/hypr/hyprland.conf`, which Omarchy 4 does not read (the config is
   `hyprland.lua` now), so the variant only landed in `colors.toml` and never
@@ -61,6 +64,14 @@ Conventional Commits.
 - The Plymouth theme script is shipped as `plymouth/virtual-paradise.script`
   instead of `plymouth/omarchy.script`, so nothing in the repository is named
   after the package theme it no longer replaces.
+- The installer removes helper scripts the theme no longer ships, so a file
+  that was dropped from the repository does not keep answering to its old name
+  in `~/.local/bin` forever.
+
+### Added
+- `install.sh --help` lists the supported options, and an unknown option is
+  now an error instead of being ignored. A typo like `--user-onyl` used to
+  run a full install with the wrong privileges.
 
 ---
 
