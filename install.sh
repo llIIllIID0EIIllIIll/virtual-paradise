@@ -352,21 +352,22 @@ INSTALL_PLYMOUTH_THEME() {
     '. "$1/lib/plymouth.sh" && plymouth_theme_install "/" "$1"' _ "$REPO_DIR"
 }
 
-# The boot image this machine boots from.
+# The boot image this machine boots from, and how old it is.
 #
 # Limine boots a unified kernel image, mkinitcpio writes a plain initramfs.
 # Both are checked so the installer can tell whether the splash really made
-# it into the image that is booted.
-boot_image_path() {
-  local candidate
-  for candidate in \
-    /boot/EFI/BOOT/BOOTX64.EFI \
-    /boot/EFI/Linux/arch-linux.efi \
-    /boot/initramfs-linux.img \
-    /boot/initrd.img; do
-    [[ -e $candidate ]] && { printf '%s\n' "$candidate"; return 0; }
-  done
-  return 1
+# it into the image that is booted. The check runs as root: /boot is not
+# readable by the user.
+boot_image_age() {
+  run_privileged bash -c '
+    for f in /boot/EFI/BOOT/BOOTX64.EFI /boot/EFI/Linux/arch-linux.efi \
+             /boot/initramfs-linux.img /boot/initrd.img; do
+      [ -e "$f" ] || continue
+      echo "$f $(( $(date +%s) - $(stat -c %Y "$f") ))"
+      exit 0
+    done
+    exit 1
+  ' 2>/dev/null
 }
 
 # Turn the SDDM autologin off so the greeter is actually shown.
@@ -444,8 +445,7 @@ INSTALL_BOOT_ANIMATIONS() {
     # exactly the same. The mtime of the boot image is checked afterwards so
     # a silently skipped rebuild cannot pass as a success.
     local rebuild_ok=0
-    local boot_image
-    boot_image="$(boot_image_path)"
+    local image_info image age
 
     if command -v limine-mkinitcpio &>/dev/null; then
       log_sub "Rebuilding UKI image with limine-mkinitcpio..."
@@ -466,18 +466,14 @@ INSTALL_BOOT_ANIMATIONS() {
     fi
 
     if [[ $rebuild_ok -eq 1 ]]; then
-      if [[ -n $boot_image && -e $boot_image ]]; then
-        local age now
-        now="$(date +%s)"
-        age=$(( now - $(stat -c '%Y' "$boot_image" 2>/dev/null || echo 0) ))
-        if [[ $age -gt 600 ]]; then
-          log_warn "The boot image $boot_image was not updated (older than 10 minutes)."
-          log_warn "The new splash only shows up after the boot image is rebuilt."
-        else
-          log_sub "Boot image rebuilt: $boot_image"
-        fi
+      image_info="$(boot_image_age || true)"
+      image="${image_info%% *}"
+      age="${image_info##* }"
+      if [[ $image =~ ^/ && $age =~ ^[0-9]+$ && $age -gt 600 ]]; then
+        log_warn "The boot image $image was not updated (older than 10 minutes)."
+        log_warn "The new splash only shows up after the boot image is rebuilt."
       else
-        log_sub "Boot image rebuilt."
+        log_sub "Boot image rebuilt: ${image:-the boot image}"
       fi
     else
       log_warn "The boot image was NOT rebuilt - the old splash stays until it is."
