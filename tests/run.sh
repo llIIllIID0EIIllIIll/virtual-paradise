@@ -1329,4 +1329,58 @@ STUB
     "$(grep -m3 'OMARCHY_PATH=<UNSET>' "$root/shim.log" 2>/dev/null)"
 fi
 
+# ─────────────────────────────────────────────────────────────────────────────
+# TC-15  The compositor can read the config the theme writes.
+#
+# A mktemp file is created with mode 600 and `mv` keeps that mode, so moving
+# a freshly built Hyprland config into place turned it into -rw-------. In a
+# `sudo ./install.sh` run the file was root-owned on top of that, and the
+# compositor answered "cannot open ~/.config/hypr/hyprland.lua: Permission
+# denied" in its error overlay.
+# ─────────────────────────────────────────────────────────────────────────────
+if want tc15; then
+  section "TC-15  Hyprland config permissions"
+
+  root="$(new_sandbox tc15)"
+  build_shims "$root/bin"
+  mkdir -p "$root/home/.config/hypr"
+  printf 'require("default.hypr.omarchy")\n\n-- Added by hyprmoncfg: its generated monitor rules load last.\ndo local path = "x"; dofile(path)\n' \
+    >"$root/home/.config/hypr/hyprland.lua"
+  chmod 644 "$root/home/.config/hypr/hyprland.lua"
+
+  run_installer "$root" >/dev/null 2>&1
+  check "the installer exits 0" $?
+
+  for hypr_file in hyprland.lua bindings.lua looknfeel.lua input.lua monitors.lua autostart.lua; do
+    mode="$(stat -c '%a' "$root/home/.config/hypr/$hypr_file" 2>/dev/null || echo 000)"
+    check "hypr/$hypr_file is readable by the compositor (mode ${mode})" \
+      "$([[ $mode == 644 ]] && echo 0 || echo 1)"
+  done
+
+  # The window rules still have to be there: the file is rebuilt to move them
+  # in front of hyprmoncfg's line.
+  check "the window rules survived the rewrite" \
+    "$(grep -q 'Virtual Paradise Add-on Window Rules' "$root/home/.config/hypr/hyprland.lua" && echo 0 || echo 1)"
+
+  # The helper itself: replacing a file must not change its mode. A mktemp
+  # file is 600, and `mv` keeps that mode - which is how the Hyprland config
+  # became unreadable.
+  probe="$root/probe.txt"
+  staged="$root/staged.txt"
+  printf 'before\n' >"$probe"
+  chmod 640 "$probe"
+  printf 'after\n' >"$staged"
+  ( . "$REPO_DIR/lib/file-ops.sh"; replace_file_preserving "$probe" "$staged" ) >/dev/null 2>&1
+  check "replacing a file keeps its mode" \
+    "$([[ $(stat -c '%a' "$probe" 2>/dev/null) == 640 ]] && echo 0 || echo 1)" \
+    "mode $(stat -c '%a' "$probe" 2>/dev/null)"
+  check "replacing a file keeps its content" \
+    "$(grep -qx 'after' "$probe" && echo 0 || echo 1)"
+
+  # The installer has to go through the helper: a plain `mv` of a mktemp file
+  # is what made the config unreadable in the first place.
+  check "the installer replaces the config through the helper" \
+    "$(grep -q 'replace_file_preserving' "$REPO_DIR/install.sh" && echo 0 || echo 1)"
+fi
+
 summary

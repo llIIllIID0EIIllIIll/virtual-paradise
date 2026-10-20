@@ -14,7 +14,7 @@
 [![Arch Linux](https://img.shields.io/badge/Arch_Linux-1793D1?style=flat-square&logo=arch-linux&logoColor=white)](https://archlinux.org)
 [![Omarchy 4.0+](https://img.shields.io/badge/Omarchy-4.0+-8A2BE2?style=flat-square)](https://omarchy.org)
 [![Hyprland](https://img.shields.io/badge/Hyprland-Wayland-00ffdd?style=flat-square)](https://hyprland.org)
-[![Tests](https://img.shields.io/badge/tests-201%20passed-00ff88?style=flat-square)](tests/)
+[![Tests](https://img.shields.io/badge/tests-212%20passed-00ff88?style=flat-square)](tests/)
 [![License](https://img.shields.io/badge/license-MIT-ffe066?style=flat-square)](LICENSE)
 [![Version](https://img.shields.io/badge/version-1.2.2-ff00ff?style=flat-square)](VERSION)
 
@@ -305,7 +305,7 @@ The uninstaller will:
 
 ### Running Tests
 
-The test suite has fourteen test cases and 201 assertions; optional tools
+The test suite has fifteen test cases and 212 assertions; optional tools
 (`shellcheck`, `qmllint`, `hyprctl`) enable extra checks when present, so the
 exact count varies between machines (171 with `shellcheck`, 170 without). It
 runs in a sandbox and never touches your real system.
@@ -330,6 +330,7 @@ Test cases:
 - **TC-12**: Theme variants (every palette-carrying file stays in sync, reset)
 - **TC-13**: Responsive typography and display layout (no pinned font size, no monitor rules)
 - **TC-14**: Omarchy environment (the installer works with a reset environment)
+- **TC-15**: Hyprland config permissions (the compositor can read every file)
 
 ### Project Structure
 

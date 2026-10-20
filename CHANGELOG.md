@@ -9,6 +9,14 @@ Conventional Commits.
 ## [Unreleased]
 
 ### Fixed
+- **The compositor can read the Hyprland config the installer writes.** A
+  `mktemp` file is created with mode 600 and `mv` keeps that mode, so moving
+  a freshly built `hyprland.lua` into place turned it into `-rw-------`. In a
+  `sudo ./install.sh` run the file was root-owned on top of that, and the
+  compositor answered *"cannot open ~/.config/hypr/hyprland.lua: Permission
+  denied"* in its error overlay - the whole session was blocked until the
+  next reload. Replacing a file now keeps its mode and its owner, and every
+  config the theme writes is made readable again.
 - **`sudo ./install.sh` no longer fails with "OMARCHY_PATH is not set".**
   Omarchy sets `OMARCHY_PATH` in the user's shell, but sudo resets the
   environment, so every `omarchy ...` command the installer started ran
