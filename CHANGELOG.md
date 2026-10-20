@@ -35,6 +35,16 @@ Conventional Commits.
   1600x900 with a 256 colour palette: the same picture once Plymouth
   stretches it over the screen (Plymouth converts palette PNGs through
   `png_set_palette_to_rgb`), about a third of the data.
+- **The boot image is really rebuilt after installing the splash.** The
+  installer picked one rebuild path with an `if/elif` and threw its output
+  away: when `limine-mkinitcpio` failed, `mkinitcpio -P` was never tried and
+  the machine kept the old splash - with the installer reporting success.
+  Both paths are tried now, the output is shown, and the mtime of the boot
+  image is checked so a skipped rebuild cannot pass as a success.
+- **The login screen can be shown at all.** Omarchy logs in automatically, so
+  the greeter is on screen for less than a second and the theme's password
+  panel was never seen. `install.sh --no-autologin` turns the automatic login
+  off, and `uninstall.sh` puts it back.
 - **The login screen continues the boot splash.** The greeter showed a
   different picture than the boot animation: a blurry 480x268 GIF stretched
   over the whole screen. It now uses the same cyber backdrop, the same

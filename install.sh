@@ -24,17 +24,19 @@ ENABLE_BOOT=1
 BOOT_ONLY=0
 SDDM_ONLY=0
 USER_ONLY=0
+NO_AUTOLOGIN=0
 
 for arg in "$@"; do
   case "$arg" in
     -h|--help)
-      printf 'Usage: %s [--no-boot] [--boot-only] [--sddm-only] [--user-only|--no-sudo]\n' "$0"
+      printf 'Usage: %s [--no-boot] [--boot-only] [--sddm-only] [--user-only|--no-sudo] [--no-autologin]\n' "$0"
       printf '\nInstalls the Virtual☆Paradise theme.\n\n'
       printf '  --no-boot        skip the Plymouth/SDDM setup (needs sudo)\n'
       printf '  --boot-only      install only the boot and login themes (needs sudo)\n'
       printf '  --sddm-only      install only the SDDM login theme (needs sudo)\n'
       printf '  --user-only      install nothing outside your home directory\n'
       printf '  --no-sudo        alias for --user-only\n'
+      printf '  --no-autologin   show the login screen instead of logging in automatically\n'
       exit 0
       ;;
     --hook)
@@ -55,6 +57,12 @@ for arg in "$@"; do
     --no-sudo|--user-only)
       USER_ONLY=1
       ENABLE_BOOT=0
+      ;;
+    --no-autologin)
+      # Show the login screen. Omarchy logs in automatically, so the greeter
+      # is on screen for less than a second and the theme's password panel
+      # would never be seen.
+      NO_AUTOLOGIN=1
       ;;
     --dry-run)
       # There is no preview mode: the installer writes to ~/.config, ~/.local
@@ -344,6 +352,45 @@ INSTALL_PLYMOUTH_THEME() {
     '. "$1/lib/plymouth.sh" && plymouth_theme_install "/" "$1"' _ "$REPO_DIR"
 }
 
+# The boot image this machine boots from.
+#
+# Limine boots a unified kernel image, mkinitcpio writes a plain initramfs.
+# Both are checked so the installer can tell whether the splash really made
+# it into the image that is booted.
+boot_image_path() {
+  local candidate
+  for candidate in \
+    /boot/EFI/BOOT/BOOTX64.EFI \
+    /boot/EFI/Linux/arch-linux.efi \
+    /boot/initramfs-linux.img \
+    /boot/initrd.img; do
+    [[ -e $candidate ]] && { printf '%s\n' "$candidate"; return 0; }
+  done
+  return 1
+}
+
+# Turn the SDDM autologin off so the greeter is actually shown.
+#
+# Omarchy logs in automatically, so the login screen is on screen for less than
+# a second: the theme's password panel would never be seen. The original file
+# is kept next to it so uninstall.sh can put it back.
+disable_autologin() {
+  local conf="/etc/sddm.conf.d/autologin.conf"
+  [[ -f $conf ]] || return 0
+  grep -qE '^[[:space:]]*User=' "$conf" || return 0
+
+  run_privileged cp -a "$conf" "$conf.paradise.bak" 2>/dev/null || true
+  if run_privileged sed -i \
+      -e 's/^\([[:space:]]*User=\)/\;#\1/' \
+      -e 's/^\([[:space:]]*Session=\)/\;#\1/' \
+      "$conf"; then
+    printf 'Disabled the SDDM autologin; the login screen is shown now.\n'
+    return 0
+  fi
+  printf 'Could not disable the SDDM autologin.\n' >&2
+  return 1
+}
+
 INSTALL_BOOT_ANIMATIONS() {
   log_step "9" "$TOTAL_STEPS" "Configuring Plymouth Boot Animation, SDDM Display Manager & UKI Kernel..."
 
@@ -359,6 +406,10 @@ INSTALL_BOOT_ANIMATIONS() {
       log_sub "Installed SDDM theme 'virtual-paradise' (Omarchy's theme left untouched)"
     else
       log_warn "SDDM theme was not installed; the login screen is unchanged."
+    fi
+
+    if [[ $NO_AUTOLOGIN -eq 1 ]]; then
+      disable_autologin || true
     fi
 
     # 2. Plymouth Theme Setup
@@ -385,12 +436,52 @@ INSTALL_BOOT_ANIMATIONS() {
     fi
 
     # Rebuild UKI / initramfs
+    #
+    # Both paths are tried and the output is shown. The old code picked one
+    # with an if/elif and threw the output away, so a failing rebuild left
+    # the boot image with the previous splash and the installer said nothing:
+    # the theme was installed, the machine rebooted, and the splash was
+    # exactly the same. The mtime of the boot image is checked afterwards so
+    # a silently skipped rebuild cannot pass as a success.
+    local rebuild_ok=0
+    local boot_image
+    boot_image="$(boot_image_path)"
+
     if command -v limine-mkinitcpio &>/dev/null; then
       log_sub "Rebuilding UKI image with limine-mkinitcpio..."
-      run_privileged limine-mkinitcpio >/dev/null 2>&1 || log_warn "limine-mkinitcpio failed; check boot partition."
-    elif command -v mkinitcpio &>/dev/null; then
+      if run_privileged limine-mkinitcpio; then
+        rebuild_ok=1
+      else
+        log_warn "limine-mkinitcpio failed; falling back to mkinitcpio -P."
+      fi
+    fi
+
+    if [[ $rebuild_ok -eq 0 ]] && command -v mkinitcpio &>/dev/null; then
       log_sub "Rebuilding initramfs with mkinitcpio -P..."
-      run_privileged mkinitcpio -P >/dev/null 2>&1 || log_warn "mkinitcpio failed."
+      if run_privileged mkinitcpio -P; then
+        rebuild_ok=1
+      else
+        log_warn "mkinitcpio -P failed."
+      fi
+    fi
+
+    if [[ $rebuild_ok -eq 1 ]]; then
+      if [[ -n $boot_image && -e $boot_image ]]; then
+        local age now
+        now="$(date +%s)"
+        age=$(( now - $(stat -c '%Y' "$boot_image" 2>/dev/null || echo 0) ))
+        if [[ $age -gt 600 ]]; then
+          log_warn "The boot image $boot_image was not updated (older than 10 minutes)."
+          log_warn "The new splash only shows up after the boot image is rebuilt."
+        else
+          log_sub "Boot image rebuilt: $boot_image"
+        fi
+      else
+        log_sub "Boot image rebuilt."
+      fi
+    else
+      log_warn "The boot image was NOT rebuilt - the old splash stays until it is."
+      log_warn "Run 'sudo mkinitcpio -P' (or 'sudo limine-mkinitcpio') by hand, then reboot."
     fi
   else
     log_warn "Sudo privileges not available. Skipping system-wide Plymouth/SDDM setup."
@@ -412,6 +503,9 @@ fi
 
 if [[ $SDDM_ONLY -eq 1 ]]; then
   if INSTALL_SDDM_THEME; then
+    if [[ $NO_AUTOLOGIN -eq 1 ]]; then
+      disable_autologin || true
+    fi
     echo -e "\n${C_BOLD}${C_GREEN}✨ SDDM login theme installed.${C_RESET}\n"
     exit 0
   fi

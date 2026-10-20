@@ -14,7 +14,7 @@
 [![Arch Linux](https://img.shields.io/badge/Arch_Linux-1793D1?style=flat-square&logo=arch-linux&logoColor=white)](https://archlinux.org)
 [![Omarchy 4.0+](https://img.shields.io/badge/Omarchy-4.0+-8A2BE2?style=flat-square)](https://omarchy.org)
 [![Hyprland](https://img.shields.io/badge/Hyprland-Wayland-00ffdd?style=flat-square)](https://hyprland.org)
-[![Tests](https://img.shields.io/badge/tests-243%20passed-00ff88?style=flat-square)](tests/)
+[![Tests](https://img.shields.io/badge/tests-249%20passed-00ff88?style=flat-square)](tests/)
 [![License](https://img.shields.io/badge/license-MIT-ffe066?style=flat-square)](LICENSE)
 [![Version](https://img.shields.io/badge/version-1.2.2-ff00ff?style=flat-square)](VERSION)
 
@@ -203,6 +203,26 @@ the live wallpaper. The theme removes Omarchy's two binds with `hl.unbind()`
 first, so only one action runs, and the group move moves to
 `SUPER + ALT + CTRL + ←` / `→`.
 
+### The Login Screen and the Boot Splash
+
+The SDDM greeter continues the Plymouth splash: the same cyber backdrop, the
+same centred still of the animation and the same neon frame, with a wide neon
+password panel in front of it. Plymouth plays the same artwork while booting
+and while shutting down, so the picture never breaks.
+
+Two things are worth knowing:
+
+- **Omarchy logs in automatically**, so the greeter is on screen for less than
+  a second. `./install.sh --sddm-only --no-autologin` (or
+  `sudo ./install.sh --no-autologin`) turns that off so the login screen is
+  really shown; `uninstall.sh` puts the automatic login back.
+- **The splash only changes after the boot image is rebuilt.** The installer
+  rebuilds it (both `limine-mkinitcpio` and `mkinitcpio -P` are tried, the
+  output is shown and the result is checked), but a machine that boots a
+  unified kernel image from Limine needs the UKI rebuilt - if the installer
+  says the boot image was not updated, run `sudo limine-mkinitcpio` by hand
+  and reboot.
+
 ### Text Size & Display Layout
 
 The theme deliberately leaves both to you and to the tools that do them well:
@@ -317,7 +337,7 @@ The uninstaller will:
 
 ### Running Tests
 
-The test suite has sixteen test cases and 243 assertions; optional tools
+The test suite has sixteen test cases and 249 assertions; optional tools
 (`shellcheck`, `qmllint`, `hyprctl`) enable extra checks when present, so the
 exact count varies between machines (171 with `shellcheck`, 170 without). It
 runs in a sandbox and never touches your real system.
