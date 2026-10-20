@@ -63,11 +63,63 @@ _copy_override() {
   cp "$src" "$target" 2>/dev/null || true
 }
 
-# Enable a plugin, suppressing errors.
-_plugin_enable() { omarchy plugin enable "$1" >/dev/null 2>&1 || true; }
+# Plugin state, read once per hook run.
+#
+# Every `omarchy plugin enable/disable` walks the whole plugin catalogue, and
+# the hook used to make about thirty of those calls on every theme change and
+# every login - three seconds of pure no-ops, because the state was already
+# correct. Asking the shell once what is enabled and only touching the
+# difference turns that into a single query in the common case.
+#
+# The shell is the source of truth here: `omarchy plugin list --json` is the
+# same listPlugins call the enable/disable commands use.
+_PLUGIN_STATE=""
+_PLUGIN_STATE_LOADED=0
 
-# Disable a plugin, suppressing errors.
-_plugin_disable() { omarchy plugin disable "$1" >/dev/null 2>&1 || true; }
+_load_plugin_state() {
+  [[ $_PLUGIN_STATE_LOADED -eq 1 ]] && return 0
+  _PLUGIN_STATE_LOADED=1
+  command -v omarchy >/dev/null 2>&1 || return 0
+  _PLUGIN_STATE="$(omarchy plugin list --json 2>/dev/null || true)"
+  return 0
+}
+
+# Is a plugin currently enabled?
+#   0 = enabled, 1 = known to be disabled, 2 = unknown (no readable state)
+_plugin_state_of() {
+  local id="$1"
+  _load_plugin_state
+  if [[ -z $_PLUGIN_STATE ]] || ! command -v jq >/dev/null 2>&1; then
+    return 2
+  fi
+  if printf '%s' "$_PLUGIN_STATE" | jq -e --arg id "$id" \
+    'any(.[]; .id == $id and .enabled == true)' >/dev/null 2>&1; then
+    return 0
+  fi
+  return 1
+}
+
+# Enable a plugin, suppressing errors. A plugin that is already enabled is
+# left alone.
+_plugin_enable() {
+  local id="$1" state
+  _plugin_state_of "$id"; state=$?
+  [[ $state -eq 0 ]] && return 0
+  omarchy plugin enable "$id" >/dev/null 2>&1 || true
+  _PLUGIN_STATE_LOADED=0
+  return 0
+}
+
+# Disable a plugin, suppressing errors. A plugin that is already disabled is
+# left alone.
+_plugin_disable() {
+  local id="$1" state
+  _plugin_state_of "$id"; state=$?
+  [[ $state -eq 1 ]] && return 0
+  omarchy plugin disable "$id" >/dev/null 2>&1 || true
+  _PLUGIN_STATE_LOADED=0
+  return 0
+}
 
 # ---------------------------------------------------------------------------
 # 1. Sync Cava visualizer colors to the newly selected theme

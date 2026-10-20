@@ -12,7 +12,16 @@
 #    toggle_live_wallpaper.sh list     # List all live wallpapers
 # ==============================================================================
 
-BG_DIR="${XDG_CONFIG_HOME:-$HOME/.config}/omarchy/themes/virtual-paradise/backgrounds"
+# The wallpapers live outside the theme directory: Omarchy stages the whole
+# theme into ~/.local/state/omarchy/current/theme on every theme switch, and
+# ~95 MB of video in there cost ~15 seconds per switch. Omarchy scans
+# ~/.config/omarchy/backgrounds/<theme>/ for wallpapers too, so that is where
+# they are. The old location is still accepted for a theme that was installed
+# before the move.
+BG_DIR="${XDG_CONFIG_HOME:-$HOME/.config}/omarchy/backgrounds/virtual-paradise"
+if [[ ! -d "$BG_DIR" ]]; then
+  BG_DIR="${XDG_CONFIG_HOME:-$HOME/.config}/omarchy/themes/virtual-paradise/backgrounds"
+fi
 STATE_DIR="$HOME/.local/state/virtual-paradise"
 STATE_FILE="$STATE_DIR/current_live_wallpaper"
 STATIC_BG="$BG_DIR/Miku_missing.jpg"

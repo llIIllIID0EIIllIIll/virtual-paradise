@@ -1383,4 +1383,94 @@ if want tc15; then
     "$(grep -q 'replace_file_preserving' "$REPO_DIR/install.sh" && echo 0 || echo 1)"
 fi
 
+# ─────────────────────────────────────────────────────────────────────────────
+# TC-16  Boot and login performance.
+#
+# Three things that used to cost seconds on every login and every theme
+# switch:
+#   - the wallpapers (~95 MB of video) lived in the theme directory, and
+#     Omarchy stages the whole theme on every theme switch;
+#   - the animated GIFs were wallpapers, and Omarchy picks the bar's text
+#     colour with ImageMagick, which rendered 250 animation frames;
+#   - the terminal banner was drawn by Python on every interactive shell.
+# ─────────────────────────────────────────────────────────────────────────────
+if want tc16; then
+  section "TC-16  Boot and login performance"
+
+  check "the wallpapers are installed outside the theme directory" \
+    "$(grep -q 'WALLPAPER_DEST="\$CONFIG_DIR/omarchy/backgrounds/\$THEME_NAME"' "$REPO_DIR/install.sh" && echo 0 || echo 1)"
+  check "the theme directory does not carry the wallpapers" \
+    "$(grep -A4 'THEME_STRIP=(' "$REPO_DIR/install.sh" | grep -q 'backgrounds' && echo 0 || echo 1)"
+  check "the live wallpaper reads the new location" \
+    "$(grep -q 'omarchy/backgrounds/virtual-paradise' "$REPO_DIR/bin/toggle_live_wallpaper.sh" && echo 0 || echo 1)"
+  check "the uninstaller removes the new wallpaper directory" \
+    "$(grep -q 'omarchy/backgrounds/\$THEME_NAME' "$REPO_DIR/uninstall.sh" && echo 0 || echo 1)"
+
+  # The animated GIFs are the SDDM animation, not wallpapers: as wallpapers
+  # they made ImageMagick render every frame of them for the bar's text colour.
+  check "the installer turns the animated GIFs into still images" \
+    "$(grep -q 'wallpaper_gif' "$REPO_DIR/install.sh" && echo 0 || echo 1)"
+  check "no animated GIF is left in the wallpapers" \
+    "$(grep -q 'rm -f "\$wallpaper_gif"' "$REPO_DIR/install.sh" && echo 0 || echo 1)"
+
+  # A theme without a preview falls back to its first wallpaper, which is the
+  # slow path the theme just avoided.
+  check "the theme gets a preview image" \
+    "$(grep -q 'preview.jpg' "$REPO_DIR/install.sh" && echo 0 || echo 1)"
+
+  # The banner: a cached shell wrapper instead of a Python render per shell.
+  check "the banner has a shell wrapper" \
+    "$([[ -f $REPO_DIR/bin/paradise_banner.sh ]] && echo 0 || echo 1)"
+  check "the shell uses the cached banner" \
+    "$(grep -q 'paradise_banner.sh' "$REPO_DIR/install.sh" && echo 0 || echo 1)"
+
+  root="$(new_sandbox tc16)"
+  mkdir -p "$root/home/.local/state/omarchy/current/theme"
+  printf 'virtual-paradise' >"$root/home/.local/state/omarchy/current/theme.name"
+  printf 'accent = "#00ffdd"\n' >"$root/home/.local/state/omarchy/current/theme/colors.toml"
+
+  banner_out="$root/banner.out"
+  HOME="$root/home" XDG_CACHE_HOME="$root/cache" \
+    bash "$REPO_DIR/bin/paradise_banner.sh" >"$banner_out" 2>/dev/null
+  check "the banner prints something" \
+    "$([[ -s $banner_out ]] && echo 0 || echo 1)"
+  check "the banner is cached" \
+    "$([[ -f $root/cache/virtual-paradise/banner.txt ]] && echo 0 || echo 1)"
+
+  # The cached copy has to be what the wrapper prints afterwards.
+  second_out="$root/banner2.out"
+  HOME="$root/home" XDG_CACHE_HOME="$root/cache" \
+    bash "$REPO_DIR/bin/paradise_banner.sh" >"$second_out" 2>/dev/null
+  check "the cached banner matches the rendered one" \
+    "$(cmp -s "$banner_out" "$second_out" && echo 0 || echo 1)"
+
+  # A theme change has to invalidate the cache. The picture can stay the same
+  # (our theme always uses the same neon colors), so the cache key is what
+  # has to change.
+  old_key="$(head -n1 "$root/cache/virtual-paradise/banner.txt" 2>/dev/null)"
+  printf 'accent = "#ff00ff"\n' >"$root/home/.local/state/omarchy/current/theme/colors.toml"
+  touch -d '2030-01-01' "$root/home/.local/state/omarchy/current/theme/colors.toml"
+  third_out="$root/banner3.out"
+  HOME="$root/home" XDG_CACHE_HOME="$root/cache" \
+    bash "$REPO_DIR/bin/paradise_banner.sh" >"$third_out" 2>/dev/null
+  new_key="$(head -n1 "$root/cache/virtual-paradise/banner.txt" 2>/dev/null)"
+  check "a theme change invalidates the banner cache" \
+    "$([[ -n $old_key && -n $new_key && $old_key != "$new_key" ]] && echo 0 || echo 1)" \
+    "old=${old_key:-none} new=${new_key:-none}"
+
+  # The plugin state is read once, and only the difference is applied: about
+  # thirty no-op `omarchy plugin` calls were three seconds of every login.
+  check "the theme-set hook reads the plugin state once" \
+    "$(grep -q 'omarchy plugin list --json' "$REPO_DIR/lib/theme-set-hook.sh" && echo 0 || echo 1)"
+  check "the theme-set hook skips plugins that are already in place" \
+    "$(grep -q '_plugin_state_of' "$REPO_DIR/lib/theme-set-hook.sh" && echo 0 || echo 1)"
+
+  # The boot image carried ~97 MB of 1920x1080 frames; 1600x900 with a
+  # palette is the same picture and a third of the data.
+  check "the Plymouth frames are smaller" \
+    "$(grep -q 'VP_PLYMOUTH_FRAME_WIDTH=1600' "$REPO_DIR/lib/plymouth.sh" && echo 0 || echo 1)"
+  check "the Plymouth frames use a palette" \
+    "$(grep -q 'VP_PLYMOUTH_FRAME_PIXEL_FORMAT="pal8"' "$REPO_DIR/lib/plymouth.sh" && echo 0 || echo 1)"
+fi
+
 summary

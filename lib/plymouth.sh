@@ -28,6 +28,21 @@ VP_PLYMOUTH_LEGACY_MARKER="Instant Lazy Loading"
 VP_PLYMOUTH_INTRO_COUNT=259
 VP_PLYMOUTH_OUTRO_COUNT=72
 
+# Resolution and colour depth of the animation frames.
+#
+# Every frame is packed into the initramfs, and the splash is scaled to the
+# screen anyway: 1920x1080 PNGs meant ~97 MB of images in the boot image, and
+# Plymouth had that much to decode every second.
+#
+# 1600x900 with a 256 colour palette is visually the same once Plymouth
+# stretches it over the screen (Plymouth converts palette PNGs through
+# png_set_palette_to_rgb) and cuts the image data to about a third. The
+# frames are also what the boot image has to read, so this is boot time
+# saved.
+VP_PLYMOUTH_FRAME_WIDTH=1600
+VP_PLYMOUTH_FRAME_HEIGHT=900
+VP_PLYMOUTH_FRAME_PIXEL_FORMAT="pal8"
+
 # Stock assets the script needs next to the animation frames.
 VP_PLYMOUTH_ASSETS="bullet.png entry.png lock.png logo.png progress_bar.png progress_box.png"
 
@@ -146,14 +161,50 @@ plymouth_encode_frames() {
 
   video="$repo/backgrounds/Miku_animated_full.mp4"
   if [[ -f $video ]]; then
-    ffmpeg -y -loglevel error -i "$video" -vf "scale=1920:1080" "$stage/intro-%d.png" || return 1
+    ffmpeg -y -loglevel error -i "$video" \
+      -vf "scale=${VP_PLYMOUTH_FRAME_WIDTH}:${VP_PLYMOUTH_FRAME_HEIGHT}" \
+      -pix_fmt "$VP_PLYMOUTH_FRAME_PIXEL_FORMAT" \
+      "$stage/intro-%d.png" || return 1
   fi
 
   video="$repo/backgrounds/Miku_missing.mp4"
   if [[ -f $video ]]; then
-    ffmpeg -y -loglevel error -i "$video" -vf "scale=1920:1080" "$stage/outro-%d.png" || return 1
+    ffmpeg -y -loglevel error -i "$video" \
+      -vf "scale=${VP_PLYMOUTH_FRAME_WIDTH}:${VP_PLYMOUTH_FRAME_HEIGHT}" \
+      -pix_fmt "$VP_PLYMOUTH_FRAME_PIXEL_FORMAT" \
+      "$stage/outro-%d.png" || return 1
   fi
   return 0
+}
+
+# Are the frames already encoded at the wanted resolution? Frames from an
+# older install are the full 1920x1080 and would keep the boot image big, so
+# they are re-encoded when the size does not match.
+plymouth_frames_match() {
+  local stage="$1" frame size
+  for frame in "$stage/intro-1.png" "$stage/outro-1.png"; do
+    [[ -f $frame ]] || continue
+    size="$(plymouth_image_size "$frame")" || return 0
+    [[ $size == "${VP_PLYMOUTH_FRAME_WIDTH}x${VP_PLYMOUTH_FRAME_HEIGHT}" ]] || return 1
+  done
+  return 0
+}
+
+# Read the pixel size of a PNG without pulling in a tool: the IHDR chunk
+# holds the width and height as two big-endian 32-bit numbers. A file that is
+# not a PNG reports nothing, and the caller keeps it as it is.
+plymouth_image_size() {
+  local frame="$1" bytes magic
+  magic="$(od -An -tx1 -N4 "$frame" 2>/dev/null | tr -d ' \n')"
+  [[ $magic == "89504e47" ]] || return 1
+
+  bytes="$(od -An -tu1 -j16 -N8 "$frame" 2>/dev/null | tr -s ' ' | sed 's/^ //')"
+  [[ -n $bytes ]] || return 1
+  # shellcheck disable=SC2086
+  set -- $bytes
+  [[ $# -eq 8 ]] || return 1
+  printf '%dx%d' "$(( $1 * 16777216 + $2 * 65536 + $3 * 256 + $4 ))" \
+    "$(( $5 * 16777216 + $6 * 65536 + $7 * 256 + $8 ))"
 }
 
 # Copy the stock assets (lock, entry, bullet, progress bar) next to the
@@ -264,7 +315,10 @@ plymouth_theme_install() {
 
   plymouth_repair_legacy_theme "$root" || true
 
-  if [[ ! -f "$stage/intro-$VP_PLYMOUTH_INTRO_COUNT.png" ]]; then
+  if [[ ! -f "$stage/intro-$VP_PLYMOUTH_INTRO_COUNT.png" ]] || ! plymouth_frames_match "$stage"; then
+    # Frames from an older install are the wrong size; re-encoding them keeps
+    # the boot image small.
+    rm -f "$stage"/intro-*.png "$stage"/outro-*.png 2>/dev/null || true
     plymouth_encode_frames "$stage" "$repo" || true
   fi
 
