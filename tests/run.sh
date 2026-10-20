@@ -4,7 +4,7 @@
 #   ./tests/run.sh            run everything
 #   ./tests/run.sh tc2 tc4    run only the named cases
 #
-# Cases are numbered TC-1..TC-10 and each maps to one numbered section of the
+# Cases are numbered TC-1..TC-12 and each maps to one numbered section of the
 # README's test matrix, so the two cannot drift apart silently.
 
 set -uo pipefail
@@ -923,6 +923,188 @@ if want tc10; then
   else
     printf '  %sSKIP%s zsh not installed\n' "$DIM" "$OFF"
   fi
+fi
+
+# ─────────────────────────────────────────────────────────────────────────────
+# TC-11  Plymouth theme: installed on its own, never patched into Omarchy's.
+#
+# install.sh used to overwrite /usr/share/plymouth/themes/omarchy/omarchy.script
+# and drop ~330 generated PNGs into that package-owned directory. A package
+# update reverted the animation, and uninstall.sh had nothing to restore. The
+# theme now lives in /usr/share/plymouth/themes/virtual-paradise and is
+# selected by name in /etc/plymouth/plymouthd.conf; these checks run the real
+# lib/plymouth.sh against a throwaway system root.
+# ─────────────────────────────────────────────────────────────────────────────
+if want tc11; then
+  section "TC-11  Plymouth theme install/remove"
+
+  root="$(new_sandbox tc11)"
+  sys="$root/sys"
+  theme="$sys/usr/share/plymouth/themes/virtual-paradise"
+  legacy_dir="$sys/usr/share/plymouth/themes/omarchy"
+  stock_dir="$sys/usr/share/omarchy/default/plymouth"
+  conf="$sys/etc/plymouth/plymouthd.conf"
+
+  mkdir -p "$stock_dir" "$legacy_dir" "$sys/etc/plymouth"
+  printf '# stock omarchy script\n' >"$stock_dir/omarchy.script"
+  for asset in bullet.png entry.png lock.png logo.png progress_bar.png progress_box.png; do
+    printf 'png' >"$stock_dir/$asset"
+  done
+
+  # Reproduce what the old installer left behind: our script and the generated
+  # frames inside the package-owned omarchy theme.
+  cp "$REPO_DIR/plymouth/virtual-paradise.script" "$legacy_dir/omarchy.script"
+  printf 'png' >"$legacy_dir/intro-1.png"
+  printf 'png' >"$legacy_dir/intro-259.png"
+  printf 'png' >"$legacy_dir/outro-1.png"
+  printf 'png' >"$legacy_dir/outro-72.png"
+  printf 'png' >"$legacy_dir/background.png"
+  printf '[Daemon]\nTheme=omarchy\n' >"$conf"
+
+  vp_plymouth() { ( . "$REPO_DIR/lib/plymouth.sh"; "$@" ); }
+
+  vp_plymouth plymouth_theme_install "$sys" "$REPO_DIR" >"$root/plymouth-install.log" 2>&1
+  check "Plymouth theme install exits 0" $? "$(tail -3 "$root/plymouth-install.log")"
+
+  check "the theme is installed in its own directory" \
+    "$([[ -f $theme/virtual-paradise.plymouth ]] && echo 0 || echo 1)"
+  check "the theme script is installed" \
+    "$([[ -f $theme/virtual-paradise.script ]] && echo 0 || echo 1)"
+  check "the animation frames are installed" \
+    "$([[ -f $theme/intro-259.png && -f $theme/outro-72.png ]] && echo 0 || echo 1)"
+  check "the stock assets are installed next to the frames" \
+    "$([[ -f $theme/lock.png && -f $theme/progress_bar.png && -f $theme/entry.png ]] && echo 0 || echo 1)"
+  check "the installed theme verifies" \
+    "$(vp_plymouth plymouth_theme_verify "$sys" >/dev/null 2>&1 && echo 0 || echo 1)"
+  check "the theme is marked as ours (so uninstall can be safe)" \
+    "$(grep -qF 'Virtual☆Paradise Plymouth theme' "$theme/virtual-paradise.marker" && echo 0 || echo 1)"
+  check "the selection points at virtual-paradise" \
+    "$(grep -qx 'Theme=virtual-paradise' "$conf" && echo 0 || echo 1)"
+  check "the descriptor points at the installed script" \
+    "$(grep -qF "ScriptFile=$theme/virtual-paradise.script" "$theme/virtual-paradise.plymouth" && echo 0 || echo 1)"
+
+  check "the old in-place patch was repaired (stock script restored)" \
+    "$(cmp -s "$stock_dir/omarchy.script" "$legacy_dir/omarchy.script" && echo 0 || echo 1)"
+  check "the generated frames were removed from the package theme" \
+    "$([[ ! -e $legacy_dir/intro-259.png && ! -e $legacy_dir/background.png ]] && echo 0 || echo 1)"
+
+  # Repeated installs must converge: the theme is swapped in, not appended to.
+  first="$(find "$theme" -type f -print0 | sort -z | xargs -0 sha256sum | sed "s|$theme/||" | sha256sum)"
+  vp_plymouth plymouth_theme_install "$sys" "$REPO_DIR" >/dev/null 2>&1
+  check "a second Plymouth install exits 0" $?
+  second="$(find "$theme" -type f -print0 | sort -z | xargs -0 sha256sum | sed "s|$theme/||" | sha256sum)"
+  check "a second Plymouth install rewrites nothing" \
+    "$([[ $first == "$second" ]] && echo 0 || echo 1)"
+
+  vp_plymouth plymouth_theme_remove "$sys" >"$root/plymouth-remove.log" 2>&1
+  check "Plymouth theme remove exits 0" $?
+  check "the theme directory is removed" "$([[ ! -e $theme ]] && echo 0 || echo 1)"
+  check "uninstall restores the previous theme selection" \
+    "$(grep -qx 'Theme=omarchy' "$conf" && echo 0 || echo 1)"
+
+  # A directory with our theme name that we did not create is never deleted.
+  sys2="$root/sys2"
+  mkdir -p "$sys2/usr/share/plymouth/themes/virtual-paradise"
+  printf 'not ours\n' >"$sys2/usr/share/plymouth/themes/virtual-paradise/virtual-paradise.script"
+  vp_plymouth plymouth_theme_remove "$sys2" >/dev/null 2>&1
+  check "remove leaves a theme it does not own alone" \
+    "$([[ -f $sys2/usr/share/plymouth/themes/virtual-paradise/virtual-paradise.script ]] && echo 0 || echo 1)"
+
+  vp_plymouth plymouth_theme_install "$sys2" "$REPO_DIR" >"$root/plymouth-foreign.log" 2>&1
+  rc=$?
+  check "install refuses to replace a theme it does not own" \
+    "$([[ $rc -ne 0 ]] && echo 0 || echo 1)" "$(tail -2 "$root/plymouth-foreign.log")"
+
+  check "install.sh installs Plymouth through lib/plymouth.sh" \
+    "$(grep -q 'lib/plymouth.sh' "$REPO_DIR/install.sh" && echo 0 || echo 1)"
+  check "install.sh no longer patches the omarchy Plymouth theme" \
+    "$(grep -vE '^[[:space:]]*#' "$REPO_DIR/install.sh" | grep -q 'plymouth/themes/omarchy' && echo 1 || echo 0)"
+  check "uninstall.sh removes the Plymouth theme" \
+    "$(grep -q 'plymouth_theme_remove' "$REPO_DIR/uninstall.sh" && echo 0 || echo 1)"
+  check "uninstall.sh removes the Plymouth systemd drop-in" \
+    "$(grep -q 'plymouth-poweroff.service' "$REPO_DIR/uninstall.sh" && echo 0 || echo 1)"
+
+  # Hyprland 0.5x loads a Lua config, and the keyword subcommand refuses to
+  # work with it: "keyword can't work with non-legacy parsers. Use eval."
+  # Every setting the theme scripts make has to go through hyprctl eval,
+  # otherwise the effect silently does nothing. Comments are not calls.
+  legacy_hyprctl="$(grep -rn 'hyprctl keyword' "$REPO_DIR/bin" "$REPO_DIR/lib" 2>/dev/null \
+    | grep -vE ':[[:space:]]*#' || true)"
+  check "no script uses the no-op hyprctl keyword subcommand" \
+    "$([[ -z $legacy_hyprctl ]] && echo 0 || echo 1)" "$legacy_hyprctl"
+
+  # The legacy dispatcher syntax is rejected by the Lua dispatcher too.
+  legacy_dispatch="$(grep -rnE 'hyprctl dispatch (workspace|movewindowpixel|resizewindowpixel|setopacity)' \
+    "$REPO_DIR/bin" "$REPO_DIR/lib" 2>/dev/null | grep -vE ':[[:space:]]*#' || true)"
+  check "no script uses the rejected legacy dispatcher syntax" \
+    "$([[ -z $legacy_dispatch ]] && echo 0 || echo 1)" "$legacy_dispatch"
+
+  # The theme switcher edited a hyprland.conf that Omarchy 4 does not read.
+  check "the theme switcher no longer edits hyprland.conf" \
+    "$(grep -q 'hyprland\.conf' "$REPO_DIR/bin/theme-switcher.sh" && echo 1 || echo 0)"
+  check "the theme switcher re-applies the theme through omarchy" \
+    "$(grep -q 'omarchy theme refresh' "$REPO_DIR/bin/theme-switcher.sh" && echo 0 || echo 1)"
+fi
+
+# ─────────────────────────────────────────────────────────────────────────────
+# TC-12  Palette switching: the theme files and the colors.toml stay in sync.
+#
+# The theme ships its own ghostty.conf, foot.ini, alacritty.toml, shell.toml,
+# btop.theme, vscode-theme.json and gtk.css. Omarchy only renders a template
+# when the theme does not ship that file, so those static copies are what the
+# terminal, the bar, btop, VS Code and GTK really use. Editing colors.toml
+# alone changed almost nothing on screen; the switcher now rewrites every
+# palette-carrying file and can restore the original again.
+# ─────────────────────────────────────────────────────────────────────────────
+if want tc12; then
+  section "TC-12  Theme variant switching"
+
+  root="$(new_sandbox tc12)"
+  home="$root/home"
+  theme="$home/.config/omarchy/themes/virtual-paradise"
+  mkdir -p "$theme/config"
+
+  cp "$REPO_DIR/theme/colors.toml" "$theme/colors.toml"
+  cp "$REPO_DIR/config/terminal/ghostty.conf" "$theme/ghostty.conf"
+  cp "$REPO_DIR/config/gtk.css" "$theme/config/gtk.css"
+
+  run_switcher() {
+    HOME="$home" XDG_CONFIG_HOME="$home/.config" \
+      bash "$REPO_DIR/bin/theme-switcher.sh" "$@" >"$root/switch.log" 2>&1
+  }
+
+  run_switcher cozy
+  check "the theme switcher exits 0" $? "$(tail -3 "$root/switch.log")"
+  check "colors.toml got the variant accent" \
+    "$(grep -q '^accent = "#ffa69e"' "$theme/colors.toml" && echo 0 || echo 1)"
+  check "the terminal config got the same accent" \
+    "$(grep -q '^palette = 4=#ffa69e' "$theme/ghostty.conf" && echo 0 || echo 1)"
+  check "the GTK stylesheet got the same accent" \
+    "$(grep -q '@define-color blue #ffa69e' "$theme/config/gtk.css" && echo 0 || echo 1)"
+  check "the cursor followed the accent" \
+    "$(grep -q '^cursor = "#ffa69e"' "$theme/colors.toml" && echo 0 || echo 1)"
+
+  # A second switch must start from the original palette, not from the one the
+  # first switch wrote.
+  run_switcher neon
+  check "a second switch starts from the original palette" \
+    "$(grep -q '^accent = "#00ffff"' "$theme/colors.toml" && echo 0 || echo 1)"
+  check "the terminal config followed the second switch" \
+    "$(grep -q '^palette = 4=#00ffff' "$theme/ghostty.conf" && echo 0 || echo 1)"
+
+  run_switcher reset
+  check "reset restores the original colors.toml" \
+    "$(grep -q '^accent = "#00ffdd"' "$theme/colors.toml" && echo 0 || echo 1)"
+  check "reset restores the original terminal config" \
+    "$(grep -q '^palette = 4=#00ffdd' "$theme/ghostty.conf" && echo 0 || echo 1)"
+  check "reset restores the original GTK stylesheet" \
+    "$(grep -q '@define-color blue #00ffdd' "$theme/config/gtk.css" && echo 0 || echo 1)"
+
+  # The effects have to speak the Lua config language.
+  check "the effects script writes through hyprctl eval" \
+    "$(grep -q 'hyprctl eval' "$REPO_DIR/bin/effects.sh" && echo 0 || echo 1)"
+  check "the effects script uses the Lua config API" \
+    "$(grep -q 'hl.config' "$REPO_DIR/bin/effects.sh" && echo 0 || echo 1)"
 fi
 
 summary

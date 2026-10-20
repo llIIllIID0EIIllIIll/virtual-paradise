@@ -6,6 +6,64 @@ Conventional Commits.
 
 ---
 
+## [Unreleased]
+
+### Fixed
+- **Plymouth: the boot theme is no longer patched into Omarchy's theme.**
+  `install.sh` overwrote `/usr/share/plymouth/themes/omarchy/omarchy.script`
+  with the theme's animation script and dropped ~330 generated PNGs into that
+  package-owned directory. An Omarchy update reverted the animation, and
+  `uninstall.sh` had no Plymouth handling at all: the patched script, the
+  frames and the systemd drop-ins stayed behind forever. The theme now lives
+  in `/usr/share/plymouth/themes/virtual-paradise` with its own descriptor and
+  is selected by name in `/etc/plymouth/plymouthd.conf`
+  (`lib/plymouth.sh`). Uninstall removes the theme, restores the previous
+  selection and deletes the drop-ins; machines that ran the old installer get
+  the stock script back and the stray frames deleted.
+- **Every effect in `effects.sh` now actually does something.** Hyprland 0.5x
+  loads a Lua config, and the `hyprctl keyword` subcommand refuses to work with
+  it ("keyword can't work with non-legacy parsers. Use eval."), so the rainbow
+  border, the glow, the blur toggle and the focus pulse were silent no-ops.
+  They go through `hyprctl eval` with the same `hl.config()` shape the theme's
+  own `hypr/*.lua` files use. The blur toggle also read `.int` from
+  `hyprctl getoption`, which reports `.bool`, so it only ever enabled blur;
+  the focus pulse read `.str` instead of `.gradient` and restored the border as
+  the literal string `null`.
+- **`effects.sh shake` uses the theme's window-error effect.** The old
+  implementation drove `hyprctl dispatch movewindowpixel`, a dispatcher the
+  Lua parser rejects; it now calls the shipped
+  `hypr_window_error_shake.sh` / `hypr_window_error_restore.sh` pair. The
+  dead `spawn_animation` helper, which used two more rejected dispatchers, was
+  removed.
+- **`effects.sh` workspace switching works again.** `hyprctl dispatch workspace
+  e+1` is legacy syntax and is parsed as Lua (`hl.dispatch(workspace e+1)` →
+  syntax error); the script now uses `hl.dsp.focus({ workspace = "e+1" })`,
+  the same call Omarchy's own bindings use.
+- **The theme switcher applies the palette it writes.** It edited
+  `~/.config/hypr/hyprland.conf`, which Omarchy 4 does not read (the config is
+  `hyprland.lua` now), so the variant only landed in `colors.toml` and never
+  reached the terminal, the bar or the window border. The script now re-renders
+  the theme through `omarchy theme refresh`, updates every color the accent
+  derives from (cursor, tab highlight, selection), keeps the original palette
+  once so `theme-switcher.sh reset` can restore it, and refuses to pretend it
+  worked when the theme is not installed.
+- **The legacy `hyprland.conf` is cleaned up.** Releases before 1.2 shipped
+  their own `~/.config/hypr/hyprland.conf`. Hyprland ignores it while
+  `hyprland.lua` exists, but it looks like a live config and hides the real
+  one; install and uninstall now remove it when it is clearly the theme's.
+- **`widgets.sh` was removed.** It only ever worked with `eww`, which the
+  theme does not install, so it always failed with "is eww running?". The
+  desktop widgets the theme ships are Quickshell bar plugins
+  (`clock`, `weather`, `cputemp`, …). Uninstall removes the leftover script
+  from older installs.
+
+### Changed
+- The Plymouth theme script is shipped as `plymouth/virtual-paradise.script`
+  instead of `plymouth/omarchy.script`, so nothing in the repository is named
+  after the package theme it no longer replaces.
+
+---
+
 ## [1.2.2] — 2026-10-20
 
 ### Fixed

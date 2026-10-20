@@ -14,7 +14,7 @@
 [![Arch Linux](https://img.shields.io/badge/Arch_Linux-1793D1?style=flat-square&logo=arch-linux&logoColor=white)](https://archlinux.org)
 [![Omarchy 4.0+](https://img.shields.io/badge/Omarchy-4.0+-8A2BE2?style=flat-square)](https://omarchy.org)
 [![Hyprland](https://img.shields.io/badge/Hyprland-Wayland-00ffdd?style=flat-square)](https://hyprland.org)
-[![Tests](https://img.shields.io/badge/tests-131%20passed-00ff88?style=flat-square)](tests/)
+[![Tests](https://img.shields.io/badge/tests-168%20passed-00ff88?style=flat-square)](tests/)
 [![License](https://img.shields.io/badge/license-MIT-ffe066?style=flat-square)](LICENSE)
 [![Version](https://img.shields.io/badge/version-1.2.2-ff00ff?style=flat-square)](VERSION)
 
@@ -62,8 +62,9 @@ alongside any other installed theme. Switching themes does not require a
 restart.
 
 The repository also ships `theme-switcher.sh` for changing the Virtual☆Paradise
-palette from a terminal (`theme-switcher.sh list` shows the variants). It is a
-terminal tool, not bound to a key.
+palette from a terminal (`theme-switcher.sh list` shows the variants,
+`theme-switcher.sh reset` restores the original palette). It is a terminal
+tool, not bound to a key.
 
 ### ✨ Visual Effects
 
@@ -75,7 +76,9 @@ Optional effects are available as scripts:
 - **Window Shake** — `effects.sh shake`
 
 They run in the foreground or background as you choose; the theme does not bind
-them to keys of their own.
+them to keys of their own. Every effect writes its setting through
+`hyprctl eval`, because Hyprland 0.5x loads a Lua config and the legacy
+`hyprctl keyword` subcommand is silently ignored there.
 
 ### 🔧 Smart Installer
 
@@ -158,7 +161,7 @@ The installer is **idempotent**: run it as many times as you want. It will only 
 | Plugins | `~/.config/omarchy/plugins/` | 12+ themed widgets |
 | Hyprland | `~/.config/hypr/` | Animations, window rules, keybindings |
 | Terminal | `~/.config/ghostty/`, `~/.config/alacritty/`, etc. | Terminal themes |
-| Plymouth | `/usr/share/plymouth/themes/omarchy/` | Boot splash (if sudo) |
+| Plymouth | `/usr/share/plymouth/themes/virtual-paradise/` | Boot splash; selected in `/etc/plymouth/plymouthd.conf` (if sudo) |
 | SDDM | `/usr/share/sddm/themes/virtual-paradise/` | Login theme; selected in `/etc/sddm.conf.d/zz-virtual-paradise-theme.conf` (if sudo) |
 | Systemd | `~/.config/systemd/user/` | Plugin update timer, audio watchdog |
 
@@ -279,14 +282,14 @@ The uninstaller will:
 
 ### Running Tests
 
-The test suite has ten test cases and 131 assertions; optional tools
+The test suite has twelve test cases and 168 assertions; optional tools
 (`shellcheck`, `qmllint`, `hyprctl`) enable extra checks when present, so the
-exact count varies between machines (131 with `shellcheck`, 130 without). It
+exact count varies between machines (168 with `shellcheck`, 167 without). It
 runs in a sandbox and never touches your real system.
 
 ```bash
 ./tests/run.sh          # Run all tests
-./tests/run.sh tc1 tc10 # Run specific test cases
+./tests/run.sh tc1 tc12 # Run specific test cases
 ```
 
 Test cases:
@@ -300,6 +303,8 @@ Test cases:
 - **TC-8**: Theme-set hook (both directions, plugin state)
 - **TC-9**: Wallpaper playlist (all files detected)
 - **TC-10**: SDDM theme (standalone install, selection, legacy repair, uninstall)
+- **TC-11**: Plymouth theme (standalone install, selection, legacy repair, uninstall)
+- **TC-12**: Theme variants (every palette-carrying file stays in sync, reset)
 
 ### Project Structure
 
