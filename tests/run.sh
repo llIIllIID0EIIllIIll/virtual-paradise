@@ -1478,14 +1478,16 @@ if want tc16; then
     "$(grep -q 'global.left = global.screen_w / 2 - global.frame_width / 2' "$REPO_DIR/plymouth/virtual-paradise.script" && echo 0 || echo 1)"
   check "the Plymouth script draws the neon frame" \
     "$(grep -q 'Image("frame.png")' "$REPO_DIR/plymouth/virtual-paradise.script" && echo 0 || echo 1)"
-  check "the Plymouth script tiles the cyber pattern" \
-    "$(grep -q 'Image("tile.png")' "$REPO_DIR/plymouth/virtual-paradise.script" && echo 0 || echo 1)"
+  check "the Plymouth script draws the cyber backdrop" \
+    "$(grep -q 'Image("backdrop.png")' "$REPO_DIR/plymouth/virtual-paradise.script" && echo 0 || echo 1)"
   check "the neon frame ships with the theme" \
     "$([[ -f $REPO_DIR/plymouth/frame.png ]] && echo 0 || echo 1)"
-  check "the cyber tile ships with the theme" \
-    "$([[ -f $REPO_DIR/plymouth/tile.png ]] && echo 0 || echo 1)"
+  check "the cyber backdrop ships with the theme" \
+    "$([[ -f $REPO_DIR/plymouth/backdrop.png ]] && echo 0 || echo 1)"
   check "no caption is drawn over the splash" \
     "$(grep -q 'caption.png' "$REPO_DIR/plymouth/virtual-paradise.script" && echo 1 || echo 0)"
+  check "no leftover pattern tile in the script" \
+    "$(grep -q 'tile.png' "$REPO_DIR/plymouth/virtual-paradise.script" && echo 1 || echo 0)"
   check "the decoration is installed with the theme" \
     "$(grep -q 'VP_PLYMOUTH_DECORATION' "$REPO_DIR/lib/plymouth.sh" && echo 0 || echo 1)"
   # The frame and the picture have to be the same size, or the neon border

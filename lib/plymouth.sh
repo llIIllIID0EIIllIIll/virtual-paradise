@@ -46,10 +46,10 @@ VP_PLYMOUTH_FRAME_PIXEL_FORMAT="pal8"
 # Stock assets the script needs next to the animation frames.
 VP_PLYMOUTH_ASSETS="bullet.png entry.png lock.png logo.png progress_bar.png progress_box.png"
 
-# The theme's own decoration: the neon frame around the picture and the cyber
-# pattern that tiles the bars around it. They are shipped in plymouth/ and
+# The theme's own decoration: the cyber backdrop that fills the screen behind
+# the animation and the neon frame around it. They are shipped in plymouth/ and
 # copied into the theme directory like the rest of the payload.
-VP_PLYMOUTH_DECORATION="frame.png tile.png"
+VP_PLYMOUTH_DECORATION="backdrop.png frame.png"
 
 plymouth_theme_path() {
   printf '%s/usr/share/plymouth/themes/%s\n' "${1%/}" "$VP_PLYMOUTH_THEME_NAME"

@@ -1,9 +1,9 @@
 # Omarchy Plymouth Theme Script — Instant Lazy Loading & Full Animation
 #
 # The animation frames are 1600x900 (see lib/plymouth.sh) and are centred on
-# the screen. The window background fills the bars around them with a dark
-# violet gradient, a neon frame marks the edge of the picture and a tiled
-# cyber pattern decorates the bars.
+# the screen. The cyber backdrop fills the whole screen behind them, the
+# window background covers whatever the backdrop does not reach, and a neon
+# frame marks the edge of the picture.
 
 Window.SetBackgroundTopColor(0.059, 0.031, 0.114);
 Window.SetBackgroundBottomColor(0.020, 0.012, 0.063);
@@ -12,12 +12,22 @@ global.intro_count = 259;
 global.outro_count = 72;
 global.frame_width = 1600;
 global.frame_height = 900;
+global.backdrop_width = 1920;
+global.backdrop_height = 1080;
 global.mode = Plymouth.GetMode();
 
 global.screen_w = Window.GetWidth();
 global.screen_h = Window.GetHeight();
 global.left = global.screen_w / 2 - global.frame_width / 2;
 global.top = global.screen_h / 2 - global.frame_height / 2;
+
+# Cyber backdrop behind everything. Plymouth cannot scale an image, so the
+# backdrop is centred instead: on a bigger screen the window gradient shows
+# around it, on a smaller one the backdrop is cropped evenly.
+backdrop.image = Image("backdrop.png");
+backdrop.sprite = Sprite(backdrop.image);
+backdrop.sprite.SetPosition(global.screen_w / 2 - global.backdrop_width / 2, global.screen_h / 2 - global.backdrop_height / 2, -10001);
+backdrop.sprite.SetOpacity(1);
 
 # Instant 0ms initial frame setup:
 if (global.mode == "shutdown" || global.mode == "reboot") {
@@ -37,47 +47,6 @@ frame.image = Image("frame.png");
 frame.sprite = Sprite(frame.image);
 frame.sprite.SetPosition(global.left, global.top, -9999);
 frame.sprite.SetOpacity(1);
-
-# Cyber pattern in the bars around the picture. The tiles that would land on
-# the animation are skipped, so the pattern always stays in the empty space.
-tile.image = Image("tile.png");
-global.tile_size = 45;
-tiles = [];
-tile_index = 0;
-
-for (x = 0; x < global.screen_w; x = x + global.tile_size) {
-  if (x + global.tile_size <= global.left || x >= global.left + global.frame_width) {
-    tiles[tile_index] = Sprite(tile.image);
-    tiles[tile_index].SetPosition(x, 0, -9999);
-    tiles[tile_index].SetOpacity(0.55);
-    tile_index = tile_index + 1;
-
-    tiles[tile_index] = Sprite(tile.image);
-    tiles[tile_index].SetPosition(x, global.screen_h - global.tile_size, -9999);
-    tiles[tile_index].SetOpacity(0.55);
-    tile_index = tile_index + 1;
-  }
-}
-
-# Left and right bars: the columns are outside the picture, so they run the
-# whole height of the screen.
-if (global.tile_size <= global.left) {
-  for (y = 0; y < global.screen_h; y = y + global.tile_size) {
-    tiles[tile_index] = Sprite(tile.image);
-    tiles[tile_index].SetPosition(0, y, -9999);
-    tiles[tile_index].SetOpacity(0.55);
-    tile_index = tile_index + 1;
-  }
-}
-
-if (global.screen_w - global.tile_size >= global.left + global.frame_width) {
-  for (y = 0; y < global.screen_h; y = y + global.tile_size) {
-    tiles[tile_index] = Sprite(tile.image);
-    tiles[tile_index].SetPosition(global.screen_w - global.tile_size, y, -9999);
-    tiles[tile_index].SetOpacity(0.55);
-    tile_index = tile_index + 1;
-  }
-}
 
 # Progress bar animation variables
 global.animation_frame = 0;
