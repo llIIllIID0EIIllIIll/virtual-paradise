@@ -18,7 +18,6 @@ Rectangle {
   // the login succeeds: the desktop then appears out of the same picture.
   opacity: 0
   Behavior on opacity { NumberAnimation { duration: 700; easing.type: Easing.OutCubic } }
-  onVisibleChanged: if (visible) opacity = 1
 
   // Cyber backdrop: the same artwork the Plymouth splash uses.
   Image {
@@ -261,5 +260,10 @@ Rectangle {
     }
   }
 
-  Component.onCompleted: password.forceActiveFocus()
+  Component.onCompleted: {
+    password.forceActiveFocus()
+    // Fade the picture in: the greeter is the boot splash continued, and the
+    // transition into the session has to look the same way.
+    opacity = 1
+  }
 }

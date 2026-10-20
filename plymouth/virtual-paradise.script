@@ -4,6 +4,10 @@
 # the screen. The cyber backdrop fills the whole screen behind them, the
 # window background covers whatever the backdrop does not reach, and a neon
 # frame marks the edge of the picture.
+#
+# The whole splash fades in, so the handover into Plymouth - after the boot
+# animation, and on the way out for a reboot or a shutdown - is a transition
+# rather than a cut.
 
 Window.SetBackgroundTopColor(0.059, 0.031, 0.114);
 Window.SetBackgroundBottomColor(0.020, 0.012, 0.063);
@@ -27,7 +31,7 @@ global.top = global.screen_h / 2 - global.frame_height / 2;
 backdrop.image = Image("backdrop.png");
 backdrop.sprite = Sprite(backdrop.image);
 backdrop.sprite.SetPosition(global.screen_w / 2 - global.backdrop_width / 2, global.screen_h / 2 - global.backdrop_height / 2, -10001);
-backdrop.sprite.SetOpacity(1);
+backdrop.sprite.SetOpacity(0);
 
 # Instant 0ms initial frame setup:
 if (global.mode == "shutdown" || global.mode == "reboot") {
@@ -39,14 +43,14 @@ if (global.mode == "shutdown" || global.mode == "reboot") {
 }
 
 bg.sprite.SetPosition(global.left, global.top, -10000);
-bg.sprite.SetOpacity(1);
+bg.sprite.SetOpacity(0);
 
 # Neon frame around the picture. The middle of the image is transparent, so it
 # only draws the border and the corner brackets.
 frame.image = Image("frame.png");
 frame.sprite = Sprite(frame.image);
 frame.sprite.SetPosition(global.left, global.top, -9999);
-frame.sprite.SetOpacity(1);
+frame.sprite.SetOpacity(0);
 
 # Progress bar animation variables
 global.animation_frame = 0;
@@ -60,8 +64,21 @@ global.password_shown = 0;
 global.max_progress = 0.0;
 global.progress_frame = 0;
 
+# Fade in over the first second.
+global.fade_frame = 0;
+global.fade_total = 45;
+
 fun refresh_callback() {
   global.animation_frame++;
+
+  if (global.fade_frame < global.fade_total) {
+    global.fade_frame++;
+    # A float divisor: an integer division would jump straight from 0 to 1.
+    global.fade = global.fade_frame * 1.0 / global.fade_total;
+    backdrop.sprite.SetOpacity(global.fade);
+    bg.sprite.SetOpacity(global.fade);
+    frame.sprite.SetOpacity(global.fade);
+  }
 
   current_mode = Plymouth.GetMode();
   if (current_mode == "shutdown" || current_mode == "reboot") {
@@ -152,10 +169,15 @@ lock.image = Image("lock.png");
 entry.image = Image("entry.png");
 bullet.image = Image("bullet.png");
 
-# Place password entry near the BOTTOM of the screen so Miku is 100% visible
+# The password entry sits *below* the picture, in the bar under the neon
+# frame, so it never covers the animation or the border. On a screen too
+# small for that bar it falls back to the bottom of the picture.
 entry.sprite = Sprite(entry.image);
 entry.x = Window.GetWidth() / 2 - entry.image.GetWidth() / 2;
-entry.y = Window.GetHeight() - entry.image.GetHeight() - 80;
+entry.y = global.top + global.frame_height + 18;
+if (entry.y + entry.image.GetHeight() > Window.GetHeight() - 8) {
+  entry.y = Window.GetHeight() - entry.image.GetHeight() - 24;
+}
 entry.sprite.SetPosition(entry.x, entry.y, 10001);
 entry.sprite.SetOpacity(0);
 

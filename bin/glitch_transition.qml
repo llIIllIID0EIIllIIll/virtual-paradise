@@ -11,13 +11,41 @@ ShellRoot {
   property string targetName: Quickshell.env("WALLPAPER_TARGET") || "LIVE STREAM"
   property int loadingPhase: 0
 
+  // The transition is only worth showing if it is seen. The wallpaper is
+  // usually ready in a fraction of a second, and a glitch that flashes past
+  // reads as a flicker instead of a transition - so the curtain holds for a
+  // moment before it opens.
+  property real shownAt: 0
+  property real minimumVisible: 1200
+
+  Component.onCompleted: {
+    shownAt = Date.now();
+  }
+
+  function readyNow() {
+    // The wallpaper is up, but the curtain stays for its minimum time.
+    if (Date.now() - root.shownAt < root.minimumVisible) {
+      if (!exitTimer.running) {
+        exitTimer.restart();
+      }
+      return;
+    }
+    root.isReady = true;
+  }
+
+  Timer {
+    id: exitTimer
+    interval: root.minimumVisible
+    onTriggered: root.isReady = true
+  }
+
   // Process checking if the wallpaper has finished decoding and rendering
   Process {
     id: readyChecker
     command: ["test", "-f", Quickshell.env("VP_WALLPAPER_READY_FILE") || "/tmp/virtual_paradise_wallpaper_ready"]
     onExited: exitCode => {
       if (exitCode === 0) {
-        root.isReady = true
+        root.readyNow();
       }
     }
   }
@@ -29,7 +57,7 @@ ShellRoot {
     running: !root.isReady && !root.exiting
     onTriggered: {
       if (!readyChecker.running) {
-        readyChecker.running = true
+        readyChecker.running = true;
       }
     }
   }
@@ -46,7 +74,7 @@ ShellRoot {
     interval: 4500
     running: true
     onTriggered: {
-      root.isReady = true
+      root.isReady = true;
     }
   }
 
