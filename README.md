@@ -323,12 +323,13 @@ virtual-paradise/
 ├── hypr/                 # Hyprland config (animations, keybindings, rules)
 ├── lib/
 │   ├── plugin-overrides.sh    # Override layer implementation
+│   ├── plymouth.sh             # Plymouth theme install/remove/legacy repair
 │   ├── sddm.sh                # SDDM theme install/remove/legacy repair
 │   ├── system.sh              # Hardware detection
 │   └── theme-set-hook.sh      # Theme-set hook (extracted from install.sh)
 ├── micro/                # Micro editor theme
 ├── overrides/            # Plugin overrides (QML patches)
-├── plymouth/             # Plymouth boot splash
+├── plymouth/             # Plymouth boot splash (standalone, self-contained)
 ├── sddm/                 # SDDM login theme (standalone, self-contained)
 ├── shell/                # shell.json template, zshrc
 ├── systemd/              # Systemd unit files

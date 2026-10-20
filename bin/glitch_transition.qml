@@ -14,7 +14,7 @@ ShellRoot {
   // Process checking if the wallpaper has finished decoding and rendering
   Process {
     id: readyChecker
-    command: ["test", "-f", "/tmp/virtual_paradise_wallpaper_ready"]
+    command: ["test", "-f", Quickshell.env("VP_WALLPAPER_READY_FILE") || "/tmp/virtual_paradise_wallpaper_ready"]
     onExited: exitCode => {
       if (exitCode === 0) {
         root.isReady = true

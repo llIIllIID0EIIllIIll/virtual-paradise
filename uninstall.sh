@@ -158,6 +158,8 @@ rm -f "$HOME/.local/state/virtual-paradise/overrides.state" \
 rm -rf "$HOME/.local/state/virtual-paradise/plugin-backups" \
        "$HOME/.local/state/virtual-paradise/theme-variant-orig"
 rm -f /tmp/virtual_paradise_wallpaper_ready /tmp/mpv-live.sock 2>/dev/null || true
+rm -f "${XDG_RUNTIME_DIR:-/tmp}/virtual_paradise_wallpaper_ready" \
+      "${XDG_RUNTIME_DIR:-/tmp}/mpv-live.sock" 2>/dev/null || true
 rm -f "$HOME/.local/bin/paradise-plugin-update" \
       "$HOME/.local/bin/update-plugins.sh" \
       "$HOME/.local/bin/notify-plugin-updates.sh" \

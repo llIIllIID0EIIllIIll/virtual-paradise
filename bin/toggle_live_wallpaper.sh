@@ -16,8 +16,14 @@ BG_DIR="${XDG_CONFIG_HOME:-$HOME/.config}/omarchy/themes/virtual-paradise/backgr
 STATE_DIR="$HOME/.local/state/virtual-paradise"
 STATE_FILE="$STATE_DIR/current_live_wallpaper"
 STATIC_BG="$BG_DIR/Miku_missing.jpg"
-READY_FILE="/tmp/virtual_paradise_wallpaper_ready"
-SOCKET_FILE="/tmp/mpv-live.sock"
+
+# The ready flag and the mpvpaper socket live in the per-user runtime
+# directory. A fixed path in /tmp can be taken by another user on the machine:
+# a socket that already exists keeps mpvpaper from starting, and a ready flag
+# that is already there ends the transition before the wallpaper is up.
+RUNTIME_DIR="${XDG_RUNTIME_DIR:-/tmp}"
+READY_FILE="$RUNTIME_DIR/virtual_paradise_wallpaper_ready"
+SOCKET_FILE="$RUNTIME_DIR/mpv-live.sock"
 
 CURRENT_THEME="$(cat "$HOME/.local/state/omarchy/current/theme.name" 2>/dev/null || echo "")"
 if [[ "$CURRENT_THEME" != "virtual-paradise" && "$1" != "--force" ]]; then
@@ -63,6 +69,7 @@ play_curtain_transition() {
     rm -f "$READY_FILE"
     export CURTAIN_LAYER="${CURTAIN_LAYER:-overlay}"
     export WALLPAPER_TARGET
+    export VP_WALLPAPER_READY_FILE="$READY_FILE"
     WALLPAPER_TARGET="$(basename "$target" 2>/dev/null || echo "LIVE STREAM")"
     quickshell -p "$qml_script" >/dev/null 2>&1 &
     # Wait until glitch layer surface is physically rendered on screen by Hyprland
