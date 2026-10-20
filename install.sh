@@ -1004,6 +1004,24 @@ cat << 'EOF' > "$CONFIG_DIR/omarchy/extensions/paradise.json"
     "label": "Cast Screen (SUPER+SHIFT+K)",
     "description": "Wireless Display / Miracast & Chromecast projection",
     "action": "bash -c ~/.local/bin/cast_screen.sh"
+  },
+  "paradise.logout": {
+    "icon": "󰍾",
+    "label": "Log out with transition",
+    "description": "Glitch curtain, then hand over to the login screen",
+    "action": "bash -c ~/.local/bin/transition.sh logout"
+  },
+  "paradise.reboot": {
+    "icon": "󰖦",
+    "label": "Reboot with transition",
+    "description": "Glitch curtain, then hand over to Plymouth",
+    "action": "bash -c ~/.local/bin/transition.sh reboot"
+  },
+  "paradise.shutdown": {
+    "icon": "󰐥",
+    "label": "Shut down with transition",
+    "description": "Glitch curtain, then hand over to Plymouth",
+    "action": "bash -c ~/.local/bin/transition.sh shutdown"
   }
 }
 EOF

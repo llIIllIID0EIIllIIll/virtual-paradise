@@ -890,6 +890,22 @@ if want tc10; then
   check "the uninstaller restores the autologin" \
     "$(grep -q 'autologin.conf.paradise.bak' "$REPO_DIR/uninstall.sh" && echo 0 || echo 1)"
 
+  # The Plymouth prompt must not cover the neon frame.
+  check "the Plymouth password row sits below the picture" \
+    "$(grep -q 'entry.y = global.top + global.frame_height' "$REPO_DIR/plymouth/virtual-paradise.script" && echo 0 || echo 1)"
+  check "the Plymouth splash fades in" \
+    "$(grep -q 'global.fade_frame' "$REPO_DIR/plymouth/virtual-paradise.script" && echo 0 || echo 1)"
+
+  # The transition has to be seen, and it has to be usable for the way out.
+  check "the wallpaper transition stays visible for a moment" \
+    "$(grep -q 'minimumVisible' "$REPO_DIR/bin/glitch_transition.qml" && echo 0 || echo 1)"
+  check "there is a transition for logout, reboot and shutdown" \
+    "$([[ -f $REPO_DIR/bin/transition.sh ]] && grep -q 'omarchy-system-shutdown' "$REPO_DIR/bin/transition.sh" && echo 0 || echo 1)"
+  check "the menu offers the transitions" \
+    "$(grep -q 'paradise.shutdown' "$REPO_DIR/install.sh" && grep -q 'paradise.logout' "$REPO_DIR/install.sh" && echo 0 || echo 1)"
+  check "the greeter fades in like the splash" \
+    "$(grep -q 'opacity = 1' "$REPO_DIR/sddm/Main.qml" && echo 0 || echo 1)"
+
   got_theme="$(vp_sddm sddm_effective_theme "$sys")"
   check "SDDM would load virtual-paradise, not omarchy (got ${got_theme:-none})" \
     "$([[ $got_theme == virtual-paradise ]] && echo 0 || echo 1)"
