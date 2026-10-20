@@ -218,9 +218,34 @@ $(basename "$f"): $out"
     rc=$?
     check "the binding checker rejects a repeated chord" \
       "$([[ $rc -ne 0 ]] && echo 0 || echo 1)"
+
+    # A chord may be taken over on purpose, but only when the default is
+    # unbound first: otherwise both actions run.
+    override="$SANDBOX/bindings-override.lua"
+    printf 'hl.unbind("SUPER + ALT + LEFT")\no.bind("SUPER + ALT + LEFT", "A", "true")\n' \
+      >"$override"
+    VP_BINDINGS_FILE="$override" OMARCHY_BINDINGS_DIR="$SANDBOX/no-omarchy" \
+      python3 "$REPO_DIR/tools/check-bindings.py" >/dev/null 2>&1
+    rc=$?
+    check "the binding checker allows a chord taken over with hl.unbind" \
+      "$([[ $rc -eq 0 ]] && echo 0 || echo 1)"
   else
     printf '  %sSKIP%s python3 not installed\n' "$DIM" "$OFF"
   fi
+
+  # The live wallpaper used to be on SUPER + ALT + arrows, then disappeared
+  # because Omarchy binds the same chords. The pair has to be there, and it
+  # has to be taken over on purpose.
+  check "the live wallpaper is bound to the arrow keys" \
+    "$(grep -q 'o.bind("SUPER + ALT + RIGHT", "Next Live Wallpaper"' "$REPO_DIR/hypr/bindings.lua" \
+      && grep -q 'o.bind("SUPER + ALT + LEFT", "Previous Live Wallpaper"' "$REPO_DIR/hypr/bindings.lua" \
+      && echo 0 || echo 1)"
+  check "Omarchy's group bind on that chord is unbound first" \
+    "$(grep -q 'hl.unbind("SUPER + ALT + LEFT")' "$REPO_DIR/hypr/bindings.lua" \
+      && grep -q 'hl.unbind("SUPER + ALT + RIGHT")' "$REPO_DIR/hypr/bindings.lua" \
+      && echo 0 || echo 1)"
+  check "the group move survives on a free chord" \
+    "$(grep -q 'o.bind("SUPER + ALT + CTRL + LEFT"' "$REPO_DIR/hypr/bindings.lua" && echo 0 || echo 1)"
 fi
 
 # ─────────────────────────────────────────────────────────────────────────────
