@@ -1487,9 +1487,10 @@ if want tc16; then
   check "the decoration is installed with the theme" \
     "$(grep -q 'VP_PLYMOUTH_DECORATION' "$REPO_DIR/lib/plymouth.sh" && echo 0 || echo 1)"
   # The frame and the picture have to be the same size, or the neon border
-  # does not sit on the edge of the animation.
+  # does not sit on the edge of the animation. The size is read from the PNG
+  # header: ImageMagick is not installed in CI.
   if [[ -f $REPO_DIR/plymouth/frame.png ]]; then
-    frame_size="$(magick identify -format '%wx%h' "$REPO_DIR/plymouth/frame.png" 2>/dev/null || echo none)"
+    frame_size="$( . "$REPO_DIR/lib/plymouth.sh"; plymouth_image_size "$REPO_DIR/plymouth/frame.png" 2>/dev/null || echo none )"
     check "the neon frame matches the animation size (${frame_size})" \
       "$([[ $frame_size == "1600x900" ]] && echo 0 || echo 1)"
   fi
