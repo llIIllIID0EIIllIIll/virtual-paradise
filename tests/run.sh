@@ -1475,15 +1475,17 @@ if want tc16; then
   # The picture is centred and the bars around it are decorated, so a smaller
   # frame does not leave a black rectangle around the animation.
   check "the Plymouth script centres the picture" \
-    "$(grep -q 'global.left = Window.GetWidth() / 2 - global.frame_width / 2' "$REPO_DIR/plymouth/virtual-paradise.script" && echo 0 || echo 1)"
+    "$(grep -q 'global.left = global.screen_w / 2 - global.frame_width / 2' "$REPO_DIR/plymouth/virtual-paradise.script" && echo 0 || echo 1)"
   check "the Plymouth script draws the neon frame" \
     "$(grep -q 'Image("frame.png")' "$REPO_DIR/plymouth/virtual-paradise.script" && echo 0 || echo 1)"
-  check "the Plymouth script draws the caption" \
-    "$(grep -q 'Image("caption.png")' "$REPO_DIR/plymouth/virtual-paradise.script" && echo 0 || echo 1)"
+  check "the Plymouth script tiles the cyber pattern" \
+    "$(grep -q 'Image("tile.png")' "$REPO_DIR/plymouth/virtual-paradise.script" && echo 0 || echo 1)"
   check "the neon frame ships with the theme" \
     "$([[ -f $REPO_DIR/plymouth/frame.png ]] && echo 0 || echo 1)"
-  check "the caption ships with the theme" \
-    "$([[ -f $REPO_DIR/plymouth/caption.png ]] && echo 0 || echo 1)"
+  check "the cyber tile ships with the theme" \
+    "$([[ -f $REPO_DIR/plymouth/tile.png ]] && echo 0 || echo 1)"
+  check "no caption is drawn over the splash" \
+    "$(grep -q 'caption.png' "$REPO_DIR/plymouth/virtual-paradise.script" && echo 1 || echo 0)"
   check "the decoration is installed with the theme" \
     "$(grep -q 'VP_PLYMOUTH_DECORATION' "$REPO_DIR/lib/plymouth.sh" && echo 0 || echo 1)"
   # The frame and the picture have to be the same size, or the neon border

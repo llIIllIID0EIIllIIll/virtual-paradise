@@ -2,8 +2,8 @@
 #
 # The animation frames are 1600x900 (see lib/plymouth.sh) and are centred on
 # the screen. The window background fills the bars around them with a dark
-# violet gradient, a neon frame marks the edge of the picture and the caption
-# sits in the bar above it.
+# violet gradient, a neon frame marks the edge of the picture and a tiled
+# cyber pattern decorates the bars.
 
 Window.SetBackgroundTopColor(0.059, 0.031, 0.114);
 Window.SetBackgroundBottomColor(0.020, 0.012, 0.063);
@@ -14,8 +14,10 @@ global.frame_width = 1600;
 global.frame_height = 900;
 global.mode = Plymouth.GetMode();
 
-global.left = Window.GetWidth() / 2 - global.frame_width / 2;
-global.top = Window.GetHeight() / 2 - global.frame_height / 2;
+global.screen_w = Window.GetWidth();
+global.screen_h = Window.GetHeight();
+global.left = global.screen_w / 2 - global.frame_width / 2;
+global.top = global.screen_h / 2 - global.frame_height / 2;
 
 # Instant 0ms initial frame setup:
 if (global.mode == "shutdown" || global.mode == "reboot") {
@@ -36,15 +38,45 @@ frame.sprite = Sprite(frame.image);
 frame.sprite.SetPosition(global.left, global.top, -9999);
 frame.sprite.SetOpacity(1);
 
-# Caption in the bar above the picture - and only when there is such a bar,
-# so it never lands on top of the animation.
-caption.image = Image("caption.png");
-caption.sprite = Sprite(caption.image);
-caption.sprite.SetPosition(Window.GetWidth() / 2 - caption.image.GetWidth() / 2, global.top / 2 - caption.image.GetHeight() / 2, -9998);
-if (global.top > caption.image.GetHeight()) {
-  caption.sprite.SetOpacity(1);
-} else {
-  caption.sprite.SetOpacity(0);
+# Cyber pattern in the bars around the picture. The tiles that would land on
+# the animation are skipped, so the pattern always stays in the empty space.
+tile.image = Image("tile.png");
+global.tile_size = 45;
+tiles = [];
+tile_index = 0;
+
+for (x = 0; x < global.screen_w; x = x + global.tile_size) {
+  if (x + global.tile_size <= global.left || x >= global.left + global.frame_width) {
+    tiles[tile_index] = Sprite(tile.image);
+    tiles[tile_index].SetPosition(x, 0, -9999);
+    tiles[tile_index].SetOpacity(0.55);
+    tile_index = tile_index + 1;
+
+    tiles[tile_index] = Sprite(tile.image);
+    tiles[tile_index].SetPosition(x, global.screen_h - global.tile_size, -9999);
+    tiles[tile_index].SetOpacity(0.55);
+    tile_index = tile_index + 1;
+  }
+}
+
+# Left and right bars: the columns are outside the picture, so they run the
+# whole height of the screen.
+if (global.tile_size <= global.left) {
+  for (y = 0; y < global.screen_h; y = y + global.tile_size) {
+    tiles[tile_index] = Sprite(tile.image);
+    tiles[tile_index].SetPosition(0, y, -9999);
+    tiles[tile_index].SetOpacity(0.55);
+    tile_index = tile_index + 1;
+  }
+}
+
+if (global.screen_w - global.tile_size >= global.left + global.frame_width) {
+  for (y = 0; y < global.screen_h; y = y + global.tile_size) {
+    tiles[tile_index] = Sprite(tile.image);
+    tiles[tile_index].SetPosition(global.screen_w - global.tile_size, y, -9999);
+    tiles[tile_index].SetOpacity(0.55);
+    tile_index = tile_index + 1;
+  }
 }
 
 # Progress bar animation variables
