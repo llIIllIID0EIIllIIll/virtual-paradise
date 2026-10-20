@@ -14,7 +14,7 @@
 [![Arch Linux](https://img.shields.io/badge/Arch_Linux-1793D1?style=flat-square&logo=arch-linux&logoColor=white)](https://archlinux.org)
 [![Omarchy 4.0+](https://img.shields.io/badge/Omarchy-4.0+-8A2BE2?style=flat-square)](https://omarchy.org)
 [![Hyprland](https://img.shields.io/badge/Hyprland-Wayland-00ffdd?style=flat-square)](https://hyprland.org)
-[![Tests](https://img.shields.io/badge/tests-186%20passed-00ff88?style=flat-square)](tests/)
+[![Tests](https://img.shields.io/badge/tests-190%20passed-00ff88?style=flat-square)](tests/)
 [![License](https://img.shields.io/badge/license-MIT-ffe066?style=flat-square)](LICENSE)
 [![Version](https://img.shields.io/badge/version-1.2.2-ff00ff?style=flat-square)](VERSION)
 
@@ -40,7 +40,7 @@ Three transparent pills with a neon hex backplate, animated gap glow, and live t
 
 ### 🎬 Animated Wallpapers
 
-Live video wallpapers with cyberpunk glitch transitions. Cycle through 7 animated backgrounds with `SUPER + ALT + N` / `SUPER + ALT + SHIFT + N`, or toggle between live and static with `SUPER + ALT + W`.
+Live video wallpapers with cyberpunk glitch transitions. Cycle through 7 animated backgrounds with `SUPER + ALT + ←` / `SUPER + ALT + →` (or `SUPER + ALT + N` / `SUPER + ALT + SHIFT + N`), or toggle between live and static with `SUPER + ALT + W`.
 
 Wallpapers are H.264 MP4 (not GIF) for better performance and smaller file size. Plymouth extracts its animation frames with ffmpeg during install; the SDDM login theme plays the GIF directly.
 
@@ -177,6 +177,8 @@ The installer is **idempotent**: run it as many times as you want. It will only 
 | `SUPER + N` | Next static wallpaper |
 | `SUPER + ALT + W` | Toggle live/static wallpaper |
 | `SUPER + ALT + N` | Next live wallpaper |
+| `SUPER + ALT + RIGHT` | Next live wallpaper (arrow) |
+| `SUPER + ALT + LEFT` | Previous live wallpaper (arrow) |
 | `SUPER + ALT + SHIFT + N` | Previous live wallpaper |
 | `SUPER + ALT + C` | Toggle cooler boost (laptop fan) |
 | `SUPER + SHIFT + T` | Omarchy theme menu |
@@ -194,6 +196,12 @@ Omarchy's own bindings are unchanged: `SUPER + RETURN` opens the terminal,
 `SUPER + K` lists keybindings, `SUPER + F` is fullscreen, and so on. The theme
 only adds bindings on free chords, because Hyprland runs *every* bind for a
 chord — a duplicate performs both actions.
+
+The one deliberate exception is `SUPER + ALT + ←` / `→`: Omarchy binds those to
+"move window into the group on the left/right", and the theme uses them for
+the live wallpaper. The theme removes Omarchy's two binds with `hl.unbind()`
+first, so only one action runs, and the group move moves to
+`SUPER + ALT + CTRL + ←` / `→`.
 
 ### Text Size & Display Layout
 
@@ -297,7 +305,7 @@ The uninstaller will:
 
 ### Running Tests
 
-The test suite has thirteen test cases and 186 assertions; optional tools
+The test suite has thirteen test cases and 190 assertions; optional tools
 (`shellcheck`, `qmllint`, `hyprctl`) enable extra checks when present, so the
 exact count varies between machines (171 with `shellcheck`, 170 without). It
 runs in a sandbox and never touches your real system.

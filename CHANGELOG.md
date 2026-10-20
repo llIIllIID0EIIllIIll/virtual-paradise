@@ -9,6 +9,14 @@ Conventional Commits.
 ## [Unreleased]
 
 ### Fixed
+- **`SUPER + ALT + ←` / `→` switch the live wallpaper again.** The theme
+  bound those two chords to the live wallpaper while Omarchy bound them to
+  "move window into the group on the left/right". Hyprland runs every bind of
+  a chord, so a press switched the wallpaper *and* moved the window into a
+  group; 1.2.2 removed the theme's pair to stop that, and the arrows stopped
+  working. The pair is now replaced deliberately: `hl.unbind()` removes
+  Omarchy's two binds first, so exactly one action runs, and the group move
+  moves to `SUPER + ALT + CTRL + ←` / `→`, which Omarchy leaves free.
 - **The terminal keeps the font size you chose.** The theme shipped
   `font-size = 12` (and `adjust-cell-height = 12%`) in its Ghostty, Kitty,
   Foot and Alacritty configs. Ghostty applies a `config-file` include *after*

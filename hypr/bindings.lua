@@ -28,8 +28,26 @@ o.bind("SUPER + Q", "Rice Layout", "~/.local/bin/rice_layout.sh")
 -- Cycle to next wallpaper in Virtual☆Paradise theme
 o.bind("SUPER + N", "Next Wallpaper", "omarchy theme bg next")
 
--- Live video wallpapers. Omarchy binds SUPER + ALT + arrows to window groups,
--- so these use free chords: W toggles, N cycles forward, SHIFT + N backward.
+-- Live video wallpapers.
+--
+-- The arrows live on SUPER + ALT, where they have always been. Omarchy binds
+-- that pair to "move window to group", and Hyprland runs *every* bind of a
+-- chord instead of replacing one, so binding the wallpaper there as well
+-- switched the wallpaper and moved the window into a group at the same time.
+-- That is why the arrows disappeared in 1.2.2.
+--
+-- This time the pair is replaced on purpose: hl.unbind() removes Omarchy's
+-- two binds first, so exactly one action runs. The group move is not lost -
+-- it moves to SUPER + ALT + CTRL + arrows, which Omarchy leaves free.
+hl.unbind("SUPER + ALT + LEFT")
+hl.unbind("SUPER + ALT + RIGHT")
+o.bind("SUPER + ALT + RIGHT", "Next Live Wallpaper", "~/.local/bin/toggle_live_wallpaper.sh next")
+o.bind("SUPER + ALT + LEFT", "Previous Live Wallpaper", "~/.local/bin/toggle_live_wallpaper.sh prev")
+o.bind("SUPER + ALT + CTRL + RIGHT", "Move window to group on right", hl.dsp.window.move({ into_group = "r" }))
+o.bind("SUPER + ALT + CTRL + LEFT", "Move window to group on left", hl.dsp.window.move({ into_group = "l" }))
+
+-- The same actions without the arrows, for keyboards where they are easier
+-- to reach: W toggles, N cycles forward, SHIFT + N backward.
 o.bind("SUPER + ALT + W", "Toggle Live Wallpaper", "~/.local/bin/toggle_live_wallpaper.sh")
 o.bind("SUPER + ALT + N", "Next Live Wallpaper", "~/.local/bin/toggle_live_wallpaper.sh next")
 o.bind("SUPER + ALT + SHIFT + N", "Previous Live Wallpaper", "~/.local/bin/toggle_live_wallpaper.sh prev")

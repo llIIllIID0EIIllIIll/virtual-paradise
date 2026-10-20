@@ -20,6 +20,8 @@ See every active binding with `SUPER + K` (or
 | `SUPER + ALT + W` | Toggle live video wallpaper |
 | `SUPER + ALT + N` | Next live wallpaper |
 | `SUPER + ALT + SHIFT + N` | Previous live wallpaper |
+| `SUPER + ALT + RIGHT` | Next live wallpaper (arrow) |
+| `SUPER + ALT + LEFT` | Previous live wallpaper (arrow) |
 | `SUPER + ALT + C` | Toggle cooler boost |
 | `SUPER + SHIFT + T` | Open the Omarchy theme menu |
 | `SUPER + E` | File manager (default app) |
@@ -46,7 +48,10 @@ These are intentionally **not** rebound by the theme:
 - `SUPER + P` — pseudo window, `SUPER + O` — pop window out (float & pin)
 - `SUPER + TAB` / `SUPER + SHIFT + TAB` — next/previous workspace
 - `SUPER + SHIFT + SPACE` — toggle the top bar
-- `SUPER + ALT + arrows` — window groups
+- `SUPER + ALT + CTRL + arrows` — move the window into the group on the left/right
+  (Omarchy binds this on `SUPER + ALT + arrows`; the theme takes those two
+  chords for the live wallpaper and moves the group action here, so exactly
+  one action runs per press)
 - `SUPER + V` — universal paste, `SUPER + CTRL + V` — clipboard history
 - `SUPER + SHIFT + B` — browser, `SUPER + SHIFT + F` — file manager
 - `SUPER + SHIFT + S` — Google Maps web app, `SUPER + SHIFT + W` — Omawrite
