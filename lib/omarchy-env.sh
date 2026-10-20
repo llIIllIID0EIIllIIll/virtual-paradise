@@ -58,3 +58,41 @@ omarchy_export_env() {
     esac
   fi
 }
+
+# Resolve the graphical session variables of a user.
+#
+# sudo resets them along with OMARCHY_PATH, and without them `hyprctl reload`
+# cannot find the compositor: the theme's Hyprland changes would only land at
+# the next login, and the notifications would go nowhere. The values are read
+# from the user's runtime directory, which is where Hyprland and the Wayland
+# compositor keep them anyway.
+omarchy_resolve_session_env() {
+  local user="${1:-${USER:-$(id -un)}}" uid runtime candidate
+  uid="$(id -u "$user" 2>/dev/null)" || return 1
+  [[ -n $uid ]] || return 1
+  runtime="/run/user/$uid"
+
+  if [[ -z ${HYPRLAND_INSTANCE_SIGNATURE:-} ]]; then
+    # The running instance is the newest one; the older directories in the
+    # runtime directory are leftovers of previous sessions.
+    HYPRLAND_INSTANCE_SIGNATURE="$(ls -1t "$runtime/hypr" 2>/dev/null | head -n 1)"
+  fi
+
+  if [[ -z ${WAYLAND_DISPLAY:-} ]]; then
+    for candidate in "$runtime"/wayland-*; do
+      if [[ -S $candidate ]]; then
+        WAYLAND_DISPLAY="${candidate##*/}"
+        break
+      fi
+    done
+  fi
+
+  if [[ -z ${DBUS_SESSION_BUS_ADDRESS:-} ]] && [[ -S "$runtime/bus" ]]; then
+    DBUS_SESSION_BUS_ADDRESS="unix:path=$runtime/bus"
+  fi
+
+  XDG_RUNTIME_DIR="$runtime"
+
+  export HYPRLAND_INSTANCE_SIGNATURE WAYLAND_DISPLAY DBUS_SESSION_BUS_ADDRESS XDG_RUNTIME_DIR
+  return 0
+}

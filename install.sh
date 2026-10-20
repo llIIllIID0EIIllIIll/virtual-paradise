@@ -143,6 +143,11 @@ fi
 # shellcheck source=lib/omarchy-env.sh
 . "$REPO_DIR/lib/omarchy-env.sh"
 omarchy_export_env
+# The graphical session variables (Hyprland instance, Wayland display, the
+# session bus) are reset by sudo as well. Without them `hyprctl reload`
+# cannot find the compositor and the theme's Hyprland changes would only land
+# at the next login.
+omarchy_resolve_session_env "$CURRENT_USER" || true
 
 cleanup_install() {
   local ec=$?
