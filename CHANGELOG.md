@@ -9,6 +9,27 @@ Conventional Commits.
 ## [Unreleased]
 
 ### Fixed
+- **The terminal keeps the font size you chose.** The theme shipped
+  `font-size = 12` (and `adjust-cell-height = 12%`) in its Ghostty, Kitty,
+  Foot and Alacritty configs. Ghostty applies a `config-file` include *after*
+  the file that pulls it in, so the theme's size beat the user's own config:
+  a fresh install turned 9pt text into 12pt text, and the line box stayed
+  inflated. The theme configs no longer pin a size or a line height, so the
+  terminal uses the user's setting (or its own default) and scales with the
+  display's DPI on every screen.
+- **The display layout belongs to hyprmoncfg again.** The theme shipped static
+  monitor rules for `eDP-1`, `HDMI-A-1`, `DP-1` and `DP-2` with a fixed scale
+  of 1.0. That kept the laptop panel alive with the wrong scale even when
+  hyprmoncfg wanted it off, and made every HiDPI display render at 1x — the
+  automatic layout switching on hotplug, lid and suspend had nothing to work
+  with. The theme now ships no rule for a named output, and the installer
+  removes the old presets from machines that ran it.
+- **The window rules no longer sit behind hyprmoncfg's rules.** The installer
+  appended them to the end of `hyprland.lua`, after the line that loads
+  hyprmoncfg's generated monitor rules last. `hyprmoncfg doctor` reported the
+  setup as broken ("anything loaded after it can override the layout") and the
+  daemon had to repair it on every apply. The rules are now inserted in front
+  of that line.
 - **Plymouth: the boot theme is no longer patched into Omarchy's theme.**
   `install.sh` overwrote `/usr/share/plymouth/themes/omarchy/omarchy.script`
   with the theme's animation script and dropped ~330 generated PNGs into that

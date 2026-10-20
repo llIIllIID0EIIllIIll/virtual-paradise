@@ -945,20 +945,69 @@ if [[ -f "$REPO_DIR/hypr/bindings.lua" ]]; then
 fi
 
 # 5.4 Display / Monitors
-if [[ ! -f "$CONFIG_DIR/hypr/monitors.lua" && -f "$REPO_DIR/hypr/monitors.lua" ]]; then
-  cp "$REPO_DIR/hypr/monitors.lua" "$CONFIG_DIR/hypr/monitors.lua"
-  log_sub "Initialized default display configuration"
-elif [[ -f "$CONFIG_DIR/hypr/monitors.lua" ]] && ! grep -q "ELECTRON_OZONE_PLATFORM_HINT" "$CONFIG_DIR/hypr/monitors.lua"; then
+#
+# The display layout belongs to hyprmoncfg, Omarchy's display manager: it
+# applies a profile per monitor setup and switches between them on hotplug,
+# lid and suspend. The theme used to ship static rules for eDP-1, HDMI-A-1,
+# DP-1 and DP-2 with a fixed scale of 1.0. That kept the laptop panel alive
+# with the wrong scale even when hyprmoncfg wanted it off, and made every
+# external display render at 1x on a HiDPI panel. Those presets are removed
+# here on machines that ran the old installer.
+monitors_file="$CONFIG_DIR/hypr/monitors.lua"
+if [[ -f $monitors_file ]]; then
+  # Strip the theme's legacy display presets. A block is only ours when it
+  # names one of the theme's outputs *and* carries the theme's signature
+  # fields, so a rule the user wrote by hand is never touched.
+  legacy_presets="$(awk '
+    function flush() {
+      if (buf != "") {
+        is_preset = (named_edp && scaled) || (named_ext && scaled) || autright
+        if (!is_preset) printf "%s", buf
+        buf = ""; named_edp = 0; named_ext = 0; scaled = 0; autright = 0
+      }
+    }
+    function inspect(line) {
+      if (line ~ /output[[:space:]]*=[[:space:]]*"eDP-1"/) named_edp = 1
+      if (line ~ /output[[:space:]]*=[[:space:]]*"(HDMI-A-1|DP-1|DP-2)"/) named_ext = 1
+      if (line ~ /scale[[:space:]]*=[[:space:]]*1\.0/) scaled = 1
+      if (line ~ /position[[:space:]]*=[[:space:]]*"auto-right"/) autright = 1
+    }
+    /hl\.monitor\(\{/ {
+      buf = $0 "\n"
+      inspect($0)
+      if ($0 ~ /\}\)/) { flush(); next }
+      inblock = 1
+      next
+    }
+    inblock {
+      buf = buf $0 "\n"
+      inspect($0)
+      if ($0 ~ /^\}\)/) { flush(); inblock = 0 }
+      next
+    }
+    { print }
+  ' "$monitors_file")"
+
+  if [[ "$legacy_presets" != "$(cat "$monitors_file")" ]]; then
+    hypr_backup "$monitors_file"
+    printf '%s\n' "$legacy_presets" >"$monitors_file"
+    log_sub "Removed the static display presets so hyprmoncfg owns the layout"
+  fi
+
   # Preserve user custom monitor positions but ensure crisp Wayland toolkit variables
-  hypr_backup "$CONFIG_DIR/hypr/monitors.lua"
-  cat << 'EOF' >> "$CONFIG_DIR/hypr/monitors.lua"
+  if ! grep -q "ELECTRON_OZONE_PLATFORM_HINT" "$monitors_file"; then
+    hypr_backup "$monitors_file"
+    cat << 'EOF' >> "$monitors_file"
 
 -- Virtual☆Paradise Toolkit & Wayland Envs
 hl.env("ELECTRON_OZONE_PLATFORM_HINT", "auto")
 hl.env("QT_WAYLAND_DISABLE_WINDOWDECORATION", "1")
-hl.env("XCURSOR_SIZE", "24")
 EOF
-  log_sub "Injected Wayland toolkit environment variables into ~/.config/hypr/monitors.lua"
+    log_sub "Injected Wayland toolkit environment variables into ~/.config/hypr/monitors.lua"
+  fi
+elif [[ -f "$REPO_DIR/hypr/monitors.lua" ]]; then
+  cp "$REPO_DIR/hypr/monitors.lua" "$CONFIG_DIR/hypr/monitors.lua"
+  log_sub "Initialized default display configuration"
 fi
 
 # 5.5 Autostart: ensure live wallpaper hook is present
@@ -973,13 +1022,68 @@ elif [[ -f "$REPO_DIR/hypr/autostart.lua" ]]; then
 fi
 
 # 5.6 Window Rules (Btop, Voxtype, Cast Screen, Nautilus)
+#
+# hyprmoncfg loads its generated monitor rules last, on purpose: anything after
+# that line can override the layout it applies, and its own doctor reports the
+# setup as broken. The window rules therefore have to sit *before* that line.
+VP_RULES_BLOCK=""
+
+# Take the theme's window-rule block out of a Hyprland config and keep it in
+# $VP_RULES_BLOCK.
+extract_rules_block() {
+  local file="$1" start end
+  VP_RULES_BLOCK=""
+  start="$(grep -n "Virtual Paradise Add-on Window Rules" "$file" 2>/dev/null | head -n 1 | cut -d: -f1)"
+  [[ -n $start ]] || return 1
+
+  end="$start"
+  while sed -n "$((end + 1))p" "$file" 2>/dev/null | grep -q '^o\.window('; do
+    end=$((end + 1))
+  done
+
+  VP_RULES_BLOCK="$(sed -n "${start},${end}p" "$file")"
+  sed -i "${start},${end}d" "$file" 2>/dev/null || true
+  return 0
+}
+
+# Put the block back, in front of hyprmoncfg's "load last" line.
+insert_rules_block() {
+  local file="$1" block merged
+  [[ -n $VP_RULES_BLOCK ]] || return 1
+
+  block="$(mktemp)"
+  merged="$(mktemp)"
+  printf '\n%s\n' "$VP_RULES_BLOCK" >"$block"
+
+  if grep -q "hyprmoncfg-monitors.lua" "$file"; then
+    awk -v blockfile="$block" '
+      /hyprmoncfg-monitors\.lua/ && !inserted {
+        while ((getline line < blockfile) > 0) print line
+        close(blockfile)
+        inserted = 1
+      }
+      { print }
+    ' "$file" >"$merged"
+    if [[ -s $merged ]]; then
+      mv "$merged" "$file"
+    else
+      rm -f "$merged"
+      cat "$block" >>"$file"
+    fi
+  else
+    cat "$block" >>"$file"
+  fi
+  rm -f "$block" "$merged"
+  return 0
+}
+
 if [[ -f "$CONFIG_DIR/hypr/hyprland.lua" ]]; then
   # Guard on our own marker, not on "GNOME Network Displays": a user comment
   # mentioning that app must not suppress the rules, and the marker is what
   # uninstall.sh removes.
   if ! grep -q "Virtual Paradise Add-on Window Rules" "$CONFIG_DIR/hypr/hyprland.lua"; then
     hypr_backup "$CONFIG_DIR/hypr/hyprland.lua"
-    cat << 'EOF' >> "$CONFIG_DIR/hypr/hyprland.lua"
+    VP_RULES_BLOCK="$(cat << 'EOF'
 
 -- Virtual Paradise Add-on Window Rules
 o.window({ initial_title = "Btop Monitor" }, { float = true, size = { 1050, 650 }, center = true })
@@ -992,6 +1096,16 @@ o.window({ class = "org.gnome.NetworkDisplays" }, { float = true, size = { 720, 
 o.window({ class = "org.gnome.Nautilus", title = "File Operation Progress" }, { float = true })
 o.window({ class = "org.gnome.Nautilus", title = ".*Properties.*" }, { float = true })
 EOF
+)"
+  else
+    # The rules are already there, but a previous install appended them after
+    # hyprmoncfg's line. Take them out and put them back in front of it.
+    hypr_backup "$CONFIG_DIR/hypr/hyprland.lua"
+    extract_rules_block "$CONFIG_DIR/hypr/hyprland.lua" || true
+  fi
+
+  if [[ -n $VP_RULES_BLOCK ]]; then
+    insert_rules_block "$CONFIG_DIR/hypr/hyprland.lua"
     log_sub "Configured floating window rules for Btop, Voxtype, Cast Screen & Nautilus"
   fi
 fi
