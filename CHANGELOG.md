@@ -59,6 +59,11 @@ Conventional Commits.
   desktop widgets the theme ships are Quickshell bar plugins
   (`clock`, `weather`, `cputemp`, …). Uninstall removes the leftover script
   from older installs.
+- **The live wallpaper keeps its socket in the runtime directory.** The
+  mpvpaper socket and the flag the transition waits on used a fixed `/tmp`
+  path. Both are world-writable on a multi-user machine: a socket that
+  already exists keeps mpvpaper from starting, and a ready flag that is
+  already there ends the transition before the wallpaper is up.
 
 ### Changed
 - The Plymouth theme script is shipped as `plymouth/virtual-paradise.script`

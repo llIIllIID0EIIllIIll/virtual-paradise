@@ -29,9 +29,11 @@ declare -A VARIANTS=(
   ["sakura"]="ffb7d5:ff69b4:ffc0cb:1a1a2e"     # Pink variants
 )
 
-# Which colors.toml keys follow which variant color.
+# Which colors.toml keys follow which variant color. The palette's other
+# entries (the sakura pink in color5, the bright shades) stay as they are:
+# they are part of the theme's identity and no variant defines them.
 ACCENT_KEYS="accent active_border_color active_tab_background cursor selection_background color4"
-SECONDARY_KEYS="color1 color5"
+SECONDARY_KEYS="color1"
 TERTIARY_KEYS="color2"
 BACKGROUND_KEYS="background color0 selection_foreground"
 
