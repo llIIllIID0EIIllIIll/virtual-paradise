@@ -30,6 +30,14 @@ ShellRoot {
   // shifts, so the static keeps crawling instead of sitting still.
   property int tick: 0
 
+  // Whether the picture is allowed to jump around. On while the signal is
+  // breaking up and during the last of it, off while the entry and the
+  // reveal animate the picture themselves.
+  property bool jitter: false
+
+  // The overlay is done and gone.
+  property bool finished: false
+
   // The transition is only worth showing if it is seen. The wallpaper is
   // usually ready in a fraction of a second, and a glitch that flashes past
   // reads as a flicker instead of a transition - so the curtain holds for a
@@ -143,7 +151,6 @@ ShellRoot {
           if (root.isReady && win.entryFinished && !win.hasStartedExit) {
             win.hasStartedExit = true
             loadingLoopAnim.stop()
-            loadingHud.opacity = 0
             exitAnim.start()
           }
         }
@@ -240,28 +247,6 @@ ShellRoot {
         // TV STATIC: the picture keeps crawling, the lines roll and the
         // whole frame jumps around.
         // -------------------------------------------------------------
-        Image {
-          id: noiseLayer
-          anchors.fill: parent
-          source: Qt.resolvedUrl("noise.jpg")
-          fillMode: Image.PreserveAspectCrop
-          // The static breaks the picture up, it does not replace it: the
-          // picture has to stay readable through the noise.
-          opacity: root.noiseLevel * 0.30
-          visible: root.noiseLevel > 0
-          cache: true
-        }
-
-        Image {
-          id: scanLayer
-          anchors.fill: parent
-          source: Qt.resolvedUrl("scanlines.png")
-          fillMode: Image.Stretch
-          opacity: 0.30
-          visible: root.noiseLevel > 0
-          cache: true
-        }
-
         // Black signal dropout blocks
         Rectangle {
           id: blackBlock1
@@ -287,142 +272,38 @@ ShellRoot {
           id: yellowBar1
           width: parent.width; height: 8; y: win.height * 0.78; color: "#ffee00"; opacity: 0
         }
+      }
 
-        // -------------------------------------------------------------
-        // CYBERPUNK LOADING HUD (Active while wallpaper is synchronizing)
-        // -------------------------------------------------------------
-        Item {
-          id: loadingHud
-          anchors.centerIn: parent
-          width: Math.min(parent.width - 64, 620)
-          height: 164
-          opacity: 0.0
+      // The static sits on top of the picture, so it can outlive it: the
+      // picture fades away and the desktop shows through the noise.
+      Image {
+        id: noiseLayer
+        anchors.fill: parent
+        source: Qt.resolvedUrl("noise.jpg")
+        fillMode: Image.PreserveAspectCrop
+        // The static breaks the picture up, it does not replace it: the
+        // picture has to stay readable through the noise.
+        opacity: root.noiseLevel * 0.30
+        visible: root.noiseLevel > 0
+        cache: true
+      }
 
-          Behavior on opacity { NumberAnimation { duration: 160 } }
+      Image {
+        id: scanLayer
+        anchors.fill: parent
+        source: Qt.resolvedUrl("scanlines.png")
+        fillMode: Image.Stretch
+        opacity: 0.30
+        visible: root.noiseLevel > 0
+        cache: true
+      }
 
-          Rectangle {
-            anchors.fill: parent
-            color: "#0f081d"
-            opacity: 0.94
-            radius: 14
-            border.color: "#00ffdd"
-            border.width: 2
-          }
-
-          Rectangle {
-            anchors.fill: parent
-            anchors.margins: 6
-            color: "transparent"
-            radius: 10
-            border.color: "#ff007f"
-            border.width: 1
-            opacity: 0.35
-          }
-
-          // Cyber Corner Accents
-          Rectangle { anchors.top: parent.top; anchors.left: parent.left; width: 16; height: 3; color: "#ff007f" }
-          Rectangle { anchors.top: parent.top; anchors.left: parent.left; width: 3; height: 16; color: "#ff007f" }
-          Rectangle { anchors.top: parent.top; anchors.right: parent.right; width: 16; height: 3; color: "#00ffdd" }
-          Rectangle { anchors.top: parent.top; anchors.right: parent.right; width: 3; height: 16; color: "#00ffdd" }
-          Rectangle { anchors.bottom: parent.bottom; anchors.left: parent.left; width: 16; height: 3; color: "#00ffdd" }
-          Rectangle { anchors.bottom: parent.bottom; anchors.left: parent.left; width: 3; height: 16; color: "#00ffdd" }
-          Rectangle { anchors.bottom: parent.bottom; anchors.right: parent.right; width: 16; height: 3; color: "#ff007f" }
-          Rectangle { anchors.bottom: parent.bottom; anchors.right: parent.right; width: 3; height: 16; color: "#ff007f" }
-
-          Column {
-            anchors.centerIn: parent
-            width: parent.width - 56
-            spacing: 10
-
-            Row {
-              anchors.horizontalCenter: parent.horizontalCenter
-              spacing: 10
-              Text {
-                text: "◈"
-                color: "#ffee00"
-                font.pixelSize: 18
-              }
-              Text {
-                text: "VIRTUAL☆PARADISE // WALLPAPER LINK"
-                color: "#00ffdd"
-                font.pixelSize: 14
-                font.bold: true
-                font.family: "JetBrainsMono Nerd Font, monospace"
-                elide: Text.ElideRight
-                maximumLineCount: 1
-              }
-            }
-
-            Text {
-              text: "LOADING  " + root.targetName
-              color: "#eafbfa"
-              font.pixelSize: 11
-              font.family: "JetBrainsMono Nerd Font, monospace"
-              anchors.horizontalCenter: parent.horizontalCenter
-              elide: Text.ElideMiddle
-              width: parent.width
-              horizontalAlignment: Text.AlignHCenter
-            }
-
-            // Neon Scanning Progress Track
-            Rectangle {
-              id: track
-              width: parent.width
-              height: 6
-              color: "#161e2e"
-              radius: 3
-              clip: true
-              anchors.horizontalCenter: parent.horizontalCenter
-
-              Rectangle {
-                id: scanBar
-                width: Math.max(90, track.width * 0.25)
-                height: 6
-                radius: 3
-                gradient: Gradient {
-                  orientation: Gradient.Horizontal
-                  GradientStop { position: 0.0; color: "transparent" }
-                  GradientStop { position: 0.5; color: "#00ffdd" }
-                  GradientStop { position: 1.0; color: "#ff007f" }
-                }
-
-                SequentialAnimation on x {
-                  loops: Animation.Infinite
-                  running: loadingHud.opacity > 0
-                  NumberAnimation { from: -100; to: 380; duration: 650; easing.type: Easing.InOutQuad }
-                  NumberAnimation { from: 380; to: -100; duration: 650; easing.type: Easing.InOutQuad }
-                }
-              }
-            }
-
-            Text {
-              id: loadingSubtext
-              text: "BUFFERING NEURAL FRAMES" + ".".repeat(root.loadingPhase)
-              color: "#ff007f"
-              font.pixelSize: 10
-              font.bold: true
-              font.family: "JetBrainsMono Nerd Font, monospace"
-              anchors.horizontalCenter: parent.horizontalCenter
-              opacity: 0.9
-
-              SequentialAnimation on opacity {
-                loops: Animation.Infinite
-                running: loadingHud.opacity > 0
-                NumberAnimation { from: 0.9; to: 0.3; duration: 400 }
-                NumberAnimation { from: 0.3; to: 0.9; duration: 400 }
-              }
-
-            }
-          }
-        }
-
-        // Fullscreen white strobe
-        Rectangle {
-          id: whiteStrobe
-          anchors.fill: parent
-          color: "white"
-          opacity: 0
-        }
+      // Fullscreen white strobe
+      Rectangle {
+        id: whiteStrobe
+        anchors.fill: parent
+        color: "white"
+        opacity: 0
       }
 
       // -------------------------------------------------------------
@@ -478,11 +359,12 @@ ShellRoot {
         ScriptAction {
           script: {
             win.entryFinished = true
+            root.jitter = true
             if (root.isReady) {
               win.hasStartedExit = true
+              root.jitter = false
               exitAnim.start()
             } else {
-              loadingHud.opacity = 1.0
               loadingLoopAnim.start()
             }
           }
@@ -497,7 +379,7 @@ ShellRoot {
       Timer {
         interval: 40
         repeat: true
-        running: !root.isReady && !root.exiting && !win.hasStartedExit
+        running: root.jitter && !root.finished
         onTriggered: {
           root.tick = (root.tick + 1) % 997;
 
@@ -625,10 +507,47 @@ ShellRoot {
         ScriptAction {
           script: {
             root.exiting = true
+            // The picture is back in place, but the signal keeps breaking up
+            // for a moment and fades away instead of cutting.
+            root.jitter = true
+            afterglow.start()
+          }
+        }
+      }
+
+      // -------------------------------------------------------------
+      // PHASE 4: THE LAST OF THE STATIC, FADING AWAY
+      // -------------------------------------------------------------
+      // The desktop is already visible behind the overlay. The noise and the
+      // jitter calm down over a couple of seconds and then the overlay is gone.
+      SequentialAnimation {
+        id: afterglow
+        // The picture dissolves, the desktop comes through...
+        NumberAnimation {
+          target: glitchRoot
+          property: "opacity"
+          from: 1.0
+          to: 0.0
+          duration: 1100
+          easing.type: Easing.InQuad
+        }
+        // ...and the last of the static fades away with it.
+        NumberAnimation {
+          target: root
+          property: "noiseLevel"
+          from: root.noiseLevel
+          to: 0
+          duration: 2200
+          easing.type: Easing.OutQuad
+        }
+        ScriptAction {
+          script: {
+            root.finished = true
             Qt.quit()
           }
         }
       }
     }
   }
+
 }
