@@ -35,6 +35,19 @@ Conventional Commits.
   1600x900 with a 256 colour palette: the same picture once Plymouth
   stretches it over the screen (Plymouth converts palette PNGs through
   `png_set_palette_to_rgb`), about a third of the data.
+- **The live wallpaper is visible right after logging in.** The video is
+  drawn on the same layer as the shell's static background, and a layer
+  created later ends up on top. The autostart hook started mpvpaper before
+  the shell had put its background up, so the video ended up *under* the
+  static picture: the login screen showed a static wallpaper with the
+  shell's diamond transition. The live wallpaper now waits for the shell's
+  background layer.
+- **The static wallpaper is sharp again.** The installer turned the animated
+  GIFs into still images to keep the wallpaper cycle short, but the GIF and
+  the JPG have the same base name - the conversion overwrote the sharp
+  1920x1080 picture with a 480x270 frame. The GIFs are now simply removed
+  from the wallpaper directory and the repository's full resolution JPGs are
+  used.
 - **The Plymouth password row no longer covers the neon frame.** The prompt
   was placed near the bottom of the *screen*, which is inside the picture now
   that the splash is centred. It sits below the picture, in the bar under the

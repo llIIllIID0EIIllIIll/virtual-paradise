@@ -1565,21 +1565,16 @@ if [[ -d "$REPO_DIR/backgrounds" ]]; then
     rm -rf "${WALLPAPER_DEST:?}"/* 2>/dev/null || true
     cp -a "$REPO_DIR/backgrounds"/. "$WALLPAPER_DEST"/ 2>/dev/null || true
   fi
-
   # The animated GIFs are not wallpapers here: they are the SDDM login
   # animation, and the login theme reads them straight from the repository.
-  # As a wallpaper they were pure cost - Omarchy picks the bar's text color
+  # As wallpapers they were pure cost - Omarchy picks the bar's text color
   # with ImageMagick, and rendering 250 animation frames took over a minute
-  # on every theme switch. The first frame of each is kept instead, so the
-  # wallpaper cycle still has the same pictures.
-  for wallpaper_gif in "$WALLPAPER_DEST"/*.gif; do
-    [[ -f $wallpaper_gif ]] || continue
-    if command -v ffmpeg &>/dev/null; then
-      ffmpeg -y -loglevel error -i "$wallpaper_gif" -frames:v 1 \
-        "${wallpaper_gif%.gif}.jpg" 2>/dev/null || true
-    fi
-    rm -f "$wallpaper_gif"
-  done
+  # on every theme switch.
+  #
+  # They are removed rather than converted: the repository ships a sharp
+  # 1920x1080 JPG with the same name, and converting the GIF over it
+  # replaced that picture with a blurry 480x270 frame.
+  rm -f "$WALLPAPER_DEST"/*.gif 2>/dev/null || true
 
   log_sub "Installed wallpapers to $WALLPAPER_DEST"
 fi
