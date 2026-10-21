@@ -22,6 +22,14 @@ ShellRoot {
   // Safety net, so the overlay can never stay on the screen.
   property int timeout: parseInt(Quickshell.env("VP_TRANSITION_TIMEOUT") || "4500", 10)
 
+  // How hard the signal breaks up. The wallpaper switch can stay subtle, the
+  // session splash wants the full "TV with a bad antenna" look.
+  property real noiseLevel: parseFloat(Quickshell.env("VP_TRANSITION_NOISE") || "0.35")
+
+  // A counter the random jitter is derived from: every tick the picture
+  // shifts, so the static keeps crawling instead of sitting still.
+  property int tick: 0
+
   // The transition is only worth showing if it is seen. The wallpaper is
   // usually ready in a fraction of a second, and a glitch that flashes past
   // reads as a flicker instead of a transition - so the curtain holds for a
@@ -226,6 +234,32 @@ ShellRoot {
           id: slice5
           width: win.width; height: win.height * 0.15; y: win.height * 0.82; clip: true; x: 0
           Image { width: win.width; height: win.height; x: -slice5.x; y: -slice5.y; source: Qt.resolvedUrl(root.baseImage); fillMode: Image.PreserveAspectCrop }
+        }
+
+        // -------------------------------------------------------------
+        // TV STATIC: the picture keeps crawling, the lines roll and the
+        // whole frame jumps around.
+        // -------------------------------------------------------------
+        Image {
+          id: noiseLayer
+          anchors.fill: parent
+          source: Qt.resolvedUrl("noise.jpg")
+          fillMode: Image.PreserveAspectCrop
+          // The static breaks the picture up, it does not replace it: the
+          // picture has to stay readable through the noise.
+          opacity: root.noiseLevel * 0.30
+          visible: root.noiseLevel > 0
+          cache: true
+        }
+
+        Image {
+          id: scanLayer
+          anchors.fill: parent
+          source: Qt.resolvedUrl("scanlines.png")
+          fillMode: Image.Stretch
+          opacity: 0.30
+          visible: root.noiseLevel > 0
+          cache: true
         }
 
         // Black signal dropout blocks
@@ -456,8 +490,52 @@ ShellRoot {
       }
 
       // -------------------------------------------------------------
-      // PHASE 2: GLITCH LOADING LOOP (Active until wallpaper is ready)
+      // PHASE 2: THE SIGNAL BREAKS UP (Active until the picture is ready)
       // -------------------------------------------------------------
+      // Every tick the slices jump to a new random offset, the picture crawls
+      // and the colour split wanders. That is what a broken TV looks like.
+      Timer {
+        interval: 40
+        repeat: true
+        running: !root.isReady && !root.exiting && !win.hasStartedExit
+        onTriggered: {
+          root.tick = (root.tick + 1) % 997;
+
+          const jump = 34 * root.noiseLevel + 6;
+          slice1.x = Math.random() * jump * 2 - jump;
+          slice1.y = Math.random() * jump * 0.5 - jump * 0.25;
+          slice2.x = Math.random() * jump * 2.4 - jump * 1.2;
+          slice2.y = Math.random() * jump * 0.4 - jump * 0.2;
+          slice3.x = Math.random() * jump * 2.8 - jump * 1.4;
+          slice3.y = Math.random() * jump * 0.6 - jump * 0.3;
+          slice4.x = Math.random() * jump * 2.2 - jump * 1.1;
+          slice4.y = Math.random() * jump * 0.5 - jump * 0.25;
+          slice5.x = Math.random() * jump * 2.6 - jump * 1.3;
+          slice5.y = Math.random() * jump * 0.4 - jump * 0.2;
+
+          cyanShift.x = -6 - Math.random() * 26 * root.noiseLevel;
+          redShift.x = 6 + Math.random() * 26 * root.noiseLevel;
+
+          noiseLayer.x = Math.random() * 60 - 30;
+          noiseLayer.y = Math.random() * 60 - 30;
+          scanLayer.y = (root.tick % 4) * 1.5 - 3;
+
+          blackBlock1.opacity = Math.random() < 0.18 * root.noiseLevel + 0.05 ? 0.85 : 0;
+          blackBlock2.opacity = Math.random() < 0.15 * root.noiseLevel + 0.05 ? 0.85 : 0;
+          blackBlock1.x = Math.random() * win.width * 0.3;
+          blackBlock2.x = Math.random() * win.width * 0.4;
+          blackBlock1.y = Math.random() * win.height * 0.8;
+          blackBlock2.y = Math.random() * win.height * 0.85;
+
+          cyanBar1.opacity = Math.random() < 0.25 * root.noiseLevel + 0.05 ? 0.9 : 0;
+          pinkBar1.opacity = Math.random() < 0.25 * root.noiseLevel + 0.05 ? 0.9 : 0;
+          yellowBar1.opacity = Math.random() < 0.2 * root.noiseLevel + 0.05 ? 0.85 : 0;
+          cyanBar1.y = Math.random() * win.height * 0.9;
+          pinkBar1.y = Math.random() * win.height * 0.9;
+          yellowBar1.y = Math.random() * win.height * 0.9;
+        }
+      }
+
       SequentialAnimation {
         id: loadingLoopAnim
         loops: Animation.Infinite
