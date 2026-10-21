@@ -1377,7 +1377,8 @@ if [[ -d "$REPO_DIR/bin" ]]; then
   # Scripts that used to be part of the theme. sync_tree merges, so a file the
   # repository no longer ships would stay in ~/.local/bin forever and keep
   # answering to a name the documentation dropped.
-  rm -f "$LOCAL_BIN/widgets.sh" "$LOCAL_BIN/rice" "$LOCAL_BIN/Miku_missing.mp4" 2>/dev/null || true
+  rm -f "$LOCAL_BIN/widgets.sh" "$LOCAL_BIN/rice" "$LOCAL_BIN/Miku_missing.mp4" \
+    "$LOCAL_BIN/session_splash.qml" 2>/dev/null || true
 
   sync_tree "$REPO_DIR/bin" "$LOCAL_BIN"
   rm -rf "$LOCAL_BIN/__pycache__"
