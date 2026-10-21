@@ -1389,15 +1389,12 @@ if [[ -d "$REPO_DIR/bin" ]]; then
   ln -nsf "$LOCAL_BIN/format-docx-vn.py" "$LOCAL_BIN/vn-docx" 2>/dev/null || true
   chmod +x "$LOCAL_BIN/sync_cava_theme.py" "$LOCAL_BIN/virtual_matrix.py" "$LOCAL_BIN/cast_screen.sh" "$LOCAL_BIN/format-docx-vn.py" "$LOCAL_BIN/paradise_banner.py" "$LOCAL_BIN/paradise_banner.sh" "$LOCAL_BIN/session_splash.sh" 2>/dev/null || true
 
-  # The artwork for the session splash. It is the same cyber background and
-  # neon frame the boot splash and the login screen use, so the whole way from
-  # the firmware to the desktop is one picture.
-  for splash_asset in backdrop.png frame.png; do
-    [[ -f "$REPO_DIR/plymouth/$splash_asset" ]] &&
-      cp -f "$REPO_DIR/plymouth/$splash_asset" "$LOCAL_BIN/$splash_asset" 2>/dev/null || true
-  done
-  [[ -f "$REPO_DIR/sddm/assets/still.png" ]] &&
-    cp -f "$REPO_DIR/sddm/assets/still.png" "$LOCAL_BIN/still.png" 2>/dev/null || true
+  # The artwork for the session splash: the cyber background, the animation
+  # still and the neon frame in one picture, which the glitch curtain cuts
+  # apart. The whole way from the firmware to the desktop is one image.
+  if [[ -f "$REPO_DIR/plymouth/session_base.png" ]]; then
+    cp -f "$REPO_DIR/plymouth/session_base.png" "$LOCAL_BIN/session_base.png" 2>/dev/null || true
+  fi
 
   cp "$REPO_DIR/uninstall.sh" "$LOCAL_BIN/uninstall-virtual-paradise"
   chmod +x "$LOCAL_BIN/uninstall-virtual-paradise"

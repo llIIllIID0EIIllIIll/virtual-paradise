@@ -2,20 +2,28 @@
 # ==============================================================================
 #  Virtual☆Paradise — Session Splash
 # ==============================================================================
-#  Shows the theme's cyber artwork from the moment the compositor is up until
-#  the shell has something to draw.
+#  Covers the gap between the greeter handing the screen to the session and
+#  the desktop having something to show.
 #
-#  The greeter hands the screen to the session and the session needs a couple
-#  of seconds before the desktop appears. Without this, that gap is a black
-#  screen; with it, the boot splash and the login screen are one continuous
-#  picture.
+#  It is the same glitch curtain the live wallpaper switch uses, over the
+#  theme's cyber artwork, and it waits for the shell to answer before it
+#  opens - so the whole way from the firmware to the desktop is one picture
+#  instead of a black screen.
 # ==============================================================================
 
 set -uo pipefail
 
-QML="$HOME/.local/bin/session_splash.qml"
+QML="$HOME/.local/bin/glitch_transition.qml"
+BASE="$HOME/.local/bin/session_base.png"
 
 [[ -f $QML ]] || exit 0
 command -v quickshell &>/dev/null || exit 0
+
+export VP_TRANSITION_IMAGE="session_base.png"
+export VP_TRANSITION_WAIT_SHELL="1"
+export VP_TRANSITION_TIMEOUT="20000"
+export WALLPAPER_TARGET="SESSION"
+
+[[ -f $BASE ]] || export VP_TRANSITION_IMAGE="Glitch.jpg"
 
 exec quickshell -p "$QML"

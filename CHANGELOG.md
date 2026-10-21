@@ -38,10 +38,10 @@ Conventional Commits.
 - **The screen is no longer black after logging in.** The greeter hands the
   screen to the session, and the session needs about three seconds before the
   desktop has anything to show: the compositor starts, then the shell loads
-  its plugins. That gap was a black screen. A session splash now shows the
-  same cyber artwork as the boot splash and the login screen, and fades out
-  as soon as the shell answers - so the whole way from the firmware to the
-  desktop is one picture.
+  its plugins. That gap was a black screen. A session splash now plays the
+  same glitch curtain as the live wallpaper switch - over the theme's cyber
+  artwork - and fades out as soon as the shell answers, so the whole way from
+  the firmware to the desktop is one picture instead of a black screen.
 - **The live wallpaper is visible right after logging in.** The video is
   drawn on the same layer as the shell's static background, and a layer
   created later ends up on top. The autostart hook started mpvpaper before

@@ -1484,15 +1484,21 @@ if want tc16; then
   # The session splash covers the gap between the greeter handing the screen
   # to the session and the desktop having something to show.
   check "there is a session splash" \
-    "$([[ -f $REPO_DIR/bin/session_splash.qml && -f $REPO_DIR/bin/session_splash.sh ]] && echo 0 || echo 1)"
+    "$([[ -f $REPO_DIR/bin/session_splash.sh ]] && echo 0 || echo 1)"
+  check "the session splash uses the glitch curtain" \
+    "$(grep -q 'glitch_transition.qml' "$REPO_DIR/bin/session_splash.sh" && echo 0 || echo 1)"
+  check "the curtain can wait for the shell instead of a file" \
+    "$(grep -q 'VP_TRANSITION_WAIT_SHELL' "$REPO_DIR/bin/glitch_transition.qml" && grep -q 'VP_TRANSITION_WAIT_SHELL' "$REPO_DIR/bin/session_splash.sh" && echo 0 || echo 1)"
+  check "the curtain can use a different picture" \
+    "$(grep -q 'VP_TRANSITION_IMAGE' "$REPO_DIR/bin/glitch_transition.qml" && echo 0 || echo 1)"
+  check "the session has its own picture for the curtain" \
+    "$([[ -f $REPO_DIR/plymouth/session_base.png ]] && echo 0 || echo 1)"
   check "the session splash is started from the Hyprland autostart" \
     "$(grep -q 'session_splash.sh' "$REPO_DIR/hypr/autostart.lua" && echo 0 || echo 1)"
   check "the installer hooks the session splash" \
     "$(grep -q 'session_splash.sh' "$REPO_DIR/install.sh" && echo 0 || echo 1)"
-  check "the splash waits for the shell and then fades out" \
-    "$(grep -q 'omarchy-shell' "$REPO_DIR/bin/session_splash.qml" && grep -q 'fadeOut' "$REPO_DIR/bin/session_splash.qml" && echo 0 || echo 1)"
-  check "the splash uses the same artwork as the boot splash" \
-    "$(grep -q 'backdrop.png' "$REPO_DIR/bin/session_splash.qml" && grep -q 'frame.png' "$REPO_DIR/bin/session_splash.qml" && echo 0 || echo 1)"
+  check "the curtain fades out when it is done" \
+    "$(grep -q 'exitAnim' "$REPO_DIR/bin/glitch_transition.qml" && grep -q 'Qt.quit()' "$REPO_DIR/bin/glitch_transition.qml" && echo 0 || echo 1)"
   check "the uninstaller removes the splash" \
     "$(grep -q 'session_splash' "$REPO_DIR/uninstall.sh" && echo 0 || echo 1)"
 

@@ -11,6 +11,17 @@ ShellRoot {
   property string targetName: Quickshell.env("WALLPAPER_TARGET") || "LIVE STREAM"
   property int loadingPhase: 0
 
+  // The picture the glitch cuts apart. The wallpaper switch uses the glitch
+  // wallpaper; the session splash uses the theme's cyber artwork.
+  property string baseImage: Quickshell.env("VP_TRANSITION_IMAGE") || "Glitch.jpg"
+
+  // Wait for the desktop instead of for a wallpaper file: the session splash
+  // stays until the shell answers.
+  property bool waitForShell: Quickshell.env("VP_TRANSITION_WAIT_SHELL") === "1"
+
+  // Safety net, so the overlay can never stay on the screen.
+  property int timeout: parseInt(Quickshell.env("VP_TRANSITION_TIMEOUT") || "4500", 10)
+
   // The transition is only worth showing if it is seen. The wallpaper is
   // usually ready in a fraction of a second, and a glitch that flashes past
   // reads as a flicker instead of a transition - so the curtain holds for a
@@ -39,7 +50,7 @@ ShellRoot {
     onTriggered: root.isReady = true
   }
 
-  // Process checking if the wallpaper has finished decoding and rendering
+  // The wallpaper has finished decoding and rendering.
   Process {
     id: readyChecker
     command: ["test", "-f", Quickshell.env("VP_WALLPAPER_READY_FILE") || "/tmp/virtual_paradise_wallpaper_ready"]
@@ -50,13 +61,28 @@ ShellRoot {
     }
   }
 
-  // Poll ready file every 30ms while waiting
+  // The shell answers: the desktop is there, the overlay can step aside.
+  Process {
+    id: shellChecker
+    command: ["omarchy-shell", "shell", "ping"]
+    onExited: exitCode => {
+      if (exitCode === 0) {
+        root.readyNow();
+      }
+    }
+  }
+
+  // Poll every 30ms while waiting
   Timer {
     interval: 30
     repeat: true
     running: !root.isReady && !root.exiting
     onTriggered: {
-      if (!readyChecker.running) {
+      if (root.waitForShell) {
+        if (!shellChecker.running) {
+          shellChecker.running = true;
+        }
+      } else if (!readyChecker.running) {
         readyChecker.running = true;
       }
     }
@@ -71,7 +97,7 @@ ShellRoot {
 
   // Safety fallback timeout: maximum 4.5s so glitch screen NEVER gets stuck
   Timer {
-    interval: 4500
+    interval: root.timeout
     running: true
     onTriggered: {
       root.isReady = true;
@@ -120,11 +146,11 @@ ShellRoot {
         anchors.fill: parent
         opacity: 1.0
 
-        // Base full glitch image (Glitch.jpg)
+        // Base full glitch image
         Image {
           id: baseImg
           anchors.fill: parent
-          source: Qt.resolvedUrl("Glitch.jpg")
+          source: Qt.resolvedUrl(root.baseImage)
           fillMode: Image.PreserveAspectCrop
           asynchronous: false
           cache: true
@@ -134,7 +160,7 @@ ShellRoot {
         Image {
           id: cyanShift
           anchors.fill: parent
-          source: Qt.resolvedUrl("Glitch.jpg")
+          source: Qt.resolvedUrl(root.baseImage)
           fillMode: Image.PreserveAspectCrop
           x: -14
           opacity: 0.35
@@ -149,7 +175,7 @@ ShellRoot {
         Image {
           id: redShift
           anchors.fill: parent
-          source: Qt.resolvedUrl("Glitch.jpg")
+          source: Qt.resolvedUrl(root.baseImage)
           fillMode: Image.PreserveAspectCrop
           x: 14
           opacity: 0.35
@@ -167,7 +193,7 @@ ShellRoot {
         Item {
           id: slice1
           width: win.width; height: win.height * 0.14; y: win.height * 0.04; clip: true; x: 0
-          Image { width: win.width; height: win.height; x: -slice1.x; y: -slice1.y; source: Qt.resolvedUrl("Glitch.jpg"); fillMode: Image.PreserveAspectCrop }
+          Image { width: win.width; height: win.height; x: -slice1.x; y: -slice1.y; source: Qt.resolvedUrl(root.baseImage); fillMode: Image.PreserveAspectCrop }
           Rectangle { anchors.bottom: parent.bottom; width: parent.width; height: 2; color: "#00ffdd"; opacity: 0.8 }
         }
 
@@ -175,7 +201,7 @@ ShellRoot {
         Item {
           id: slice2
           width: win.width; height: win.height * 0.22; y: win.height * 0.20; clip: true; x: 0
-          Image { width: win.width; height: win.height; x: -slice2.x; y: -slice2.y; source: Qt.resolvedUrl("Glitch.jpg"); fillMode: Image.PreserveAspectCrop }
+          Image { width: win.width; height: win.height; x: -slice2.x; y: -slice2.y; source: Qt.resolvedUrl(root.baseImage); fillMode: Image.PreserveAspectCrop }
           Rectangle { anchors.bottom: parent.bottom; width: parent.width; height: 3; color: "#ff0055"; opacity: 0.9 }
         }
 
@@ -183,7 +209,7 @@ ShellRoot {
         Item {
           id: slice3
           width: win.width; height: win.height * 0.16; y: win.height * 0.44; clip: true; x: 0
-          Image { width: win.width; height: win.height; x: -slice3.x; y: -slice3.y; source: Qt.resolvedUrl("Glitch.jpg"); fillMode: Image.PreserveAspectCrop }
+          Image { width: win.width; height: win.height; x: -slice3.x; y: -slice3.y; source: Qt.resolvedUrl(root.baseImage); fillMode: Image.PreserveAspectCrop }
           Rectangle { anchors.top: parent.top; width: parent.width; height: 2; color: "#00ffdd"; opacity: 0.8 }
         }
 
@@ -191,7 +217,7 @@ ShellRoot {
         Item {
           id: slice4
           width: win.width; height: win.height * 0.18; y: win.height * 0.62; clip: true; x: 0
-          Image { width: win.width; height: win.height; x: -slice4.x; y: -slice4.y; source: Qt.resolvedUrl("Glitch.jpg"); fillMode: Image.PreserveAspectCrop }
+          Image { width: win.width; height: win.height; x: -slice4.x; y: -slice4.y; source: Qt.resolvedUrl(root.baseImage); fillMode: Image.PreserveAspectCrop }
           Rectangle { anchors.bottom: parent.bottom; width: parent.width; height: 2; color: "#ff007f"; opacity: 0.9 }
         }
 
@@ -199,7 +225,7 @@ ShellRoot {
         Item {
           id: slice5
           width: win.width; height: win.height * 0.15; y: win.height * 0.82; clip: true; x: 0
-          Image { width: win.width; height: win.height; x: -slice5.x; y: -slice5.y; source: Qt.resolvedUrl("Glitch.jpg"); fillMode: Image.PreserveAspectCrop }
+          Image { width: win.width; height: win.height; x: -slice5.x; y: -slice5.y; source: Qt.resolvedUrl(root.baseImage); fillMode: Image.PreserveAspectCrop }
         }
 
         // Black signal dropout blocks
