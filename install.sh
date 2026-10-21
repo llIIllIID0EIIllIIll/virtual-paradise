@@ -1146,8 +1146,17 @@ elif [[ -f "$REPO_DIR/hypr/monitors.lua" ]]; then
   log_sub "Initialized default display configuration"
 fi
 
-# 5.5 Autostart: ensure live wallpaper hook is present
+# 5.5 Autostart: ensure the session splash and the live wallpaper are hooked
+#
+# The file is the user's (Omarchy ships its own), so the hooks are added to it
+# instead of replacing it. Both are checked separately: a machine that
+# already had the live wallpaper still needs the splash.
 if [[ -f "$CONFIG_DIR/hypr/autostart.lua" ]]; then
+  if ! grep -q "session_splash.sh" "$CONFIG_DIR/hypr/autostart.lua"; then
+    hypr_backup "$CONFIG_DIR/hypr/autostart.lua"
+    echo 'o.launch_on_start("session_splash.sh")' >> "$CONFIG_DIR/hypr/autostart.lua"
+    log_sub "Hooked the session splash to ~/.config/hypr/autostart.lua"
+  fi
   if ! grep -q "toggle_live_wallpaper.sh" "$CONFIG_DIR/hypr/autostart.lua"; then
     hypr_backup "$CONFIG_DIR/hypr/autostart.lua"
     echo 'o.launch_on_start("toggle_live_wallpaper.sh init")' >> "$CONFIG_DIR/hypr/autostart.lua"
@@ -1378,7 +1387,18 @@ if [[ -d "$REPO_DIR/bin" ]]; then
   ln -nsf "$LOCAL_BIN/cast_screen.sh" "$LOCAL_BIN/cast-screen" 2>/dev/null || true
   ln -nsf "$LOCAL_BIN/format-docx-vn.py" "$LOCAL_BIN/format-docx" 2>/dev/null || true
   ln -nsf "$LOCAL_BIN/format-docx-vn.py" "$LOCAL_BIN/vn-docx" 2>/dev/null || true
-  chmod +x "$LOCAL_BIN/sync_cava_theme.py" "$LOCAL_BIN/virtual_matrix.py" "$LOCAL_BIN/cast_screen.sh" "$LOCAL_BIN/format-docx-vn.py" "$LOCAL_BIN/paradise_banner.py" "$LOCAL_BIN/paradise_banner.sh" 2>/dev/null || true
+  chmod +x "$LOCAL_BIN/sync_cava_theme.py" "$LOCAL_BIN/virtual_matrix.py" "$LOCAL_BIN/cast_screen.sh" "$LOCAL_BIN/format-docx-vn.py" "$LOCAL_BIN/paradise_banner.py" "$LOCAL_BIN/paradise_banner.sh" "$LOCAL_BIN/session_splash.sh" 2>/dev/null || true
+
+  # The artwork for the session splash. It is the same cyber background and
+  # neon frame the boot splash and the login screen use, so the whole way from
+  # the firmware to the desktop is one picture.
+  for splash_asset in backdrop.png frame.png; do
+    [[ -f "$REPO_DIR/plymouth/$splash_asset" ]] &&
+      cp -f "$REPO_DIR/plymouth/$splash_asset" "$LOCAL_BIN/$splash_asset" 2>/dev/null || true
+  done
+  [[ -f "$REPO_DIR/sddm/assets/still.png" ]] &&
+    cp -f "$REPO_DIR/sddm/assets/still.png" "$LOCAL_BIN/still.png" 2>/dev/null || true
+
   cp "$REPO_DIR/uninstall.sh" "$LOCAL_BIN/uninstall-virtual-paradise"
   chmod +x "$LOCAL_BIN/uninstall-virtual-paradise"
   log_sub "Installed helper tools (rice_layout, momoisay, toggle_live_wallpaper, logout_splash, paradise-banner, etc.)"

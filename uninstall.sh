@@ -203,6 +203,7 @@ for file in \
   toggle_cooler_boost.sh toggle_live_wallpaper.sh toggle_btop.sh toggle_voxtype_config.sh memory_detail_notify.sh \
   virtual_matrix virtual_matrix.py momoisay momoisay.real sync_cava_theme.py format-docx format-docx-vn.py vn-docx \
   hypr_window_error_shake.sh hypr_window_error_restore.sh logout_splash.qml curtain_transition.qml glitch_transition.qml \
+  session_splash.sh session_splash.qml transition.sh backdrop.png frame.png still.png \
   Glitch.jpg Miku_missing.gif Miku_missing.mp4 uninstall-virtual-paradise widgets.sh; do
   rm -f "$LOCAL_BIN/$file"
 done
@@ -338,7 +339,10 @@ done
 # it from an autostart.lua that the user owned.
 autostart="$CONFIG_DIR/hypr/autostart.lua"
 if [[ -f $autostart ]]; then
-  sed -i '/o\.launch_on_start("toggle_live_wallpaper\.sh init")/d' "$autostart"
+  sed -i \
+    -e '/o\.launch_on_start("toggle_live_wallpaper\.sh init")/d' \
+    -e '/o\.launch_on_start("session_splash\.sh")/d' \
+    "$autostart" 2>/dev/null || true
 fi
 
 hyprland="$CONFIG_DIR/hypr/hyprland.lua"
