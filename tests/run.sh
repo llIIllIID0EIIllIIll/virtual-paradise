@@ -1501,6 +1501,15 @@ if want tc16; then
     "$(grep -q 'VP_TRANSITION_NOISE' "$REPO_DIR/bin/glitch_transition.qml" && echo 0 || echo 1)"
   check "the session splash uses the full noise" \
     "$(grep -q 'VP_TRANSITION_NOISE="1.0"' "$REPO_DIR/bin/session_splash.sh" && echo 0 || echo 1)"
+  # The HUD sat in the middle of the picture and covered Miku's face.
+  check "the curtain draws no HUD over the picture" \
+    "$(grep -q 'WALLPAPER LINK' "$REPO_DIR/bin/glitch_transition.qml" && echo 1 || echo 0)"
+  # After the reveal the picture dissolves and the last of the static fades
+  # away, instead of the overlay vanishing at once.
+  check "the curtain keeps a fading afterglow" \
+    "$(grep -q 'id: afterglow' "$REPO_DIR/bin/glitch_transition.qml" && echo 0 || echo 1)"
+  check "the picture dissolves into the desktop" \
+    "$(grep -q 'target: glitchRoot' "$REPO_DIR/bin/glitch_transition.qml" && echo 0 || echo 1)"
   check "the session splash is started from the Hyprland autostart" \
     "$(grep -q 'session_splash.sh' "$REPO_DIR/hypr/autostart.lua" && echo 0 || echo 1)"
   check "the installer hooks the session splash" \

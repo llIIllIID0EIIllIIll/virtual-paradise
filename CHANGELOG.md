@@ -49,6 +49,11 @@ Conventional Commits.
   the amount of noise is configurable: the wallpaper switch keeps it subtle,
   the session splash runs at full strength.
 - **The session splash shows Miku_animated4** instead of Miku_animated_full.
+- **The HUD is gone.** "VIRTUAL☆PARADISE // WALLPAPER LINK" sat in the middle
+  of the picture and covered Miku's face.
+- **The overlay does not vanish abruptly.** After the reveal the picture
+  dissolves and the last of the static keeps crawling over the desktop for a
+  moment, fading away before the overlay is gone.
 - **The live wallpaper is visible right after logging in.** The video is
   drawn on the same layer as the shell's static background, and a layer
   created later ends up on top. The autostart hook started mpvpaper before
