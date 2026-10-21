@@ -1504,12 +1504,13 @@ if want tc16; then
   # The HUD sat in the middle of the picture and covered Miku's face.
   check "the curtain draws no HUD over the picture" \
     "$(grep -q 'WALLPAPER LINK' "$REPO_DIR/bin/glitch_transition.qml" && echo 1 || echo 0)"
-  # After the reveal the picture dissolves and the last of the static fades
-  # away, instead of the overlay vanishing at once.
+  # The picture and the static end at once, the way they always did. Only the
+  # glitch itself lingers for a moment over the desktop.
   check "the curtain keeps a fading afterglow" \
     "$(grep -q 'id: afterglow' "$REPO_DIR/bin/glitch_transition.qml" && echo 0 || echo 1)"
-  check "the picture dissolves into the desktop" \
-    "$(grep -q 'target: glitchRoot' "$REPO_DIR/bin/glitch_transition.qml" && echo 0 || echo 1)"
+  check "the picture ends at once, the glitch lingers" \
+    "$(grep -q 'glitchRoot.visible = false' "$REPO_DIR/bin/glitch_transition.qml" \
+      && grep -q 'property real remnant' "$REPO_DIR/bin/glitch_transition.qml" && echo 0 || echo 1)"
   check "the session splash is started from the Hyprland autostart" \
     "$(grep -q 'session_splash.sh' "$REPO_DIR/hypr/autostart.lua" && echo 0 || echo 1)"
   check "the installer hooks the session splash" \

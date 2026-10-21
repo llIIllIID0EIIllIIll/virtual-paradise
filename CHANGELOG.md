@@ -51,9 +51,11 @@ Conventional Commits.
 - **The session splash shows Miku_animated4** instead of Miku_animated_full.
 - **The HUD is gone.** "VIRTUAL☆PARADISE // WALLPAPER LINK" sat in the middle
   of the picture and covered Miku's face.
-- **The overlay does not vanish abruptly.** After the reveal the picture
-  dissolves and the last of the static keeps crawling over the desktop for a
-  moment, fading away before the overlay is gone.
+- **The overlay does not vanish abruptly - but only the glitch lingers.**
+  The picture and the static end at once, the way they always did. What
+  stays for a moment afterwards is the glitch itself: the tearing, the
+  dropout bands and the colour bars keep breaking up over the desktop and
+  fade away.
 - **The live wallpaper is visible right after logging in.** The video is
   drawn on the same layer as the shell's static background, and a layer
   created later ends up on top. The autostart hook started mpvpaper before

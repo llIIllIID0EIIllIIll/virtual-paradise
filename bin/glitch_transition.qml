@@ -38,6 +38,10 @@ ShellRoot {
   // The overlay is done and gone.
   property bool finished: false
 
+  // How much of the glitch is still left after the picture and the static are
+  // gone. The picture and the noise end at once, the tearing does not.
+  property real remnant: 1
+
   // The transition is only worth showing if it is seen. The wallpaper is
   // usually ready in a fraction of a second, and a glitch that flashes past
   // reads as a flicker instead of a transition - so the curtain holds for a
@@ -402,16 +406,16 @@ ShellRoot {
           noiseLayer.y = Math.random() * 60 - 30;
           scanLayer.y = (root.tick % 4) * 1.5 - 3;
 
-          blackBlock1.opacity = Math.random() < 0.18 * root.noiseLevel + 0.05 ? 0.85 : 0;
-          blackBlock2.opacity = Math.random() < 0.15 * root.noiseLevel + 0.05 ? 0.85 : 0;
+          blackBlock1.opacity = Math.random() < 0.18 * root.noiseLevel + 0.05 ? 0.85 * root.remnant : 0;
+          blackBlock2.opacity = Math.random() < 0.15 * root.noiseLevel + 0.05 ? 0.85 * root.remnant : 0;
           blackBlock1.x = Math.random() * win.width * 0.3;
           blackBlock2.x = Math.random() * win.width * 0.4;
           blackBlock1.y = Math.random() * win.height * 0.8;
           blackBlock2.y = Math.random() * win.height * 0.85;
 
-          cyanBar1.opacity = Math.random() < 0.25 * root.noiseLevel + 0.05 ? 0.9 : 0;
-          pinkBar1.opacity = Math.random() < 0.25 * root.noiseLevel + 0.05 ? 0.9 : 0;
-          yellowBar1.opacity = Math.random() < 0.2 * root.noiseLevel + 0.05 ? 0.85 : 0;
+          cyanBar1.opacity = Math.random() < 0.25 * root.noiseLevel + 0.05 ? 0.9 * root.remnant : 0;
+          pinkBar1.opacity = Math.random() < 0.25 * root.noiseLevel + 0.05 ? 0.9 * root.remnant : 0;
+          yellowBar1.opacity = Math.random() < 0.2 * root.noiseLevel + 0.05 ? 0.85 * root.remnant : 0;
           cyanBar1.y = Math.random() * win.height * 0.9;
           pinkBar1.y = Math.random() * win.height * 0.9;
           yellowBar1.y = Math.random() * win.height * 0.9;
@@ -507,8 +511,10 @@ ShellRoot {
         ScriptAction {
           script: {
             root.exiting = true
-            // The picture is back in place, but the signal keeps breaking up
-            // for a moment and fades away instead of cutting.
+            // The picture and the static end here, at once, the way they
+            // always did. Only the glitch itself lingers.
+            glitchRoot.visible = false;
+            noiseLayer.visible = false;
             root.jitter = true
             afterglow.start()
           }
@@ -522,22 +528,14 @@ ShellRoot {
       // jitter calm down over a couple of seconds and then the overlay is gone.
       SequentialAnimation {
         id: afterglow
-        // The picture dissolves, the desktop comes through...
-        NumberAnimation {
-          target: glitchRoot
-          property: "opacity"
-          from: 1.0
-          to: 0.0
-          duration: 1100
-          easing.type: Easing.InQuad
-        }
-        // ...and the last of the static fades away with it.
+        // The last of the glitch: the tearing, the dropout bands and the
+        // colour bars keep breaking up over the desktop for a moment.
         NumberAnimation {
           target: root
-          property: "noiseLevel"
-          from: root.noiseLevel
-          to: 0
-          duration: 2200
+          property: "remnant"
+          from: 1.0
+          to: 0.0
+          duration: 1400
           easing.type: Easing.OutQuad
         }
         ScriptAction {
