@@ -1455,10 +1455,31 @@ if want tc16; then
 
   # The animated GIFs are the SDDM animation, not wallpapers: as wallpapers
   # they made ImageMagick render every frame of them for the bar's text colour.
-  check "the installer turns the animated GIFs into still images" \
-    "$(grep -q 'wallpaper_gif' "$REPO_DIR/install.sh" && echo 0 || echo 1)"
-  check "no animated GIF is left in the wallpapers" \
-    "$(grep -q 'rm -f "\$wallpaper_gif"' "$REPO_DIR/install.sh" && echo 0 || echo 1)"
+  # They must not be converted into a JPG either - the repository ships a
+  # sharp 1920x1080 JPG with the same name, and the conversion replaced it
+  # with a blurry 480x270 frame.
+  check "the animated GIFs are removed from the wallpapers" \
+    "$(grep -q 'rm -f "\$WALLPAPER_DEST"/\*.gif' "$REPO_DIR/install.sh" && echo 0 || echo 1)"
+  check "the GIFs are not converted over the sharp wallpapers" \
+    "$(grep -q 'wallpaper_gif' "$REPO_DIR/install.sh" && echo 1 || echo 0)"
+
+  # Every static wallpaper has to be full resolution.
+  wallpaper_ok=1
+  for wallpaper in "$REPO_DIR"/backgrounds/*.jpg; do
+    bytes="$(od -An -tu1 -j16 -N4 "$wallpaper" 2>/dev/null | tr -s ' ' | sed 's/^ //')"
+    set -- $bytes
+    pixels=$(( $1 * 16777216 + $2 * 65536 + $3 * 256 + $4 ))
+    [[ $pixels -ge 1920000 ]] || wallpaper_ok=0
+  done
+  check "every static wallpaper is full resolution" \
+    "$([[ $wallpaper_ok -eq 1 ]] && echo 0 || echo 1)"
+
+  # The live wallpaper is drawn on the same layer as the static background and
+  # a layer created later ends up on top: started too early, the video ended
+  # up under the static picture and the login screen showed the static
+  # wallpaper with the shell's diamond transition instead.
+  check "the live wallpaper waits for the shell's background layer" \
+    "$(grep -q 'wait_for_shell_background' "$REPO_DIR/bin/toggle_live_wallpaper.sh" && echo 0 || echo 1)"
 
   # A theme without a preview falls back to its first wallpaper, which is the
   # slow path the theme just avoided.

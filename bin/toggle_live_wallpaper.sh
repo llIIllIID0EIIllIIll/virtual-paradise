@@ -70,6 +70,25 @@ is_live_running() {
   pgrep -x mpvpaper >/dev/null 2>&1
 }
 
+# Wait for the shell's background layer.
+#
+# The live wallpaper is drawn on the same layer as the static background, and
+# a layer created later ends up on top. Started too early - before the shell
+# puts its background up - the video ends up *under* the static picture, and
+# the login screen shows the static wallpaper with the shell's diamond
+# transition instead of the live one.
+wait_for_shell_background() {
+  local waited=0
+  while (( waited < 120 )); do
+    if hyprctl layers 2>/dev/null | grep -q "namespace: omarchy-background"; then
+      return 0
+    fi
+    sleep 0.25
+    waited=$((waited + 1))
+  done
+  return 1
+}
+
 play_curtain_transition() {
   local target="${1:-LIVE STREAM}"
   local qml_script="$HOME/.local/bin/glitch_transition.qml"
@@ -195,6 +214,9 @@ cycle_live() {
 
 case "$1" in
   init|autostart)
+    # The shell's background has to be up before the video starts, otherwise
+    # the video is drawn under the static picture and never shows.
+    wait_for_shell_background || true
     # Brief delay on fresh login to ensure Wayland layer-shell is fully mapped
     sleep 0.35
     if [[ -f "$STATE_FILE" ]] && [[ -f "$(cat "$STATE_FILE" 2>/dev/null)" ]]; then
