@@ -1481,6 +1481,21 @@ if want tc16; then
   check "the live wallpaper waits for the shell's background layer" \
     "$(grep -q 'wait_for_shell_background' "$REPO_DIR/bin/toggle_live_wallpaper.sh" && echo 0 || echo 1)"
 
+  # The session splash covers the gap between the greeter handing the screen
+  # to the session and the desktop having something to show.
+  check "there is a session splash" \
+    "$([[ -f $REPO_DIR/bin/session_splash.qml && -f $REPO_DIR/bin/session_splash.sh ]] && echo 0 || echo 1)"
+  check "the session splash is started from the Hyprland autostart" \
+    "$(grep -q 'session_splash.sh' "$REPO_DIR/hypr/autostart.lua" && echo 0 || echo 1)"
+  check "the installer hooks the session splash" \
+    "$(grep -q 'session_splash.sh' "$REPO_DIR/install.sh" && echo 0 || echo 1)"
+  check "the splash waits for the shell and then fades out" \
+    "$(grep -q 'omarchy-shell' "$REPO_DIR/bin/session_splash.qml" && grep -q 'fadeOut' "$REPO_DIR/bin/session_splash.qml" && echo 0 || echo 1)"
+  check "the splash uses the same artwork as the boot splash" \
+    "$(grep -q 'backdrop.png' "$REPO_DIR/bin/session_splash.qml" && grep -q 'frame.png' "$REPO_DIR/bin/session_splash.qml" && echo 0 || echo 1)"
+  check "the uninstaller removes the splash" \
+    "$(grep -q 'session_splash' "$REPO_DIR/uninstall.sh" && echo 0 || echo 1)"
+
   # A theme without a preview falls back to its first wallpaper, which is the
   # slow path the theme just avoided.
   check "the theme gets a preview image" \
