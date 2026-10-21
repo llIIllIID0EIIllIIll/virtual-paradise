@@ -1493,6 +1493,14 @@ if want tc16; then
     "$(grep -q 'VP_TRANSITION_IMAGE' "$REPO_DIR/bin/glitch_transition.qml" && echo 0 || echo 1)"
   check "the session has its own picture for the curtain" \
     "$([[ -f $REPO_DIR/plymouth/session_base.png ]] && echo 0 || echo 1)"
+  check "the curtain has a TV static layer" \
+    "$([[ -f $REPO_DIR/plymouth/noise.jpg && -f $REPO_DIR/plymouth/scanlines.png ]] && echo 0 || echo 1)"
+  check "the curtain jitters the picture" \
+    "$(grep -q 'Math.random()' "$REPO_DIR/bin/glitch_transition.qml" && echo 0 || echo 1)"
+  check "the amount of noise is configurable" \
+    "$(grep -q 'VP_TRANSITION_NOISE' "$REPO_DIR/bin/glitch_transition.qml" && echo 0 || echo 1)"
+  check "the session splash uses the full noise" \
+    "$(grep -q 'VP_TRANSITION_NOISE="1.0"' "$REPO_DIR/bin/session_splash.sh" && echo 0 || echo 1)"
   check "the session splash is started from the Hyprland autostart" \
     "$(grep -q 'session_splash.sh' "$REPO_DIR/hypr/autostart.lua" && echo 0 || echo 1)"
   check "the installer hooks the session splash" \

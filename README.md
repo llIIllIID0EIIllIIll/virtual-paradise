@@ -14,7 +14,7 @@
 [![Arch Linux](https://img.shields.io/badge/Arch_Linux-1793D1?style=flat-square&logo=arch-linux&logoColor=white)](https://archlinux.org)
 [![Omarchy 4.0+](https://img.shields.io/badge/Omarchy-4.0+-8A2BE2?style=flat-square)](https://omarchy.org)
 [![Hyprland](https://img.shields.io/badge/Hyprland-Wayland-00ffdd?style=flat-square)](https://hyprland.org)
-[![Tests](https://img.shields.io/badge/tests-266%20passed-00ff88?style=flat-square)](tests/)
+[![Tests](https://img.shields.io/badge/tests-270%20passed-00ff88?style=flat-square)](tests/)
 [![License](https://img.shields.io/badge/license-MIT-ffe066?style=flat-square)](LICENSE)
 [![Version](https://img.shields.io/badge/version-1.2.2-ff00ff?style=flat-square)](VERSION)
 
@@ -215,7 +215,9 @@ The same artwork is used for the **session splash**: between the greeter
 handing the screen to the session and the desktop having something to show
 (about three seconds), the glitch curtain - the same one the live wallpaper
 switch plays - runs over the theme's picture and fades out as soon as the
-shell is up, instead of a black screen.
+shell is up, instead of a black screen. The curtain breaks up like a bad TV:
+crawling static, rolling scanlines, wandering colour separation and slices
+that jump to a new random offset every tick.
 
 The password prompt in Plymouth sits *below* the picture, in the bar under the
 neon frame, so it never covers the animation.
@@ -360,7 +362,7 @@ The uninstaller will:
 
 ### Running Tests
 
-The test suite has sixteen test cases and 266 assertions; optional tools
+The test suite has sixteen test cases and 270 assertions; optional tools
 (`shellcheck`, `qmllint`, `hyprctl`) enable extra checks when present, so the
 exact count varies between machines (171 with `shellcheck`, 170 without). It
 runs in a sandbox and never touches your real system.

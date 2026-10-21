@@ -42,6 +42,13 @@ Conventional Commits.
   same glitch curtain as the live wallpaper switch - over the theme's cyber
   artwork - and fades out as soon as the shell answers, so the whole way from
   the firmware to the desktop is one picture instead of a black screen.
+- **The glitch effect breaks up like a bad TV.** The curtain now has a
+  crawling static layer, rolling scanlines, colour separation that wanders and
+  slices that jump to a new random offset every tick, with dropout blocks and
+  colour bars appearing at random. The picture stays readable through it, and
+  the amount of noise is configurable: the wallpaper switch keeps it subtle,
+  the session splash runs at full strength.
+- **The session splash shows Miku_animated4** instead of Miku_animated_full.
 - **The live wallpaper is visible right after logging in.** The video is
   drawn on the same layer as the shell's static background, and a layer
   created later ends up on top. The autostart hook started mpvpaper before

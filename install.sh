@@ -1392,9 +1392,10 @@ if [[ -d "$REPO_DIR/bin" ]]; then
   # The artwork for the session splash: the cyber background, the animation
   # still and the neon frame in one picture, which the glitch curtain cuts
   # apart. The whole way from the firmware to the desktop is one image.
-  if [[ -f "$REPO_DIR/plymouth/session_base.png" ]]; then
-    cp -f "$REPO_DIR/plymouth/session_base.png" "$LOCAL_BIN/session_base.png" 2>/dev/null || true
-  fi
+  for splash_asset in session_base.png noise.jpg scanlines.png; do
+    [[ -f "$REPO_DIR/plymouth/$splash_asset" ]] &&
+      cp -f "$REPO_DIR/plymouth/$splash_asset" "$LOCAL_BIN/$splash_asset" 2>/dev/null || true
+  done
 
   cp "$REPO_DIR/uninstall.sh" "$LOCAL_BIN/uninstall-virtual-paradise"
   chmod +x "$LOCAL_BIN/uninstall-virtual-paradise"
