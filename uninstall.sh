@@ -119,7 +119,7 @@ snapshot() {
 # paradise_agent, rice-btop, rice-cava, rice-momoi and fastfetch-agent, none of
 # which exist anywhere in the tree, so they matched nothing while widening the
 # kill across every process of this user.
-pkill -u "$CURRENT_USER" -f 'mpvpaper|virtual_matrix|momoisay|paradise_banner' 2>/dev/null || true
+pkill -u "$CURRENT_USER" -f 'mpvpaper|virtual_matrix|momoisay|paradise_banner|vp_death_daemon\.qml' 2>/dev/null || true
 
 # Switch theme if current theme is Virtual Paradise
 if command -v omarchy &>/dev/null; then
@@ -204,6 +204,7 @@ for file in \
   virtual_matrix virtual_matrix.py momoisay momoisay.real sync_cava_theme.py format-docx format-docx-vn.py vn-docx \
   hypr_window_error_shake.sh hypr_window_error_restore.sh logout_splash.qml curtain_transition.qml glitch_transition.qml \
   session_splash.sh session_splash.qml transition.sh session_base.png noise.jpg scanlines.png backdrop.png frame.png still.png \
+  window_death.sh window_death.qml vp_death_daemon.sh vp_death_daemon.qml \
   Glitch.jpg Miku_missing.gif Miku_missing.mp4 uninstall-virtual-paradise widgets.sh; do
   rm -f "$LOCAL_BIN/$file"
 done
@@ -342,6 +343,7 @@ if [[ -f $autostart ]]; then
   sed -i \
     -e '/o\.launch_on_start("toggle_live_wallpaper\.sh init")/d' \
     -e '/o\.launch_on_start("session_splash\.sh")/d' \
+    -e '/o\.launch_on_start("vp_death_daemon\.sh")/d' \
     "$autostart" 2>/dev/null || true
 fi
 

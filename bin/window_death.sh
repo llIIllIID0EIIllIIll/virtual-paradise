@@ -2,18 +2,20 @@
 # ==============================================================================
 #  Virtual☆Paradise — Window Death
 # ==============================================================================
-#  Close the active window the way it deserves, without making the close
-#  feel slow: the border burns neon red, the window is captured frame and
-#  all, and the window closes right after the capture - about a tenth of a
-#  second after the keypress, as close to instant as a death rite gets.
-#  The glitch burst rises over the rectangle a beat later as the window's
-#  afterimage, tearing the captured frame apart. The script never waits for
-#  the burst: a burst that is late must not make the close late.
+#  Close the active window the way it deserves, at full speed: the border
+#  burns neon red, the window is captured frame and all, the death is
+#  announced to the resident daemon, and the window closes in the same
+#  breath. The daemon maps the burst in a single frame - burst and close
+#  land together, no afterimage, no waiting.
+#
+#  Measured: ~150 ms from keypress to the close dispatch, the burst on
+#  screen within a frame of that. Without the daemon (fresh session, not
+#  yet autostarted) the script falls back to spawning the burst itself,
+#  which trails the close by its startup time.
 # ==============================================================================
 
 set -euo pipefail
 
-command -v quickshell &>/dev/null || exit 0
 command -v hyprctl &>/dev/null || exit 0
 
 # One parse for everything: address and geometry in a single python.
@@ -42,7 +44,9 @@ hyprctl eval "
 
 # 2. Capture the red window, border included. The burst tears this frame.
 #    Three frames of grace so the red border is on screen before the shot.
-FRAME="${XDG_RUNTIME_DIR:-/tmp}/vp_death_frame.png"
+RUNTIME_DIR="${XDG_RUNTIME_DIR:-/tmp}"
+FRAME="$RUNTIME_DIR/vp_death_frame.$(date +%s%N).png"
+rm -f "$RUNTIME_DIR"/vp_death_frame.*.png 2>/dev/null || true
 sleep 0.03
 if command -v grim &>/dev/null; then
   grim -g "$X,$Y ${W}x${H}" "$FRAME" &>/dev/null || FRAME=""
@@ -50,17 +54,17 @@ else
   FRAME=""
 fi
 
+# 3. Announce the death. The resident daemon maps the burst within a frame
+#    of this write; without it, spawn the burst ourselves as a fallback.
 QML="${VP_DEATH_QML:-$HOME/.local/bin/window_death.qml}"
-if [[ -f "$QML" ]]; then
-  # 3. The burst rises on its own; the compositor's layer animation is off
-  #    for its namespace, so it appears in one frame when it arrives.
+if pgrep -f "[v]p_death_daemon\.qml" &>/dev/null; then
+  printf '%s %s\n' "$X,$Y,$W,$H" "$FRAME" > "$RUNTIME_DIR/vp_death_trigger"
+elif [[ -f "$QML" ]] && command -v quickshell &>/dev/null; then
   VP_DEATH_RECT="$X,$Y,$W,$H" VP_DEATH_IMAGE="$FRAME" \
     quickshell -p "$QML" &>/dev/null &
 fi
 
-# 4. Close at once. The burst is an afterimage, not a gate: waiting for its
-#    surface to map added a third of a second to every close and made the
-#    desktop feel laggy. A late burst must never make a late close.
+# 4. Close in the same breath as the announcement.
 #
 # Hyprland 0.56 parses `hyprctl dispatch` arguments as Lua, so the plain
 # `closewindow address:0x...` form is a syntax error there and the window

@@ -1579,11 +1579,30 @@ if want tc16; then
     "$(grep -q 'hl.dsp.window.close' "$REPO_DIR/bin/window_death.sh" \
       && ! grep -q 'dispatch closewindow' "$REPO_DIR/bin/window_death.sh" && echo 0 || echo 1)"
   # A late burst must never make a late close: polling the layer tree for
-  # the burst surface added a third of a second to every close. The burst
-  # is an afterimage, not a gate.
+  # the burst surface added a third of a second to every close. The
+  # resident daemon maps the burst in one frame, so the script only
+  # announces the death and closes.
   check "the window closes without waiting on the burst" \
     "$(grep -q 'hl.dsp.window.close' "$REPO_DIR/bin/window_death.sh" \
       && ! grep -q 'hyprctl layers' "$REPO_DIR/bin/window_death.sh" && echo 0 || echo 1)"
+  # A watched FileView keeps its old text until reload() runs; the daemon
+  # must reload on every change or the burst never arms.
+  check "the death daemon reloads the trigger it watches" \
+    "$(grep -q 'trigger.reload()' "$REPO_DIR/bin/vp_death_daemon.qml" \
+      && grep -q 'onTextChanged' "$REPO_DIR/bin/vp_death_daemon.qml" && echo 0 || echo 1)"
+  # Loading a leftover trigger at startup must not fire a stale burst.
+  check "the death daemon ignores the initial trigger load" \
+    "$(grep -q 'if (!root.pending) return' "$REPO_DIR/bin/vp_death_daemon.qml" && echo 0 || echo 1)"
+  # The script hands the death to the daemon, so burst and close land in
+  # the same breath instead of the burst trailing the window.
+  check "the death script announces the death to the daemon" \
+    "$(grep -q 'vp_death_trigger' "$REPO_DIR/bin/window_death.sh" && echo 0 || echo 1)"
+  check "the death daemon is autostarted with the theme" \
+    "$(grep -q 'vp_death_daemon.sh' "$REPO_DIR/hypr/autostart.lua" && echo 0 || echo 1)"
+  check "the installer hooks the death daemon to autostart" \
+    "$(grep -q 'vp_death_daemon.sh' "$REPO_DIR/install.sh" && echo 0 || echo 1)"
+  check "the uninstaller removes the death daemon" \
+    "$(grep -q 'vp_death_daemon.qml' "$REPO_DIR/uninstall.sh" && echo 0 || echo 1)"
   # The ambient tear is a whisper: one or two pixels at a fifth of full
   # opacity. Anything heavier reads as a fault, not atmosphere.
   check "the ambient tear stays a whisper" \

@@ -1157,6 +1157,11 @@ if [[ -f "$CONFIG_DIR/hypr/autostart.lua" ]]; then
     echo 'o.launch_on_start("session_splash.sh")' >> "$CONFIG_DIR/hypr/autostart.lua"
     log_sub "Hooked the session splash to ~/.config/hypr/autostart.lua"
   fi
+  if ! grep -q "vp_death_daemon.sh" "$CONFIG_DIR/hypr/autostart.lua"; then
+    hypr_backup "$CONFIG_DIR/hypr/autostart.lua"
+    echo 'o.launch_on_start("vp_death_daemon.sh")' >> "$CONFIG_DIR/hypr/autostart.lua"
+    log_sub "Hooked the window death daemon to ~/.config/hypr/autostart.lua"
+  fi
   if ! grep -q "toggle_live_wallpaper.sh" "$CONFIG_DIR/hypr/autostart.lua"; then
     hypr_backup "$CONFIG_DIR/hypr/autostart.lua"
     echo 'o.launch_on_start("toggle_live_wallpaper.sh init")' >> "$CONFIG_DIR/hypr/autostart.lua"
@@ -1388,7 +1393,7 @@ if [[ -d "$REPO_DIR/bin" ]]; then
   ln -nsf "$LOCAL_BIN/cast_screen.sh" "$LOCAL_BIN/cast-screen" 2>/dev/null || true
   ln -nsf "$LOCAL_BIN/format-docx-vn.py" "$LOCAL_BIN/format-docx" 2>/dev/null || true
   ln -nsf "$LOCAL_BIN/format-docx-vn.py" "$LOCAL_BIN/vn-docx" 2>/dev/null || true
-  chmod +x "$LOCAL_BIN/sync_cava_theme.py" "$LOCAL_BIN/virtual_matrix.py" "$LOCAL_BIN/cast_screen.sh" "$LOCAL_BIN/format-docx-vn.py" "$LOCAL_BIN/paradise_banner.py" "$LOCAL_BIN/paradise_banner.sh" "$LOCAL_BIN/session_splash.sh" "$LOCAL_BIN/window_death.sh" 2>/dev/null || true
+  chmod +x "$LOCAL_BIN/sync_cava_theme.py" "$LOCAL_BIN/virtual_matrix.py" "$LOCAL_BIN/cast_screen.sh" "$LOCAL_BIN/format-docx-vn.py" "$LOCAL_BIN/paradise_banner.py" "$LOCAL_BIN/paradise_banner.sh" "$LOCAL_BIN/session_splash.sh" "$LOCAL_BIN/window_death.sh" "$LOCAL_BIN/vp_death_daemon.sh" 2>/dev/null || true
 
   # The artwork for the session splash: the cyber background, the animation
   # still and the neon frame in one picture, which the glitch curtain cuts
