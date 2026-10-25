@@ -119,7 +119,11 @@ snapshot() {
 # paradise_agent, rice-btop, rice-cava, rice-momoi and fastfetch-agent, none of
 # which exist anywhere in the tree, so they matched nothing while widening the
 # kill across every process of this user.
-pkill -u "$CURRENT_USER" -f 'mpvpaper|virtual_matrix|momoisay|paradise_banner|vp_death_daemon\.qml' 2>/dev/null || true
+pkill -u "$CURRENT_USER" -f 'mpvpaper|virtual_matrix|momoisay|paradise_banner' 2>/dev/null || true
+# The death daemon is matched by the path this install owns. A bare
+# vp_death_daemon.qml pattern also killed the developer's live daemon when
+# the test suite ran uninstall.sh in a sandbox with a different HOME.
+pkill -u "$CURRENT_USER" -f "$HOME/.local/bin/vp_death_daemon\.qml" 2>/dev/null || true
 
 # Switch theme if current theme is Virtual Paradise
 if command -v omarchy &>/dev/null; then
