@@ -1553,7 +1553,7 @@ if want tc16; then
   check "the gradient bands respect Hyprland's ten-colour cap" \
     "$(grep -q 'return { cyan, cyan, cyan, cyan, green, green, pink, pink, pink, pink }' \
       "$REPO_DIR/hypr/looknfeel.lua" && echo 0 || echo 1)"
-  # Closing a window burns a red glitch burst in its place. Omarchy's plain
+  # Closing a window burns a neon glitch burst in its place. Omarchy's plain
   # SUPER + W is unbound on purpose first, so exactly one action runs.
   check "SUPER + W is owned by the window death effect" \
     "$(grep -A1 'hl.unbind("SUPER + W")' "$REPO_DIR/hypr/bindings.lua" \
@@ -1569,9 +1569,9 @@ if want tc16; then
   check "the death burst tears the window's own captured frame" \
     "$(grep -q 'VP_DEATH_IMAGE' "$REPO_DIR/bin/window_death.qml" \
       && grep -q 'grim -g' "$REPO_DIR/bin/window_death.sh" && echo 0 || echo 1)"
-  # The border burns neon red while the window is still alive, so the
-  # captured corpse - and the death - is red from the very first frame.
-  check "the window burns red before it dies" \
+  # The border burns neon while the window is still alive, so the
+  # captured corpse - and the death - is neon from the very first frame.
+  check "the window burns neon before it dies" \
     "$(grep -q 'active_border_color' "$REPO_DIR/bin/window_death.sh" && echo 0 || echo 1)"
   # `hyprctl dispatch closewindow address:...` is parsed as Lua on 0.56 and
   # silently no-ops; the dispatcher object is the supported spelling.
@@ -1620,9 +1620,13 @@ if want tc16; then
   check "the corpse capture is JPEG for speed" \
     "$(grep -q -- '-t jpeg' "$REPO_DIR/bin/window_death.sh" && echo 0 || echo 1)"
   # The toplevel grab has no compositor border, so the corpse draws its
-  # own neon-red edge.
-  check "the corpse carries its own neon-red border" \
-    "$(grep -q 'border.color: "#ff0055"' "$REPO_DIR/bin/vp_death_daemon.qml" && echo 0 || echo 1)"
+  # own neon edge: four gradient sides, violet at two corners and sakura
+  # at the other two.
+  check "the corpse carries its own neon gradient border" \
+    "$(grep -q 'anchors { top: parent.top; left: parent.left; right: parent.right }' "$REPO_DIR/bin/vp_death_daemon.qml" \
+      && grep -q 'anchors { bottom: parent.bottom; left: parent.left; right: parent.right }' "$REPO_DIR/bin/vp_death_daemon.qml" \
+      && grep -q 'GradientStop { position: 1.0; color: "#ffb7d5" }' "$REPO_DIR/bin/vp_death_daemon.qml" \
+      && echo 0 || echo 1)"
   # The daemon is found through its pidfile and /proc, not pgrep: a pgrep
   # per close cost ~30 ms and matched unrelated shells.
   check "the death script finds the daemon without pgrep" \

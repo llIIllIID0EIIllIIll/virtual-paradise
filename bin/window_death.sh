@@ -5,7 +5,7 @@
 #  Close the active window the way it deserves, faster than the close itself.
 #
 #  The glitch leads, the close follows. The resident daemon keeps its burst
-#  surfaces mapped, so announcing the death puts the red static on screen in
+#  surfaces mapped, so announcing the death puts the neon static on screen in
 #  a couple of frames - while the window is still alive. Only then is the
 #  window captured, torn into slices and closed underneath the burst.
 #
@@ -83,13 +83,13 @@ if [[ -n "$DAEMON_PID" ]] && kill -0 "$DAEMON_PID" 2>/dev/null \
 fi
 
 # ---------------------------------------------------------------------------
-#  Fallback: no resident daemon. Burn the border red, grab the padded
+#  Fallback: no resident daemon. Burn the border neon, grab the padded
 #  region (border and shadow included), spawn the one-shot overlay and
 #  close at once.
 # ---------------------------------------------------------------------------
 hyprctl eval "
-  local d1 = hl.dsp.window.set_prop({ window = 'address:$ADDR', prop = 'active_border_color', value = 'rgba(ff0055ff) rgba(ff1744ff) rgba(ff003cff) 45deg' })
-  local d2 = hl.dsp.window.set_prop({ window = 'address:$ADDR', prop = 'inactive_border_color', value = 'rgba(ff0055bb) rgba(ff174499) 45deg' })
+  local d1 = hl.dsp.window.set_prop({ window = 'address:$ADDR', prop = 'active_border_color', value = 'rgba(7a1fd0ff) rgba(ff2bd6ff) rgba(ffb7d5ff) 45deg' })
+  local d2 = hl.dsp.window.set_prop({ window = 'address:$ADDR', prop = 'inactive_border_color', value = 'rgba(7a1fd0bb) rgba(ffb7d599) 45deg' })
   hl.dispatch(d1)
   hl.dispatch(d2)
 " &>/dev/null || true

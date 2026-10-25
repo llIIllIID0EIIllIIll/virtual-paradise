@@ -6,7 +6,7 @@ import Quickshell.Wayland
 //
 // Where a window just closed, its own corpse tears apart: the burst shows a
 // captured frame of the window - border and all - cut into horizontal slices
-// that jump around while a red static wash burns through, then nothing.
+// that jump around while a neon static wash burns through, then nothing.
 // The window does not fade away politely; it glitches to death on screen,
 // border included.
 //
@@ -96,7 +96,7 @@ ShellRoot {
         easing.type: Easing.InQuad
       }
 
-      // The red wash burns up through the corpse instead of appearing at
+      // The neon wash burns up through the corpse instead of appearing at
       // full strength: the first frames still show the window itself.
       NumberAnimation {
         target: win
@@ -195,7 +195,8 @@ ShellRoot {
           }
         }
 
-        // Red static crawling over the corpse, burning up with the wash.
+        // Neon static crawling over the corpse, burning up with the wash:
+        // the same violet -> magenta -> sakura noise as the login splash.
         Image {
           id: staticLayer
           anchors.fill: parent
@@ -205,10 +206,17 @@ ShellRoot {
           opacity: win.wash
         }
 
+        // The wash is the gradient itself, not a flat tint: the corpse
+        // dies from violet on the left to sakura on the right.
         Rectangle {
           anchors.fill: parent
-          color: "#ff2244"
           opacity: win.wash * 0.55
+          gradient: Gradient {
+            orientation: Gradient.Horizontal
+            GradientStop { position: 0.0; color: "#7a1fd0" }
+            GradientStop { position: 0.5; color: "#ff2bd6" }
+            GradientStop { position: 1.0; color: "#ffb7d5" }
+          }
         }
 
         // Tear bars and a dropout block, heavy while they live.
@@ -216,7 +224,7 @@ ShellRoot {
           id: bar1
           width: parent.width
           height: 6
-          color: "#ff003c"
+          color: "#ff2bd6"
           opacity: 0
         }
         Rectangle {
@@ -239,7 +247,7 @@ ShellRoot {
         Rectangle {
           id: strobe
           anchors.fill: parent
-          color: "#ff8899"
+          color: "#ffc4dd"
           opacity: 0.5
 
           NumberAnimation {

@@ -190,9 +190,9 @@ ShellRoot {
           opacity: 0.15
         }
 
-        // RGB Split - Red Right Shift
+        // RGB Split - Magenta Right Shift
         Image {
-          id: redShift
+          id: magentaShift
           anchors.fill: parent
           source: Qt.resolvedUrl(root.baseImage)
           fillMode: Image.PreserveAspectCrop
@@ -201,7 +201,7 @@ ShellRoot {
         }
         Rectangle {
           anchors.fill: parent
-          color: "#ff0055"
+          color: "#ff2bd6"
           opacity: 0.15
         }
 
@@ -221,7 +221,7 @@ ShellRoot {
           id: slice2
           width: win.width; height: win.height * 0.22; y: win.height * 0.20; clip: true; x: 0
           Image { width: win.width; height: win.height; x: -slice2.x; y: -slice2.y; source: Qt.resolvedUrl(root.baseImage); fillMode: Image.PreserveAspectCrop }
-          Rectangle { anchors.bottom: parent.bottom; width: parent.width; height: 3; color: "#ff0055"; opacity: 0.9 }
+          Rectangle { anchors.bottom: parent.bottom; width: parent.width; height: 3; color: "#ff2bd6"; opacity: 0.9 }
         }
 
         // Slice 3 (Center)
@@ -237,7 +237,7 @@ ShellRoot {
           id: slice4
           width: win.width; height: win.height * 0.18; y: win.height * 0.62; clip: true; x: 0
           Image { width: win.width; height: win.height; x: -slice4.x; y: -slice4.y; source: Qt.resolvedUrl(root.baseImage); fillMode: Image.PreserveAspectCrop }
-          Rectangle { anchors.bottom: parent.bottom; width: parent.width; height: 2; color: "#ff007f"; opacity: 0.9 }
+          Rectangle { anchors.bottom: parent.bottom; width: parent.width; height: 2; color: "#ff9ecb"; opacity: 0.9 }
         }
 
         // Slice 5 (Bottom)
@@ -270,7 +270,7 @@ ShellRoot {
         }
         Rectangle {
           id: pinkBar1
-          width: parent.width; height: 14; y: win.height * 0.55; color: "#ff007f"; opacity: 0
+          width: parent.width; height: 14; y: win.height * 0.55; color: "#ff9ecb"; opacity: 0
         }
         Rectangle {
           id: yellowBar1
@@ -400,7 +400,7 @@ ShellRoot {
           slice5.y = Math.random() * jump * 0.4 - jump * 0.2;
 
           cyanShift.x = -6 - Math.random() * 26 * root.noiseLevel;
-          redShift.x = 6 + Math.random() * 26 * root.noiseLevel;
+          magentaShift.x = 6 + Math.random() * 26 * root.noiseLevel;
 
           noiseLayer.x = Math.random() * 60 - 30;
           noiseLayer.y = Math.random() * 60 - 30;
