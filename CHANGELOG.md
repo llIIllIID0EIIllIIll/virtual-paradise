@@ -219,6 +219,11 @@ Conventional Commits.
   path. Both are world-writable on a multi-user machine: a socket that
   already exists keeps mpvpaper from starting, and a ready flag that is
   already there ends the transition before the wallpaper is up.
+- **The window and workspace springs register on Hyprland 0.56.x.** The
+  spring curve key is `dampening` on 0.56; the wiki's "Latest git" pages
+  spell it `damping`. Copying the newer spelling made the config loader
+  reject both curves and every animation leaf that referenced them, and
+  the compositor silently fell back to its default curves.
 
 ### Changed
 - The Plymouth theme script is shipped as `plymouth/virtual-paradise.script`
@@ -229,6 +234,12 @@ Conventional Commits.
   in `~/.local/bin` forever.
 
 ### Added
+- **Ambient effect layers, and a switch for them.** `vp-effects.sh
+  start|stop|status|enable|disable` runs optional fullscreen Quickshell
+  overlays: `ambient_glitch` (a cyan or magenta tear flashes across the
+  screen every 5-15 seconds) and `scanline_overlay` (faint CRT scanlines).
+  Both are click-through everywhere - an empty input mask - and never take
+  keyboard focus, so the desktop underneath stays fully usable.
 - `install.sh --help` lists the supported options, and an unknown option is
   now an error instead of being ignored. A typo like `--user-onyl` used to
   run a full install with the wrong privileges.
