@@ -1515,6 +1515,21 @@ if want tc16; then
     "$(grep -q 'session_splash.sh' "$REPO_DIR/hypr/autostart.lua" && echo 0 || echo 1)"
   check "the installer hooks the session splash" \
     "$(grep -q 'session_splash.sh' "$REPO_DIR/install.sh" && echo 0 || echo 1)"
+  # Hyprland 0.56.x spells the spring key `dampening`; the wiki's "Latest git"
+  # pages spell it `damping`, and the config loader rejects that spelling,
+  # silently dropping every curve and animation leaf that uses it.
+  check "spring curves use the 0.56.x 'dampening' key" \
+    "$(grep -q 'type = "spring"' "$REPO_DIR/hypr/looknfeel.lua" \
+      && ! grep 'type = "spring"' "$REPO_DIR/hypr/looknfeel.lua" | grep -q 'damping =' \
+      && grep 'type = "spring"' "$REPO_DIR/hypr/looknfeel.lua" | grep -q 'dampening =' \
+      && echo 0 || echo 1)"
+  # A fullscreen ambient overlay must never eat the desktop's clicks: the
+  # empty input mask makes every pointer event pass through.
+  for vp_overlay in ambient_glitch scanline_overlay; do
+    check "the $vp_overlay overlay is click-through" \
+      "$(grep -q 'mask: Region {}' "$REPO_DIR/bin/$vp_overlay.qml" \
+        && grep -q 'ShellRoot {' "$REPO_DIR/bin/$vp_overlay.qml" && echo 0 || echo 1)"
+  done
   check "the curtain fades out when it is done" \
     "$(grep -q 'exitAnim' "$REPO_DIR/bin/glitch_transition.qml" && grep -q 'Qt.quit()' "$REPO_DIR/bin/glitch_transition.qml" && echo 0 || echo 1)"
   check "the uninstaller removes the splash" \

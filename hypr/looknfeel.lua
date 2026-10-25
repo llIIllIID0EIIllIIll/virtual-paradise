@@ -62,12 +62,12 @@ hl.config({
     -- 3D Shadows with Neon Accent
     shadow = {
       enabled = true,
-      range = 25,               -- Extended range for deeper depth
-      render_power = 3,
-      color = "rgba(00000088)",  -- Stronger shadow
-      color_inactive = "rgba(00000055)",
-      offset = "0 4",            -- Slightly deeper offset
-      scale = 0.97,              -- Shadow scales down slightly
+      range = 30,               -- Extended range for deeper depth + glow
+      render_power = 4,         -- Higher quality shadow
+      color = "rgba(00ffdd80)", -- Cyan neon glow for active windows
+      color_inactive = "rgba(0f081d40)", -- Dark subtle for inactive
+      offset = "0 4",           -- Slightly deeper offset
+      scale = 0.97,             -- Shadow scales down slightly
     },
 
     -- Subtle dimming for non-focused windows & overlays
@@ -152,10 +152,16 @@ hl.curve("quickFade", { type = "bezier", points = { { 0.15, 0.0 }, { 0.1, 1.0 } 
 hl.curve("workspaceGlide", { type = "bezier", points = { { 0.16, 1.0 }, { 0.3, 1.0 } } })
 hl.curve("workspaceSpring", { type = "bezier", points = { { 0.34, 1.2 }, { 0.64, 1.0 } } })
 
+-- Phase 1.2: Enhanced pop-in with overshoot bounce.
+-- NOTE: Hyprland 0.56.x spells the spring key `dampening`; the wiki's
+-- "Latest git" pages renamed it to `damping`, which this version rejects.
+hl.curve("popInBounce", { type = "spring", mass = 1, stiffness = 238.1191, dampening = 24.21279333 })
+hl.curve("popOutSmooth", { type = "bezier", points = { { 0.36, 0.0 }, { 0.66, -0.56 } } })
+
 -- Window animations
-hl.animation({ leaf = "windows", enabled = true, speed = 4.2, bezier = "cyberSpring" })
-hl.animation({ leaf = "windowsIn", enabled = true, speed = 4.0, bezier = "cyberSpring", style = "popin 82%" })
-hl.animation({ leaf = "windowsOut", enabled = true, speed = 3.2, bezier = "quickFade", style = "popin 82%" })
+hl.animation({ leaf = "windows", enabled = true, speed = 4.2, spring = "popInBounce" })
+hl.animation({ leaf = "windowsIn", enabled = true, speed = 5.5, spring = "popInBounce", style = "popin 85%" })
+hl.animation({ leaf = "windowsOut", enabled = true, speed = 3.5, bezier = "popOutSmooth", style = "popin 85%" })
 hl.animation({ leaf = "windowsMove", enabled = true, speed = 4.2, bezier = "fluentDecel" })
 
 -- Border color transition (Fast, Crisp & Silky Smooth)
@@ -168,8 +174,10 @@ hl.animation({ leaf = "layersIn", enabled = true, speed = 4.2, bezier = "fluentD
 hl.animation({ leaf = "layersOut", enabled = true, speed = 3.2, bezier = "quickFade", style = "fade" })
 
 -- Workspace transitions (Silky Smooth Slidefade with 35% Alpha Blend)
-hl.animation({ leaf = "workspaces", enabled = true, speed = 5.0, bezier = "workspaceGlide", style = "slidefade 35%" })
-hl.animation({ leaf = "specialWorkspace", enabled = true, speed = 4.2, bezier = "workspaceGlide", style = "slidefadevert 35%" })
+-- Phase 1.3: Enhanced workspace spring for a more dynamic feel (0.56.x: `dampening`)
+hl.curve("workspaceSpringDynamic", { type = "spring", mass = 1, stiffness = 180, dampening = 20 })
+hl.animation({ leaf = "workspaces", enabled = true, speed = 6.5, spring = "workspaceSpringDynamic", style = "slidefade 35%" })
+hl.animation({ leaf = "specialWorkspace", enabled = true, speed = 5.0, spring = "workspaceSpringDynamic", style = "slidefadevert 35%" })
 
 -- ==============================================================================
 --  9. POPUPS & PANELS LAYER ANIMATIONS (Smooth Slidefade without Background Dim/Blur)
