@@ -144,14 +144,33 @@ if command -v omarchy &>/dev/null; then
 fi
 
 snapshot "$CONFIG_DIR/omarchy/shell.json"
-restore_or_remove "$CONFIG_DIR/omarchy/shell.json" "$CONFIG_DIR/omarchy/shell-default.json"
+# Restore the stock layout only when the live file is still the theme layout or
+# the last layout this theme applied. A user-customised shell.json is preserved;
+# that is the same rule the installer and theme hook use.
+if [[ -f "$REPO_DIR/lib/shell-layout.sh" ]]; then
+  # shellcheck source=lib/shell-layout.sh
+  . "$REPO_DIR/lib/shell-layout.sh"
+  layout_result="$(VP_CONFIG_DIR="$CONFIG_DIR" \
+    VP_STATE_DIR="$HOME/.local/state/virtual-paradise" \
+    vp_layout_leave 1 2>/dev/null || true)"
+  case "$layout_result" in
+    restored) printf 'Restored the stock Omarchy shell layout.\n' ;;
+    preserved) printf 'Preserving shell.json because it contains customizations.\n' ;;
+    already) : ;;
+  esac
+  unset layout_result
+else
+  restore_or_remove "$CONFIG_DIR/omarchy/shell.json" "$CONFIG_DIR/omarchy/shell-default.json"
+fi
 rm -f "$CONFIG_DIR/omarchy/shell-paradise.json" "$CONFIG_DIR/omarchy/extensions/paradise.json"
+rm -f "$HOME/.local/state/virtual-paradise/shell-layout.applied.json"
 snapshot "$CONFIG_DIR/omarchy/themes/$THEME_NAME"
 rm -rf "$CONFIG_DIR/omarchy/themes/$THEME_NAME"
 # The wallpapers were moved out of the theme directory so Omarchy does not
 # copy ~95 MB of video on every theme switch. Remove them from both places.
 rm -rf "$CONFIG_DIR/omarchy/backgrounds/$THEME_NAME"
 rm -f "$CONFIG_DIR/omarchy/hooks/theme-set.d/virtual-paradise.sh"
+rm -f "$CONFIG_DIR/omarchy/hooks/post-update.d/virtual-paradise.sh"
 
 # Plugin update check + audio backend watchdog. Stop the timers before removing
 # the units, otherwise systemd keeps re-running commands that no longer exist.
@@ -481,16 +500,9 @@ if [[ -d "$island_bar_dir" ]]; then
   fi
 fi
 
-# Restore the stock system tray if install.sh patched it for the drawer reveal.
-tray_qml="/usr/share/omarchy/shell/plugins/bar/widgets/Tray.qml"
-if [[ -f "$tray_qml.paradise.orig" ]]; then
-  if run_privileged cp "$tray_qml.paradise.orig" "$tray_qml" 2>/dev/null; then
-    run_privileged rm -f "$tray_qml.paradise.orig" 2>/dev/null || true
-    printf 'Restored the stock system tray.\n'
-  else
-    printf 'Could not restore the stock system tray (needs sudo).\n'
-  fi
-fi
+# The stock system tray is deliberately not touched. The old drawer-reveal
+# patch was disabled before it ever wrote a backup, so there is nothing to
+# restore; install.sh no longer contains that code at all.
 
 # SDDM: remove our own theme and restore the previous selection. The old
 # installer patched /usr/share/sddm/themes/omarchy in place; repairing that here

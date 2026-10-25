@@ -3,6 +3,9 @@ Description=Check for Omarchy plugin updates (read-only)
 # Network is genuinely required here; this is the one unit that may fail offline.
 After=network-online.target
 Wants=network-online.target
+# After uninstall the unit files can outlive the script for one reload cycle;
+# skip cleanly instead of showing a failed unit.
+ConditionPathExists=%h/.local/bin/notify-plugin-updates.sh
 
 [Service]
 Type=oneshot

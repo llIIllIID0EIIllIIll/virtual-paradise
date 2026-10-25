@@ -63,6 +63,11 @@ Item {
   // Streaming glow in the gaps between islands. Only meaningful while the bar
   // is split into islands; a merged bar has no gaps for it to live in.
   property bool gapEffects: true
+  // Per-widget halo under the pointer. Gated by the same effects switch as the
+  // gap stream, and independently switchable from shell.json with
+  // `"bar": { "hoverGlow": false }`.
+  property bool hoverGlow: true
+  readonly property bool hoverEffectsEnabled: islandsEnabled && gapEffects && hoverGlow
   // Surface language. false (default) draws the V2 continuous strip in
   // BarSurface.qml; true brings back the floating pill islands.
   property bool pillIslands: true
@@ -654,6 +659,10 @@ Item {
     position = normalizePosition(config.position)
     setRequestedTransparency(config.transparent === true)
     centerAnchor = Util.canonicalWidgetId(config.centerAnchor || "")
+    // Effects are opt-out: a missing key keeps the current behaviour, while an
+    // explicit false lets a user turn off ambient motion without editing QML.
+    gapEffects = config.gapEffects !== false
+    hoverGlow = config.hoverGlow !== false
 
     // layoutEntries feeds plain JS arrays to the module Repeaters, and QML
     // cannot diff those: reassigning layoutConfig rebuilds every widget on
@@ -2318,6 +2327,14 @@ Item {
     Component.onDestruction: {
       if (root.barDragSource === slot) root.clearBarDrag()
       root.unregisterModuleSlot(slot)
+    }
+
+    HoverGlow {
+      anchors.fill: parent
+      anchors.margins: -Style.space(1)
+      active: root.hoverEffectsEnabled && slot.hovered && !slot.dragSource
+      radius: Math.min(Style.cornerRadius, slot.height / 2)
+      z: -1
     }
 
     HoverHandler { id: moduleHover }

@@ -48,17 +48,30 @@ po_die() {
 # Absolute path of an installed plugin directory.
 po_plugin_dir() { printf '%s/%s\n' "$(po_plugins_dir)" "$1"; }
 
-# Resolve a plugin manifest entryPoint to a path relative to the plugin dir.
-# Plugins may ship their QML inside a versioned runtime/<hash>/ tree, so an
-# override copied to the plugin root would never be loaded by Quickshell.
-po_resolve_entrypoint() {
-  # Note: these must stay on separate `local` statements. Bash expands every word
-  # of a `local` command before performing any of its assignments, so
-  # `local a="$1" b="$a/x"` would expand $a while it is still unset.
-  local plugin_dir="$1" kind="$2"
-  local manifest="$plugin_dir/manifest.json"
-  [[ -f $manifest ]] || return 1
-  python3 - "$manifest" "$kind" <<'PY' 2>/dev/null
+# A user-owned copy of every file the layer is about to modify. `git checkout`
+# is the primary revert path for git-managed plugins, but a plugin can be a
+# plain directory (a local build, an extracted archive, a theme-owned clone).
+# Without this backup those overrides were unrevertable and the theme hook left
+# them patched after switching away.
+po_backup_root() { printf '%s/overrides-backup\n' "$PARADISE_STATE_DIR"; }
+po_backup_path() { printf '%s/%s/%s\n' "$(po_backup_root)" "$1" "$2"; }
+
+# Read one entryPoint from a manifest without assuming a JSON tool is installed.
+# jq is the fast path; python3 is the reliable fallback; a line-oriented sed
+# extraction keeps the override layer working on a minimal system where neither
+# is present. Empty output means "not found", not an error.
+po_json_entrypoint() {
+  local manifest="$1" kind="$2"
+  if command -v jq >/dev/null 2>&1; then
+    local out
+    out="$(jq -r --arg k "$kind" '(.entryPoints // {})[$k] // empty' "$manifest" 2>/dev/null)" || out=""
+    if [[ -n $out ]]; then
+      printf '%s\n' "$out"
+      return 0
+    fi
+  fi
+  if command -v python3 >/dev/null 2>&1; then
+    python3 - "$manifest" "$kind" <<'PY' 2>/dev/null
 import json, sys
 try:
     with open(sys.argv[1]) as fh:
@@ -68,6 +81,28 @@ except Exception:
 if entry:
     print(entry)
 PY
+    return 0
+  fi
+  # Last resort: manifests are JSON but entryPoint values are simple strings, so
+  # a targeted match is safe and avoids a hard dependency on jq/python3.
+  sed -n "s/.*\"${kind}\"[[:space:]]*:[[:space:]]*\"\\([^\"]*\\)\".*/\\1/p" "$manifest" 2>/dev/null | head -n1
+  return 0
+}
+
+# Resolve a plugin manifest entryPoint to a path relative to the plugin dir.
+# Plugins may ship their QML inside a versioned runtime/<hash>/ tree, so an
+# override copied to the plugin root would never be loaded by Quickshell.
+po_resolve_entrypoint() {
+  # Note: these must stay on separate `local` statements. Bash expands every word
+  # of a `local` command before performing any of its assignments, so
+  # `local a="$1" b="$a/x"` would expand $a while it is still unset.
+  local plugin_dir="$1" kind="$2"
+  local manifest="$plugin_dir/manifest.json"
+  local rel
+  [[ -f $manifest ]] || return 1
+  rel="$(po_json_entrypoint "$manifest" "$kind")"
+  [[ -n $rel ]] || return 1
+  printf '%s\n' "$rel"
 }
 
 # ---------------------------------------------------------------------------
@@ -88,17 +123,33 @@ po_state_record() {
   dir="$(po_plugin_dir "$plugin_id")"
   rel="${abs#"$dir"/}"
   [[ $rel == "$abs" ]] && return 0 # not inside the plugin, nothing to revert
+  mkdir -p "$PARADISE_STATE_DIR" 2>/dev/null || true
+  [[ -f $PARADISE_OVERRIDE_STATE ]] || : >"$PARADISE_OVERRIDE_STATE" 2>/dev/null || true
   local line
   line="$action"$'\t'"$plugin_id"$'\t'"$rel"
   grep -qxF "$line" "$PARADISE_OVERRIDE_STATE" 2>/dev/null && return 0
   printf '%s\n' "$line" >>"$PARADISE_OVERRIDE_STATE"
 }
 
-# Record an existing file before mutating it in place.
+# Record an existing file before mutating it in place, and keep a pristine copy
+# the first time the layer touches it. Re-applying an override must not overwrite
+# that copy with an already-patched version.
 po_touch_existing() {
   local plugin_id="$1" abs="$2"
   [[ -f $abs ]] || return 0
-  po_state_record modified "$plugin_id" "$abs"
+  local dir rel backup line existed=0
+  dir="$(po_plugin_dir "$plugin_id")"
+  rel="${abs#"$dir"/}"
+  [[ $rel == "$abs" ]] && return 0
+  line="modified"$'\t'"$plugin_id"$'\t'"$rel"
+  grep -qxF "$line" "$PARADISE_OVERRIDE_STATE" 2>/dev/null && existed=1
+  po_state_record modified "$plugin_id" "$abs" || return 0
+  (( existed == 1 )) && return 0
+  backup="$(po_backup_path "$plugin_id" "$rel")"
+  mkdir -p "$(dirname "$backup")" 2>/dev/null || true
+  cp "$abs" "$backup" 2>/dev/null \
+    || po_log "plugin-overrides: could not back up $abs; revert will need git."
+  return 0
 }
 
 # Copy a repo override onto an installed plugin file, recording either a
@@ -228,6 +279,11 @@ po_apply_theme_colors() {
 # Restore every plugin file this layer touched to its upstream state. Untracked
 # files are left alone except the ones recorded as created: `git clean -fd`
 # would also delete plugin runtime caches, which are not ours to delete.
+#
+# Revert order matters: git checkout is used when the plugin tracks the path,
+# otherwise the pristine copy taken by po_touch_existing is restored. A file
+# with neither is reported and its state row is kept, so a later run can still
+# recover it instead of silently losing the record.
 po_revert_all() {
   local state
   state="$(po_state_file)"
@@ -236,16 +292,13 @@ po_revert_all() {
     return 0
   fi
 
-  local action plugin_id rel abs dir reverted=0 skipped=0
+  local action plugin_id rel abs dir backup reverted=0
   local -a failed=()
   while IFS=$'\t' read -r action plugin_id rel; do
     [[ -n ${action:-} && -n ${plugin_id:-} && -n ${rel:-} ]] || continue
     dir="$(po_plugin_dir "$plugin_id")"
-    [[ -d $dir/.git ]] || {
-      skipped=$((skipped + 1))
-      continue
-    }
     abs="$dir/$rel"
+    backup="$(po_backup_path "$plugin_id" "$rel")"
     case "$action" in
       created)
         if [[ -e $abs ]]; then
@@ -257,20 +310,24 @@ po_revert_all() {
         fi
         ;;
       modified)
-        # git checkout only if upstream actually tracks the path; otherwise the
-        # file is one of ours and deleting it is the correct revert.
-        if git -C "$dir" ls-files --error-unmatch -- "$rel" >/dev/null 2>&1; then
+        if [[ -d $dir/.git ]] && command -v git >/dev/null 2>&1 \
+          && git -C "$dir" ls-files --error-unmatch -- "$rel" >/dev/null 2>&1; then
           if git -C "$dir" checkout -- "$rel" 2>/dev/null; then
             reverted=$((reverted + 1))
           else
             failed+=("$plugin_id/$rel")
           fi
-        elif [[ -e $abs ]]; then
-          if rm -f "$abs" 2>/dev/null; then
+        elif [[ -f $backup ]]; then
+          if mkdir -p "$(dirname "$abs")" 2>/dev/null && cp "$backup" "$abs" 2>/dev/null; then
             reverted=$((reverted + 1))
           else
             failed+=("$plugin_id/$rel")
           fi
+        elif [[ -e $abs ]]; then
+          # No git and no pristine copy: this file may be upstream's, so
+          # deleting it would corrupt the plugin. Keep the state row.
+          po_log "plugin-overrides: no backup for modified $plugin_id/$rel; left in place."
+          failed+=("$plugin_id/$rel")
         fi
         ;;
     esac
@@ -281,13 +338,29 @@ po_revert_all() {
   # stay half-themed with nothing pointing at it. Keep the state and report.
   if (( ${#failed[@]} == 0 )); then
     po_state_reset
-    po_log "Reverted $reverted file(s); $skipped non-git plugin dir(s) skipped."
+    rm -rf "$(po_backup_root)" 2>/dev/null || true
+    po_log "Reverted $reverted file(s)."
   else
     po_log "Reverted $reverted file(s); ${#failed[@]} could not be restored and remain recorded:"
     local failed_path
     for failed_path in "${failed[@]}"; do po_log "  $failed_path"; done
     return 1
   fi
+}
+
+# Hidden backup directories such as .doe.bluetooth.bak.20261003 are ignored by
+# the plugin registry, but every failed install used to leave another one
+# behind. They are only useful for a short recovery window.
+po_prune_plugin_backups() {
+  [[ ${PO_KEEP_PLUGIN_BACKUPS:-0} == 1 ]] && return 0
+  [[ -n ${_PO_BACKUPS_PRUNED:-} ]] && return 0
+  _PO_BACKUPS_PRUNED=1
+  local dir max_age="${PO_BACKUP_MAX_AGE_DAYS:-7}"
+  dir="$(po_plugins_dir)"
+  [[ -d $dir ]] || return 0
+  find "$dir" -mindepth 1 -maxdepth 1 -type d -name '.*.bak.*' \
+    -mtime +"$max_age" -exec rm -rf {} + 2>/dev/null || true
+  return 0
 }
 
 # ---------------------------------------------------------------------------
@@ -387,6 +460,7 @@ po_apply_repo_overrides() {
 po_apply_all() {
   mkdir -p "$PARADISE_STATE_DIR"
   [[ -f $PARADISE_OVERRIDE_STATE ]] || po_state_reset
+  po_prune_plugin_backups
   po_apply_theme_colors
   po_apply_repo_overrides
   if [[ -n "${PO_VERBOSE:-}" ]]; then

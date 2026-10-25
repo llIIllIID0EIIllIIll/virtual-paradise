@@ -264,6 +264,11 @@ if want tc2; then
   A="$root/home/.config/omarchy/plugins/ssupt.audio-control"
   HASH=abc123
   mkdir -p "$A/runtime/$HASH/qml/panels" "$A/runtime/$HASH/qml/core"
+  # Upstream files exist before the override layer touches them. Recording them
+  # as modifications (rather than creations) is what exercises the backup path
+  # for a plugin that is not a git checkout.
+  printf '// pristine panel\n' >"$A/runtime/$HASH/qml/panels/Panel.qml"
+  printf '// pristine model\n' >"$A/runtime/$HASH/qml/core/Model.js"
   cat >"$A/manifest.json" <<EOF
 {"schemaVersion":1,"id":"ssupt.audio-control","kinds":["bar-widget"],
  "entryPoints":{"barWidget":"runtime/$HASH/qml/panels/Panel.qml",
@@ -338,8 +343,9 @@ EOF
         '$A/runtime/$HASH/qml/panels/Panel.qml'" 2>&1 )
   check "override layer survives revert then re-apply" "$?" "$po_cycle"
 
-  # Revert must put the runtime file back to its pristine content.
-  before=$(md5sum "$A/runtime/$HASH/qml/panels/Panel.qml" | cut -d' ' -f1)
+  # Revert must put the non-git runtime file back to its pristine content, not
+  # delete it: the plugin has no git checkout to restore from, so the backup
+  # taken by the override layer is the only copy of upstream's file.
   PATH="$root/bin:$PATH" HOME="$root/home" XDG_CONFIG_HOME="$root/home/.config" \
     PARADISE_REPO_DIR="$REPO_DIR" PARADISE_CONFIG_DIR="$root/home/.config" \
     bash -c ". '$REPO_DIR/lib/plugin-overrides.sh'; po_revert_all" >/dev/null 2>&1
@@ -348,7 +354,8 @@ EOF
   else
     fail "revert leaves the runtime file in place" "file was deleted"
   fi
-  : "$before"
+  grep -qx '// pristine panel' "$A/runtime/$HASH/qml/panels/Panel.qml" 2>/dev/null
+  check "revert restores a non-git plugin from its backup" $?
 fi
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -1738,6 +1745,408 @@ if want tc16; then
     check "the neon frame matches the animation size (${frame_size})" \
       "$([[ $frame_size == "1600x900" ]] && echo 0 || echo 1)"
   fi
+fi
+
+# ─────────────────────────────────────────────────────────────────────────────
+# TC-17  Shell layout ownership.
+#
+# shell.json is user data. install.sh, the theme-set hook and the post-update
+# hook all have to agree on when it may be replaced: missing, stock, the previous
+# theme layout, or the layout this theme applied last. Anything else is a user
+# edit and must survive a theme round-trip.
+# ─────────────────────────────────────────────────────────────────────────────
+if want tc17; then
+  section "TC-17  Shell layout ownership"
+
+  root="$(new_sandbox tc17)"
+  cfg="$root/home/.config/omarchy"
+  state="$root/home/.local/state/virtual-paradise"
+  mkdir -p "$cfg" "$state"
+  # The stock default and the live file have the same bar, but different
+  # runtime plugin state. That difference must not look like a user edit.
+  cat >"$cfg/shell-default.json" <<'EOF'
+{
+  "bar": {
+    "id": "omarchy.bar",
+    "position": "top",
+    "layout": { "left": [], "center": [], "right": [] }
+  },
+  "plugins": [{ "id": "stock.plugin" }],
+  "disabledPlugins": ["stock.disabled"]
+}
+EOF
+  cat >"$cfg/shell.json" <<'EOF'
+{
+  "bar": {
+    "id": "omarchy.bar",
+    "position": "top",
+    "layout": { "left": [], "center": [], "right": [] }
+  },
+  "plugins": [{ "id": "user.keep" }],
+  "disabledPlugins": ["user.disabled"]
+}
+EOF
+  cat >"$root/theme.json" <<'EOF'
+{
+  "bar": {
+    "id": "tester.island-bar",
+    "position": "bottom",
+    "layout": { "left": [{ "id": "theme.widget" }], "center": [], "right": [] }
+  },
+  "plugins": [{ "id": "theme.plugin" }],
+  "disabledPlugins": []
+}
+EOF
+  cat >"$root/user.json" <<'EOF'
+{
+  "bar": {
+    "id": "tester.island-bar",
+    "position": "left",
+    "layout": { "left": [{ "id": "user.widget" }], "center": [], "right": [] }
+  },
+  "plugins": [{ "id": "user.keep" }],
+  "disabledPlugins": ["user.disabled"]
+}
+EOF
+
+  layout_install() {
+    ( VP_CONFIG_DIR="$root/home/.config" VP_STATE_DIR="$state" \
+      bash -c '. "$1"; vp_layout_install_from "$2" "${3:-0}"' \
+        _ "$REPO_DIR/lib/shell-layout.sh" "$1" "${2:-0}" 2>/dev/null )
+  }
+  layout_enter() {
+    ( VP_CONFIG_DIR="$root/home/.config" VP_STATE_DIR="$state" \
+      bash -c '. "$1"; vp_layout_enter' _ "$REPO_DIR/lib/shell-layout.sh" 2>/dev/null )
+  }
+  layout_leave() {
+    ( VP_CONFIG_DIR="$root/home/.config" VP_STATE_DIR="$state" \
+      bash -c '. "$1"; vp_layout_leave' _ "$REPO_DIR/lib/shell-layout.sh" 2>/dev/null )
+  }
+
+  check "a stock layout is replaced" \
+    "$([[ $(layout_install "$root/theme.json") == applied ]] && echo 0 || echo 1)"
+  check "the theme layout becomes live" \
+    "$(grep -q 'theme.widget' "$cfg/shell.json" && echo 0 || echo 1)"
+  check "the theme layout is recorded for the next run" \
+    "$(grep -q 'theme.widget' "$cfg/shell-paradise.json" && echo 0 || echo 1)"
+  check "the applied layout is recorded" \
+    "$([[ -f $state/shell-layout.applied.json ]] && echo 0 || echo 1)"
+  check "the runtime plugin list survives the layout write" \
+    "$(grep -q 'user.keep' "$cfg/shell.json" && grep -q 'user.disabled' "$cfg/shell.json" \
+      && echo 0 || echo 1)"
+  check "the theme template does not overwrite the plugin list" \
+    "$(grep -q 'theme.plugin' "$cfg/shell.json" && echo 1 || echo 0)"
+
+  # Omarchy's activeBarId fallback changes the bar id when the first-party bar
+  # cannot load. That transient state must be treated as ours, not as a user
+  # edit that pins the stock bar forever.
+  cat >"$root/fallback.json" <<'EOF'
+{
+  "bar": {
+    "id": "omarchy.bar",
+    "position": "top",
+    "layout": { "left": [], "center": [{ "id": "omarchy.bluetooth" }], "right": [] }
+  },
+  "plugins": [{ "id": "user.keep" }],
+  "disabledPlugins": ["user.disabled"]
+}
+EOF
+  cp "$root/fallback.json" "$cfg/shell.json"
+  check "a host bar fallback is not a user edit" \
+    "$([[ $(layout_install "$root/theme.json") == applied ]] && echo 0 || echo 1)"
+  check "the fallback is replaced by the theme bar" \
+    "$(grep -q 'theme.widget' "$cfg/shell.json" \
+      && ! grep -q 'omarchy.bluetooth' "$cfg/shell.json" && echo 0 || echo 1)"
+  check "the fallback replacement preserves plugin state" \
+    "$(grep -q 'user.keep' "$cfg/shell.json" && echo 0 || echo 1)"
+
+  # Entering and leaving must recognise the same host fallback. Otherwise a
+  # theme switch could pin the stock bar or leave the theme plugin state behind.
+  cp "$root/fallback.json" "$cfg/shell.json"
+  check "entering the theme repairs a host bar fallback" \
+    "$([[ $(layout_enter) == applied ]] && grep -q 'theme.widget' "$cfg/shell.json" \
+      && echo 0 || echo 1)"
+  cp "$root/fallback.json" "$cfg/shell.json"
+  check "leaving the theme restores the stock bar after a fallback" \
+    "$([[ $(layout_leave) == restored ]] && ! grep -q 'theme.widget' "$cfg/shell.json" \
+      && grep -q 'stock.plugin' "$cfg/shell.json" && echo 0 || echo 1)"
+
+  # A user edit is not one of the replaceable states.
+  cp "$root/user.json" "$cfg/shell.json"
+  check "a user-customised layout is preserved" \
+    "$([[ $(layout_install "$root/theme.json") == preserved ]] && echo 0 || echo 1)"
+  check "the user edit survives a reinstall" \
+    "$(grep -q 'user.widget' "$cfg/shell.json" && echo 0 || echo 1)"
+  check "entering the theme preserves a user edit" \
+    "$([[ $(layout_enter) == preserved ]] && echo 0 || echo 1)"
+  check "leaving the theme preserves a user edit" \
+    "$([[ $(layout_leave) == preserved ]] && echo 0 || echo 1)"
+  check "the user edit is still live after leaving" \
+    "$(grep -q 'user.widget' "$cfg/shell.json" && echo 0 || echo 1)"
+
+  # --force-shell-layout is the explicit escape hatch.
+  check "--force replaces a user-customised layout" \
+    "$([[ $(layout_install "$root/theme.json" 1) == applied ]] && echo 0 || echo 1)"
+  check "the forced layout is live" \
+    "$(grep -q 'theme.widget' "$cfg/shell.json" && echo 0 || echo 1)"
+  check "the forced layout still preserves the plugin list" \
+    "$(grep -q 'user.keep' "$cfg/shell.json" && echo 0 || echo 1)"
+
+  # Leaving restores the stock file only while the live file is still ours.
+  check "leaving restores the stock layout" \
+    "$([[ $(layout_leave) == restored ]] && echo 0 || echo 1)"
+  check "the stock layout is live again" \
+    "$(grep -q 'theme.widget' "$cfg/shell.json" && echo 1 || echo 0)"
+  check "leaving restores the stock plugin list" \
+    "$(grep -q 'stock.plugin' "$cfg/shell.json" && grep -q 'stock.disabled' "$cfg/shell.json" \
+      && ! grep -q 'user.keep' "$cfg/shell.json" && echo 0 || echo 1)"
+  check "the applied-layout marker is cleared" \
+    "$([[ ! -f $state/shell-layout.applied.json ]] && echo 0 || echo 1)"
+
+  # A missing file is ours to create; a second leave is a no-op.
+  rm -f "$cfg/shell.json"
+  check "a missing layout is installed" \
+    "$([[ $(layout_install "$root/theme.json") == applied ]] && echo 0 || echo 1)"
+  check "leaving the installed layout restores the stock layout" \
+    "$([[ $(layout_leave) == restored ]] && echo 0 || echo 1)"
+  check "leaving an already-stock layout is a no-op" \
+    "$([[ $(layout_leave) == already ]] && echo 0 || echo 1)"
+  check "the no-op leave keeps the stock layout" \
+    "$(grep -q 'theme.widget' "$cfg/shell.json" && echo 1 || echo 0)"
+fi
+
+# ─────────────────────────────────────────────────────────────────────────────
+# TC-18  Post-update repair hook.
+#
+# `omarchy update` can leave the first-party bar half-copied or missing. The
+# hook must repair it from the user-owned copy when it can, and otherwise leave
+# shell.json alone and let Omarchy's activeBarId fall back to the stock bar.
+# ─────────────────────────────────────────────────────────────────────────────
+if want tc18; then
+  section "TC-18  Post-update repair hook"
+
+  root="$(new_sandbox tc18)"
+  cfg="$root/home/.config/omarchy"
+  data="$root/home/.local/share/virtual-paradise"
+  state="$root/home/.local/state/virtual-paradise"
+  plugins="$root/plugins"
+  bar="$plugins/tester.island-bar"
+  mkdir -p "$cfg" "$data/island-bar" "$state" "$plugins" "$root/bin"
+
+  cat >"$cfg/shell.json" <<'EOF'
+{
+  "bar": {
+    "id": "tester.island-bar",
+    "layout": { "left": [], "center": [], "right": [] }
+  }
+}
+EOF
+  shell_before="$(md5sum "$cfg/shell.json" | cut -d' ' -f1)"
+
+  cat >"$data/island-bar/manifest.json" <<'EOF'
+{"schemaVersion":1,"id":"tester.island-bar","kinds":["bar"],"entryPoints":{"bar":"Bar.qml"}}
+EOF
+  printf '// repaired bar\n' >"$data/island-bar/Bar.qml"
+  printf 'Bar.qml\nmanifest.json\n' >"$data/island-bar/.paradise-files"
+
+  # The first-party copy is present but broken: the manifest is valid and the
+  # entry file is missing. This is the half-copied state an update can leave.
+  mkdir -p "$bar"
+  cp "$data/island-bar/manifest.json" "$bar/manifest.json"
+  printf 'Bar.qml\nmanifest.json\n' >"$bar/.paradise-files"
+
+  # A sudo that actually runs the command (with -n stripped), so the repair path
+  # is exercised without touching the real /usr/share.
+  cat >"$root/bin/sudo" <<'EOF'
+#!/usr/bin/env bash
+[[ ${1:-} == -n ]] && shift
+exec "$@"
+EOF
+  chmod +x "$root/bin/sudo"
+
+  cat >"$root/bin/omarchy" <<'EOF'
+#!/usr/bin/env bash
+printf '%s\n' "$*" >>"${SHIM_LOG:-/dev/null}"
+if [[ ${1:-} == plugin && ${2:-} == list && ${3:-} == --json ]]; then
+  printf '[]\n'
+  exit 0
+fi
+exit 0
+EOF
+  chmod +x "$root/bin/omarchy"
+
+  for tool in omarchy-shell hyprctl notify-send; do
+    cat >"$root/bin/$tool" <<'EOF'
+#!/usr/bin/env bash
+printf '%s\n' "$*" >>"${SHIM_LOG:-/dev/null}"
+exit 0
+EOF
+    chmod +x "$root/bin/$tool"
+  done
+
+  run_post_update() {
+    ( PATH="$root/bin:$PATH" \
+      HOME="$root/home" \
+      XDG_CONFIG_HOME="$root/home/.config" \
+      XDG_DATA_HOME="$root/home/.local/share" \
+      XDG_STATE_HOME="$root/home/.local/state" \
+      USER=tester \
+      PARADISE_FIRST_PARTY_DIR="$plugins" \
+      SHIM_LOG="$root/hook.log" \
+      bash "$REPO_DIR/lib/post-update-hook.sh" >"$root/hook.out" 2>&1 )
+  }
+
+  : >"$root/hook.log"
+  run_post_update
+  check "post-update hook exits cleanly" $?
+  check "post-update hook repairs a broken island bar" \
+    "$([[ -f $bar/Bar.qml ]] && echo 0 || echo 1)"
+  check "the repaired bar has the expected entry point" \
+    "$(grep -qx '// repaired bar' "$bar/Bar.qml" && echo 0 || echo 1)"
+  check "the repair enables the first-party bar" \
+    "$(grep -q 'plugin enable tester.island-bar' "$root/hook.log" && echo 0 || echo 1)"
+  check "the repair does not rewrite shell.json" \
+    "$([[ $(md5sum "$cfg/shell.json" | cut -d' ' -f1) == "$shell_before" ]] && echo 0 || echo 1)"
+  check "the repaired bar is no longer in fallback" \
+    "$([[ ! -f $state/bar-missing ]] && echo 0 || echo 1)"
+
+  # Now the repair is impossible: no usable sudo. The hook must still exit 0,
+  # leave the broken copy for the host fallback, and not touch shell.json.
+  rm -f "$bar/Bar.qml"
+  cat >"$root/bin/sudo" <<'EOF'
+#!/usr/bin/env bash
+exit 1
+EOF
+  chmod +x "$root/bin/sudo"
+  : >"$root/hook.log"
+  run_post_update
+  check "post-update hook survives an unrepairable bar" $?
+  check "the broken bar is left for the host fallback" \
+    "$([[ ! -f $bar/Bar.qml ]] && echo 0 || echo 1)"
+  check "fallback does not rewrite shell.json" \
+    "$([[ $(md5sum "$cfg/shell.json" | cut -d' ' -f1) == "$shell_before" ]] && echo 0 || echo 1)"
+  check "fallback records a notice once" \
+    "$([[ -f $state/bar-missing ]] && echo 0 || echo 1)"
+  check "fallback does not force-enable the broken bar" \
+    "$(grep -q 'plugin enable tester.island-bar' "$root/hook.log" && echo 1 || echo 0)"
+fi
+
+# ─────────────────────────────────────────────────────────────────────────────
+# TC-19  Stability guards.
+#
+# The stock tray is not patched, unit conditions live in [Unit], a stale-socket
+# cleanup is a success, and the theme hook falls back to the stock widget when a
+# replacement plugin is not installed.
+# ─────────────────────────────────────────────────────────────────────────────
+if want tc19; then
+  section "TC-19  Stability guards"
+
+  check "install.sh has no system tray patch" \
+    "$(grep -q 'patch_system_tray\|Tray\.qml' "$REPO_DIR/install.sh" && echo 1 || echo 0)"
+  check "uninstall.sh has no system tray patch" \
+    "$(grep -q 'Tray\.qml' "$REPO_DIR/uninstall.sh" && echo 1 || echo 0)"
+
+  for unit in paradise-plugin-check.service paradise-audio-watchdog.service; do
+    condition_section="$(awk '
+      /^\[Unit\]/{s="unit"}
+      /^\[Service\]/{s="service"}
+      /^ConditionPathExists=/{print s}
+    ' "$REPO_DIR/systemd/$unit" | grep -qx unit && echo 0 || echo 1)"
+    check "$unit keeps ConditionPathExists in [Unit]" "$condition_section"
+  done
+
+  check "the audio watchdog treats stale-socket cleanup as success" \
+    "$(grep -A4 'no daemon process found' "$REPO_DIR/bin/audio-backend-watchdog.sh" \
+      | grep -q 'exit 0' && echo 0 || echo 1)"
+
+  # Theme-hook fallback: the replacement plugin is not installed, so the stock
+  # audio widget must stay enabled. The old hook disabled it unconditionally,
+  # which is how leaving the theme produced a bar with no audio widget.
+  root="$(new_sandbox tc19)"
+  cfg="$root/home/.config"
+  data="$root/home/.local/share/virtual-paradise"
+  mkdir -p "$cfg" "$data" "$root/bin"
+  cat >"$root/bin/omarchy" <<'EOF'
+#!/usr/bin/env bash
+printf '%s\n' "$*" >>"${SHIM_LOG:-/dev/null}"
+if [[ ${1:-} == plugin && ${2:-} == list && ${3:-} == --json ]]; then
+  printf '[{"id":"omarchy.audio","enabled":false},{"id":"omarchy.bluetooth","enabled":false},{"id":"omarchy.bar","enabled":false}]\n'
+  exit 0
+fi
+exit 0
+EOF
+  chmod +x "$root/bin/omarchy"
+  cat >"$root/bin/pkill" <<'EOF'
+#!/usr/bin/env bash
+exit 0
+EOF
+  chmod +x "$root/bin/pkill"
+  cat >"$root/bin/pgrep" <<'EOF'
+#!/usr/bin/env bash
+exit 1
+EOF
+  chmod +x "$root/bin/pgrep"
+  cat >"$data/plugin-overrides.sh" <<'EOF'
+po_apply_all() { printf 'apply\n' >>"${VP_TEST_LOG:-/dev/null}"; }
+po_revert_all() { printf 'revert\n' >>"${VP_TEST_LOG:-/dev/null}"; }
+EOF
+
+  : >"$root/hook.log"
+  : >"$root/layer.log"
+  ( PATH="$root/bin:$PATH" HOME="$root/home" XDG_CONFIG_HOME="$cfg" \
+    XDG_DATA_HOME="$root/home/.local/share" XDG_STATE_HOME="$root/home/.local/state" \
+    USER=tester SHIM_LOG="$root/hook.log" VP_TEST_LOG="$root/layer.log" \
+    bash "$REPO_DIR/lib/theme-set-hook.sh" virtual-paradise >/dev/null 2>&1 )
+  check "theme hook entering applies the tracked override layer" \
+    "$(grep -qx apply "$root/layer.log" 2>/dev/null && echo 0 || echo 1)"
+  check "theme hook entering keeps the stock audio widget" \
+    "$(grep -q 'plugin enable omarchy.audio' "$root/hook.log" && echo 0 || echo 1)"
+  check "theme hook entering does not disable the stock audio widget" \
+    "$(grep -q 'plugin disable omarchy.audio' "$root/hook.log" && echo 1 || echo 0)"
+  check "theme hook entering does not enable a missing replacement" \
+    "$(grep -q 'plugin enable ssupt.audio-control' "$root/hook.log" && echo 1 || echo 0)"
+
+  : >"$root/hook.log"
+  ( PATH="$root/bin:$PATH" HOME="$root/home" XDG_CONFIG_HOME="$cfg" \
+    XDG_DATA_HOME="$root/home/.local/share" XDG_STATE_HOME="$root/home/.local/state" \
+    USER=tester SHIM_LOG="$root/hook.log" VP_TEST_LOG="$root/layer.log" \
+    bash "$REPO_DIR/lib/theme-set-hook.sh" catppuccin >/dev/null 2>&1 )
+  check "theme hook leaving reverts the tracked override layer" \
+    "$(grep -qx revert "$root/layer.log" 2>/dev/null && echo 0 || echo 1)"
+  check "theme hook leaving enables the stock audio widget" \
+    "$(grep -q 'plugin enable omarchy.audio' "$root/hook.log" && echo 0 || echo 1)"
+fi
+
+# ─────────────────────────────────────────────────────────────────────────────
+# TC-20  Hover glow.
+#
+# The per-widget halo is an opt-out effect: it follows the bar's gap-effects
+# switch, hides while a widget is being dragged, and can be disabled on its own
+# from shell.json. It must not depend on a new plugin or a package-owned file.
+# ─────────────────────────────────────────────────────────────────────────────
+if want tc20; then
+  section "TC-20  Hover glow"
+
+  glow="$REPO_DIR/bars/island-bar/HoverGlow.qml"
+  check "HoverGlow.qml ships with the island bar" \
+    "$([[ -f $glow ]] && echo 0 || echo 1)"
+  check "the hover glow is a shape-following accent halo" \
+    "$(grep -q 'import QtQuick.Effects' "$glow" \
+      && grep -q 'RectangularShadow' "$glow" && grep -q 'blur:' "$glow" \
+      && grep -q 'root.accent' "$glow" \
+      && grep -q 'Color.accent !== undefined' "$glow" && echo 0 || echo 1)"
+  check "the hover glow fades instead of popping" \
+    "$(grep -q 'Behavior on opacity' "$glow" && echo 0 || echo 1)"
+  check "ModuleSlot instantiates the hover glow" \
+    "$(grep -q 'HoverGlow {' "$REPO_DIR/bars/island-bar/Bar.qml" && echo 0 || echo 1)"
+  check "the hover glow hides while a widget is dragged" \
+    "$(grep -q '!slot.dragSource' "$REPO_DIR/bars/island-bar/Bar.qml" && echo 0 || echo 1)"
+  check "the hover glow follows the bar effects switch" \
+    "$(grep -q 'hoverEffectsEnabled: islandsEnabled && gapEffects && hoverGlow' \
+      "$REPO_DIR/bars/island-bar/Bar.qml" && echo 0 || echo 1)"
+  check "the hover glow can be disabled from shell.json" \
+    "$(grep -q 'config.hoverGlow !== false' "$REPO_DIR/bars/island-bar/Bar.qml" \
+      && echo 0 || echo 1)"
 fi
 
 summary

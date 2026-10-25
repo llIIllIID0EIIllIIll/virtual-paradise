@@ -18,6 +18,8 @@ REPO_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 export PARADISE_REPO_DIR="$REPO_DIR"
 # shellcheck source=lib/plugin-overrides.sh
 . "$REPO_DIR/lib/plugin-overrides.sh"
+# shellcheck source=lib/shell-layout.sh
+. "$REPO_DIR/lib/shell-layout.sh"
 THEME_NAME="virtual-paradise"
 IS_HOOK=0
 ENABLE_BOOT=1
@@ -25,11 +27,12 @@ BOOT_ONLY=0
 SDDM_ONLY=0
 USER_ONLY=0
 NO_AUTOLOGIN=0
+FORCE_SHELL_LAYOUT=0
 
 for arg in "$@"; do
   case "$arg" in
     -h|--help)
-      printf 'Usage: %s [--no-boot] [--boot-only] [--sddm-only] [--user-only|--no-sudo] [--no-autologin]\n' "$0"
+      printf 'Usage: %s [--no-boot] [--boot-only] [--sddm-only] [--user-only|--no-sudo] [--no-autologin] [--force-shell-layout]\n' "$0"
       printf '\nInstalls the Virtual☆Paradise theme.\n\n'
       printf '  --no-boot        skip the Plymouth/SDDM setup (needs sudo)\n'
       printf '  --boot-only      install only the boot and login themes (needs sudo)\n'
@@ -37,6 +40,7 @@ for arg in "$@"; do
       printf '  --user-only      install nothing outside your home directory\n'
       printf '  --no-sudo        alias for --user-only\n'
       printf '  --no-autologin   show the login screen instead of logging in automatically\n'
+      printf '  --force-shell-layout  replace a customised shell.json with the theme layout\n'
       exit 0
       ;;
     --hook)
@@ -63,6 +67,9 @@ for arg in "$@"; do
       # is on screen for less than a second and the theme's password panel
       # would never be seen.
       NO_AUTOLOGIN=1
+      ;;
+    --force-shell-layout)
+      FORCE_SHELL_LAYOUT=1
       ;;
     --dry-run)
       # There is no preview mode: the installer writes to ~/.config, ~/.local
@@ -531,15 +538,55 @@ po_install_island_bar() {
   local src_dir="$REPO_DIR/bars/island-bar"
   local dest_root="/usr/share/omarchy/shell/plugins"
   local dest_dir="$dest_root/${CURRENT_USER}.island-bar"
+  local data_dir="$HOME/.local/share/virtual-paradise"
+  local repair_dir="$data_dir/island-bar"
 
   if [[ ! -d "$src_dir" ]]; then
     log_warn "Island Bar sources missing at $src_dir"
     return 1
   fi
 
+  # Render the bundle once into a user-owned repair copy. The post-update hook
+  # uses this when the first-party copy is missing; keeping it even when the
+  # system copy cannot be written (--user-only, no sudo) means a later repair
+  # does not need the repository to still exist.
+  mkdir -p "$data_dir" 2>/dev/null || {
+    log_warn "Could not create $data_dir — skipping Paradise Island Bar."
+    return 1
+  }
+  local stage
+  stage="$(mktemp -d "$data_dir/.island-bar-stage.XXXXXX")" || {
+    log_warn "Could not create staging dir — skipping Paradise Island Bar."
+    return 1
+  }
+  : >"$stage/.paradise-files"
+
+  # Every file the bundle ships, rather than a hand-maintained subset: a QML
+  # component added to bars/island-bar/ has to reach the deployed copy, or the
+  # bar ends up importing a component that is not installed alongside it.
+  local src f
+  for src in "$src_dir"/*.qml "$src_dir"/*.js "$src_dir"/*.json; do
+    [[ -f $src ]] || continue
+    f="$(basename "$src")"
+    if ! sed "s/__USER__/${CURRENT_USER}/g" "$src" >"$stage/$f" 2>/dev/null; then
+      rm -rf "$stage"
+      log_warn "Could not render $src"
+      return 1
+    fi
+    printf '%s\n' "$f" >>"$stage/.paradise-files"
+  done
+
+  rm -rf "$repair_dir" 2>/dev/null || true
+  if ! mv "$stage" "$repair_dir" 2>/dev/null; then
+    rm -rf "$stage"
+    log_warn "Could not publish the island bar repair copy at $repair_dir."
+    return 1
+  fi
+
   if [[ ! -w "$dest_root" && ! -d "$dest_dir" ]] && ! run_privileged true; then
     log_warn "Cannot write $dest_root and no sudo available — Paradise Island Bar skipped."
     log_info "  sudo mkdir -p '$dest_dir' && sudo cp -r '$src_dir'/* '$dest_dir'/"
+    log_info "  A repair copy is available at $repair_dir for the post-update hook."
     return 1
   fi
 
@@ -548,82 +595,45 @@ po_install_island_bar() {
     return 1
   }
 
-  # Substitute the repo's __USER__ placeholder so the deployed manifest carries
-  # the installing user's plugin id. Stage through a user-owned temp dir: the
-  # destination may be root-owned and not writable without elevation.
-  local stage f src
-  stage="$(mktemp -d)" || {
-    log_warn "Could not create staging dir — skipping Paradise Island Bar."
-    return 1
-  }
+  # The previous manifest lists the files this theme installed. Files removed
+  # upstream are pruned so a stale component cannot keep loading; anything the
+  # user added to the directory is not in the list and is left alone.
+  local old_files=""
+  if [[ -f "$dest_dir/.paradise-files" ]]; then
+    old_files="$(cat "$dest_dir/.paradise-files" 2>/dev/null || true)"
+  fi
 
-  # Every file the bundle ships, rather than a hand-maintained subset: a QML
-  # component added to bars/island-bar/ has to reach the deployed copy, or the
-  # bar ends up importing a component that is not installed alongside it.
-  for src in "$src_dir"/*.qml "$src_dir"/*.js "$src_dir"/*.json; do
+  for src in "$repair_dir"/* "$repair_dir"/.paradise-files; do
     [[ -f $src ]] || continue
     f="$(basename "$src")"
-    sed "s/__USER__/${CURRENT_USER}/g" "$src" >"$stage/$f" 2>/dev/null || {
-      rm -rf "$stage"
-      log_warn "Could not render $src"
-      return 1
-    }
-    if ! run_privileged cp "$stage/$f" "$dest_dir/$f" 2>/dev/null; then
+    if ! run_privileged cp "$src" "$dest_dir/$f" 2>/dev/null; then
       # A pre-existing root-owned copy from an older run can block the write
       # even with sudo in play; surface it instead of failing silently.
-      if ! run_privileged cp -f "$stage/$f" "$dest_dir/$f" 2>/dev/null; then
-        rm -rf "$stage"
+      if ! run_privileged cp -f "$src" "$dest_dir/$f" 2>/dev/null; then
         log_warn "Could not write $dest_dir/$f"
         return 1
       fi
     fi
   done
-  rm -rf "$stage"
+
+  if [[ -n $old_files && -f "$repair_dir/.paradise-files" ]]; then
+    while IFS= read -r f; do
+      [[ -n $f ]] || continue
+      grep -qxF "$f" "$repair_dir/.paradise-files" 2>/dev/null || \
+        run_privileged rm -f "$dest_dir/$f" 2>/dev/null || true
+    done <<<"$old_files"
+  fi
 
   # The registry only rescans on demand, so ask for one now rather than
   # leaving the shell on the previous bar until the next restart.
   RUN_AS_INSTALL_USER omarchy-shell shell rescanPlugins >/dev/null 2>&1 || true
-  log_sub "Installed Paradise Island Bar to $dest_dir"
+  log_sub "Installed Paradise Island Bar to $dest_dir (repair copy: $repair_dir)"
 }
 
-# The stock system tray reserves its entire drawer width even while collapsed,
-# so a bar host never shrinks when the drawer is closed and never moves when it
-# opens. Reserve only what is actually revealed instead.
-#
-# This is a stock Omarchy file, not ours, so it is edited in place rather than
-# replaced: shipping a full copy would silently roll back any upstream fix the
-# next time Omarchy updates the tray. The edit only lands when the exact
-# upstream expression is still present, and uninstall.sh restores the saved
-# original.
-patch_system_tray() {
-  # Disabled: reserving only the revealed drawer broke the tray's own layout.
-  # Its clip region is drawerExtent wide and is expected to sit left of the
-  # pinned items; narrowing it moved the pinned items under the drawer icons,
-  # which then drew over them. Doing this properly means redesigning the
-  # drawer's slide geometry, and a patch that deep would be lost on the next
-  # Omarchy update. Left here as documentation, not called.
-  return 0
-  local tray="/usr/share/omarchy/shell/plugins/bar/widgets/Tray.qml"
-  local orig="$tray.paradise.orig"
-  [[ -f "$tray" ]] || return 0
-
-  if grep -q 'expandIcon.implicitWidth + root.revealExtent' "$tray" 2>/dev/null; then
-    log_sub "System tray already follows its drawer reveal"
-    return 0
-  fi
-  if ! grep -q 'expandIcon.implicitWidth + root.drawerExtent' "$tray" 2>/dev/null; then
-    log_warn "System tray layout differs upstream; skipping the drawer-reveal patch."
-    return 0
-  fi
-  [[ -f "$orig" ]] || run_privileged cp "$tray" "$orig" 2>/dev/null || true
-  if run_privileged sed -i \
-    's/expandIcon\.implicitWidth + root\.drawerExtent/expandIcon.implicitWidth + root.revealExtent/' \
-    "$tray" 2>/dev/null; then
-    log_sub "Patched system tray to follow its drawer reveal"
-  else
-    log_warn "Could not patch the system tray (needs sudo)."
-  fi
-}
+# The stock system tray is deliberately left alone. The old drawer-reveal patch
+# is gone: narrowing the clip region moved the pinned items under the drawer
+# icons, and any in-place edit of a package-owned QML file would be lost on the
+# next Omarchy update anyway. The island bar uses the upstream tray unchanged.
 
 if [[ $IS_HOOK -eq 0 ]]; then
   CHECK_AND_INSTALL_PACKAGES
@@ -641,6 +651,7 @@ mkdir -p "$CONFIG_DIR/omarchy/themes/$THEME_NAME"
 mkdir -p "$CONFIG_DIR/omarchy/backgrounds/$THEME_NAME"
 mkdir -p "$CONFIG_DIR/omarchy/plugins"
 mkdir -p "$CONFIG_DIR/omarchy/hooks/theme-set.d"
+mkdir -p "$CONFIG_DIR/omarchy/hooks/post-update.d"
 mkdir -p "$CONFIG_DIR/omarchy/extensions"
 mkdir -p "$CONFIG_DIR/hypr"
 mkdir -p "$CONFIG_DIR/cava"
@@ -669,6 +680,10 @@ log_sub "Directories verified under $CONFIG_DIR and $LOCAL_BIN"
 # ------------------------------------------------------------------------------
 # 3. Install & Enable Custom Omarchy Bar Plugins
 # ------------------------------------------------------------------------------
+# Set to 1 only when both the first-party bar copy and its plugin enablement
+# succeed. Step 4 uses it to decide whether to keep the stock bar enabled.
+BAR_INSTALL_OK=0
+
 INSTALL_AND_ENABLE_PLUGINS() {
   log_step "3" "$TOTAL_STEPS" "Installing and enabling custom Quickshell plugins for user '$CURRENT_USER'..."
   # These repo-owned clones were replaced by maintained external plugins.
@@ -867,13 +882,25 @@ EXTRA_PLUGINS
       # reported "Audio service is unavailable" over a healthy backend.
 # A missing bar bundle is a warning, not a fatal error: every other
       # plugin is still usable, so don't let `set -e` abort the whole install.
-      po_install_island_bar || true
-      # The stock tray reserves its whole drawer width by design; shrinking it
-      # is not a one-line change, see patch_system_tray.
-      enable_plugin_retry "${CURRENT_USER}.island-bar" || \
-        log_warn "Paradise Island Bar could not be enabled: ${LAST_PLUGIN_ERROR:-unknown error}"
-      RUN_AS_INSTALL_USER omarchy plugin disable "omarchy.bar" 2>/dev/null || true
-      RUN_AS_INSTALL_USER omarchy plugin disable "mscurtescu.island-bar" 2>/dev/null || true
+      if po_install_island_bar; then
+        if enable_plugin_retry "${CURRENT_USER}.island-bar"; then
+          BAR_INSTALL_OK=1
+        else
+          log_warn "Paradise Island Bar could not be enabled: ${LAST_PLUGIN_ERROR:-unknown error}"
+        fi
+      else
+        log_warn "Paradise Island Bar is unavailable; Omarchy will use its bundled bar."
+      fi
+      if (( BAR_INSTALL_OK == 1 )); then
+        RUN_AS_INSTALL_USER omarchy plugin disable "omarchy.bar" 2>/dev/null || true
+        RUN_AS_INSTALL_USER omarchy plugin disable "mscurtescu.island-bar" 2>/dev/null || true
+      else
+        # Keep the stock bar enabled so the shell has a working bar even if the
+        # first-party copy could not be installed. shell.json still names the
+        # island bar; Omarchy's activeBarId falls back on its own, and the
+        # post-update hook repairs the copy when it can.
+        RUN_AS_INSTALL_USER omarchy plugin enable "omarchy.bar" 2>/dev/null || true
+      fi
       po_apply_all
 
 
@@ -919,10 +946,32 @@ if [[ ! -f "$CONFIG_DIR/omarchy/shell-default.json" ]]; then
 fi
 
 if [[ -f "$REPO_DIR/shell/shell.json" ]]; then
-  # Save Virtual Paradise bar layout as shell-paradise.json
-  sed "s/__USER__/${CURRENT_USER}/g" "$REPO_DIR/shell/shell.json" > "$CONFIG_DIR/omarchy/shell-paradise.json"
-  cp "$CONFIG_DIR/omarchy/shell-paradise.json" "$CONFIG_DIR/omarchy/shell.json"
-  log_sub "Synchronized ~/.config/omarchy/shell-paradise.json with calibrated user IDs"
+  # Render the theme layout into a temp file and let the ownership rules decide
+  # whether the live file may be replaced. A user-customised shell.json is
+  # preserved unless --force-shell-layout was passed.
+  _vp_layout_tmp="$(mktemp)" || _vp_layout_tmp=""
+  if [[ -n $_vp_layout_tmp ]]; then
+    sed "s/__USER__/${CURRENT_USER}/g" "$REPO_DIR/shell/shell.json" >"$_vp_layout_tmp"
+    _vp_layout_result="$(vp_layout_install_from "$_vp_layout_tmp" "$FORCE_SHELL_LAYOUT" || true)"
+    rm -f "$_vp_layout_tmp"
+    unset _vp_layout_tmp
+
+    case "$_vp_layout_result" in
+      applied)
+        log_sub "Installed the Virtual Paradise shell layout (shell-paradise.json)"
+        ;;
+      preserved)
+        log_warn "Existing ~/.config/omarchy/shell.json contains customizations; preserving it."
+        log_info "  Run '$0 --force-shell-layout' to replace it with the theme layout."
+        ;;
+      *)
+        log_warn "Could not install the Virtual Paradise shell layout."
+        ;;
+    esac
+    unset _vp_layout_result
+  else
+    log_warn "Could not create a temporary file for the shell layout."
+  fi
 
   # The shell layout copy above can reset plugin enablement. Restore the
   # external notification center after the layout is installed.
@@ -958,10 +1007,17 @@ if [[ -f "$REPO_DIR/shell/shell.json" ]]; then
       log_warn "Japanese workspace plugin could not be enabled after shell layout sync: ${LAST_PLUGIN_ERROR:-unknown error}"
     RUN_AS_INSTALL_USER omarchy plugin disable "${CURRENT_USER}.workspaces" 2>/dev/null || true
     RUN_AS_INSTALL_USER omarchy plugin disable "omarchy.workspaces" 2>/dev/null || true
-    enable_plugin_retry "${CURRENT_USER}.island-bar" || \
-      log_warn "Paradise Island Bar could not be enabled after shell layout sync: ${LAST_PLUGIN_ERROR:-unknown error}"
-    RUN_AS_INSTALL_USER omarchy plugin disable "omarchy.bar" 2>/dev/null || true
-    RUN_AS_INSTALL_USER omarchy plugin disable "mscurtescu.island-bar" 2>/dev/null || true
+    if (( BAR_INSTALL_OK == 1 )); then
+      enable_plugin_retry "${CURRENT_USER}.island-bar" || \
+        log_warn "Paradise Island Bar could not be enabled after shell layout sync: ${LAST_PLUGIN_ERROR:-unknown error}"
+      RUN_AS_INSTALL_USER omarchy plugin disable "omarchy.bar" 2>/dev/null || true
+      RUN_AS_INSTALL_USER omarchy plugin disable "mscurtescu.island-bar" 2>/dev/null || true
+    else
+      # No usable first-party bar: leave the stock one enabled. The layout may
+      # still name the island bar, and Omarchy's activeBarId handles the
+      # fallback without us editing the user's file.
+      RUN_AS_INSTALL_USER omarchy plugin enable "omarchy.bar" 2>/dev/null || true
+    fi
     po_apply_all
 
   fi
@@ -1416,6 +1472,10 @@ fi
 if [[ -f "$REPO_DIR/bin/update-plugins.sh" && -f "$REPO_DIR/lib/plugin-overrides.sh" ]]; then
   mkdir -p "$HOME/.local/share/virtual-paradise"
   cp "$REPO_DIR/lib/plugin-overrides.sh" "$HOME/.local/share/virtual-paradise/plugin-overrides.sh"
+  # The theme-set hook and the post-update hook both need the same three-way
+  # shell.json rules the installer just used.
+  [[ -f "$REPO_DIR/lib/shell-layout.sh" ]] &&
+    cp "$REPO_DIR/lib/shell-layout.sh" "$HOME/.local/share/virtual-paradise/shell-layout.sh"
   # The updater runs from a systemd timer whose environment has no
   # OMARCHY_PATH, so it needs the same helper the installer uses.
   [[ -f "$REPO_DIR/lib/omarchy-env.sh" ]] &&
@@ -1659,6 +1719,18 @@ if [[ -f "$REPO_DIR/lib/theme-set-hook.sh" ]]; then
   log_sub "Installed post-theme-set hook for plugin & widget lifecycle management"
 else
   log_warn "Theme-set hook template not found at $REPO_DIR/lib/theme-set-hook.sh"
+fi
+
+# Post-update repair hook. `omarchy update` runs this as the user after
+# packages and migrations; it verifies the first-party bar, repairs it from the
+# user-owned copy when possible, re-applies overrides, and never edits a
+# package-owned Omarchy file.
+if [[ -f "$REPO_DIR/lib/post-update-hook.sh" ]]; then
+  cp "$REPO_DIR/lib/post-update-hook.sh" "$CONFIG_DIR/omarchy/hooks/post-update.d/virtual-paradise.sh"
+  chmod +x "$CONFIG_DIR/omarchy/hooks/post-update.d/virtual-paradise.sh"
+  log_sub "Installed post-update repair hook (island bar, overrides, shell layout)"
+else
+  log_warn "Post-update hook template not found at $REPO_DIR/lib/post-update-hook.sh"
 fi
 
 # Daily read-only update check. Deliberately does NOT update: applying an
