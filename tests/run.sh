@@ -1560,6 +1560,19 @@ if want tc16; then
       | grep -q 'window_death.sh' && echo 0 || echo 1)"
   check "the window death burst is click-through" \
     "$(grep -q 'mask: Region {}' "$REPO_DIR/bin/window_death.qml" && echo 0 || echo 1)"
+  # A glitch that slides in reads as a panel, not as signal loss: the death
+  # burst's namespace is in the no_anim layer rule so it appears in one frame.
+  check "the death burst appears in one frame, no slide" \
+    "$(grep 'no_anim = true' "$REPO_DIR/hypr/looknfeel.lua" | grep -q 'vp-window-death' && echo 0 || echo 1)"
+  # The burst tears the window's own captured frame - border pixels jump
+  # with the slices, so the window reads as shaking itself apart.
+  check "the death burst tears the window's own captured frame" \
+    "$(grep -q 'VP_DEATH_IMAGE' "$REPO_DIR/bin/window_death.qml" \
+      && grep -q 'grim -g' "$REPO_DIR/bin/window_death.sh" && echo 0 || echo 1)"
+  # The border burns neon red while the window is still alive, so the
+  # captured corpse - and the death - is red from the very first frame.
+  check "the window burns red before it dies" \
+    "$(grep -q 'active_border_color' "$REPO_DIR/bin/window_death.sh" && echo 0 || echo 1)"
   # `hyprctl dispatch closewindow address:...` is parsed as Lua on 0.56 and
   # silently no-ops; the dispatcher object is the supported spelling.
   check "the death script closes with the 0.56 dispatcher spelling" \
