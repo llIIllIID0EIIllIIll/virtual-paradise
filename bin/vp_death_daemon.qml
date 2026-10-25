@@ -246,7 +246,8 @@ ShellRoot {
           }
         }
 
-        // Red static crawling over the corpse, burning up with the wash.
+        // Neon static crawling over the corpse, burning up with the wash:
+        // the same violet -> magenta -> sakura noise as the login splash.
         Image {
           id: staticLayer
           anchors.fill: parent
@@ -256,19 +257,59 @@ ShellRoot {
           opacity: win.wash
         }
 
+        // The wash is the gradient itself, not a flat tint: the corpse
+        // dies from violet on the left to sakura on the right.
         Rectangle {
           anchors.fill: parent
-          color: "#ff2244"
           opacity: win.wash * 0.55
+          gradient: Gradient {
+            orientation: Gradient.Horizontal
+            GradientStop { position: 0.0; color: "#7a1fd0" }
+            GradientStop { position: 0.5; color: "#ff2bd6" }
+            GradientStop { position: 1.0; color: "#ffb7d5" }
+          }
         }
 
         // The toplevel capture has no compositor border, so the corpse
-        // carries its own neon edge. The slices tear against it.
+        // carries its own neon edge: four gradient edges, violet and
+        // sakura meeting at the corners. The slices tear against it.
         Rectangle {
-          anchors.fill: parent
-          color: "transparent"
-          border.width: 3
-          border.color: "#ff0055"
+          anchors { top: parent.top; left: parent.left; right: parent.right }
+          height: 3
+          gradient: Gradient {
+            orientation: Gradient.Horizontal
+            GradientStop { position: 0.0; color: "#7a1fd0" }
+            GradientStop { position: 0.5; color: "#ff2bd6" }
+            GradientStop { position: 1.0; color: "#ffb7d5" }
+          }
+        }
+        Rectangle {
+          anchors { bottom: parent.bottom; left: parent.left; right: parent.right }
+          height: 3
+          gradient: Gradient {
+            orientation: Gradient.Horizontal
+            GradientStop { position: 0.0; color: "#ffb7d5" }
+            GradientStop { position: 0.5; color: "#ff2bd6" }
+            GradientStop { position: 1.0; color: "#7a1fd0" }
+          }
+        }
+        Rectangle {
+          anchors { top: parent.top; bottom: parent.bottom; left: parent.left }
+          width: 3
+          gradient: Gradient {
+            GradientStop { position: 0.0; color: "#7a1fd0" }
+            GradientStop { position: 0.5; color: "#ff2bd6" }
+            GradientStop { position: 1.0; color: "#ffb7d5" }
+          }
+        }
+        Rectangle {
+          anchors { top: parent.top; bottom: parent.bottom; right: parent.right }
+          width: 3
+          gradient: Gradient {
+            GradientStop { position: 0.0; color: "#ffb7d5" }
+            GradientStop { position: 0.5; color: "#ff2bd6" }
+            GradientStop { position: 1.0; color: "#7a1fd0" }
+          }
         }
 
         // Tear bars and a dropout block, heavy while they live.
@@ -276,7 +317,7 @@ ShellRoot {
           id: bar1
           width: parent.width
           height: 6
-          color: "#ff003c"
+          color: "#ff2bd6"
           opacity: 0
         }
         Rectangle {
@@ -299,7 +340,7 @@ ShellRoot {
         Rectangle {
           id: strobe
           anchors.fill: parent
-          color: "#ff8899"
+          color: "#ffc4dd"
           opacity: 0
 
           NumberAnimation {

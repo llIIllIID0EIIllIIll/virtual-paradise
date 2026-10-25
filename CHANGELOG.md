@@ -256,7 +256,7 @@ Conventional Commits.
   A resident daemon (`vp_death_daemon.qml`, autostarted with the session)
   now keeps its burst surfaces mapped for the whole session, so a death
   costs no compositor roundtrip. The script announces the death first and
-  the red glitch is on screen in ~50 ms - before the window starts to
+  the neon glitch is on screen in ~50 ms - before the window starts to
   close. It then grabs the window itself with `grim -T` (the foreign-
   toplevel capture excludes the overlay, so the corpse is the window, not
   the glitch), snaps the corpse into the burst, and closes at ~90 ms. The
@@ -280,14 +280,16 @@ Conventional Commits.
   is uninstalling from.
 
 ### Added
-- **Windows die in a red glitch burst.** SUPER + W - replacing Omarchy's
+- **Windows die in a neon glitch burst.** SUPER + W - replacing Omarchy's
   plain close on purpose, unbind first - kills the window in three beats,
-  glitch first: the burst's mapped surface turns the live window into red
-  static in ~50 ms, the window is captured frame and all with a toplevel
-  grab (the overlay is not in the shot), and the capture is torn into
-  jumping slices while red static burns through - the slices and the
-  corpse's own neon-red border shiver, so the window reads as shaking
-  itself apart. The burst is in the no_anim layer rule, so it appears in a
+  glitch first: the burst's mapped surface turns the live window into
+  violet, magenta and sakura static in ~50 ms, the window is captured frame
+  and all with a toplevel grab (the overlay is not in the shot), and the
+  capture is torn into jumping slices while the neon wash burns through -
+  the slices and the corpse's own violet-to-sakura gradient border shiver,
+  so the window reads as shaking itself apart. The shared `noise.jpg` is
+  the same asset the login splash uses, so the close and the boot wear the
+  same palette. The burst is in the no_anim layer rule, so it appears in a
   single frame instead of sliding in like a panel, and the window closes
   *under* it at ~90 ms. Click-through like every other overlay; closes
   with the 0.56 dispatcher spelling (`hl.dsp.window.close`), because
