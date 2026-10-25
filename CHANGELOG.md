@@ -224,6 +224,19 @@ Conventional Commits.
   spell it `damping`. Copying the newer spelling made the config loader
   reject both curves and every animation leaf that referenced them, and
   the compositor silently fell back to its default curves.
+- **The active shadow carries the border's three-stop gradient.** A flat
+  cyan shadow halo read as a monochrome glow around every window and
+  drowned the three-stop border gradient - the window edge lost its
+  cyan-green-pink travel. The shadow now carries the same three stops at
+  the same 135 degrees, at a lower alpha and a tighter range, so the glow
+  reads as the border's own light spilling out.
+- **Every window glows, not just the focused one.** The glow read as
+  inconsistent - some windows had it, some did not - because only the
+  focused window carried the palette: the inactive border was a flat grey
+  and the inactive shadow was nearly invisible. Inactive windows now keep
+  the same three stops at a low alpha on both the border and the shadow,
+  so every window carries the gradient while the focused one still burns
+  brightest.
 
 ### Changed
 - The Plymouth theme script is shipped as `plymouth/virtual-paradise.script`
