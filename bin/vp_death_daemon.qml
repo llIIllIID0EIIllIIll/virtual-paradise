@@ -7,12 +7,16 @@ import Quickshell.Wayland
 //
 // Keeps the death burst warm. Spawning a Quickshell per death costs a
 // quarter of a second of startup, which either delayed the close or left
-// the burst trailing behind it as an afterimage. This shell stays resident
-// with its panels hidden and watches the trigger file: the moment a death
-// is announced the panels map in a single frame - in the same breath as
-// the close - and tear the captured corpse apart.
+// the burst trailing behind it as an afterimage. This shell keeps its
+// panels mapped for the whole session - only the corpse inside them is
+// hidden - so a death needs no compositor roundtrip: the glitch is on
+// screen before the window starts to close.
 //
-// Trigger format, one line: "x,y,w,h /path/to/frame.png"
+// The death script announces the burst first, then captures the window
+// with grim -T (the foreign-toplevel capture excludes this overlay), then
+// announces the frame. Two payloads, two beats:
+//   "x,y,w,h /path/to/pending"  -> the glitch takes the live window
+//   "x,y,w,h /path/to/frame"    -> the captured corpse snaps into it
 
 ShellRoot {
   id: root
@@ -93,15 +97,11 @@ ShellRoot {
         left: true
         right: true
       }
-      margins {
-        left: Math.max(0, root.rx - geo.x)
-        top: Math.max(0, root.ry - geo.y)
-        right: Math.max(0, (geo.x + geo.width) - (root.rx + root.rw))
-        bottom: Math.max(0, (geo.y + geo.height) - (root.ry + root.rh))
-      }
-
       color: "transparent"
-      visible: win.hit
+      // Mapped for the whole session: mapping on the death costs a
+      // compositor roundtrip and the glitch has to beat the close. Only
+      // the corpse item inside is shown or hidden.
+      visible: true
       WlrLayershell.namespace: "vp-window-death"
       WlrLayershell.layer: WlrLayer.Overlay
       WlrLayershell.keyboardFocus: WlrKeyboardFocus.None
@@ -152,9 +152,16 @@ ShellRoot {
 
       Item {
         id: corpse
-        anchors.fill: parent
+        x: root.rx - win.geo.x
+        y: root.ry - win.geo.y
+        width: root.rw
+        height: root.rh
+        visible: win.hit
         opacity: win.fade
         clip: true
+        // The whole corpse shivers, border included; the slices add the
+        // violent part on top.
+        transform: Translate { id: shake }
 
         // The window's own frame, torn into six slices. Every slice shows
         // the same capture shifted to its band; the jitter timer throws them
@@ -179,6 +186,8 @@ ShellRoot {
             drop1.y = Math.random() * corpse.height
             drop1.opacity = Math.random() < 0.5 ? 0.95 : 0
             staticLayer.x = (Math.random() - 0.5) * 40
+            shake.x = (Math.random() - 0.5) * 5
+            shake.y = (Math.random() - 0.5) * 5
           }
         }
 
@@ -251,6 +260,15 @@ ShellRoot {
           anchors.fill: parent
           color: "#ff2244"
           opacity: win.wash * 0.55
+        }
+
+        // The toplevel capture has no compositor border, so the corpse
+        // carries its own neon edge. The slices tear against it.
+        Rectangle {
+          anchors.fill: parent
+          color: "transparent"
+          border.width: 3
+          border.color: "#ff0055"
         }
 
         // Tear bars and a dropout block, heavy while they live.

@@ -250,18 +250,23 @@ Conventional Commits.
   travel around the focused edge rainbow-style. Inactive windows carry the
   same spin at their dim alpha: movement on a faint gradient reads as a
   shimmer, not a distraction.
-- **The death burst and the close land together, instantly.** Spawning a
+- **The glitch now leads the close instead of chasing it.** Spawning a
   Quickshell per death cost a quarter of a second of startup, which either
   delayed the close or left the burst trailing behind it as an afterimage.
   A resident daemon (`vp_death_daemon.qml`, autostarted with the session)
-  now keeps the burst warm and watches a trigger file: the script parses
-  the window once, burns the border red, captures the corpse, announces
-  the death and closes - measured at ~150 ms to the close dispatch and
-  ~220 ms to the window actually gone, with the burst already on screen
-  at the moment the window disappears. The daemon adds one resident
-  Quickshell (~110 MB), the accepted price of a death that is both
-  instant and synchronous. Its lifetime shrank from 520 ms to 430 ms so
-  the layout reflow stays visible under it.
+  now keeps its burst surfaces mapped for the whole session, so a death
+  costs no compositor roundtrip. The script announces the death first and
+  the red glitch is on screen in ~50 ms - before the window starts to
+  close. It then grabs the window itself with `grim -T` (the foreign-
+  toplevel capture excludes the overlay, so the corpse is the window, not
+  the glitch), snaps the corpse into the burst, and closes at ~90 ms. The
+  window's pop-out animation plays behind the glitch, never before it.
+  Three things bought the speed: JPEG q70 capture (~20 ms instead of
+  ~77 ms for PNG), a pidfile + `/proc` check instead of a ~30 ms `pgrep`
+  per close, and one frame of head start between the trigger and the
+  close. The daemon adds one resident Quickshell (~110 MB), the accepted
+  price of a death that is both instant and synchronous. Its lifetime
+  stays at 430 ms so the layout reflow stays visible under it.
 - The Plymouth theme script is shipped as `plymouth/virtual-paradise.script`
   instead of `plymouth/omarchy.script`, so nothing in the repository is named
   after the package theme it no longer replaces.
@@ -271,14 +276,15 @@ Conventional Commits.
 
 ### Added
 - **Windows die in a red glitch burst.** SUPER + W - replacing Omarchy's
-  plain close on purpose, unbind first - kills the window in three beats:
-  the border burns neon red while the window is still alive, the window is
-  captured frame and all, and a burst over the rectangle the window
-  occupied tears that capture into jumping slices while red static burns
-  through - border pixels jump with the slices, so the window reads as
-  shaking itself apart. The burst is in the no_anim layer rule, so it
-  appears in a single frame instead of sliding in like a panel, and the
-  window closes *under* it. Click-through like every other overlay; closes
+  plain close on purpose, unbind first - kills the window in three beats,
+  glitch first: the burst's mapped surface turns the live window into red
+  static in ~50 ms, the window is captured frame and all with a toplevel
+  grab (the overlay is not in the shot), and the capture is torn into
+  jumping slices while red static burns through - the slices and the
+  corpse's own neon-red border shiver, so the window reads as shaking
+  itself apart. The burst is in the no_anim layer rule, so it appears in a
+  single frame instead of sliding in like a panel, and the window closes
+  *under* it at ~90 ms. Click-through like every other overlay; closes
   with the 0.56 dispatcher spelling (`hl.dsp.window.close`), because
   `hyprctl dispatch closewindow address:...` is parsed as Lua on 0.56 and
   silently no-ops.

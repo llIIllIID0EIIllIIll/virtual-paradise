@@ -1597,6 +1597,42 @@ if want tc16; then
   # the same breath instead of the burst trailing the window.
   check "the death script announces the death to the daemon" \
     "$(grep -q 'vp_death_trigger' "$REPO_DIR/bin/window_death.sh" && echo 0 || echo 1)"
+  # The glitch must lead: the trigger is written before the close is
+  # dispatched, so the burst is already on screen when the window goes.
+  check "the glitch is announced before the close" \
+    "$(awk '/vp_death_trigger/{if (!t) t=NR} /hl\.dsp\.window\.close/{if (!c) c=NR} END {exit !(t && c && t < c)}' \
+      "$REPO_DIR/bin/window_death.sh" && echo 0 || echo 1)"
+  # The burst surfaces stay mapped for the whole session: mapping them on
+  # the death costs a compositor roundtrip the glitch cannot afford.
+  check "the death daemon keeps its burst surfaces mapped" \
+    "$(grep -q 'visible: true' "$REPO_DIR/bin/vp_death_daemon.qml" \
+      && grep -q 'visible: win.hit' "$REPO_DIR/bin/vp_death_daemon.qml" && echo 0 || echo 1)"
+  # The corpse is positioned inside that always-mapped fullscreen surface,
+  # so a death never resizes or remaps it.
+  check "the corpse is positioned inside the mapped surface" \
+    "$(grep -q 'x: root.rx - win.geo.x' "$REPO_DIR/bin/vp_death_daemon.qml" && echo 0 || echo 1)"
+  # grim -T grabs the toplevel's own surface tree: the overlay already
+  # covering the window is not in the corpse.
+  check "the corpse capture takes the window, not the screen" \
+    "$(grep -q 'grim -T' "$REPO_DIR/bin/window_death.sh" && echo 0 || echo 1)"
+  # JPEG encoding is ~50 ms cheaper than PNG; the burst tears the frame
+  # apart anyway, so the artefacts are part of the look.
+  check "the corpse capture is JPEG for speed" \
+    "$(grep -q -- '-t jpeg' "$REPO_DIR/bin/window_death.sh" && echo 0 || echo 1)"
+  # The toplevel grab has no compositor border, so the corpse draws its
+  # own neon-red edge.
+  check "the corpse carries its own neon-red border" \
+    "$(grep -q 'border.color: "#ff0055"' "$REPO_DIR/bin/vp_death_daemon.qml" && echo 0 || echo 1)"
+  # The daemon is found through its pidfile and /proc, not pgrep: a pgrep
+  # per close cost ~30 ms and matched unrelated shells.
+  check "the death script finds the daemon without pgrep" \
+    "$(grep -q 'vp_death_daemon.pid' "$REPO_DIR/bin/window_death.sh" \
+      && ! grep -q 'pgrep' "$REPO_DIR/bin/window_death.sh" && echo 0 || echo 1)"
+  # exec keeps the wrapper's PID, so the pidfile written before exec stays
+  # valid for the daemon's whole life.
+  check "the daemon writes its pidfile before exec" \
+    "$(awk '/vp_death_daemon\.pid/{if (!p) p=NR} /exec quickshell/{if (!e) e=NR} END {exit !(p && e && p < e)}' \
+      "$REPO_DIR/bin/vp_death_daemon.sh" && echo 0 || echo 1)"
   check "the death daemon is autostarted with the theme" \
     "$(grep -q 'vp_death_daemon.sh' "$REPO_DIR/hypr/autostart.lua" && echo 0 || echo 1)"
   check "the installer hooks the death daemon to autostart" \
