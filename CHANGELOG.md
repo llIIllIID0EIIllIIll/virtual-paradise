@@ -250,6 +250,14 @@ Conventional Commits.
   travel around the focused edge rainbow-style. Inactive windows carry the
   same spin at their dim alpha: movement on a faint gradient reads as a
   shimmer, not a distraction.
+- **Closing with the death effect is near-instant again.** The script used
+  to poll the layer tree until the burst surface mapped before closing,
+  which added a third of a second to every close and made the desktop feel
+  laggy. It now parses the window once, burns the border red, captures the
+  corpse, fires the burst and closes in the same breath - measured at
+  ~150 ms to the close dispatch, ~260 ms to the window actually gone. The
+  burst rises a beat later as the window's afterimage, and its lifetime
+  shrank from 520 ms to 420 ms so the layout reflow stays visible under it.
 - The Plymouth theme script is shipped as `plymouth/virtual-paradise.script`
   instead of `plymouth/omarchy.script`, so nothing in the repository is named
   after the package theme it no longer replaces.

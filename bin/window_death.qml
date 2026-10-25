@@ -27,9 +27,11 @@ ShellRoot {
     return { x: +p[0], y: +p[1], width: +p[2], height: +p[3] }
   })()
 
-  // The whole burst lives and dies in about half a second.
+  // The whole burst lives and dies in four tenths of a second: long
+  // enough to read as a death, short enough to stay out of the layout
+  // reflow's way.
   Timer {
-    interval: 520
+    interval: 420
     running: true
     onTriggered: Qt.quit()
   }
@@ -80,7 +82,7 @@ ShellRoot {
 
       // The corpse fades at the very end, so the burst does not cut.
       Timer {
-        interval: 380
+        interval: 280
         running: win.hit
         onTriggered: fadeAnim.start()
       }
@@ -101,7 +103,7 @@ ShellRoot {
         property: "wash"
         from: 0.15
         to: 0.85
-        duration: 260
+        duration: 220
         running: win.hit
         easing.type: Easing.InQuad
       }

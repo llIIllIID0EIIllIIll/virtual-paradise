@@ -2,11 +2,13 @@
 # ==============================================================================
 #  Virtual☆Paradise — Window Death
 # ==============================================================================
-#  Close the active window the way it deserves: the border burns neon red,
-#  the window is captured frame and all, and a glitch burst tears that
-#  capture apart - slices jumping, red static burning through - exactly
-#  where the window was. The window closes *under* the burst, so what the
-#  eye sees is the window shaking itself to death, border included.
+#  Close the active window the way it deserves, without making the close
+#  feel slow: the border burns neon red, the window is captured frame and
+#  all, and the window closes right after the capture - about a tenth of a
+#  second after the keypress, as close to instant as a death rite gets.
+#  The glitch burst rises over the rectangle a beat later as the window's
+#  afterimage, tearing the captured frame apart. The script never waits for
+#  the burst: a burst that is late must not make the close late.
 # ==============================================================================
 
 set -euo pipefail
@@ -14,17 +16,12 @@ set -euo pipefail
 command -v quickshell &>/dev/null || exit 0
 command -v hyprctl &>/dev/null || exit 0
 
-WIN="$(hyprctl activewindow -j 2>/dev/null)" || exit 0
-
-ADDR="$(printf '%s' "$WIN" \
-  | python3 -c 'import json,sys; print(json.load(sys.stdin).get("address") or "")' 2>/dev/null)"
-if [[ -z "$ADDR" || "$ADDR" == "0x0" ]]; then
-  exit 0
-fi
-
-read -r X Y W H <<< "$(printf '%s' "$WIN" \
-  | python3 -c 'import json,sys; w=json.load(sys.stdin); print(w["at"][0], w["at"][1], w["size"][0], w["size"][1])' 2>/dev/null)"
-if [[ -z "${W:-}" ]]; then
+# One parse for everything: address and geometry in a single python.
+read -r ADDR X Y W H <<< "$(hyprctl activewindow -j 2>/dev/null \
+  | python3 -c 'import json,sys
+w = json.load(sys.stdin)
+print(w.get("address") or "", w["at"][0], w["at"][1], w["size"][0], w["size"][1])' 2>/dev/null)" || exit 0
+if [[ -z "${ADDR:-}" || "$ADDR" == "0x0" || -z "${W:-}" ]]; then
   exit 0
 fi
 
@@ -44,9 +41,9 @@ hyprctl eval "
 " &>/dev/null || true
 
 # 2. Capture the red window, border included. The burst tears this frame.
+#    Three frames of grace so the red border is on screen before the shot.
 FRAME="${XDG_RUNTIME_DIR:-/tmp}/vp_death_frame.png"
-rm -f "$FRAME"
-sleep 0.09
+sleep 0.03
 if command -v grim &>/dev/null; then
   grim -g "$X,$Y ${W}x${H}" "$FRAME" &>/dev/null || FRAME=""
 else
@@ -54,23 +51,17 @@ else
 fi
 
 QML="${VP_DEATH_QML:-$HOME/.local/bin/window_death.qml}"
-[[ -f "$QML" ]] || exit 0
+if [[ -f "$QML" ]]; then
+  # 3. The burst rises on its own; the compositor's layer animation is off
+  #    for its namespace, so it appears in one frame when it arrives.
+  VP_DEATH_RECT="$X,$Y,$W,$H" VP_DEATH_IMAGE="$FRAME" \
+    quickshell -p "$QML" &>/dev/null &
+fi
 
-# 3. The burst appears in one frame over the captured rectangle: the
-#    compositor's layer animation is disabled for its namespace, so nothing
-#    slides, nothing fades in - the glitch is simply suddenly there.
-VP_DEATH_RECT="$X,$Y,$W,$H" VP_DEATH_IMAGE="$FRAME" \
-  quickshell -p "$QML" &>/dev/null &
-
-# 4. Wait for the burst surface to map, then close the window under it.
-for _ in $(seq 1 20); do
-  if hyprctl layers 2>/dev/null | grep -q "vp-window-death"; then
-    break
-  fi
-  sleep 0.05
-done
-sleep 0.05
-
+# 4. Close at once. The burst is an afterimage, not a gate: waiting for its
+#    surface to map added a third of a second to every close and made the
+#    desktop feel laggy. A late burst must never make a late close.
+#
 # Hyprland 0.56 parses `hyprctl dispatch` arguments as Lua, so the plain
 # `closewindow address:0x...` form is a syntax error there and the window
 # silently survives. The dispatcher object is the supported spelling.

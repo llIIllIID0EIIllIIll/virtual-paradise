@@ -1578,6 +1578,12 @@ if want tc16; then
   check "the death script closes with the 0.56 dispatcher spelling" \
     "$(grep -q 'hl.dsp.window.close' "$REPO_DIR/bin/window_death.sh" \
       && ! grep -q 'dispatch closewindow' "$REPO_DIR/bin/window_death.sh" && echo 0 || echo 1)"
+  # A late burst must never make a late close: polling the layer tree for
+  # the burst surface added a third of a second to every close. The burst
+  # is an afterimage, not a gate.
+  check "the window closes without waiting on the burst" \
+    "$(grep -q 'hl.dsp.window.close' "$REPO_DIR/bin/window_death.sh" \
+      && ! grep -q 'hyprctl layers' "$REPO_DIR/bin/window_death.sh" && echo 0 || echo 1)"
   # The ambient tear is a whisper: one or two pixels at a fifth of full
   # opacity. Anything heavier reads as a fault, not atmosphere.
   check "the ambient tear stays a whisper" \
