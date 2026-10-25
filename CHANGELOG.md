@@ -8,7 +8,58 @@ Conventional Commits.
 
 ## [Unreleased]
 
+### Added
+- **The island bar marks the widget under the pointer.** A soft accent halo
+  follows the rounded shape of the hovered widget and fades in and out instead
+  of popping. It is disabled by `"bar": { "hoverGlow": false }` in
+  `shell.json`, and turning off `gapEffects` disables both ambient effects so
+  the bar can be made completely still.
+- **`install.sh --force-shell-layout`** replaces a customised `shell.json`
+  when that is what the user actually wants. Without it, the installer, the
+  theme hook and the post-update hook preserve the user's layout.
+- **A user-owned post-update hook** (`post-update.d/virtual-paradise.sh`)
+  verifies the island bar, repairs it from the copy under
+  `~/.local/share/virtual-paradise/island-bar`, re-applies plugin overrides and
+  the bar layout while the theme is active, and re-enables the theme timers if
+  an update left them disabled.
+
 ### Fixed
+- **A customised `shell.json` survives a theme round-trip.** Re-applying the
+  theme used to overwrite any layout change on every login, and leaving it
+  overwrote the file again with the stock layout. All three entry points now
+  use the same three-way ownership check: missing, stock, the previous theme
+  layout, or the last layout this theme applied may be replaced; anything else
+  is a user edit and is preserved.
+- **Leaving Virtual Paradise restores the stock plugins and reverts the
+  overrides.** The old hook copied overrides without recording them, so a
+  switch away left the plugins patched and `omarchy plugin update` could no
+  longer fast-forward. It now uses the same tracked layer as the installer and
+  updater.
+- **Omarchy's `activeBarId` fallback is no longer mistaken for a user edit.**
+  While the island bar is temporarily unavailable, Omarchy rewrites the live
+  bar id to `omarchy.bar`. The installer now recognises that transient state,
+  replaces it with the theme layout, and still preserves a layout the user
+  actually changed.
+- **A missing replacement plugin no longer removes its stock widget.** The
+  theme hook enables a stock widget whenever its external replacement is not
+  installed, instead of disabling it unconditionally and leaving an empty slot.
+- **Non-git plugin overrides are reversible.** The layer now keeps a pristine
+  copy of every existing file it modifies, so a plugin that is not a git
+  checkout can be restored when the theme is left or uninstalled.
+- **An update cannot leave you without a bar.** If the first-party bar is
+  missing or half-copied, the post-update hook repairs it from the user-owned
+  copy. If it cannot, it leaves `shell.json` alone and lets Omarchy's
+  `activeBarId` fall back to the bundled bar, with a single notification
+  instead of an empty bar or a failed update.
+- **The audio watchdog treats a stale-socket cleanup as success.** It used to
+  exit 2 after removing a socket with no daemon behind it, which showed a
+  healthy repair as a failed systemd unit.
+- **`ConditionPathExists` is in `[Unit]`, not `[Service]`.** Both theme units
+  now verify cleanly with `systemd-analyze verify`; an update cannot make them
+  look like a configuration error.
+- **The stock system tray is untouched.** The disabled drawer-reveal patch and
+  its uninstaller repair path are gone; the island bar uses the upstream tray
+  unchanged.
 - **Switching themes (and logging in) is several times faster.** Three
   things were costing seconds on every login and every theme switch:
   - The wallpapers (~95 MB of video) lived *inside* the theme directory.

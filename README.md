@@ -14,7 +14,7 @@
 [![Arch Linux](https://img.shields.io/badge/Arch_Linux-1793D1?style=flat-square&logo=arch-linux&logoColor=white)](https://archlinux.org)
 [![Omarchy 4.0+](https://img.shields.io/badge/Omarchy-4.0+-8A2BE2?style=flat-square)](https://omarchy.org)
 [![Hyprland](https://img.shields.io/badge/Hyprland-Wayland-00ffdd?style=flat-square)](https://hyprland.org)
-[![Tests](https://img.shields.io/badge/tests-302%20passed-00ff88?style=flat-square)](tests/)
+[![Tests](https://img.shields.io/badge/tests-359%20passed-00ff88?style=flat-square)](tests/)
 [![License](https://img.shields.io/badge/license-MIT-ffe066?style=flat-square)](LICENSE)
 [![Version](https://img.shields.io/badge/version-1.2.2-ff00ff?style=flat-square)](VERSION)
 
@@ -32,11 +32,13 @@
 
 ### 🏝️ Floating Island Bar
 
-Three transparent pills with a neon hex backplate, animated gap glow, and live telemetry. Built as a first-party Quickshell plugin so `serviceFor()` works correctly — third-party bars get a scoped shell where services resolve to null.
+Three transparent pills with a neon hex backplate, animated gap glow, a soft hover halo on every widget, and live telemetry. Built as a first-party Quickshell plugin so `serviceFor()` works correctly — third-party bars get a scoped shell where services resolve to null.
 
 - **Left island**: quick menu, Japanese workspace numerals, active window
 - **Center island**: waveform visualizer, weather, clock, vitals (CPU/GPU/RAM/disk/net)
 - **Right island**: system tray, network, audio, battery, power
+
+Both ambient effects are opt-out in `~/.config/omarchy/shell.json`; see [Bar Effects](#bar-effects).
 
 ### 🎬 Animated Wallpapers
 
@@ -90,17 +92,25 @@ Idempotent, XDG-compliant, and respects your existing config:
 - Supports `--user-only` for sudo-free installs
 - Supports `--no-boot` to skip Plymouth/SDDM
 - Supports `--sddm-only` to reinstall just the login theme
+- Preserves a customised `shell.json` unless `--force-shell-layout` is passed
 
 ### 🛡️ Override Layer
 
 Third-party plugins are patched in-place to follow the theme palette. The override layer:
 
 - Records every file it touches in a state file
-- Reverts cleanly with `git checkout` or deletion
+- Reverts cleanly with `git checkout`, a pristine backup for non-git plugins, or deletion
 - Reapplies after every plugin update
 - Resolves versioned `runtime/<hash>/` paths from `manifest.json`
+- Leaves the theme automatically when you switch away, restoring the stock plugins
 
-This means your theme survives `omarchy plugin update` without manual intervention.
+A user-owned post-update hook verifies the island bar, repairs it from a
+user-owned copy when possible, re-applies overrides and the bar layout, and
+checks the theme timers. If repair is impossible, Omarchy's built-in
+`activeBarId` fallback uses the stock bar instead of leaving you with none.
+
+This means your theme survives `omarchy update` and `omarchy plugin update`
+without manual intervention.
 
 ---
 
@@ -301,8 +311,7 @@ ffmpeg -i input.gif -vf "scale=trunc(iw/2)*2:trunc(ih/2)*2" -c:v libx264 -preset
 The theme includes a systemd timer that checks for plugin updates daily. To update manually:
 
 ```bash
-omarchy plugin update
-paradise-plugin-update --apply  # Reapply theme overrides
+paradise-plugin-update --apply  # Revert, update, reapply, pin
 ```
 
 The `paradise-plugin-update` wrapper:
@@ -313,18 +322,39 @@ The `paradise-plugin-update` wrapper:
 
 This ensures your theme survives upstream changes.
 
+### Bar Effects
+
+The gap stream and the per-widget hover halo are opt-out. Add the keys under
+`bar` in `~/.config/omarchy/shell.json`; the installer and theme hooks preserve
+a file you have edited.
+
+```json
+{
+  "bar": {
+    "gapEffects": false,
+    "hoverGlow": false
+  }
+}
+```
+
+`gapEffects` controls the travelling dots between islands. `hoverGlow` controls
+the accent halo behind the widget under the pointer. Setting `gapEffects` to
+`false` also turns off the hover halo, so the bar can be made completely still
+with one key.
+
 ### Disabling Components
 
 **Disable live wallpapers:**
 ```bash
-systemctl --user stop live-wallpaper.service
-systemctl --user disable live-wallpaper.service
+~/.local/bin/toggle_live_wallpaper.sh stop
 ```
+To stop it starting at login, remove the `toggle_live_wallpaper.sh init` line
+from `~/.config/hypr/autostart.lua`.
 
 **Disable plugin update timer:**
 ```bash
-systemctl --user stop paradise-plugin-update.timer
-systemctl --user disable paradise-plugin-update.timer
+systemctl --user stop paradise-plugin-check.timer
+systemctl --user disable paradise-plugin-check.timer
 ```
 
 **Disable audio watchdog:**
@@ -362,9 +392,9 @@ The uninstaller will:
 
 ### Running Tests
 
-The test suite has sixteen test cases and 302 assertions; optional tools
+The test suite has twenty test cases and 359 assertions; optional tools
 (`shellcheck`, `qmllint`, `hyprctl`) enable extra checks when present, so the
-exact count varies between machines (302 with `shellcheck`, 301 without). It
+exact count varies between machines (359 with `shellcheck`, 358 without). It
 runs in a sandbox and never touches your real system.
 
 ```bash
@@ -389,6 +419,10 @@ Test cases:
 - **TC-14**: Omarchy environment (the installer works with a reset environment)
 - **TC-15**: Hyprland config permissions (the compositor can read every file)
 - **TC-16**: Boot and login performance (no wallpapers in the theme, cached banner)
+- **TC-17**: Shell layout ownership (custom `shell.json` survives a round-trip)
+- **TC-18**: Post-update repair hook (bar repair, host fallback, no layout rewrite)
+- **TC-19**: Stability guards (no tray patch, unit conditions, plugin fallback)
+- **TC-20**: Hover glow (effect ships, follows the toggle, hides while dragging)
 
 ### Project Structure
 
@@ -407,6 +441,8 @@ virtual-paradise/
 ├── hypr/                 # Hyprland config (animations, keybindings, rules)
 ├── lib/
 │   ├── plugin-overrides.sh    # Override layer implementation
+│   ├── shell-layout.sh        # Three-way shell.json ownership rules
+│   ├── post-update-hook.sh    # Bar repair and override re-apply after updates
 │   ├── plymouth.sh             # Plymouth theme install/remove/legacy repair
 │   ├── sddm.sh                # SDDM theme install/remove/legacy repair
 │   ├── system.sh              # Hardware detection

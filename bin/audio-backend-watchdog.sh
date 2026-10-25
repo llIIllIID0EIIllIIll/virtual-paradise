@@ -8,10 +8,11 @@
 #
 # Healthy path is a single short round-trip. Only a failed probe kills anything.
 #
-# Exit: 0 healthy (or nothing to check) and 0 after a successful reset; 2 when
-# the probe failed but there was no daemon to kill. A reset is a successful run,
-# so it must not exit non-zero and leave the unit shown as failed in
-# `systemctl --user status`; the journal records what happened.
+# Exit: 0 healthy (or nothing to check), 0 after a successful reset, and 0 when
+# the socket was stale but there was no daemon to kill. The last case is a
+# successful cleanup, not a failure; leaving the unit red made a healthy repair
+# look like an error in `systemctl --user status`. The journal records what
+# happened.
 
 set -uo pipefail
 
@@ -76,7 +77,7 @@ mapfile -t pids < <(pgrep -f "^$PLUGIN_DIR/$BIN_REL --plugin-daemon$" || true)
 if (( ${#pids[@]} == 0 )); then
   printf 'watchdog: socket unresponsive but no daemon process found; removing stale socket\n' >&2
   rm -f "${sockets[@]}"
-  exit 2
+  exit 0
 fi
 
 printf 'watchdog: killing wedged daemon pid(s): %s\n' "${pids[*]}" >&2
