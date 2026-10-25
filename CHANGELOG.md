@@ -239,6 +239,17 @@ Conventional Commits.
   brightest.
 
 ### Changed
+- **The glow is heavy and proud, and every gradient follows the theme's
+  band layout.** Active shadows widened to range 30 at render power 4 with
+  the border's three stops near full alpha. Gradients are built as four
+  cyan, two green, four pink stops: Hyprland caps a gradient at ten
+  colours and spaces stops evenly, and this is the closest the cap allows
+  to the theme's cyan 45% / green 20% / pink 45% travel.
+- **The focused border cycles its colours.** `borderangle` runs a linear
+  loop - one full turn every three seconds - so cyan, green and pink
+  travel around the focused edge rainbow-style. Inactive windows carry the
+  same spin at their dim alpha: movement on a faint gradient reads as a
+  shimmer, not a distraction.
 - The Plymouth theme script is shipped as `plymouth/virtual-paradise.script`
   instead of `plymouth/omarchy.script`, so nothing in the repository is named
   after the package theme it no longer replaces.
@@ -247,6 +258,15 @@ Conventional Commits.
   in `~/.local/bin` forever.
 
 ### Added
+- **Windows die in a red glitch burst.** SUPER + W - replacing Omarchy's
+  plain close on purpose, unbind first - raises a half-second burst of red
+  static, tear bars, dropout blocks and a strobe over the rectangle the
+  window occupied, and closes the window *under* it: what the eye sees is
+  the window dying on screen, not vanishing between frames. The burst
+  waits for its layer to map before the close, is click-through like every
+  other overlay, and closes with the 0.56 dispatcher spelling
+  (`hl.dsp.window.close`), because `hyprctl dispatch closewindow
+  address:...` is parsed as Lua on 0.56 and silently no-ops.
 - **Ambient effect layers, and a switch for them.** `vp-effects.sh
   start|stop|status|enable|disable` runs optional fullscreen Quickshell
   overlays: `ambient_glitch` (a cyan or magenta tear flashes across the

@@ -52,6 +52,13 @@ o.bind("SUPER + ALT + W", "Toggle Live Wallpaper", "~/.local/bin/toggle_live_wal
 o.bind("SUPER + ALT + N", "Next Live Wallpaper", "~/.local/bin/toggle_live_wallpaper.sh next")
 o.bind("SUPER + ALT + SHIFT + N", "Previous Live Wallpaper", "~/.local/bin/toggle_live_wallpaper.sh prev")
 
+-- Closing a window deserves a proper death: a red glitch burst burns where
+-- the window was, then goes out half a second later. Omarchy's SUPER + W
+-- closes plainly, so the chord is replaced on purpose - unbind first, then
+-- own it, exactly like the arrow pair above.
+hl.unbind("SUPER + W")
+o.bind("SUPER + W", "Close Window (Red Glitch Death)", "~/.local/bin/window_death.sh")
+
 -- Omarchy theme menu (the theme-variant script is a separate terminal tool)
 o.bind("SUPER + SHIFT + T", "Theme Menu", "omarchy-menu toggle theme")
 

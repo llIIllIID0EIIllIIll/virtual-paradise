@@ -5,6 +5,16 @@
 --                 https://wiki.hypr.land/Configuring/Advanced-and-Cool/Animations/
 -- ==============================================================================
 
+-- The theme gradient: cyan holds ~45% of the travel, green ~20%, pink ~45%.
+-- Hyprland spaces gradient stops evenly AND caps a gradient at ten colours
+-- (an eleventh makes window rules error out), so the bands are built from
+-- repeated stops - four cyan, two green, four pink - which puts the blend
+-- centres at ~39% and ~61%: the closest the ten-colour cap allows to the
+-- theme's 45/20/45 layout.
+local function band(cyan, green, pink)
+  return { cyan, cyan, cyan, cyan, green, green, pink, pink, pink, pink }
+end
+
 
 
 hl.config({
@@ -20,13 +30,16 @@ hl.config({
     -- Multi-stop neon border
     border_size = 2,
 
-    -- Inactive windows keep the same three-stop palette at a low alpha, so
-    -- every window carries the gradient and its faint glow; only the
-    -- focused one burns bright. A flat grey inactive border read as
-    -- "some windows glow, some do not".
+    -- Every window carries the theme gradient - cyan 45%, green 20%, pink
+    -- 45% - the focused one at full alpha, the rest as a dim trace, so no
+    -- window ever reads as "no glow" next to a neon edge.
     col = {
+      active_border = {
+        colors = band("rgba(00ffdddd)", "rgba(00ff88cc)", "rgba(ffb7d5dd)"),
+        angle = 135,
+      },
       inactive_border = {
-        colors = { "rgba(00ffdd30)", "rgba(00ff8824)", "rgba(ffb7d530)" },
+        colors = band("rgba(00ffdd3c)", "rgba(00ff8830)", "rgba(ffb7d53c)"),
         angle = 135,
       },
     },
@@ -71,19 +84,19 @@ hl.config({
     },
 
     -- 3D Shadows with Neon Accent
-    -- The shadow carries the same three-stop gradient as the active border,
-    -- at a lower alpha: the glow around a window reads as the border's own
-    -- light spilling out, instead of a flat halo that drowns the gradient.
+    -- The shadow carries the same 45/20/45 gradient as the border, heavy
+    -- and proud: the glow around a window reads as the border's own light
+    -- spilling out onto the wallpaper.
     shadow = {
       enabled = true,
-      range = 22,               -- Tighter: supports the border, not floods it
-      render_power = 3,
+      range = 30,               -- Wide enough to read as a glow, not an edge
+      render_power = 4,
       color = {
-        colors = { "rgba(00ffdd55)", "rgba(00ff8844)", "rgba(ffb7d555)" },
+        colors = band("rgba(00ffddbb)", "rgba(00ff8899)", "rgba(ffb7d5bb)"),
         angle = 135,
       },
       color_inactive = {
-        colors = { "rgba(00ffdd12)", "rgba(00ff880e)", "rgba(ffb7d512)" },
+        colors = band("rgba(00ffdd1a)", "rgba(00ff8814)", "rgba(ffb7d51a)"),
         angle = 135,
       },
       offset = "0 4",           -- Slightly deeper offset
@@ -177,6 +190,9 @@ hl.curve("workspaceSpring", { type = "bezier", points = { { 0.34, 1.2 }, { 0.64,
 -- "Latest git" pages renamed it to `damping`, which this version rejects.
 hl.curve("popInBounce", { type = "spring", mass = 1, stiffness = 238.1191, dampening = 24.21279333 })
 hl.curve("popOutSmooth", { type = "bezier", points = { { 0.36, 0.0 }, { 0.66, -0.56 } } })
+-- Constant-rate spin for the border gradient: one full turn per loop, no
+-- easing, so the three colours travel the border at a steady pace.
+hl.curve("linearSpin", { type = "bezier", points = { { 0.0, 0.0 }, { 1.0, 1.0 } } })
 
 -- Window animations
 hl.animation({ leaf = "windows", enabled = true, speed = 4.2, spring = "popInBounce" })
@@ -187,6 +203,12 @@ hl.animation({ leaf = "windowsMove", enabled = true, speed = 4.2, bezier = "flue
 -- Border color transition (Fast, Crisp & Silky Smooth)
 hl.animation({ leaf = "border", enabled = true, speed = 8.5, bezier = "quickFade" })
 hl.animation({ leaf = "fade", enabled = true, speed = 3.8, bezier = "quickFade" })
+
+-- Rainbow on focus: the border gradient's angle spins a full turn every
+-- three seconds, so cyan, green and pink travel around the edge forever.
+-- Inactive windows carry the same spin at their dim alpha - movement on a
+-- 24% gradient reads as a shimmer, not a distraction.
+hl.animation({ leaf = "borderangle", enabled = true, speed = 30, bezier = "linearSpin", style = "loop" })
 
 -- Layers & Popups (Launcher, menus, notifications)
 hl.animation({ leaf = "layers", enabled = true, speed = 4.0, bezier = "fluentDecel", style = "slidefade 20%" })
@@ -260,7 +282,7 @@ o.window({ class = "dialog" }, {
 -- Active windows get a subtle neon glow effect through enhanced border rendering
 -- The multi-stop gradient creates a flowing cyberpunk aesthetic
 local activeBorderGradient = {
-  colors = { "rgba(00ffdddd)", "rgba(00ff88cc)", "rgba(ffb7d5dd)" },
+  colors = band("rgba(00ffdddd)", "rgba(00ff88cc)", "rgba(ffb7d5dd)"),
   angle = 135,
 }
 
