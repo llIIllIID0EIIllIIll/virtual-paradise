@@ -20,6 +20,17 @@ hl.config({
     -- Multi-stop neon border
     border_size = 2,
 
+    -- Inactive windows keep the same three-stop palette at a low alpha, so
+    -- every window carries the gradient and its faint glow; only the
+    -- focused one burns bright. A flat grey inactive border read as
+    -- "some windows glow, some do not".
+    col = {
+      inactive_border = {
+        colors = { "rgba(00ffdd30)", "rgba(00ff8824)", "rgba(ffb7d530)" },
+        angle = 135,
+      },
+    },
+
     -- Easy window edge grabbing & resizing
     resize_on_border = true,
     extend_border_grab_area = 20,
@@ -71,7 +82,10 @@ hl.config({
         colors = { "rgba(00ffdd55)", "rgba(00ff8844)", "rgba(ffb7d555)" },
         angle = 135,
       },
-      color_inactive = "rgba(0f081d40)", -- Dark subtle for inactive
+      color_inactive = {
+        colors = { "rgba(00ffdd12)", "rgba(00ff880e)", "rgba(ffb7d512)" },
+        angle = 135,
+      },
       offset = "0 4",           -- Slightly deeper offset
       scale = 0.97,             -- Shadow scales down slightly
     },

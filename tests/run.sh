@@ -1536,6 +1536,13 @@ if want tc16; then
   check "the active shadow carries the border's three-stop gradient" \
     "$(grep -q 'rgba(00ffdd55)' "$REPO_DIR/hypr/looknfeel.lua" \
       && grep -q 'rgba(ffb7d555)' "$REPO_DIR/hypr/looknfeel.lua" && echo 0 || echo 1)"
+  # Every window carries the palette, not just the focused one: inactive
+  # windows keep the same three stops at a low alpha, on both the border
+  # and the shadow. A flat grey inactive border read as "some windows
+  # glow, some do not".
+  check "inactive windows keep the dim three-stop gradient" \
+    "$(grep -q 'rgba(00ffdd30)' "$REPO_DIR/hypr/looknfeel.lua" \
+      && grep -q 'rgba(00ffdd12)' "$REPO_DIR/hypr/looknfeel.lua" && echo 0 || echo 1)"
   # The ambient tear is a whisper: one or two pixels at a fifth of full
   # opacity. Anything heavier reads as a fault, not atmosphere.
   check "the ambient tear stays a whisper" \
