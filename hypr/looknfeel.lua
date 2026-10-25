@@ -60,11 +60,17 @@ hl.config({
     },
 
     -- 3D Shadows with Neon Accent
+    -- The shadow carries the same three-stop gradient as the active border,
+    -- at a lower alpha: the glow around a window reads as the border's own
+    -- light spilling out, instead of a flat halo that drowns the gradient.
     shadow = {
       enabled = true,
-      range = 30,               -- Extended range for deeper depth + glow
-      render_power = 4,         -- Higher quality shadow
-      color = "rgba(00ffdd80)", -- Cyan neon glow for active windows
+      range = 22,               -- Tighter: supports the border, not floods it
+      render_power = 3,
+      color = {
+        colors = { "rgba(00ffdd55)", "rgba(00ff8844)", "rgba(ffb7d555)" },
+        angle = 135,
+      },
       color_inactive = "rgba(0f081d40)", -- Dark subtle for inactive
       offset = "0 4",           -- Slightly deeper offset
       scale = 0.97,             -- Shadow scales down slightly
