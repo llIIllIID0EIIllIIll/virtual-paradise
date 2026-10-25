@@ -273,6 +273,11 @@ Conventional Commits.
 - The installer removes helper scripts the theme no longer ships, so a file
   that was dropped from the repository does not keep answering to its old name
   in `~/.local/bin` forever.
+- **The test suite no longer kills the live death daemon.** `uninstall.sh`
+  stopped every `vp_death_daemon.qml` process of the user, and the suite runs
+  the uninstaller in a sandbox with a different HOME - so a test run silently
+  killed the resident daemon. It now only stops the daemon under the HOME it
+  is uninstalling from.
 
 ### Added
 - **Windows die in a red glitch burst.** SUPER + W - replacing Omarchy's
