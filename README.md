@@ -377,7 +377,7 @@ The uninstaller will:
 3. Restore backups of your original configs
 4. Remove the SDDM login theme and restore the previous theme selection (if sudo available)
 5. Disable systemd timers
-6. Leave a snapshot in `~/.local/share/virtual-paradise/uninstall-snapshots/`
+6. Leave a snapshot in `~/.local/state/virtual-paradise/uninstall-backup-<timestamp>/`
 
 ### Uninstall Flags
 
