@@ -35,9 +35,11 @@ ShellRoot {
       exclusionMode: ExclusionMode.Ignore
       mask: Region {}
 
-      // Where the tear sits and how it looks while it lives.
+      // Where the tear sits and how it looks while it lives. Kept as faint
+      // as a tear can be and still be seen: one or two pixels, a fifth of
+      // full opacity, a nudge rather than a jump.
       property real tearY: 0
-      property real tearHeight: 3
+      property real tearHeight: 1
       property real tearShift: 0
       property real tearOpacity: 0
       property color tearColor: "#00ffdd"
@@ -48,13 +50,13 @@ ShellRoot {
 
       Timer {
         id: tearTimer
-        interval: win.firstTear ? 1200 : 5000 + Math.random() * 10000
+        interval: win.firstTear ? 2500 : 10000 + Math.random() * 15000
         repeat: true
         running: true
 
         onTriggered: {
           win.tearY = Math.random() * win.height
-          win.tearHeight = 2 + Math.random() * 6
+          win.tearHeight = 1 + Math.random() * 1
           win.tearColor = Math.random() > 0.5 ? "#00ffdd" : "#ff00ff"
           win.firstTear = false
           tearAnim.start()
@@ -76,20 +78,20 @@ ShellRoot {
         NumberAnimation {
           target: win
           property: "tearOpacity"
-          to: 0.7
-          duration: 50
+          to: 0.2
+          duration: 60
         }
         NumberAnimation {
           target: win
           property: "tearShift"
-          to: (Math.random() - 0.5) * 30
+          to: (Math.random() - 0.5) * 10
           duration: 40
         }
         NumberAnimation {
           target: win
           property: "tearOpacity"
           to: 0
-          duration: 100
+          duration: 140
         }
         ScriptAction {
           script: win.tearShift = 0

@@ -1530,6 +1530,17 @@ if want tc16; then
       "$(grep -q 'mask: Region {}' "$REPO_DIR/bin/$vp_overlay.qml" \
         && grep -q 'ShellRoot {' "$REPO_DIR/bin/$vp_overlay.qml" && echo 0 || echo 1)"
   done
+  # The active window's shadow carries the same three-stop gradient as its
+  # border, so the glow reads as the border's light instead of a flat halo
+  # that drowns the gradient.
+  check "the active shadow carries the border's three-stop gradient" \
+    "$(grep -q 'rgba(00ffdd55)' "$REPO_DIR/hypr/looknfeel.lua" \
+      && grep -q 'rgba(ffb7d555)' "$REPO_DIR/hypr/looknfeel.lua" && echo 0 || echo 1)"
+  # The ambient tear is a whisper: one or two pixels at a fifth of full
+  # opacity. Anything heavier reads as a fault, not atmosphere.
+  check "the ambient tear stays a whisper" \
+    "$(grep -A2 'property: "tearOpacity"' "$REPO_DIR/bin/ambient_glitch.qml" | grep -q 'to: 0.2' \
+      && grep -q 'tearHeight = 1 + Math.random() \* 1' "$REPO_DIR/bin/ambient_glitch.qml" && echo 0 || echo 1)"
   check "the curtain fades out when it is done" \
     "$(grep -q 'exitAnim' "$REPO_DIR/bin/glitch_transition.qml" && grep -q 'Qt.quit()' "$REPO_DIR/bin/glitch_transition.qml" && echo 0 || echo 1)"
   check "the uninstaller removes the splash" \
