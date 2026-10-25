@@ -2,10 +2,11 @@
 # ==============================================================================
 #  Virtual☆Paradise — Window Death
 # ==============================================================================
-#  Close the active window with a red glitch burst in its place: the burst
-#  overlay is raised over the window's rectangle first, then the window is
-#  closed, so what the eye sees is the window dying on screen rather than
-#  vanishing between frames.
+#  Close the active window the way it deserves: the border burns neon red,
+#  the window is captured frame and all, and a glitch burst tears that
+#  capture apart - slices jumping, red static burning through - exactly
+#  where the window was. The window closes *under* the burst, so what the
+#  eye sees is the window shaking itself to death, border included.
 # ==============================================================================
 
 set -euo pipefail
@@ -21,20 +22,47 @@ if [[ -z "$ADDR" || "$ADDR" == "0x0" ]]; then
   exit 0
 fi
 
-RECT="$(printf '%s' "$WIN" \
-  | python3 -c 'import json,sys; w=json.load(sys.stdin); x,y=w["at"]; sw,sh=w["size"]; print(x,y,sw,sh,sep=",")' 2>/dev/null)"
-if [[ -z "$RECT" ]]; then
+read -r X Y W H <<< "$(printf '%s' "$WIN" \
+  | python3 -c 'import json,sys; w=json.load(sys.stdin); print(w["at"][0], w["at"][1], w["size"][0], w["size"][1])' 2>/dev/null)"
+if [[ -z "${W:-}" ]]; then
   exit 0
+fi
+
+# Widen the rectangle past the border and into the shadow, so the captured
+# frame - and the burst that tears it - carries the window's whole edge.
+X=$((X - 12))
+Y=$((Y - 12))
+W=$((W + 24))
+H=$((H + 24))
+
+# 1. The window burns red while it is still alive.
+hyprctl eval "
+  local d1 = hl.dsp.window.set_prop({ window = 'address:$ADDR', prop = 'active_border_color', value = 'rgba(ff0055ff) rgba(ff1744ff) rgba(ff003cff) 45deg' })
+  local d2 = hl.dsp.window.set_prop({ window = 'address:$ADDR', prop = 'inactive_border_color', value = 'rgba(ff0055bb) rgba(ff174499) 45deg' })
+  hl.dispatch(d1)
+  hl.dispatch(d2)
+" &>/dev/null || true
+
+# 2. Capture the red window, border included. The burst tears this frame.
+FRAME="${XDG_RUNTIME_DIR:-/tmp}/vp_death_frame.png"
+rm -f "$FRAME"
+sleep 0.09
+if command -v grim &>/dev/null; then
+  grim -g "$X,$Y ${W}x${H}" "$FRAME" &>/dev/null || FRAME=""
+else
+  FRAME=""
 fi
 
 QML="${VP_DEATH_QML:-$HOME/.local/bin/window_death.qml}"
 [[ -f "$QML" ]] || exit 0
 
-VP_DEATH_RECT="$RECT" quickshell -p "$QML" &>/dev/null &
+# 3. The burst appears in one frame over the captured rectangle: the
+#    compositor's layer animation is disabled for its namespace, so nothing
+#    slides, nothing fades in - the glitch is simply suddenly there.
+VP_DEATH_RECT="$X,$Y,$W,$H" VP_DEATH_IMAGE="$FRAME" \
+  quickshell -p "$QML" &>/dev/null &
 
-# The burst needs a moment to map its surface. Wait for it to actually
-# appear in the layer tree before closing the window, so the window dies
-# *under* the burst instead of leaving a gap of plain desktop first.
+# 4. Wait for the burst surface to map, then close the window under it.
 for _ in $(seq 1 20); do
   if hyprctl layers 2>/dev/null | grep -q "vp-window-death"; then
     break

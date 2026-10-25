@@ -4,27 +4,32 @@ import Quickshell.Wayland
 
 // Virtual☆Paradise — Window Death
 //
-// Where a window just closed, a red glitch burst burns for half a second:
-// red static, jumping tear bars, dropout blocks and a strobe, then nothing.
-// The window does not fade away politely; it dies on screen.
+// Where a window just closed, its own corpse tears apart: the burst shows a
+// captured frame of the window - border and all - cut into horizontal slices
+// that jump around while a red static wash burns through, then nothing.
+// The window does not fade away politely; it glitches to death on screen,
+// border included.
 //
-// The burst is placed exactly over the rectangle the window occupied
-// (VP_DEATH_RECT="x,y,w,h" in global coordinates) and is click-through:
-// it is a corpse, not a surface.
+// The burst is placed exactly over the captured rectangle
+// (VP_DEATH_RECT="x,y,w,h", VP_DEATH_IMAGE=the captured frame) and is
+// click-through: it is a corpse, not a surface. It must appear in a single
+// frame - the compositor's layer animation is disabled for this namespace
+// in hypr/looknfeel.lua, or the glitch would slide in and look fake.
 
 ShellRoot {
   id: root
 
   property string rectEnv: Quickshell.env("VP_DEATH_RECT") || ""
+  property string frameImage: Quickshell.env("VP_DEATH_IMAGE") || ""
   property var rect: (function () {
     var p = rectEnv.split(",")
     if (p.length !== 4) return { x: 0, y: 0, width: 0, height: 0 }
     return { x: +p[0], y: +p[1], width: +p[2], height: +p[3] }
   })()
 
-  // The whole burst lives and dies in under half a second.
+  // The whole burst lives and dies in about half a second.
   Timer {
-    interval: 480
+    interval: 520
     running: true
     onTriggered: Qt.quit()
   }
@@ -71,10 +76,11 @@ ShellRoot {
       mask: Region {}
 
       property real fade: 1
+      property real wash: 0.15
 
       // The corpse fades at the very end, so the burst does not cut.
       Timer {
-        interval: 340
+        interval: 380
         running: win.hit
         onTriggered: fadeAnim.start()
       }
@@ -88,89 +94,141 @@ ShellRoot {
         easing.type: Easing.InQuad
       }
 
+      // The red wash burns up through the corpse instead of appearing at
+      // full strength: the first frames still show the window itself.
+      NumberAnimation {
+        target: win
+        property: "wash"
+        from: 0.15
+        to: 0.85
+        duration: 260
+        running: win.hit
+        easing.type: Easing.InQuad
+      }
+
       Item {
+        id: corpse
         anchors.fill: parent
         opacity: win.fade
         clip: true
 
-        // Dark red base: whatever was here is gone, only the wound remains.
-        Rectangle {
-          anchors.fill: parent
-          color: "#2a0008"
-          opacity: 0.92
-        }
-
-        // Red static, crawling. noise.jpg is greyscale TV static, so a red
-        // wash over it is red static - no shader needed.
-        Image {
-          id: noise
-          anchors.fill: parent
-          source: Qt.resolvedUrl("noise.jpg")
-          fillMode: Image.PreserveAspectCrop
-          cache: true
-        }
-
-        Rectangle {
-          anchors.fill: parent
-          color: "#ff2244"
-          opacity: 0.55
-        }
-
-        // Tear bars: heavy, jumping every tick.
+        // The window's own frame, torn into six slices. Every slice shows
+        // the same capture shifted to its band; the jitter timer throws them
+        // sideways every tick, border pixels included, so the whole window
+        // reads as shaking itself apart.
         Timer {
           interval: 40
           repeat: true
           running: win.hit && win.fade > 0
           onTriggered: {
-            bar1.y = Math.random() * parent.height
-            bar1.height = 4 + Math.random() * 18
-            bar1.opacity = Math.random() < 0.8 ? 0.9 : 0
-            bar2.y = Math.random() * parent.height
-            bar2.height = 3 + Math.random() * 12
-            bar2.opacity = Math.random() < 0.7 ? 0.85 : 0
-            bar3.y = Math.random() * parent.height
-            bar3.height = 2 + Math.random() * 8
-            bar3.opacity = Math.random() < 0.6 ? 0.8 : 0
-            drop1.y = Math.random() * parent.height
+            var amp = 26
+            s1.x = (Math.random() - 0.5) * amp
+            s2.x = (Math.random() - 0.5) * amp * 1.4
+            s3.x = (Math.random() - 0.5) * amp
+            s4.x = (Math.random() - 0.5) * amp * 1.2
+            s5.x = (Math.random() - 0.5) * amp
+            s6.x = (Math.random() - 0.5) * amp * 0.8
+            bar1.y = Math.random() * corpse.height
+            bar1.opacity = Math.random() < 0.7 ? 0.85 : 0
+            bar2.y = Math.random() * corpse.height
+            bar2.opacity = Math.random() < 0.6 ? 0.8 : 0
+            drop1.y = Math.random() * corpse.height
             drop1.opacity = Math.random() < 0.5 ? 0.95 : 0
-            drop2.y = Math.random() * parent.height
-            drop2.opacity = Math.random() < 0.45 ? 0.95 : 0
-            noise.x = (Math.random() - 0.5) * 40
+            staticLayer.x = (Math.random() - 0.5) * 40
           }
         }
 
+        Item {
+          id: s1
+          width: parent.width; height: parent.height / 6; y: 0; clip: true
+          Image {
+            source: root.frameImage
+            width: corpse.width; height: corpse.height; y: -0
+            fillMode: Image.Stretch; cache: false
+          }
+        }
+        Item {
+          id: s2
+          width: parent.width; height: parent.height / 6; y: parent.height / 6; clip: true
+          Image {
+            source: root.frameImage
+            width: corpse.width; height: corpse.height; y: -parent.parent.height / 6
+            fillMode: Image.Stretch; cache: false
+          }
+        }
+        Item {
+          id: s3
+          width: parent.width; height: parent.height / 6; y: parent.height * 2 / 6; clip: true
+          Image {
+            source: root.frameImage
+            width: corpse.width; height: corpse.height; y: -parent.parent.height * 2 / 6
+            fillMode: Image.Stretch; cache: false
+          }
+        }
+        Item {
+          id: s4
+          width: parent.width; height: parent.height / 6; y: parent.height * 3 / 6; clip: true
+          Image {
+            source: root.frameImage
+            width: corpse.width; height: corpse.height; y: -parent.parent.height * 3 / 6
+            fillMode: Image.Stretch; cache: false
+          }
+        }
+        Item {
+          id: s5
+          width: parent.width; height: parent.height / 6; y: parent.height * 4 / 6; clip: true
+          Image {
+            source: root.frameImage
+            width: corpse.width; height: corpse.height; y: -parent.parent.height * 4 / 6
+            fillMode: Image.Stretch; cache: false
+          }
+        }
+        Item {
+          id: s6
+          width: parent.width; height: parent.height / 6; y: parent.height * 5 / 6; clip: true
+          Image {
+            source: root.frameImage
+            width: corpse.width; height: corpse.height; y: -parent.parent.height * 5 / 6
+            fillMode: Image.Stretch; cache: false
+          }
+        }
+
+        // Red static crawling over the corpse, burning up with the wash.
+        Image {
+          id: staticLayer
+          anchors.fill: parent
+          source: Qt.resolvedUrl("noise.jpg")
+          fillMode: Image.PreserveAspectCrop
+          cache: true
+          opacity: win.wash
+        }
+
+        Rectangle {
+          anchors.fill: parent
+          color: "#ff2244"
+          opacity: win.wash * 0.55
+        }
+
+        // Tear bars and a dropout block, heavy while they live.
         Rectangle {
           id: bar1
           width: parent.width
+          height: 6
           color: "#ff003c"
           opacity: 0
         }
         Rectangle {
           id: bar2
-          width: parent.width
-          x: (Math.random() - 0.5) * 30
-          color: "#ff5577"
-          opacity: 0
-        }
-        Rectangle {
-          id: bar3
-          width: parent.width * 0.7
+          width: parent.width * 0.8
+          height: 4
           color: "#00ffdd"
           opacity: 0
         }
         Rectangle {
           id: drop1
-          width: parent.width * 0.6
+          width: parent.width * 0.55
           x: parent.width * 0.2
-          height: 26
-          color: "#05000a"
-          opacity: 0
-        }
-        Rectangle {
-          id: drop2
-          width: parent.width * 0.45
-          x: parent.width * 0.1
-          height: 16
+          height: 20
           color: "#05000a"
           opacity: 0
         }
@@ -180,7 +238,7 @@ ShellRoot {
           id: strobe
           anchors.fill: parent
           color: "#ff8899"
-          opacity: 0.55
+          opacity: 0.5
 
           NumberAnimation {
             target: strobe

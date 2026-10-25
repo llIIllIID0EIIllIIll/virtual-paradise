@@ -259,14 +259,17 @@ Conventional Commits.
 
 ### Added
 - **Windows die in a red glitch burst.** SUPER + W - replacing Omarchy's
-  plain close on purpose, unbind first - raises a half-second burst of red
-  static, tear bars, dropout blocks and a strobe over the rectangle the
-  window occupied, and closes the window *under* it: what the eye sees is
-  the window dying on screen, not vanishing between frames. The burst
-  waits for its layer to map before the close, is click-through like every
-  other overlay, and closes with the 0.56 dispatcher spelling
-  (`hl.dsp.window.close`), because `hyprctl dispatch closewindow
-  address:...` is parsed as Lua on 0.56 and silently no-ops.
+  plain close on purpose, unbind first - kills the window in three beats:
+  the border burns neon red while the window is still alive, the window is
+  captured frame and all, and a burst over the rectangle the window
+  occupied tears that capture into jumping slices while red static burns
+  through - border pixels jump with the slices, so the window reads as
+  shaking itself apart. The burst is in the no_anim layer rule, so it
+  appears in a single frame instead of sliding in like a panel, and the
+  window closes *under* it. Click-through like every other overlay; closes
+  with the 0.56 dispatcher spelling (`hl.dsp.window.close`), because
+  `hyprctl dispatch closewindow address:...` is parsed as Lua on 0.56 and
+  silently no-ops.
 - **Ambient effect layers, and a switch for them.** `vp-effects.sh
   start|stop|status|enable|disable` runs optional fullscreen Quickshell
   overlays: `ambient_glitch` (a cyan or magenta tear flashes across the
