@@ -6,5 +6,10 @@
 --  show. The splash keeps the theme's picture on the screen during that gap.
 o.launch_on_start("session_splash.sh")
 
+--  The window death daemon keeps the close burst warm: a resident shell
+--  maps the burst in a single frame, so the glitch and the close land in
+--  the same breath instead of the burst trailing the window.
+o.launch_on_start("vp_death_daemon.sh")
+
 --  Default to live video wallpaper; auto-fallback to static Miku wallpaper if unavailable
 o.launch_on_start("toggle_live_wallpaper.sh init")
