@@ -1534,15 +1534,37 @@ if want tc16; then
   # border, so the glow reads as the border's light instead of a flat halo
   # that drowns the gradient.
   check "the active shadow carries the border's three-stop gradient" \
-    "$(grep -q 'rgba(00ffdd55)' "$REPO_DIR/hypr/looknfeel.lua" \
-      && grep -q 'rgba(ffb7d555)' "$REPO_DIR/hypr/looknfeel.lua" && echo 0 || echo 1)"
+    "$(grep -q 'rgba(00ffddbb)' "$REPO_DIR/hypr/looknfeel.lua" \
+      && grep -q 'rgba(ffb7d5bb)' "$REPO_DIR/hypr/looknfeel.lua" && echo 0 || echo 1)"
   # Every window carries the palette, not just the focused one: inactive
   # windows keep the same three stops at a low alpha, on both the border
   # and the shadow. A flat grey inactive border read as "some windows
   # glow, some do not".
   check "inactive windows keep the dim three-stop gradient" \
-    "$(grep -q 'rgba(00ffdd30)' "$REPO_DIR/hypr/looknfeel.lua" \
-      && grep -q 'rgba(00ffdd12)' "$REPO_DIR/hypr/looknfeel.lua" && echo 0 || echo 1)"
+    "$(grep -q 'rgba(00ffdd3c)' "$REPO_DIR/hypr/looknfeel.lua" \
+      && grep -q 'rgba(00ffdd1a)' "$REPO_DIR/hypr/looknfeel.lua" && echo 0 || echo 1)"
+  # The focused border cycles its colours: borderangle spins the gradient a
+  # full turn every three seconds, linearly, forever.
+  check "the focused border cycles its colours rainbow-style" \
+    "$(grep -q 'leaf = "borderangle"' "$REPO_DIR/hypr/looknfeel.lua" \
+      && grep -q 'style = "loop"' "$REPO_DIR/hypr/looknfeel.lua" && echo 0 || echo 1)"
+  # Hyprland caps a gradient at ten colours and spaces stops evenly, so the
+  # theme's 45/20/45 travel is built from four cyan, two green, four pink.
+  check "the gradient bands respect Hyprland's ten-colour cap" \
+    "$(grep -q 'return { cyan, cyan, cyan, cyan, green, green, pink, pink, pink, pink }' \
+      "$REPO_DIR/hypr/looknfeel.lua" && echo 0 || echo 1)"
+  # Closing a window burns a red glitch burst in its place. Omarchy's plain
+  # SUPER + W is unbound on purpose first, so exactly one action runs.
+  check "SUPER + W is owned by the window death effect" \
+    "$(grep -A1 'hl.unbind("SUPER + W")' "$REPO_DIR/hypr/bindings.lua" \
+      | grep -q 'window_death.sh' && echo 0 || echo 1)"
+  check "the window death burst is click-through" \
+    "$(grep -q 'mask: Region {}' "$REPO_DIR/bin/window_death.qml" && echo 0 || echo 1)"
+  # `hyprctl dispatch closewindow address:...` is parsed as Lua on 0.56 and
+  # silently no-ops; the dispatcher object is the supported spelling.
+  check "the death script closes with the 0.56 dispatcher spelling" \
+    "$(grep -q 'hl.dsp.window.close' "$REPO_DIR/bin/window_death.sh" \
+      && ! grep -q 'dispatch closewindow' "$REPO_DIR/bin/window_death.sh" && echo 0 || echo 1)"
   # The ambient tear is a whisper: one or two pixels at a fifth of full
   # opacity. Anything heavier reads as a fault, not atmosphere.
   check "the ambient tear stays a whisper" \
