@@ -33,6 +33,11 @@ Conventional Commits.
   lozenge that follows the widget's full height.
 
 ### Fixed
+- **The gap comet no longer jerks when the window focus changes.** Switching
+  focus rewrites the active-window title, the left island resizes, and the
+  comet's old wall-clock position was re-rolled by the new gap width. Its
+  crossing is now a fixed-step fraction of the current gap, so a resizing gap
+  carries the comet smoothly instead of teleporting it.
 - **A customised `shell.json` survives a theme round-trip.** Re-applying the
   theme used to overwrite any layout change on every login, and leaving it
   overwrote the file again with the stock layout. All three entry points now
