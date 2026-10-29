@@ -31,13 +31,21 @@ Conventional Commits.
   was reduced to a fixed stream of comets with short trails over an
   edge-faded rail, the centre widgets got more breathing room, and the hover
   halo became a soft lozenge that follows the widget's full height. The
-  stream is deliberately sparse and slow - 180px apart at 55px/s, painted at
+  stream is deliberately sparse and slow - 260px apart at 40px/s, painted at
   60fps - so the gaps read as air with an occasional spark.
 - **The window shadow now rotates with the border gradient.** `shadowangle`
   spins the shadow's gradient on the same `linearSpin` loop as `borderangle`,
   and `glowangle` does the same for `decoration:glow` if it is ever enabled,
   so the neon spill travels around the edge instead of sitting still while
   the border moves.
+- **The bar rim and the Super+Space menu border ride the window gradient.**
+  The islands read their rim colours from the same `hyprland.active-border`
+  token the compositor paints on windows and spin the gradient once every
+  15s; the centre bloom samples the same ramp so it cycles with the rim. The
+  menu is a package-owned plugin, so the first-party bar swaps the loaded
+  menu item's border spec at runtime instead of patching a package file, and
+  every step is guarded so an upstream rename disables the effect rather than
+  breaking the menu.
 
 ### Fixed
 - **The gap comet no longer jerks when the window focus changes.** Switching

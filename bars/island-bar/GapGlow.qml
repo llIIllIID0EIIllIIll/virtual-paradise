@@ -31,8 +31,8 @@ Item {
   // around or change its speed. Spacing is deliberately wider than the old
   // bead chain so the gaps read as air with an occasional spark, not a
   // conveyor belt.
-  readonly property real cometSpacing: 180
-  readonly property real cometSpeed: 55
+  readonly property real cometSpacing: 260
+  readonly property real cometSpeed: 40
   // Pixels of stream travel. Advanced by a fixed step on every timer tick
   // rather than read from the wall clock, so a stalled event loop slows the
   // stream down instead of teleporting it forward.
