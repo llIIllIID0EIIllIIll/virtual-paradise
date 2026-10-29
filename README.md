@@ -14,7 +14,7 @@
 [![Arch Linux](https://img.shields.io/badge/Arch_Linux-1793D1?style=flat-square&logo=arch-linux&logoColor=white)](https://archlinux.org)
 [![Omarchy 4.0+](https://img.shields.io/badge/Omarchy-4.0+-8A2BE2?style=flat-square)](https://omarchy.org)
 [![Hyprland](https://img.shields.io/badge/Hyprland-Wayland-00ffdd?style=flat-square)](https://hyprland.org)
-[![Tests](https://img.shields.io/badge/tests-368%20passed-00ff88?style=flat-square)](tests/)
+[![Tests](https://img.shields.io/badge/tests-374%20passed-00ff88?style=flat-square)](tests/)
 [![License](https://img.shields.io/badge/license-MIT-ffe066?style=flat-square)](LICENSE)
 [![Version](https://img.shields.io/badge/version-1.2.2-ff00ff?style=flat-square)](VERSION)
 
@@ -392,9 +392,9 @@ The uninstaller will:
 
 ### Running Tests
 
-The test suite has twenty-one test cases and 368 assertions; optional tools
+The test suite has twenty-two test cases and 374 assertions; optional tools
 (`shellcheck`, `qmllint`, `hyprctl`) enable extra checks when present, so the
-exact count varies between machines (368 with `shellcheck`, 367 without). It
+exact count varies between machines (374 with `shellcheck`, 373 without). It
 runs in a sandbox and never touches your real system.
 
 ```bash
@@ -424,6 +424,7 @@ Test cases:
 - **TC-19**: Stability guards (no tray patch, unit conditions, plugin fallback)
 - **TC-20**: Hover glow (effect ships, follows the toggle, hides while dragging)
 - **TC-21**: Island chrome and gap effects (hex underlay, glass fill, single comet)
+- **TC-22**: Rotating gradient chrome (bar rim, bloom and menu border share one spin)
 
 ### Project Structure
 

@@ -4,7 +4,7 @@
 #   ./tests/run.sh            run everything
 #   ./tests/run.sh tc2 tc4    run only the named cases
 #
-# Cases are numbered TC-1..TC-21 and each maps to one numbered section of the
+# Cases are numbered TC-1..TC-22 and each maps to one numbered section of the
 # README's test matrix, so the two cannot drift apart silently.
 
 set -uo pipefail
@@ -2201,6 +2201,42 @@ if want tc21; then
   check "the hover halo is a soft lozenge, not a hard box" \
     "$(grep -q 'Keep the halo inside the island' "$bar" \
       && grep -q 'radius: Math.min(width, height) / 2' "$bar" && echo 0 || echo 1)"
+fi
+
+# ─────────────────────────────────────────────────────────────────────────────
+# TC-22  Rotating gradient chrome.
+#
+# The bar rim, the centre bloom and the Super+Space menu border all ride the
+# same slow spin and the same window-gradient token, so the chrome matches the
+# compositor's window borders. The menu hook must stay guarded: it reaches
+# into a package-owned plugin from the first-party bar, and an upstream rename
+# has to disable the effect, not break the menu.
+# ─────────────────────────────────────────────────────────────────────────────
+if want tc22; then
+  section "TC-22  Rotating gradient chrome"
+
+  island="$REPO_DIR/bars/island-bar/IslandBackdrop.qml"
+  bar="$REPO_DIR/bars/island-bar/Bar.qml"
+
+  check "the bar rim rides the window gradient token" \
+    "$(grep -q 'Border.surfaceSpec("hyprland", "active-border"' "$island" \
+      && echo 0 || echo 1)"
+  check "the rim angle is animated slowly and linearly" \
+    "$(grep -q 'property real rimAngle' "$bar" \
+      && grep -q 'NumberAnimation on rimAngle' "$bar" \
+      && grep -q 'duration: 15000' "$bar" \
+      && grep -q 'easing.type: Easing.Linear' "$bar" && echo 0 || echo 1)"
+  check "every island follows the bar rim angle" \
+    "$([[ $(grep -c 'rimAngle: root.rimAngle' "$bar") -eq 6 ]] && echo 0 || echo 1)"
+  check "the centre bloom samples the rim ramp" \
+    "$(grep -q 'glowColor' "$island" && echo 0 || echo 1)"
+  check "the Super+Space menu border rides the same spin" \
+    "$(grep -q 'function applyMenuRim' "$bar" \
+      && grep -q 'panelLoaders\["omarchy.menu"\]' "$bar" \
+      && grep -q 'running: root.menuOpen' "$bar" && echo 0 || echo 1)"
+  check "the menu hook fails soft on an upstream rename" \
+    "$(grep -q '!("borderSpec" in item)' "$bar" \
+      && grep -q '!("border" in item)' "$bar" && echo 0 || echo 1)"
 fi
 
 summary

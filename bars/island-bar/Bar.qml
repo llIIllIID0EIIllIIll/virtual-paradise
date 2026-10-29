@@ -120,6 +120,12 @@ Item {
   // every island to a bare outline and lose the floating look.
   readonly property real islandFillOpacity: 1
 
+  // Degrees. One slow spin shared by every island rim and the Super+Space
+  // menu border, so the bar chrome and the menu read as the same material.
+  // The compositor spins window borders every 3s; the chrome is deliberately
+  // slower so it shimmers instead of competing with the windows.
+  property real rimAngle: 0
+
   function islandRadius(height) {
     // Full pill on the short axis; the clamp keeps a very tall bar from
     // growing absurdly round corners.
@@ -162,6 +168,17 @@ Item {
   Behavior on barForeground { enabled: root.foregroundAnimationEnabled; ColorAnimation { duration: 420; easing.type: Easing.InOutCubic } }
   Behavior on background { ColorAnimation { duration: 420; easing.type: Easing.InOutCubic } }
   Behavior on urgent { ColorAnimation { duration: 420; easing.type: Easing.InOutCubic } }
+
+  // Linear and seamless: the rim gradient wraps on 360, so the loop point is
+  // invisible. The menu border samples this same angle on its own timer.
+  NumberAnimation on rimAngle {
+    running: root.islandsEnabled
+    loops: Animation.Infinite
+    from: 0
+    to: 360
+    duration: 15000
+    easing.type: Easing.Linear
+  }
   property var tooltipTarget: null
   property var pendingTooltipTarget: null
   property string tooltipText: ""
@@ -1229,6 +1246,53 @@ Item {
     clearTooltip()
   }
 
+  // --- Rotating Super+Space menu rim ---------------------------------------
+  // The menu is the first-party omarchy.menu plugin in /usr/share, so the
+  // user-writable override layer cannot reach it and patching a package file
+  // is off the table. The first-party bar is handed the shell root, so it
+  // swaps the loaded menu item's border spec for the same rotating gradient
+  // the windows use. Every step is guarded on the host API and the item's
+  // properties: an upstream rename disables the effect instead of breaking
+  // the menu.
+  readonly property bool menuOpen: !!(root.shell && root.shell.openPanelIds
+    && root.shell.openPanelIds["omarchy.menu"] === true)
+
+  function menuPanelItem() {
+    if (!root.shell || !root.shell.panelLoaders) return null
+    var loader = root.shell.panelLoaders["omarchy.menu"]
+    return loader && loader.item ? loader.item : null
+  }
+
+  function applyMenuRim() {
+    var item = root.menuPanelItem()
+    if (!item || !("borderSpec" in item) || !("border" in item)) return
+    try {
+      var spec = Border.surfaceSpec("menu", "border", item.border, Math.max(1, Style.space(2)))
+      if (!spec || !spec.gradient || !spec.gradient.enabled) return
+      item.borderSpec = {
+        color: spec.color,
+        widths: spec.widths,
+        gradient: {
+          enabled: true,
+          angle: root.rimAngle,
+          colors: spec.gradient.colors
+        }
+      }
+    } catch (e) {
+      // The menu is not ours to break: leave the upstream spec in place.
+    }
+  }
+
+  // 80ms is enough for a 15s turn to read as continuous on a 1px rim, and
+  // keeps the menu card from repainting every frame. Only runs while the menu
+  // is actually open, so a closed menu costs nothing.
+  Timer {
+    interval: 80
+    repeat: true
+    running: root.menuOpen
+    onTriggered: root.applyMenuRim()
+  }
+
   Timer {
     id: tooltipTimer
     interval: 400
@@ -1536,6 +1600,7 @@ Item {
             visible: root.islandsEnabled && root.pillIslands && leftHost.leftContentWidth > 0
             fillOpacity: root.islandFillOpacity
             barAtTop: root.position !== "bottom"
+            rimAngle: root.rimAngle
             radius: root.islandRadius(leftHost.height)
           }
 
@@ -1589,6 +1654,7 @@ Item {
             visible: root.islandsEnabled && root.pillIslands && rightHost.rightContentWidth > 0
             fillOpacity: root.islandFillOpacity
             barAtTop: root.position !== "bottom"
+            rimAngle: root.rimAngle
             radius: root.islandRadius(rightHost.height)
           }
 
@@ -1707,6 +1773,7 @@ Item {
             visible: root.islandsEnabled && root.pillIslands && leftHostV.leftContentHeightV > 0
             fillOpacity: root.islandFillOpacity
             barAtTop: root.position !== "bottom"
+            rimAngle: root.rimAngle
             radius: root.islandRadius(leftHostV.width)
           }
 
@@ -1740,6 +1807,7 @@ Item {
             visible: root.islandsEnabled && root.pillIslands && rightHostV.rightContentHeightV > 0
             fillOpacity: root.islandFillOpacity
             barAtTop: root.position !== "bottom"
+            rimAngle: root.rimAngle
             radius: root.islandRadius(rightHostV.width)
           }
 
@@ -1973,6 +2041,7 @@ Item {
           edge: "center"
           fillOpacity: root.islandFillOpacity
           barAtTop: root.position !== "bottom"
+          rimAngle: root.rimAngle
           radius: root.islandRadius(height)
           accentGlow: true
           animateWidth: true
@@ -2097,6 +2166,7 @@ Item {
           edge: "center"
           fillOpacity: root.islandFillOpacity
           barAtTop: root.position !== "bottom"
+          rimAngle: root.rimAngle
           radius: root.islandRadius(width)
         }
 

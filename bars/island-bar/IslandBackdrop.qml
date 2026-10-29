@@ -12,8 +12,8 @@ import qs.Ui
 Item {
   id: root
 
-  // Which edge of the bar this island hugs. Drives the rim gradient so the
-  // brightest accent always sits on the outer edge of the island.
+  // Which edge of the bar this island hugs. The centre rides the full-strength
+  // rim; the sides sit a little dimmer so the centre stays the focus.
   property string edge: "center"
   property real radius: 0
   property real fillOpacity: 1
@@ -27,9 +27,49 @@ Item {
   // Ease width changes so a section that grows (revealed indicators, a new
   // tray item) glides instead of snapping its backdrop.
   property bool animateWidth: false
+  // Degrees. The bar spins this once per rim period so the rim gradient
+  // travels around the island like the window borders do.
+  property real rimAngle: 0
 
   readonly property bool filled: fillOpacity > 0
   readonly property color base: Color.bar.background
+
+  // The rim rides the same gradient token the compositor paints on window
+  // borders, so the bar and the windows always travel through the same
+  // colours, including theme variants that rewrite that token. A theme
+  // without the token falls back to the accent/muted pair.
+  readonly property var windowGradient: {
+    var spec = Border.surfaceSpec("hyprland", "active-border", Color.accent, 1)
+    return (spec && spec.gradient && spec.gradient.enabled) ? spec.gradient : null
+  }
+
+  readonly property var rimColors: {
+    var grad = root.windowGradient
+    if (!grad || !grad.colors || grad.colors.length === 0)
+      return [Color.accent, Color.muted]
+    var scale = root.edge === "center" ? 0.9 : 0.75
+    var out = []
+    for (var i = 0; i < grad.colors.length; i++) {
+      var c = grad.colors[i]
+      out.push(Qt.rgba(c.r, c.g, c.b, (c.a === undefined ? 1 : c.a) * scale))
+    }
+    return out
+  }
+
+  // The colour the centre bloom shows at this point in the spin, sampled from
+  // the same ramp as the rim so the two never disagree.
+  readonly property color glowColor: {
+    var colors = root.rimColors
+    var n = colors.length
+    if (n === 0) return Color.accent
+    var pos = (root.rimAngle % 360) / 360 * n
+    var i = Math.floor(pos) % n
+    var f = pos - Math.floor(pos)
+    var a = colors[i]
+    var b = colors[(i + 1) % n]
+    return Qt.rgba(a.r + (b.r - a.r) * f, a.g + (b.g - a.g) * f,
+      a.b + (b.b - a.b) * f, 1)
+  }
 
   Behavior on width {
     enabled: root.animateWidth
@@ -62,7 +102,7 @@ Item {
     blur: 18
     spread: 1
     offset: Qt.vector2d(0, 0)
-    color: Qt.rgba(Color.accent.r, Color.accent.g, Color.accent.b, 0.16)
+    color: Qt.rgba(root.glowColor.r, root.glowColor.g, root.glowColor.b, 0.16)
     visible: root.accentGlow && root.shadowEnabled && root.filled
     z: -2
   }
@@ -103,9 +143,10 @@ Item {
     }
   }
 
-  // Accent rim. Colour pairs come from the theme rather than literals so a
-  // palette swap carries over to the bar chrome. The centre is a little
-  // brighter than the sides, matching its role as the focus.
+  // Accent rim. The colours come from the same window-gradient token the
+  // compositor paints on window borders, and the angle is animated by the bar
+  // so the bands travel around the island. A theme without that token falls
+  // back to the accent/muted pair, which still rotates.
   BorderOverlay {
     radius: root.radius
     borderSpec: ({
@@ -113,13 +154,8 @@ Item {
       widths: { top: 1, right: 1, bottom: 1, left: 1 },
       gradient: {
         enabled: true,
-        angle: root.parent && root.parent.vertical === true ? 90 : 0,
-        colors: root.edge === "left"
-          ? [Qt.alpha(Color.accent, 0.68), Qt.alpha(Color.muted, 0.24)]
-          : root.edge === "right"
-            ? [Qt.alpha(Color.muted, 0.24), Qt.alpha(Color.accent, 0.68)]
-            : [Qt.alpha(Color.accent, 0.58), Qt.alpha(Color.muted, 0.28),
-               Qt.alpha(Color.accent, 0.58)]
+        angle: root.rimAngle,
+        colors: root.rimColors
       }
     })
   }
