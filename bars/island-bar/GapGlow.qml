@@ -21,8 +21,16 @@ Item {
   property bool glowEnabled: true
   property real fade: 0.0
 
-  // Pixels per second. Slow enough to read as drifting energy, not a scanner.
-  readonly property real cometSpeed: 74
+  // Seconds for the comet to cross one gap. The animated value is the
+  // fraction of that crossing, not an absolute pixel position: when a gap
+  // resizes (the active-window island grows on a focus change), the comet
+  // keeps its place in the crossing and glides with the island edge instead
+  // of being re-rolled by a new modulo.
+  readonly property real cometPeriod: 1.6
+  // 0..1 crossing phase. Advanced by a fixed step on every timer tick rather
+  // than read from the wall clock, so a stalled event loop slows the comet
+  // down instead of teleporting it forward.
+  property real cometLap: 0
   // Extra travel beyond the gap so the comet enters and leaves off-screen
   // instead of popping into existence at the island rim.
   readonly property real cometOverhang: 40
@@ -51,7 +59,10 @@ Item {
     interval: 33
     repeat: true
     running: root.active
-    onTriggered: root.requestFrame()
+    onTriggered: {
+      root.cometLap = (root.cometLap + 0.033 / root.cometPeriod) % 1.0
+      root.requestFrame()
+    }
   }
 
   Canvas {
@@ -65,7 +76,6 @@ Item {
       ctx.clearRect(0, 0, width, height)
       if (!root.active) return
 
-      var now = Date.now()
       var cy = height / 2
       var a = root.accent
       var rgba = function (alpha) {
@@ -112,10 +122,12 @@ Item {
         ctx.stroke()
 
         // One comet per gap. The phase offset keeps the two gaps from
-        // travelling in lockstep.
+        // travelling in lockstep. Position is a fraction of the crossing, so a
+        // gap that resizes under the comet moves it smoothly instead of
+        // wrapping it to a new spot.
         var span = gapWidth + root.cometOverhang * 2
-        var travel = (now / 1000 * root.cometSpeed + gapIndex * 53) % span
-        var head = x1 - root.cometOverhang + travel
+        var frac = (root.cometLap + gapIndex * 0.37) % 1.0
+        var head = x1 - root.cometOverhang + frac * span
         var trail = 34
         var comet = ctx.createLinearGradient(head - trail, 0, head + 6, 0)
         comet.addColorStop(0.00, rgba(0.00))
