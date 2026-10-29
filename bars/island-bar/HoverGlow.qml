@@ -34,19 +34,20 @@ Item {
   RectangularShadow {
     anchors.fill: parent
     radius: root.radius
-    blur: 14
-    spread: 1
+    blur: 18
+    spread: 0
     offset: Qt.vector2d(0, 0)
-    color: Qt.rgba(root.accent.r, root.accent.g, root.accent.b, 0.55)
+    color: Qt.rgba(root.accent.r, root.accent.g, root.accent.b, 0.20)
   }
 
   // The shadow supplies the bloom. A faint wash and a crisp rim keep the
-  // widget's outline legible against a bright wallpaper.
+  // widget's outline legible against a bright wallpaper without turning the
+  // halo into a hard box around every icon.
   Rectangle {
     anchors.fill: parent
     radius: root.radius
-    color: Qt.rgba(root.accent.r, root.accent.g, root.accent.b, 0.08)
+    color: Qt.rgba(root.accent.r, root.accent.g, root.accent.b, 0.04)
     border.width: 1
-    border.color: Qt.rgba(root.accent.r, root.accent.g, root.accent.b, 0.55)
+    border.color: Qt.rgba(root.accent.r, root.accent.g, root.accent.b, 0.38)
   }
 }

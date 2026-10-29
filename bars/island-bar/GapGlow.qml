@@ -1,15 +1,14 @@
 import QtQuick
 import qs.Commons
 
-// Streaming glow drawn in the gaps between islands.
+// A single light pulse crossing each gap between islands.
 //
-// Adapted from Shibumi-Shell's V1 gap-effects layer (mode 1): a soft accent
-// line at the bar's vertical centre with two layers of dots travelling along
-// it, the fast layer pulsing. It is the one effect that fits this bar's shape -
-// the islands already leave real gaps, so there is somewhere for it to live
-// without covering a widget.
+// The earlier version stacked a solid rail, two bead layers and a white core
+// in every gap. On a gap only a few dozen pixels wide that read as noise, and
+// it fought the hex circuitry underneath. One comet with a short trail over a
+// faint, edge-faded rail keeps the motion legible and lets the pattern breathe.
 //
-// Deliberately a Canvas: a gap can carry dozens of dots at 30fps, which is
+// Deliberately a Canvas: a few gradients and circles per gap at 30fps are
 // cheaper as one threaded paint than as dozens of animated Rectangles.
 Item {
   id: root
@@ -22,11 +21,11 @@ Item {
   property bool glowEnabled: true
   property real fade: 0.0
 
-  // Two cadences, like the source: a fast dense layer and a slow sparse one.
-  readonly property int fastSpacing: 65
-  readonly property int slowSpacing: 110
-  readonly property real fastSpeed: 70
-  readonly property real slowSpeed: 38
+  // Pixels per second. Slow enough to read as drifting energy, not a scanner.
+  readonly property real cometSpeed: 74
+  // Extra travel beyond the gap so the comet enters and leaves off-screen
+  // instead of popping into existence at the island rim.
+  readonly property real cometOverhang: 40
 
   readonly property bool active: glowEnabled && runs.length > 1 && width > 0 && height > 0
 
@@ -87,73 +86,57 @@ Item {
         ctx.rect(x1, 0, gapWidth, height)
         ctx.clip()
 
-        // Soft horizontal glow through the gap.
-        var glowHeight = 8
-        var glow = ctx.createLinearGradient(0, cy - glowHeight, 0, cy + glowHeight)
-        glow.addColorStop(0.00, rgba(0.00))
-        glow.addColorStop(0.25, rgba(0.05))
-        glow.addColorStop(0.45, rgba(0.10))
-        glow.addColorStop(0.50, rgba(0.13))
-        glow.addColorStop(0.55, rgba(0.10))
-        glow.addColorStop(0.75, rgba(0.05))
-        glow.addColorStop(1.00, rgba(0.00))
-        ctx.fillStyle = glow
-        ctx.fillRect(x1, cy - glowHeight, gapWidth, glowHeight * 2)
+        // Soft horizontal band through the gap. Tighter and dimmer than the
+        // old glow so it reads as a lit seam, not a neon tube.
+        var bandHeight = 9
+        var band = ctx.createLinearGradient(0, cy - bandHeight, 0, cy + bandHeight)
+        band.addColorStop(0.00, rgba(0.00))
+        band.addColorStop(0.50, rgba(0.09))
+        band.addColorStop(1.00, rgba(0.00))
+        ctx.fillStyle = band
+        ctx.fillRect(x1, cy - bandHeight, gapWidth, bandHeight * 2)
 
-        // The line the dots travel along.
-        ctx.globalAlpha = 0.45
-        ctx.strokeStyle = rgba(1)
-        ctx.lineWidth = 1.5
+        // Rail fades into both islands, so it has no hard endpoints to fight
+        // the rounded rims.
+        var rail = ctx.createLinearGradient(x1, 0, x2, 0)
+        rail.addColorStop(0.00, rgba(0.00))
+        rail.addColorStop(0.22, rgba(0.26))
+        rail.addColorStop(0.50, rgba(0.38))
+        rail.addColorStop(0.78, rgba(0.26))
+        rail.addColorStop(1.00, rgba(0.00))
+        ctx.strokeStyle = rail
+        ctx.lineWidth = 1
         ctx.beginPath()
         ctx.moveTo(x1, cy)
         ctx.lineTo(x2, cy)
         ctx.stroke()
+
+        // One comet per gap. The phase offset keeps the two gaps from
+        // travelling in lockstep.
+        var span = gapWidth + root.cometOverhang * 2
+        var travel = (now / 1000 * root.cometSpeed + gapIndex * 53) % span
+        var head = x1 - root.cometOverhang + travel
+        var trail = 34
+        var comet = ctx.createLinearGradient(head - trail, 0, head + 6, 0)
+        comet.addColorStop(0.00, rgba(0.00))
+        comet.addColorStop(0.55, rgba(0.22))
+        comet.addColorStop(0.90, rgba(0.72))
+        comet.addColorStop(1.00, rgba(0.85))
+        ctx.fillStyle = comet
+        ctx.fillRect(head - trail, cy - 1.5, trail + 6, 3)
+
+        // Bloom plus a white core at the head. The core is what makes the
+        // pulse read at a glance; the bloom supplies the neon spill.
         ctx.globalAlpha = 0.22
-        ctx.strokeStyle = "#ffffff"
-        ctx.lineWidth = 0.75
+        ctx.fillStyle = rgba(1)
         ctx.beginPath()
-        ctx.moveTo(x1, cy)
-        ctx.lineTo(x2, cy)
-        ctx.stroke()
-
-        // Fast layer: smaller, denser, pulses.
-        var fastOffset = (now / 1000 * root.fastSpeed) % root.fastSpacing
-        var fastStart = Math.ceil((x1 - fastOffset) / root.fastSpacing)
-        for (var i = 0; i < 60; i++) {
-          var dotId = fastStart + i + 100000
-          var dotX = fastOffset + (fastStart + i) * root.fastSpacing
-          if (dotX >= x2) break
-          var pulse = dotId % 5 === 0
-            ? 0.5 + 0.5 * Math.sin(now / 700 + dotId * 2.4) : 0
-          ctx.globalAlpha = pulse > 0 ? 0.28 + pulse * 0.18 : 0.30
-          ctx.fillStyle = rgba(1)
-          ctx.beginPath()
-          ctx.arc(dotX, cy, pulse > 0 ? 4 + pulse * 1.5 : 4.5, 0, Math.PI * 2)
-          ctx.fill()
-          ctx.globalAlpha = pulse > 0 ? 0.95 : 0.90
-          ctx.fillStyle = "#ffffff"
-          ctx.beginPath()
-          ctx.arc(dotX, cy, pulse > 0 ? 1.6 + pulse * 0.4 : 1.6, 0, Math.PI * 2)
-          ctx.fill()
-        }
-
-        // Slow layer: larger haloes, sparse.
-        var slowOffset = (now / 1000 * root.slowSpeed) % root.slowSpacing
-        var slowStart = Math.ceil((x1 - slowOffset) / root.slowSpacing)
-        for (var j = 0; j < 40; j++) {
-          var slowX = slowOffset + (slowStart + j) * root.slowSpacing
-          if (slowX >= x2) break
-          ctx.globalAlpha = 0.11
-          ctx.fillStyle = rgba(1)
-          ctx.beginPath()
-          ctx.arc(slowX, cy, 8.5, 0, Math.PI * 2)
-          ctx.fill()
-          ctx.globalAlpha = 0.50
-          ctx.fillStyle = "#ffffff"
-          ctx.beginPath()
-          ctx.arc(slowX, cy, 2.3, 0, Math.PI * 2)
-          ctx.fill()
-        }
+        ctx.arc(head, cy, 6.5, 0, Math.PI * 2)
+        ctx.fill()
+        ctx.globalAlpha = 0.92
+        ctx.fillStyle = "#ffffff"
+        ctx.beginPath()
+        ctx.arc(head, cy, 1.7, 0, Math.PI * 2)
+        ctx.fill()
 
         ctx.restore()
       }

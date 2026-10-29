@@ -23,6 +23,15 @@ Conventional Commits.
   the bar layout while the theme is active, and re-enables the theme timers if
   an update left them disabled.
 
+### Changed
+- **The island bar now reads as three floating glass pills instead of one
+  outlined plate.** The hex layer is a borderless underlay that only shows in
+  the gaps, each island carries the sole rim plus a top-lit gradient and a
+  softer shadow, and the centre island gets a faint accent bloom. Gap motion
+  was reduced to one comet with a short trail over an edge-faded rail, the
+  centre widgets got more breathing room, and the hover halo became a soft
+  lozenge that follows the widget's full height.
+
 ### Fixed
 - **A customised `shell.json` survives a theme round-trip.** Re-applying the
   theme used to overwrite any layout change on every login, and leaving it
