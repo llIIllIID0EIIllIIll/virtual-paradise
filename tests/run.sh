@@ -2175,9 +2175,10 @@ if want tc21; then
   check "island width changes ease instead of snapping" \
     "$(grep -q 'animateWidth' "$island" \
       && grep -q 'Behavior on width' "$island" && echo 0 || echo 1)"
-  check "the gap effect is a single, resize-stable comet with a faded rail" \
-    "$(grep -q 'cometPeriod' "$gap" \
-      && grep -q 'cometLap' "$gap" \
+  check "the gap effect is a bar-independent comet stream" \
+    "$(grep -q 'cometSpacing' "$gap" \
+      && grep -q 'cometOffset' "$gap" \
+      && grep -q 'var head = first + k \* root.cometSpacing' "$gap" \
       && grep -q 'createLinearGradient' "$gap" \
       && ! grep -q 'Date.now()' "$gap" \
       && ! grep -q 'slowSpacing' "$gap" && echo 0 || echo 1)"

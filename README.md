@@ -32,7 +32,7 @@
 
 ### 🏝️ Floating Island Bar
 
-Three floating glass pills over a faint hex underlay, one comet crossing each gap, a soft hover halo on every widget, and live telemetry. Built as a first-party Quickshell plugin so `serviceFor()` works correctly — third-party bars get a scoped shell where services resolve to null.
+Three floating glass pills over a faint hex underlay, a comet stream crossing the gaps, a soft hover halo on every widget, and live telemetry. Built as a first-party Quickshell plugin so `serviceFor()` works correctly — third-party bars get a scoped shell where services resolve to null.
 
 - **Left island**: quick menu, Japanese workspace numerals, active window
 - **Center island**: waveform visualizer, weather, clock, vitals (CPU/GPU/RAM/disk/net)
@@ -337,8 +337,8 @@ a file you have edited.
 }
 ```
 
-`gapEffects` controls the travelling comet between islands and freezes the hex
-drift. `hoverGlow` controls the accent halo behind the widget under the
+`gapEffects` controls the travelling comet stream between islands and freezes
+the hex drift. `hoverGlow` controls the accent halo behind the widget under the
 pointer. Setting `gapEffects` to `false` also turns off the hover halo, so the
 bar can be made completely still with one key.
 

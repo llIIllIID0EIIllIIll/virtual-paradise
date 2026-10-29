@@ -1,12 +1,16 @@
 import QtQuick
 import qs.Commons
 
-// A single light pulse crossing each gap between islands.
+// A light stream crossing the gaps between islands.
 //
 // The earlier version stacked a solid rail, two bead layers and a white core
 // in every gap. On a gap only a few dozen pixels wide that read as noise, and
-// it fought the hex circuitry underneath. One comet with a short trail over a
-// faint, edge-faded rail keeps the motion legible and lets the pattern breathe.
+// it fought the hex circuitry underneath. The stream is now a fixed row of
+// comets travelling across the whole bar in absolute coordinates; each gap is
+// a window onto it. That keeps the motion even and, more importantly, makes it
+// independent of the bar: an island that resizes when the window focus changes
+// can never move a comet or change its speed, it only changes how much of the
+// stream shows through.
 //
 // Deliberately a Canvas: a few gradients and circles per gap at 30fps are
 // cheaper as one threaded paint than as dozens of animated Rectangles.
@@ -21,19 +25,16 @@ Item {
   property bool glowEnabled: true
   property real fade: 0.0
 
-  // Seconds for the comet to cross one gap. The animated value is the
-  // fraction of that crossing, not an absolute pixel position: when a gap
-  // resizes (the active-window island grows on a focus change), the comet
-  // keeps its place in the crossing and glides with the island edge instead
-  // of being re-rolled by a new modulo.
-  readonly property real cometPeriod: 1.6
-  // 0..1 crossing phase. Advanced by a fixed step on every timer tick rather
-  // than read from the wall clock, so a stalled event loop slows the comet
-  // down instead of teleporting it forward.
-  property real cometLap: 0
-  // Extra travel beyond the gap so the comet enters and leaves off-screen
-  // instead of popping into existence at the island rim.
-  readonly property real cometOverhang: 40
+  // The comet is a fixed stream travelling across the whole bar; each gap is
+  // just a window onto it. Nothing in the stream's position depends on where
+  // an island edge currently is, so a resizing island cannot tug the comet
+  // around or change its speed.
+  readonly property real cometSpacing: 90
+  readonly property real cometSpeed: 90
+  // Pixels of stream travel. Advanced by a fixed step on every timer tick
+  // rather than read from the wall clock, so a stalled event loop slows the
+  // stream down instead of teleporting it forward.
+  property real cometOffset: 0
 
   readonly property bool active: glowEnabled && runs.length > 1 && width > 0 && height > 0
 
@@ -60,7 +61,7 @@ Item {
     repeat: true
     running: root.active
     onTriggered: {
-      root.cometLap = (root.cometLap + 0.033 / root.cometPeriod) % 1.0
+      root.cometOffset = (root.cometOffset + root.cometSpeed * 0.033) % root.cometSpacing
       root.requestFrame()
     }
   }
@@ -121,34 +122,38 @@ Item {
         ctx.lineTo(x2, cy)
         ctx.stroke()
 
-        // One comet per gap. The phase offset keeps the two gaps from
-        // travelling in lockstep. Position is a fraction of the crossing, so a
-        // gap that resizes under the comet moves it smoothly instead of
-        // wrapping it to a new spot.
-        var span = gapWidth + root.cometOverhang * 2
-        var frac = (root.cometLap + gapIndex * 0.37) % 1.0
-        var head = x1 - root.cometOverhang + frac * span
+        // Comets from the global stream. Draw every stream position; the gap
+        // clip culls the rest, so a resizing gap reveals more or less of the
+        // stream without ever moving it.
         var trail = 34
-        var comet = ctx.createLinearGradient(head - trail, 0, head + 6, 0)
-        comet.addColorStop(0.00, rgba(0.00))
-        comet.addColorStop(0.55, rgba(0.22))
-        comet.addColorStop(0.90, rgba(0.72))
-        comet.addColorStop(1.00, rgba(0.85))
-        ctx.fillStyle = comet
-        ctx.fillRect(head - trail, cy - 1.5, trail + 6, 3)
+        var count = Math.ceil(width / root.cometSpacing) + 2
+        var first = root.cometOffset - root.cometSpacing
+        for (var k = 0; k < count; k++) {
+          var head = first + k * root.cometSpacing
+          if (head + 8 < x1 || head - trail > x2) continue
 
-        // Bloom plus a white core at the head. The core is what makes the
-        // pulse read at a glance; the bloom supplies the neon spill.
-        ctx.globalAlpha = 0.22
-        ctx.fillStyle = rgba(1)
-        ctx.beginPath()
-        ctx.arc(head, cy, 6.5, 0, Math.PI * 2)
-        ctx.fill()
-        ctx.globalAlpha = 0.92
-        ctx.fillStyle = "#ffffff"
-        ctx.beginPath()
-        ctx.arc(head, cy, 1.7, 0, Math.PI * 2)
-        ctx.fill()
+          ctx.globalAlpha = 1
+          var comet = ctx.createLinearGradient(head - trail, 0, head + 6, 0)
+          comet.addColorStop(0.00, rgba(0.00))
+          comet.addColorStop(0.55, rgba(0.22))
+          comet.addColorStop(0.90, rgba(0.72))
+          comet.addColorStop(1.00, rgba(0.85))
+          ctx.fillStyle = comet
+          ctx.fillRect(head - trail, cy - 1.5, trail + 6, 3)
+
+          // Bloom plus a white core at the head. The core is what makes the
+          // pulse read at a glance; the bloom supplies the neon spill.
+          ctx.globalAlpha = 0.22
+          ctx.fillStyle = rgba(1)
+          ctx.beginPath()
+          ctx.arc(head, cy, 6.5, 0, Math.PI * 2)
+          ctx.fill()
+          ctx.globalAlpha = 0.92
+          ctx.fillStyle = "#ffffff"
+          ctx.beginPath()
+          ctx.arc(head, cy, 1.7, 0, Math.PI * 2)
+          ctx.fill()
+        }
 
         ctx.restore()
       }
