@@ -28,16 +28,17 @@ Conventional Commits.
   outlined plate.** The hex layer is a borderless underlay that only shows in
   the gaps, each island carries the sole rim plus a top-lit gradient and a
   softer shadow, and the centre island gets a faint accent bloom. Gap motion
-  was reduced to one comet with a short trail over an edge-faded rail, the
-  centre widgets got more breathing room, and the hover halo became a soft
-  lozenge that follows the widget's full height.
+  was reduced to a fixed stream of comets with short trails over an
+  edge-faded rail, the centre widgets got more breathing room, and the hover
+  halo became a soft lozenge that follows the widget's full height.
 
 ### Fixed
 - **The gap comet no longer jerks when the window focus changes.** Switching
   focus rewrites the active-window title, the left island resizes, and the
-  comet's old wall-clock position was re-rolled by the new gap width. Its
-  crossing is now a fixed-step fraction of the current gap, so a resizing gap
-  carries the comet smoothly instead of teleporting it.
+  comet used to be re-rolled by the new gap width. The comets are now a
+  fixed-speed stream in bar coordinates, and the gaps are windows onto it: a
+  resizing island changes how much of the stream shows, never where it is or
+  how fast it moves.
 - **A customised `shell.json` survives a theme round-trip.** Re-applying the
   theme used to overwrite any layout change on every login, and leaving it
   overwrote the file again with the stock layout. All three entry points now
