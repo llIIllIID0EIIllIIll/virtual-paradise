@@ -28,9 +28,11 @@ Item {
   // The comet is a fixed stream travelling across the whole bar; each gap is
   // just a window onto it. Nothing in the stream's position depends on where
   // an island edge currently is, so a resizing island cannot tug the comet
-  // around or change its speed.
-  readonly property real cometSpacing: 90
-  readonly property real cometSpeed: 90
+  // around or change its speed. Spacing is deliberately wider than the old
+  // bead chain so the gaps read as air with an occasional spark, not a
+  // conveyor belt.
+  readonly property real cometSpacing: 180
+  readonly property real cometSpeed: 55
   // Pixels of stream travel. Advanced by a fixed step on every timer tick
   // rather than read from the wall clock, so a stalled event loop slows the
   // stream down instead of teleporting it forward.
@@ -56,12 +58,14 @@ Item {
     requestFrame()
   }
 
+  // 60fps: the comet is slow enough now that a 30fps step would read as
+  // stepping rather than gliding. One threaded canvas paint is cheap.
   Timer {
-    interval: 33
+    interval: 16
     repeat: true
     running: root.active
     onTriggered: {
-      root.cometOffset = (root.cometOffset + root.cometSpeed * 0.033) % root.cometSpacing
+      root.cometOffset = (root.cometOffset + root.cometSpeed * 0.016) % root.cometSpacing
       root.requestFrame()
     }
   }

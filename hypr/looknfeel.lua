@@ -210,6 +210,13 @@ hl.animation({ leaf = "fade", enabled = true, speed = 3.8, bezier = "quickFade" 
 -- 24% gradient reads as a shimmer, not a distraction.
 hl.animation({ leaf = "borderangle", enabled = true, speed = 30, bezier = "linearSpin", style = "loop" })
 
+-- The shadow is the window's glow: spin its gradient angle on the same clock
+-- and curve as the border, so the neon spill rotates with the edge instead of
+-- sitting still while the border travels. `glowangle` does the same for
+-- decoration:glow if a future config turns it on.
+hl.animation({ leaf = "shadowangle", enabled = true, speed = 30, bezier = "linearSpin", style = "loop" })
+hl.animation({ leaf = "glowangle", enabled = true, speed = 30, bezier = "linearSpin", style = "loop" })
+
 -- Layers & Popups (Launcher, menus, notifications)
 hl.animation({ leaf = "layers", enabled = true, speed = 4.0, bezier = "fluentDecel", style = "slidefade 20%" })
 hl.animation({ leaf = "layersIn", enabled = true, speed = 4.2, bezier = "fluentDecel", style = "slidefade 20%" })

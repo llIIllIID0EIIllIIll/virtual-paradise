@@ -1555,6 +1555,14 @@ if want tc16; then
   check "the focused border cycles its colours rainbow-style" \
     "$(grep -q 'leaf = "borderangle"' "$REPO_DIR/hypr/looknfeel.lua" \
       && grep -q 'style = "loop"' "$REPO_DIR/hypr/looknfeel.lua" && echo 0 || echo 1)"
+  # The shadow is the window's glow, so it has to spin on the same clock as
+  # the border; a static shadow next to a travelling border read as two
+  # unrelated effects. glowangle covers decoration:glow if it is ever enabled.
+  check "the shadow and glow spin with the border gradient" \
+    "$(grep -q 'leaf = "shadowangle"' "$REPO_DIR/hypr/looknfeel.lua" \
+      && grep -q 'leaf = "glowangle"' "$REPO_DIR/hypr/looknfeel.lua" \
+      && [[ $(grep -c 'bezier = "linearSpin", style = "loop"' "$REPO_DIR/hypr/looknfeel.lua") -ge 3 ]] \
+      && echo 0 || echo 1)"
   # Hyprland caps a gradient at ten colours and spaces stops evenly, so the
   # theme's 45/20/45 travel is built from four cyan, two green, four pink.
   check "the gradient bands respect Hyprland's ten-colour cap" \
