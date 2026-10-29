@@ -57,7 +57,7 @@ Item {
   // floating island. Padding is the gutter between an island's fill and the
   // widgets it hosts, inset is how far the island pulls in from the bar edge
   // so the three islands read as separate objects rather than one long strip.
-  readonly property int islandPad: Style.space(4)
+  readonly property int islandPad: Style.space(6)
   readonly property int islandInset: Style.space(2)
   readonly property bool islandsEnabled: true
   // Streaming glow in the gaps between islands. Only meaningful while the bar
@@ -93,15 +93,19 @@ Item {
   // Which V2 form BarSurface draws when one continuous surface is used:
   // "notch" (flowing shoulders), "dock", "full" or "fit".
   property string shellVariant: "fit"
-  // How far the outer groups sit from the window edge. Notch insets its
+  // How far the outer groups sit from the window edge. A pill island floats
+  // `islandInset` from the edge, so its host has to start one padding further
+  // in: the host includes the island fill's own gutter. Notch insets its
   // desktop edge at both ends, and fit floats inside its own margin, so both
   // push the groups in further than the attached, flush forms do.
-  readonly property real barEdgeInset: root.notchIslands
-    ? Style.space(3)
-    : root.shellVariant === "notch"
-      ? Style.space(14) + Style.space(9) + Style.space(3)
-      : root.shellVariant === "fit" ? Style.space(3) + Style.space(2)
-      : Style.space(3)
+  readonly property real barEdgeInset: root.pillIslands
+    ? root.islandInset + root.islandPad
+    : root.notchIslands
+      ? root.islandPad
+      : root.shellVariant === "notch"
+        ? Style.space(14) + Style.space(9) + Style.space(3)
+        : root.shellVariant === "fit" ? Style.space(3) + Style.space(2)
+        : Style.space(3)
 
   // The bar owns an IPC handler, and Quickshell keeps only one handler per
   // target. Leaving this on the upstream "omarchy.bar" makes the bundled bar
@@ -1456,15 +1460,16 @@ Item {
           variant: root.shellVariant
         }
 
-        // Neon backplate spanning all three islands. It has to live here, not
+        // Hex circuitry under all three islands. It has to live here, not
         // inside the centre: it needs the side hosts' geometry too, and those
-        // are siblings of the centre, not children of it.
+        // are siblings of the centre, not children of it. The islands cover
+        // it, so the pattern only shows in the gaps - there is no plate fill
+        // or outer border to double up on the island rims.
         NeonBackdrop {
           id: neonPlate
 
           z: -2
           visible: root.islandsEnabled && root.pillIslands
-          readonly property real gap: Style.space(3)
           readonly property var cRect: centerModules.islandRect
           readonly property var edges: {
             var out = { left: [], right: [] }
@@ -1487,13 +1492,14 @@ Item {
           readonly property real backRight: edges.right.length
             ? Math.max.apply(null, edges.right) : 0
 
-          x: Math.round(backLeft - gap)
-          width: Math.max(1, Math.round(backRight - backLeft + gap * 2))
-          height: Math.max(1, root.barSize)
+          x: Math.round(backLeft)
+          width: Math.max(1, Math.round(backRight - backLeft))
+          height: Math.max(1, root.barSize - root.islandInset * 2)
           anchors.verticalCenter: parent.verticalCenter
-          radius: root.islandRadius(height)
           accent: Color.accent
-          base: Color.bar.background
+          // The pattern is ambient motion, so the effects switch freezes it
+          // too; a user who turns gapEffects off gets a completely still bar.
+          animated: root.gapEffects
         }
 
         CenterModules { id: centerModules; anchors.fill: parent }
@@ -1968,6 +1974,8 @@ Item {
           fillOpacity: root.islandFillOpacity
           barAtTop: root.position !== "bottom"
           radius: root.islandRadius(height)
+          accentGlow: true
+          animateWidth: true
         }
 
         BarSurface {
@@ -2001,7 +2009,7 @@ Item {
           visible: !centerRoot.hasAnchor
           entries: centerRoot.entries
           region: "center"
-          spacing: Style.space(3)
+          spacing: Style.space(5)
           anchors.centerIn: parent
         }
 
@@ -2011,7 +2019,7 @@ Item {
           visible: centerRoot.hasAnchor
           entries: root.entriesBefore(centerRoot.entries, root.centerAnchor)
           region: "center"
-          spacing: Style.space(3)
+          spacing: Style.space(5)
           anchors.right: centerAnchorModule.left
           anchors.verticalCenter: centerAnchorModule.verticalCenter
         }
@@ -2030,7 +2038,7 @@ Item {
           visible: centerRoot.hasAnchor
           entries: root.entriesAfter(centerRoot.entries, root.centerAnchor)
           region: "center"
-          spacing: Style.space(3)
+          spacing: Style.space(5)
           anchors.left: centerAnchorModule.right
           anchors.verticalCenter: centerAnchorModule.verticalCenter
         }
@@ -2098,7 +2106,7 @@ Item {
           visible: !centerRoot.hasAnchor
           entries: centerRoot.entries
           region: "center"
-          spacing: Style.space(3)
+          spacing: Style.space(5)
           anchors.centerIn: parent
         }
 
@@ -2108,7 +2116,7 @@ Item {
           visible: centerRoot.hasAnchor
           entries: root.entriesBefore(centerRoot.entries, root.centerAnchor)
           region: "center"
-          spacing: Style.space(3)
+          spacing: Style.space(5)
           anchors.bottom: centerAnchorModule.top
           anchors.horizontalCenter: centerAnchorModule.horizontalCenter
         }
@@ -2127,7 +2135,7 @@ Item {
           visible: centerRoot.hasAnchor
           entries: root.entriesAfter(centerRoot.entries, root.centerAnchor)
           region: "center"
-          spacing: Style.space(3)
+          spacing: Style.space(5)
           anchors.top: centerAnchorModule.bottom
           anchors.horizontalCenter: centerAnchorModule.horizontalCenter
         }
@@ -2330,10 +2338,18 @@ Item {
     }
 
     HoverGlow {
-      anchors.fill: parent
-      anchors.margins: -Style.space(1)
+      anchors.centerIn: parent
+      // Keep the halo inside the island so it highlights the widget instead of
+      // painting over the island rim. Widgets are sized off barSize, which is
+      // taller than the floating pill.
+      width: root.vertical
+        ? Math.max(1, root.barSize - root.islandInset * 2)
+        : parent.width + Style.space(2)
+      height: root.vertical
+        ? parent.height + Style.space(2)
+        : Math.max(1, root.barSize - root.islandInset * 2)
       active: root.hoverEffectsEnabled && slot.hovered && !slot.dragSource
-      radius: Math.min(Style.cornerRadius, slot.height / 2)
+      radius: Math.min(width, height) / 2
       z: -1
     }
 

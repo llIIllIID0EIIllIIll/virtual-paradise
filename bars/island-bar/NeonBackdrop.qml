@@ -1,58 +1,32 @@
 import QtQuick
-import QtQuick.Effects
 import qs.Commons
 
-// A neon backplate for the centre pill.
+// Faint hex circuitry behind the islands.
 //
-// The centre pill floats on top of this; the plate is a little larger on every
-// side so the pattern frames the pill instead of hiding under it. The pattern
-// is a hex grid drifting slowly to the right - the cheapest way to read as a
-// HUD surface without a texture file, and it costs one Canvas paint every
-// other frame rather than an image decode.
+// This is an underlay, not a surface. The islands are opaque and cover it, so
+// only the gaps between them reveal the pattern. That keeps the gaps alive
+// without painting a second plate - and a second outline - around the whole
+// bar. There is deliberately no fill and no border here: the island rims are
+// the only chrome.
 Item {
   id: root
 
   property color accent: Color.accent
-  property color base: Color.bar.background
-  property real radius: 14
   property real cell: Style.space(7)
   property bool animated: true
-  property real patternOpacity: 0.20
+  // Low enough that the pattern reads as circuitry under glass rather than a
+  // texture competing with the widgets.
+  property real patternOpacity: 0.11
 
-  // Horizontal drift, in pixels per second.
-  readonly property real driftPerSecond: 6
+  // Horizontal drift, in pixels per second. Slower than the gap comet so the
+  // two motions do not fight for attention.
+  readonly property real driftPerSecond: 5
 
   // Column spacing. The drift must wrap on exactly this, or the pattern jumps
   // once per loop: a hex row repeats every column, not every cell.
   readonly property real hexWidth: Math.sqrt(3) * Math.max(4, cell)
 
   property real phase: 0
-
-  Rectangle {
-    id: plate
-
-    anchors.fill: parent
-    radius: root.radius
-    color: Qt.rgba(root.base.r, root.base.g, root.base.b, 0.92)
-    border.width: 1
-    border.color: Qt.rgba(root.accent.r, root.accent.g, root.accent.b, 0.45)
-  }
-
-  // Soft accent wash so the plate reads as lit rather than painted.
-  Rectangle {
-    anchors.fill: parent
-    radius: root.radius
-    opacity: 0.5
-    gradient: Gradient {
-      orientation: Gradient.Horizontal
-      GradientStop { position: 0.0; color: "transparent" }
-      GradientStop {
-        position: 0.5
-        color: Qt.rgba(root.accent.r, root.accent.g, root.accent.b, 0.10)
-      }
-      GradientStop { position: 1.0; color: "transparent" }
-    }
-  }
 
   // Driven by an animation, not a timer: a timer advances in whole ticks and
   // lands on a different sub-pixel offset each loop, which is what read as
@@ -92,7 +66,6 @@ Item {
       // cells interlock.
       var s = Math.max(4, root.cell)
       var hexW = Math.sqrt(3) * s
-      var hexH = 2 * s
       var rowStep = 1.5 * s
       var cols = Math.ceil(width / hexW) + 2
       var rows = Math.ceil(height / rowStep) + 1

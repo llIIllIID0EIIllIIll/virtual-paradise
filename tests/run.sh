@@ -4,7 +4,7 @@
 #   ./tests/run.sh            run everything
 #   ./tests/run.sh tc2 tc4    run only the named cases
 #
-# Cases are numbered TC-1..TC-12 and each maps to one numbered section of the
+# Cases are numbered TC-1..TC-21 and each maps to one numbered section of the
 # README's test matrix, so the two cannot drift apart silently.
 
 set -uo pipefail
@@ -2147,6 +2147,49 @@ if want tc20; then
   check "the hover glow can be disabled from shell.json" \
     "$(grep -q 'config.hoverGlow !== false' "$REPO_DIR/bars/island-bar/Bar.qml" \
       && echo 0 || echo 1)"
+fi
+
+# ─────────────────────────────────────────────────────────────────────────────
+# TC-21  Island chrome and gap effects.
+#
+# The bar reads as three floating pills, not one outlined plate: the hex layer
+# is an underlay with no fill or border, the islands carry the only rims, the
+# gap effect is a single comet, and the centre gets the focal treatment.
+# ─────────────────────────────────────────────────────────────────────────────
+if want tc21; then
+  section "TC-21  Island chrome and gap effects"
+
+  neon="$REPO_DIR/bars/island-bar/NeonBackdrop.qml"
+  island="$REPO_DIR/bars/island-bar/IslandBackdrop.qml"
+  gap="$REPO_DIR/bars/island-bar/GapGlow.qml"
+  bar="$REPO_DIR/bars/island-bar/Bar.qml"
+
+  check "the hex layer is an underlay, not a second plate" \
+    "$(grep -q 'patternOpacity' "$neon" \
+      && ! grep -q 'border.width' "$neon" \
+      && ! grep -q 'Qt.rgba(root.base' "$neon" && echo 0 || echo 1)"
+  check "the islands carry a glass gradient and a focal accent bloom" \
+    "$(grep -q 'gradient: Gradient' "$island" \
+      && grep -q 'accentGlow' "$island" \
+      && grep -q 'Qt.lighter(root.base' "$island" && echo 0 || echo 1)"
+  check "island width changes ease instead of snapping" \
+    "$(grep -q 'animateWidth' "$island" \
+      && grep -q 'Behavior on width' "$island" && echo 0 || echo 1)"
+  check "the gap effect is a single comet with a faded rail" \
+    "$(grep -q 'cometSpeed' "$gap" \
+      && grep -q 'createLinearGradient' "$gap" \
+      && ! grep -q 'slowSpacing' "$gap" && echo 0 || echo 1)"
+  check "the centre island is the focal surface" \
+    "$(grep -q 'accentGlow: true' "$bar" \
+      && grep -q 'animateWidth: true' "$bar" && echo 0 || echo 1)"
+  check "turning off the effects freezes the hex drift" \
+    "$(grep -q 'animated: root.gapEffects' "$bar" && echo 0 || echo 1)"
+  check "the bar gives the islands a wider gutter" \
+    "$(grep -q 'readonly property int islandPad: Style.space(6)' "$bar" \
+      && grep -q 'spacing: Style.space(5)' "$bar" && echo 0 || echo 1)"
+  check "the hover halo is a soft lozenge, not a hard box" \
+    "$(grep -q 'Keep the halo inside the island' "$bar" \
+      && grep -q 'radius: Math.min(width, height) / 2' "$bar" && echo 0 || echo 1)"
 fi
 
 summary
