@@ -52,12 +52,13 @@ Conventional Commits.
   angle, and a faint hex shimmer clipped inside the pill. The whole chrome is
   created by a loader only while the halo is visible, so a bar full of idle
   widgets pays nothing for the effect.
-- **The bar border got its own language.** Beyond the rotating ramp rim, every
-  island now carries a dim inner hairline and a faint ramp aura, and a scanner
-  spark with a short trail laps the pill perimeter on a faster clock. That is
-  deliberately different from the hover chrome - hex shimmer, scale pop and a
-  stronger bloom - so the bar and the hovered widget never read as the same
-  effect.
+- **The bar border got its own language.** Beyond the rotating ramp rim - now
+  a two-pixel gradient line like the window borders - every island carries a
+  dim inner hairline that rides the same ramp and a faint ramp aura, and two
+  scanner sparks with short trails lap each pill's perimeter on a faster
+  clock. That is deliberately different from the hover chrome - hex shimmer,
+  scale pop and a stronger bloom - so the bar and the hovered widget never
+  read as the same effect.
 
 ### Fixed
 - **The empty `omarchy.spacer` between the waveform and the weather is gone.**

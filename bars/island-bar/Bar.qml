@@ -1601,7 +1601,7 @@ Item {
             fillOpacity: root.islandFillOpacity
             barAtTop: root.position !== "bottom"
             rimAngle: root.rimAngle
-            glowStrength: 0.07
+            glowStrength: 0.10
             radius: root.islandRadius(leftHost.height)
           }
 
@@ -1656,7 +1656,7 @@ Item {
             fillOpacity: root.islandFillOpacity
             barAtTop: root.position !== "bottom"
             rimAngle: root.rimAngle
-            glowStrength: 0.07
+            glowStrength: 0.10
             radius: root.islandRadius(rightHost.height)
           }
 
@@ -1808,7 +1808,7 @@ Item {
             fillOpacity: root.islandFillOpacity
             barAtTop: root.position !== "bottom"
             rimAngle: root.rimAngle
-            glowStrength: 0.07
+            glowStrength: 0.10
             radius: root.islandRadius(leftHostV.width)
           }
 
@@ -1843,7 +1843,7 @@ Item {
             fillOpacity: root.islandFillOpacity
             barAtTop: root.position !== "bottom"
             rimAngle: root.rimAngle
-            glowStrength: 0.07
+            glowStrength: 0.10
             radius: root.islandRadius(rightHostV.width)
           }
 
@@ -2079,7 +2079,7 @@ Item {
           barAtTop: root.position !== "bottom"
           rimAngle: root.rimAngle
           radius: root.islandRadius(height)
-          glowStrength: 0.16
+          glowStrength: 0.20
           animateWidth: true
         }
 
@@ -2203,7 +2203,7 @@ Item {
           fillOpacity: root.islandFillOpacity
           barAtTop: root.position !== "bottom"
           rimAngle: root.rimAngle
-          glowStrength: 0.16
+          glowStrength: 0.20
           radius: root.islandRadius(width)
         }
 
