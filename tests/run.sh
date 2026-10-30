@@ -4,7 +4,7 @@
 #   ./tests/run.sh            run everything
 #   ./tests/run.sh tc2 tc4    run only the named cases
 #
-# Cases are numbered TC-1..TC-22 and each maps to one numbered section of the
+# Cases are numbered TC-1..TC-23 and each maps to one numbered section of the
 # README's test matrix, so the two cannot drift apart silently.
 
 set -uo pipefail
@@ -2216,10 +2216,11 @@ if want tc22; then
   section "TC-22  Rotating gradient chrome"
 
   island="$REPO_DIR/bars/island-bar/IslandBackdrop.qml"
+  ramp="$REPO_DIR/bars/island-bar/RimRamp.qml"
   bar="$REPO_DIR/bars/island-bar/Bar.qml"
 
-  check "the bar rim rides the window gradient token" \
-    "$(grep -q 'Border.surfaceSpec("hyprland", "active-border"' "$island" \
+  check "the shared ramp rides the window gradient token" \
+    "$(grep -q 'Border.surfaceSpec("hyprland", "active-border"' "$ramp" \
       && echo 0 || echo 1)"
   check "the rim angle is animated slowly and linearly" \
     "$(grep -q 'property real rimAngle' "$bar" \
@@ -2229,7 +2230,7 @@ if want tc22; then
   check "every island follows the bar rim angle" \
     "$([[ $(grep -c 'rimAngle: root.rimAngle' "$bar") -eq 6 ]] && echo 0 || echo 1)"
   check "the centre bloom samples the rim ramp" \
-    "$(grep -q 'glowColor' "$island" && echo 0 || echo 1)"
+    "$(grep -q 'ramp.colorAt' "$island" && echo 0 || echo 1)"
   check "the Super+Space menu border rides the same spin" \
     "$(grep -q 'function applyMenuRim' "$bar" \
       && grep -q 'panelLoaders\["omarchy.menu"\]' "$bar" \
@@ -2237,6 +2238,40 @@ if want tc22; then
   check "the menu hook fails soft on an upstream rename" \
     "$(grep -q '!("borderSpec" in item)' "$bar" \
       && grep -q '!("border" in item)' "$bar" && echo 0 || echo 1)"
+fi
+
+# ─────────────────────────────────────────────────────────────────────────────
+# TC-23  Hover chrome.
+#
+# The hover effect is a miniature window: a rotating gradient rim, a bloom
+# sampled from the shared ramp and a hex shimmer inside the pill. The chrome
+# is created by a Loader only while the halo is visible, and the bar passes
+# its own rim angle so the hover rim joins the same spin as the islands.
+# ─────────────────────────────────────────────────────────────────────────────
+if want tc23; then
+  section "TC-23  Hover chrome"
+
+  glow="$REPO_DIR/bars/island-bar/HoverGlow.qml"
+  bar="$REPO_DIR/bars/island-bar/Bar.qml"
+  ramp="$REPO_DIR/bars/island-bar/RimRamp.qml"
+
+  check "RimRamp.qml ships with the island bar" \
+    "$([[ -f $ramp ]] && echo 0 || echo 1)"
+  check "the hover rim rides the shared ramp and the bar angle" \
+    "$(grep -q 'RimRamp {' "$glow" \
+      && grep -q 'angle: root.barAngle' "$glow" \
+      && grep -q 'colors: ramp.colors' "$glow" && echo 0 || echo 1)"
+  check "the hover bloom samples the ramp" \
+    "$(grep -q 'ramp.colorAt' "$glow" && echo 0 || echo 1)"
+  check "the hover pill carries a clipped hex shimmer" \
+    "$(grep -q 'ctx.clip()' "$glow" \
+      && grep -q 'ctx.arcTo' "$glow" \
+      && grep -q 'hexW' "$glow" && echo 0 || echo 1)"
+  check "the chrome only exists while the halo is visible" \
+    "$(grep -q 'active: root.active || root.opacity > 0' "$glow" \
+      && grep -q 'sourceComponent: chrome' "$glow" && echo 0 || echo 1)"
+  check "the bar feeds its rim angle into the hover chrome" \
+    "$(grep -q 'barAngle: root.rimAngle' "$bar" && echo 0 || echo 1)"
 fi
 
 summary

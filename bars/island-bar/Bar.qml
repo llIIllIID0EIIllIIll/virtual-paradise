@@ -2419,8 +2419,12 @@ Item {
         ? parent.height + Style.space(2)
         : Math.max(1, root.barSize - root.islandInset * 2)
       active: root.hoverEffectsEnabled && slot.hovered && !slot.dragSource
+      barAngle: root.rimAngle
       radius: Math.min(width, height) / 2
-      z: -1
+      // Declared before the widget loaders, so it paints behind the widget's
+      // own content without a negative z: a negative z drops the halo behind
+      // the island fill on this bar and it never shows up.
+      z: 0
     }
 
     HoverHandler { id: moduleHover }

@@ -46,6 +46,12 @@ Conventional Commits.
   menu item's border spec at runtime instead of patching a package file, and
   every step is guarded so an upstream rename disables the effect rather than
   breaking the menu.
+- **The hover halo became a miniature window.** Hovering a widget now draws a
+  gradient rim that rides the shared `hyprland.active-border` ramp and spins
+  with the bar, a bloom whose colour is sampled from that ramp at the current
+  angle, and a faint hex shimmer clipped inside the pill. The whole chrome is
+  created by a loader only while the halo is visible, so a bar full of idle
+  widgets pays nothing for the effect.
 
 ### Fixed
 - **The gap comet no longer jerks when the window focus changes.** Switching
