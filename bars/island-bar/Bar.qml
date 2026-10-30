@@ -1601,6 +1601,7 @@ Item {
             fillOpacity: root.islandFillOpacity
             barAtTop: root.position !== "bottom"
             rimAngle: root.rimAngle
+            glowStrength: 0.07
             radius: root.islandRadius(leftHost.height)
           }
 
@@ -1655,6 +1656,7 @@ Item {
             fillOpacity: root.islandFillOpacity
             barAtTop: root.position !== "bottom"
             rimAngle: root.rimAngle
+            glowStrength: 0.07
             radius: root.islandRadius(rightHost.height)
           }
 
@@ -1706,6 +1708,38 @@ Item {
               list.push({ x: c.x + t, width: c.width - 2 * t })
             if (rightHost.rightContentWidth > 0)
               list.push({ x: rightHost.x + t, width: rightHost.width - t })
+            list.sort(function (a, b) { return a.x - b.x })
+            return list
+          }
+        }
+
+        // The scanner light on the island rims. One canvas paints every
+        // island's spark; it lives above the islands so the trail rides the
+        // rim instead of hiding behind the fill. This is the motion the hover
+        // chrome does not have, so the bar border reads as its own thing.
+        RimLight {
+          id: rimLight
+
+          z: 12
+          anchors.left: parent.left
+          anchors.right: parent.right
+          height: root.barSize
+          anchors.top: root.position !== "bottom" ? parent.top : undefined
+          anchors.bottom: root.position === "bottom" ? parent.bottom : undefined
+          lightEnabled: root.islandsEnabled && root.gapEffects && root.pillIslands
+          barHeight: Math.max(1, root.barSize - root.islandInset * 2)
+          radius: root.islandRadius(barHeight)
+          angle: root.rimAngle
+          color: Color.accent
+          runs: {
+            var list = []
+            if (leftHost.leftContentWidth > 0)
+              list.push({ x: leftHost.x, width: leftHost.width })
+            var c = centerModules.islandRect
+            if (c && c.width > 0)
+              list.push({ x: c.x, width: c.width })
+            if (rightHost.rightContentWidth > 0)
+              list.push({ x: rightHost.x, width: rightHost.width })
             list.sort(function (a, b) { return a.x - b.x })
             return list
           }
@@ -1774,6 +1808,7 @@ Item {
             fillOpacity: root.islandFillOpacity
             barAtTop: root.position !== "bottom"
             rimAngle: root.rimAngle
+            glowStrength: 0.07
             radius: root.islandRadius(leftHostV.width)
           }
 
@@ -1808,6 +1843,7 @@ Item {
             fillOpacity: root.islandFillOpacity
             barAtTop: root.position !== "bottom"
             rimAngle: root.rimAngle
+            glowStrength: 0.07
             radius: root.islandRadius(rightHostV.width)
           }
 
@@ -2043,7 +2079,7 @@ Item {
           barAtTop: root.position !== "bottom"
           rimAngle: root.rimAngle
           radius: root.islandRadius(height)
-          accentGlow: true
+          glowStrength: 0.16
           animateWidth: true
         }
 
@@ -2167,6 +2203,7 @@ Item {
           fillOpacity: root.islandFillOpacity
           barAtTop: root.position !== "bottom"
           rimAngle: root.rimAngle
+          glowStrength: 0.16
           radius: root.islandRadius(width)
         }
 
