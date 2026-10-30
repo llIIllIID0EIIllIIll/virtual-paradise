@@ -34,41 +34,11 @@ Item {
   readonly property bool filled: fillOpacity > 0
   readonly property color base: Color.bar.background
 
-  // The rim rides the same gradient token the compositor paints on window
-  // borders, so the bar and the windows always travel through the same
-  // colours, including theme variants that rewrite that token. A theme
-  // without the token falls back to the accent/muted pair.
-  readonly property var windowGradient: {
-    var spec = Border.surfaceSpec("hyprland", "active-border", Color.accent, 1)
-    return (spec && spec.gradient && spec.gradient.enabled) ? spec.gradient : null
-  }
+  RimRamp {
+    id: ramp
 
-  readonly property var rimColors: {
-    var grad = root.windowGradient
-    if (!grad || !grad.colors || grad.colors.length === 0)
-      return [Color.accent, Color.muted]
-    var scale = root.edge === "center" ? 0.9 : 0.75
-    var out = []
-    for (var i = 0; i < grad.colors.length; i++) {
-      var c = grad.colors[i]
-      out.push(Qt.rgba(c.r, c.g, c.b, (c.a === undefined ? 1 : c.a) * scale))
-    }
-    return out
-  }
-
-  // The colour the centre bloom shows at this point in the spin, sampled from
-  // the same ramp as the rim so the two never disagree.
-  readonly property color glowColor: {
-    var colors = root.rimColors
-    var n = colors.length
-    if (n === 0) return Color.accent
-    var pos = (root.rimAngle % 360) / 360 * n
-    var i = Math.floor(pos) % n
-    var f = pos - Math.floor(pos)
-    var a = colors[i]
-    var b = colors[(i + 1) % n]
-    return Qt.rgba(a.r + (b.r - a.r) * f, a.g + (b.g - a.g) * f,
-      a.b + (b.b - a.b) * f, 1)
+    alphaScale: root.edge === "center" ? 0.9 : 0.75
+    angle: root.rimAngle
   }
 
   Behavior on width {
@@ -102,7 +72,7 @@ Item {
     blur: 18
     spread: 1
     offset: Qt.vector2d(0, 0)
-    color: Qt.rgba(root.glowColor.r, root.glowColor.g, root.glowColor.b, 0.16)
+    color: Qt.rgba(ramp.colorAt.r, ramp.colorAt.g, ramp.colorAt.b, 0.16)
     visible: root.accentGlow && root.shadowEnabled && root.filled
     z: -2
   }
@@ -143,10 +113,8 @@ Item {
     }
   }
 
-  // Accent rim. The colours come from the same window-gradient token the
-  // compositor paints on window borders, and the angle is animated by the bar
-  // so the bands travel around the island. A theme without that token falls
-  // back to the accent/muted pair, which still rotates.
+  // Accent rim. The colours come from the shared window-gradient ramp and the
+  // angle is animated by the bar so the bands travel around the island.
   BorderOverlay {
     radius: root.radius
     borderSpec: ({
@@ -155,7 +123,7 @@ Item {
       gradient: {
         enabled: true,
         angle: root.rimAngle,
-        colors: root.rimColors
+        colors: ramp.colors
       }
     })
   }
