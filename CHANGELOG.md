@@ -51,7 +51,15 @@ Conventional Commits.
   with the bar, a bloom whose colour is sampled from that ramp at the current
   angle, and a faint hex shimmer clipped inside the pill. The whole chrome is
   created by a loader only while the halo is visible, so a bar full of idle
-  widgets pays nothing for the effect.
+  widgets pays nothing for the effect. The halo runs hotter than the bar
+  border - full-strength ramp rim, a 0.10 wash, a 0.22 hex shimmer and a
+  lit-glass sheen - so it reads as a pressed button rather than a smaller
+  copy of the island rim.
+- **The bar grew to 40px so widget pills clear the island rim.** The widgets
+  are sized off the bar height, and at 34px the weather, temperature and mic
+  capsules sat within a pixel of the island rim. The taller bar leaves a
+  visible gutter between a widget's own border and the island's two-pixel
+  gradient line.
 - **The bar border got its own language.** Beyond the rotating ramp rim - now
   a two-pixel gradient line like the window borders - every island carries a
   dim inner hairline that rides the same ramp and a faint ramp aura, and a

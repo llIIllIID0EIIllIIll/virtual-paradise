@@ -7,7 +7,7 @@ background-alpha = 0.88
 text             = "#eafbfa"
 active           = "#00ffdd"
 scale-with-font  = true
-size-horizontal  = 34
+size-horizontal  = 40
 size-vertical    = 34
 
 [hyprland]
