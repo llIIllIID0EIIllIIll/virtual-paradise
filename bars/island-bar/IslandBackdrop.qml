@@ -20,10 +20,11 @@ Item {
   // Shadow direction follows the bar: an island on the bottom edge casts up.
   property bool barAtTop: true
   property bool shadowEnabled: true
-  // A faint accent bloom behind one island. The centre uses it to read as the
-  // focal surface; the sides keep only the neutral shadow so the bar does not
-  // turn into three competing glows.
-  property bool accentGlow: false
+  // A soft bloom behind the island, in the ramp colour at the current angle.
+  // The centre runs stronger so it stays the focal surface; the sides get a
+  // faint aura so the whole bar glows instead of only the middle. Zero means
+  // no bloom at all.
+  property real glowStrength: 0
   // Ease width changes so a section that grows (revealed indicators, a new
   // tray item) glides instead of snapping its backdrop.
   property bool animateWidth: false
@@ -64,16 +65,17 @@ Item {
     }
   }
 
-  // Accent bloom for the focal island. Sits behind the neutral shadow so the
-  // dark edge stays crisp and the colour only spills outward.
+  // Accent bloom for the island. Sits behind the neutral shadow so the dark
+  // edge stays crisp and the colour only spills outward.
   RectangularShadow {
     anchors.fill: parent
     radius: root.radius
     blur: 18
     spread: 1
     offset: Qt.vector2d(0, 0)
-    color: Qt.rgba(ramp.colorAt.r, ramp.colorAt.g, ramp.colorAt.b, 0.16)
-    visible: root.accentGlow && root.shadowEnabled && root.filled
+    color: Qt.rgba(ramp.colorAt.r, ramp.colorAt.g, ramp.colorAt.b,
+      root.glowStrength)
+    visible: root.glowStrength > 0 && root.shadowEnabled && root.filled
     z: -2
   }
 
@@ -111,6 +113,20 @@ Item {
         color: "transparent"
       }
     }
+  }
+
+  // Inner hairline: a dim frame two pixels inside the rim. It reads as a
+  // machined bezel and gives the bar a second line the hover chrome does not
+  // have, so the two effects never blur together.
+  Rectangle {
+    anchors.fill: parent
+    anchors.margins: 2
+    radius: Math.max(0, root.radius - 2)
+    color: "transparent"
+    border.width: 1
+    border.color: Qt.rgba(Color.foreground.r, Color.foreground.g,
+      Color.foreground.b, 0.07)
+    visible: root.filled
   }
 
   // Accent rim. The colours come from the shared window-gradient ramp and the

@@ -14,7 +14,7 @@
 [![Arch Linux](https://img.shields.io/badge/Arch_Linux-1793D1?style=flat-square&logo=arch-linux&logoColor=white)](https://archlinux.org)
 [![Omarchy 4.0+](https://img.shields.io/badge/Omarchy-4.0+-8A2BE2?style=flat-square)](https://omarchy.org)
 [![Hyprland](https://img.shields.io/badge/Hyprland-Wayland-00ffdd?style=flat-square)](https://hyprland.org)
-[![Tests](https://img.shields.io/badge/tests-380%20passed-00ff88?style=flat-square)](tests/)
+[![Tests](https://img.shields.io/badge/tests-385%20passed-00ff88?style=flat-square)](tests/)
 [![License](https://img.shields.io/badge/license-MIT-ffe066?style=flat-square)](LICENSE)
 [![Version](https://img.shields.io/badge/version-1.2.2-ff00ff?style=flat-square)](VERSION)
 
@@ -392,9 +392,9 @@ The uninstaller will:
 
 ### Running Tests
 
-The test suite has twenty-three test cases and 380 assertions; optional tools
+The test suite has twenty-four test cases and 385 assertions; optional tools
 (`shellcheck`, `qmllint`, `hyprctl`) enable extra checks when present, so the
-exact count varies between machines (380 with `shellcheck`, 379 without). It
+exact count varies between machines (385 with `shellcheck`, 384 without). It
 runs in a sandbox and never touches your real system.
 
 ```bash
@@ -426,6 +426,7 @@ Test cases:
 - **TC-21**: Island chrome and gap effects (hex underlay, glass fill, single comet)
 - **TC-22**: Rotating gradient chrome (bar rim, bloom and menu border share one spin)
 - **TC-23**: Hover chrome (rotating rim, ramp bloom, hex shimmer, lazy loader)
+- **TC-24**: Bar border chrome (scanner spark, inner hairline, ramp aura, no spacer)
 
 ### Project Structure
 

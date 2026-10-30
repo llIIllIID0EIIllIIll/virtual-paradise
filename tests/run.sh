@@ -4,7 +4,7 @@
 #   ./tests/run.sh            run everything
 #   ./tests/run.sh tc2 tc4    run only the named cases
 #
-# Cases are numbered TC-1..TC-23 and each maps to one numbered section of the
+# Cases are numbered TC-1..TC-24 and each maps to one numbered section of the
 # README's test matrix, so the two cannot drift apart silently.
 
 set -uo pipefail
@@ -2178,7 +2178,7 @@ if want tc21; then
       && ! grep -q 'Qt.rgba(root.base' "$neon" && echo 0 || echo 1)"
   check "the islands carry a glass gradient and a focal accent bloom" \
     "$(grep -q 'gradient: Gradient' "$island" \
-      && grep -q 'accentGlow' "$island" \
+      && grep -q 'glowStrength' "$island" \
       && grep -q 'Qt.lighter(root.base' "$island" && echo 0 || echo 1)"
   check "island width changes ease instead of snapping" \
     "$(grep -q 'animateWidth' "$island" \
@@ -2191,7 +2191,7 @@ if want tc21; then
       && ! grep -q 'Date.now()' "$gap" \
       && ! grep -q 'slowSpacing' "$gap" && echo 0 || echo 1)"
   check "the centre island is the focal surface" \
-    "$(grep -q 'accentGlow: true' "$bar" \
+    "$(grep -q 'glowStrength: 0.16' "$bar" \
       && grep -q 'animateWidth: true' "$bar" && echo 0 || echo 1)"
   check "turning off the effects freezes the hex drift" \
     "$(grep -q 'animated: root.gapEffects' "$bar" && echo 0 || echo 1)"
@@ -2272,6 +2272,40 @@ if want tc23; then
       && grep -q 'sourceComponent: chrome' "$glow" && echo 0 || echo 1)"
   check "the bar feeds its rim angle into the hover chrome" \
     "$(grep -q 'barAngle: root.rimAngle' "$bar" && echo 0 || echo 1)"
+fi
+
+# ─────────────────────────────────────────────────────────────────────────────
+# TC-24  Bar border chrome.
+#
+# The bar border has to read as its own thing next to the hover chrome: a
+# scanner spark walking each island's rim, an inner hairline and a faint ramp
+# aura on every island. The empty omarchy.spacer must not come back into the
+# centre layout, where it showed up as a hoverable hole.
+# ─────────────────────────────────────────────────────────────────────────────
+if want tc24; then
+  section "TC-24  Bar border chrome"
+
+  bar="$REPO_DIR/bars/island-bar/Bar.qml"
+  island="$REPO_DIR/bars/island-bar/IslandBackdrop.qml"
+  light="$REPO_DIR/bars/island-bar/RimLight.qml"
+  shell="$REPO_DIR/shell/shell.json"
+
+  check "RimLight.qml ships with the island bar" \
+    "$([[ -f $light ]] && echo 0 || echo 1)"
+  check "the bar border runs a scanner spark" \
+    "$(grep -q 'RimLight {' "$bar" \
+      && grep -q 'lightEnabled: root.islandsEnabled && root.gapEffects' "$bar" \
+      && grep -q 'speedFactor' "$light" && echo 0 || echo 1)"
+  check "the scanner walks the rounded-rect perimeter" \
+    "$(grep -q 'function rimPoint' "$light" \
+      && grep -q 'straightX' "$light" && echo 0 || echo 1)"
+  check "the islands carry an inner hairline and a ramp aura" \
+    "$(grep -q 'Inner hairline' "$island" \
+      && grep -q 'glowStrength' "$island" \
+      && grep -q 'glowStrength: 0.07' "$bar" \
+      && grep -q 'glowStrength: 0.16' "$bar" && echo 0 || echo 1)"
+  check "the empty omarchy.spacer is gone from the centre layout" \
+    "$(grep -q 'omarchy.spacer' "$shell" && echo 1 || echo 0)"
 fi
 
 summary
