@@ -67,11 +67,11 @@ Item {
         running: root.active
         loops: Animation.Infinite
         NumberAnimation {
-          from: 1.0; to: 0.82
+          from: 1.0; to: 0.78
           duration: 1700; easing.type: Easing.InOutSine
         }
         NumberAnimation {
-          from: 0.82; to: 1.0
+          from: 0.78; to: 1.0
           duration: 1700; easing.type: Easing.InOutSine
         }
       }
@@ -79,7 +79,7 @@ Item {
       RimRamp {
         id: ramp
 
-        alphaScale: 0.85
+        alphaScale: 1.0
         angle: root.barAngle
       }
 
@@ -88,18 +88,33 @@ Item {
       RectangularShadow {
         anchors.fill: parent
         radius: root.radius
-        blur: 16
+        blur: 20
         spread: 0
         offset: Qt.vector2d(0, 0)
         color: Qt.rgba(ramp.colorAt.r, ramp.colorAt.g, ramp.colorAt.b,
-          0.20 * chromeRoot.pulse)
+          0.30 * chromeRoot.pulse)
       }
 
       // Faint wash so text stays legible over a bright wallpaper.
       Rectangle {
         anchors.fill: parent
         radius: root.radius
-        color: Qt.rgba(ramp.colorAt.r, ramp.colorAt.g, ramp.colorAt.b, 0.05)
+        color: Qt.rgba(ramp.colorAt.r, ramp.colorAt.g, ramp.colorAt.b, 0.10)
+      }
+
+      // Top sheen: the lit-glass cue the bar border deliberately does not
+      // have, so the hovered pill reads as a pressed button instead of a
+      // smaller copy of the island rim.
+      Rectangle {
+        anchors.fill: parent
+        radius: root.radius
+        color: "transparent"
+        opacity: 0.55
+        gradient: Gradient {
+          orientation: Gradient.Vertical
+          GradientStop { position: 0.0; color: Qt.rgba(1, 1, 1, 0.14) }
+          GradientStop { position: 0.5; color: "transparent" }
+        }
       }
 
       // HUD hex shimmer inside the pill, clipped to its rounded shape. Static
@@ -109,7 +124,7 @@ Item {
         id: hexCanvas
 
         anchors.fill: parent
-        opacity: 0.14
+        opacity: 0.22
         renderStrategy: Canvas.Threaded
 
         onPaint: {
