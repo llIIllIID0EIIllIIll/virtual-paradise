@@ -54,11 +54,12 @@ Conventional Commits.
   widgets pays nothing for the effect.
 - **The bar border got its own language.** Beyond the rotating ramp rim - now
   a two-pixel gradient line like the window borders - every island carries a
-  dim inner hairline that rides the same ramp and a faint ramp aura, and two
-  scanner sparks with short trails lap each pill's perimeter on a faster
-  clock. That is deliberately different from the hover chrome - hex shimmer,
-  scale pop and a stronger bloom - so the bar and the hovered widget never
-  read as the same effect.
+  dim inner hairline that rides the same ramp and a faint ramp aura, and a
+  single scanner spark with a short trail laps the whole bar's outer contour,
+  crossing the gaps along the top and bottom edges so the three islands read
+  as one circuit. That is deliberately different from the hover chrome - hex
+  shimmer, scale pop and a stronger bloom - so the bar and the hovered widget
+  never read as the same effect.
 
 ### Fixed
 - **The empty `omarchy.spacer` between the waveform and the weather is gone.**

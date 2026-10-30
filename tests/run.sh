@@ -2196,7 +2196,7 @@ if want tc21; then
   check "turning off the effects freezes the hex drift" \
     "$(grep -q 'animated: root.gapEffects' "$bar" && echo 0 || echo 1)"
   check "the bar gives the islands a wider gutter" \
-    "$(grep -q 'readonly property int islandPad: Style.space(6)' "$bar" \
+    "$(grep -q 'readonly property int islandPad: Style.space(8)' "$bar" \
       && grep -q 'spacing: Style.space(5)' "$bar" && echo 0 || echo 1)"
   check "the hover halo is a soft lozenge, not a hard box" \
     "$(grep -q 'Keep the halo inside the island' "$bar" \
@@ -2295,7 +2295,7 @@ if want tc24; then
   check "the bar border runs a scanner spark" \
     "$(grep -q 'RimLight {' "$bar" \
       && grep -q 'lightEnabled: root.islandsEnabled && root.gapEffects' "$bar" \
-      && grep -q 'speedFactor' "$light" && echo 0 || echo 1)"
+      && grep -q 'sparkSpeed' "$light" && echo 0 || echo 1)"
   check "the scanner walks the rounded-rect perimeter" \
     "$(grep -q 'function rimPoint' "$light" \
       && grep -q 'straightX' "$light" && echo 0 || echo 1)"
@@ -2307,8 +2307,10 @@ if want tc24; then
   check "the bar rim is a two-pixel gradient line with a ramp hairline" \
     "$(grep -q 'widths: { top: 2' "$island" \
       && grep -q 'ramp.colorAt' "$island" && echo 0 || echo 1)"
-  check "two sparks lap each island rim" \
-    "$(grep -q 'spark < 2' "$light" && echo 0 || echo 1)"
+  check "one spark orbits the whole bar" \
+    "$(grep -q 'totalPerimeter' "$light" \
+      && grep -q 'sparkOffset' "$light" \
+      && ! grep -q 'spark < 2' "$light" && echo 0 || echo 1)"
   check "the empty omarchy.spacer is gone from the centre layout" \
     "$(grep -q 'omarchy.spacer' "$shell" && echo 1 || echo 0)"
 fi
