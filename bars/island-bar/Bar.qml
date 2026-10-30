@@ -57,7 +57,7 @@ Item {
   // floating island. Padding is the gutter between an island's fill and the
   // widgets it hosts, inset is how far the island pulls in from the bar edge
   // so the three islands read as separate objects rather than one long strip.
-  readonly property int islandPad: Style.space(6)
+  readonly property int islandPad: Style.space(8)
   readonly property int islandInset: Style.space(2)
   readonly property bool islandsEnabled: true
   // Streaming glow in the gaps between islands. Only meaningful while the bar
@@ -1713,10 +1713,11 @@ Item {
           }
         }
 
-        // The scanner light on the island rims. One canvas paints every
-        // island's spark; it lives above the islands so the trail rides the
-        // rim instead of hiding behind the fill. This is the motion the hover
-        // chrome does not have, so the bar border reads as its own thing.
+        // The scanner light that laps the whole bar's outer contour. One
+        // canvas paints a single spark; it lives above the islands so the
+        // trail rides the rim instead of hiding behind the fill. This is the
+        // motion the hover chrome does not have, so the bar border reads as
+        // its own thing.
         RimLight {
           id: rimLight
 
@@ -1729,7 +1730,6 @@ Item {
           lightEnabled: root.islandsEnabled && root.gapEffects && root.pillIslands
           barHeight: Math.max(1, root.barSize - root.islandInset * 2)
           radius: root.islandRadius(barHeight)
-          angle: root.rimAngle
           color: Color.accent
           runs: {
             var list = []
