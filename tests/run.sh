@@ -2191,7 +2191,7 @@ if want tc21; then
       && ! grep -q 'Date.now()' "$gap" \
       && ! grep -q 'slowSpacing' "$gap" && echo 0 || echo 1)"
   check "the centre island is the focal surface" \
-    "$(grep -q 'glowStrength: 0.16' "$bar" \
+    "$(grep -q 'glowStrength: 0.20' "$bar" \
       && grep -q 'animateWidth: true' "$bar" && echo 0 || echo 1)"
   check "turning off the effects freezes the hex drift" \
     "$(grep -q 'animated: root.gapEffects' "$bar" && echo 0 || echo 1)"
@@ -2302,8 +2302,13 @@ if want tc24; then
   check "the islands carry an inner hairline and a ramp aura" \
     "$(grep -q 'Inner hairline' "$island" \
       && grep -q 'glowStrength' "$island" \
-      && grep -q 'glowStrength: 0.07' "$bar" \
-      && grep -q 'glowStrength: 0.16' "$bar" && echo 0 || echo 1)"
+      && grep -q 'glowStrength: 0.10' "$bar" \
+      && grep -q 'glowStrength: 0.20' "$bar" && echo 0 || echo 1)"
+  check "the bar rim is a two-pixel gradient line with a ramp hairline" \
+    "$(grep -q 'widths: { top: 2' "$island" \
+      && grep -q 'ramp.colorAt' "$island" && echo 0 || echo 1)"
+  check "two sparks lap each island rim" \
+    "$(grep -q 'spark < 2' "$light" && echo 0 || echo 1)"
   check "the empty omarchy.spacer is gone from the centre layout" \
     "$(grep -q 'omarchy.spacer' "$shell" && echo 1 || echo 0)"
 fi

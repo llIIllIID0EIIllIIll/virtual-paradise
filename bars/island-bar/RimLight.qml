@@ -1,14 +1,15 @@
 import QtQuick
 import qs.Commons
 
-// A bright spark with a short trail running along each island's rim.
+// A pair of bright sparks with short trails running along each island's rim.
 //
 // The rim gradient already rotates; this layer adds the one motion the hover
-// chrome does not have, so the bar border reads as its own thing: a scanner
-// light that laps the pill's perimeter. Each island starts at a different
-// point on the lap, so the three never move in lockstep. It is deliberately a
-// Canvas - three sparks at 60fps are cheaper as one threaded paint than as
-// three path animations, and the geometry is just a rounded-rect walk.
+// chrome does not have, so the bar border reads as its own thing: two scanner
+// lights on opposite sides of the lap, so the rim is never still. Each island
+// starts at a different point on the lap, so the three never move in lockstep.
+// It is deliberately a Canvas - six sparks at 60fps are cheaper as one
+// threaded paint than as six path animations, and the geometry is just a
+// rounded-rect walk.
 Item {
   id: root
 
@@ -99,34 +100,38 @@ Item {
         var total = 2 * straightX + 2 * straightY + 4 * arc
         if (total <= 0) continue
 
-        var t = ((root.angle / 360) * root.speedFactor + i * 0.37) % 1.0
-        var head = rimPoint(t * total, x0, y0, w, h, r, straightX, straightY, arc)
+        // Two sparks per island, opposite each other on the lap.
+        for (var spark = 0; spark < 2; spark++) {
+          var t = ((root.angle / 360) * root.speedFactor + i * 0.37
+            + spark * 0.5) % 1.0
+          var head = rimPoint(t * total, x0, y0, w, h, r, straightX, straightY, arc)
 
-        // Head bloom, then the trail, then the white core on top.
-        ctx.globalAlpha = 0.20
-        ctx.fillStyle = rgba(1)
-        ctx.beginPath()
-        ctx.arc(head.x, head.y, 5, 0, Math.PI * 2)
-        ctx.fill()
-
-        var step = 4
-        var count = 9
-        for (var k = count - 1; k >= 1; k--) {
-          var s = (t * total - k * step) % total
-          if (s < 0) s += total
-          var p = rimPoint(s, x0, y0, w, h, r, straightX, straightY, arc)
-          ctx.globalAlpha = 0.30 * (1 - k / count)
+          // Head bloom, then the trail, then the white core on top.
+          ctx.globalAlpha = 0.22
           ctx.fillStyle = rgba(1)
           ctx.beginPath()
-          ctx.arc(p.x, p.y, 1.2, 0, Math.PI * 2)
+          ctx.arc(head.x, head.y, 6, 0, Math.PI * 2)
+          ctx.fill()
+
+          var step = 4
+          var count = 12
+          for (var k = count - 1; k >= 1; k--) {
+            var s = (t * total - k * step) % total
+            if (s < 0) s += total
+            var p = rimPoint(s, x0, y0, w, h, r, straightX, straightY, arc)
+            ctx.globalAlpha = 0.30 * (1 - k / count)
+            ctx.fillStyle = rgba(1)
+            ctx.beginPath()
+            ctx.arc(p.x, p.y, 1.3, 0, Math.PI * 2)
+            ctx.fill()
+          }
+
+          ctx.globalAlpha = 0.95
+          ctx.fillStyle = "#ffffff"
+          ctx.beginPath()
+          ctx.arc(head.x, head.y, 2.0, 0, Math.PI * 2)
           ctx.fill()
         }
-
-        ctx.globalAlpha = 0.95
-        ctx.fillStyle = "#ffffff"
-        ctx.beginPath()
-        ctx.arc(head.x, head.y, 1.7, 0, Math.PI * 2)
-        ctx.fill()
       }
 
       ctx.globalAlpha = 1

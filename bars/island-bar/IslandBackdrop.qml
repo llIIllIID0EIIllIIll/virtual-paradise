@@ -38,7 +38,7 @@ Item {
   RimRamp {
     id: ramp
 
-    alphaScale: root.edge === "center" ? 0.9 : 0.75
+    alphaScale: root.edge === "center" ? 0.95 : 0.8
     angle: root.rimAngle
   }
 
@@ -70,7 +70,7 @@ Item {
   RectangularShadow {
     anchors.fill: parent
     radius: root.radius
-    blur: 18
+    blur: 22
     spread: 1
     offset: Qt.vector2d(0, 0)
     color: Qt.rgba(ramp.colorAt.r, ramp.colorAt.g, ramp.colorAt.b,
@@ -115,27 +115,29 @@ Item {
     }
   }
 
-  // Inner hairline: a dim frame two pixels inside the rim. It reads as a
-  // machined bezel and gives the bar a second line the hover chrome does not
-  // have, so the two effects never blur together.
+  // Inner hairline: a dim frame three pixels inside the rim. It rides the
+  // same ramp colour as the outer rim, so the bar reads as a two-line bezel
+  // whose both lines travel with the gradient. The hover chrome has no second
+  // line, so the two effects never blur together.
   Rectangle {
     anchors.fill: parent
-    anchors.margins: 2
-    radius: Math.max(0, root.radius - 2)
+    anchors.margins: 3
+    radius: Math.max(0, root.radius - 3)
     color: "transparent"
     border.width: 1
-    border.color: Qt.rgba(Color.foreground.r, Color.foreground.g,
-      Color.foreground.b, 0.07)
+    border.color: Qt.rgba(ramp.colorAt.r, ramp.colorAt.g, ramp.colorAt.b, 0.22)
     visible: root.filled
   }
 
   // Accent rim. The colours come from the shared window-gradient ramp and the
-  // angle is animated by the bar so the bands travel around the island.
+  // angle is animated by the bar so the bands travel around the island. The
+  // rim is two pixels - the same weight as a window border - so the bar reads
+  // as another set of windows, not as a toolbar.
   BorderOverlay {
     radius: root.radius
     borderSpec: ({
       color: Color.accent,
-      widths: { top: 1, right: 1, bottom: 1, left: 1 },
+      widths: { top: 2, right: 2, bottom: 2, left: 2 },
       gradient: {
         enabled: true,
         angle: root.rimAngle,
