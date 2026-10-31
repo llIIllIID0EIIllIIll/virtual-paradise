@@ -32,6 +32,13 @@ Conventional Commits.
   gets a truecolor status bar sourced from a marker block in `tmux.conf` -
   each installed with a pre-theme backup and restored on uninstall or when
   the theme is left.
+- **The pointer carries a neon glow.** A click-through overlay
+  (`doe.cursor-glow`) trails a soft cyan core and a sakura halo behind the
+  cursor; it reads the position from Hyprland's command socket at ~30Hz
+  without spawning a process per frame.
+- **The screen edges flash with the desktop.** A second click-through overlay
+  (`doe.edge-glow`) lights the screen border cyan when the workspace changes
+  and magenta when a notification layer opens.
 - **`install.sh --force-shell-layout`** replaces a customised `shell.json`
   when that is what the user actually wants. Without it, the installer, the
   theme hook and the post-update hook preserve the user's layout.

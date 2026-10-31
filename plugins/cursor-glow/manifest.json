@@ -1,0 +1,15 @@
+{
+  "schemaVersion": 1,
+  "id": "__USER__.cursor-glow",
+  "name": "Paradise Cursor Glow",
+  "version": "1.0.0",
+  "author": "Virtual☆Paradise",
+  "description": "Soft neon glow that trails the pointer. Click-through, overlay layer.",
+  "kinds": [
+    "overlay"
+  ],
+  "keepLoaded": true,
+  "entryPoints": {
+    "overlay": "CursorGlow.qml"
+  }
+}
