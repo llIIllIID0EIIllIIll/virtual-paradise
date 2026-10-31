@@ -113,6 +113,13 @@ Item {
     console.log("omarchy lock " + lastEventAt + " " + event)
   }
 
+  // Theme sounds are best-effort: vp-sound.sh exits silently when the pack or
+  // the player is missing, and the user can switch them off with
+  // ~/.local/state/virtual-paradise/sound-off.
+  function playSound(event) {
+    Quickshell.execDetached(["vp-sound.sh", event])
+  }
+
   function resetAuthenticationState() {
     enteredPassword = ""
     pendingPassword = ""
@@ -135,6 +142,7 @@ Item {
     lockRequested = true
     armBlankTimer()
     logEvent("lock-requested")
+    playSound("lock")
     queueSessionLock()
 
     Qt.callLater(function() {
@@ -156,6 +164,7 @@ Item {
     idleBlankTimer.stop()
     sessionLock.locked = false
     logEvent("unlocked")
+    playSound("unlock")
     runWake()
   }
 
@@ -203,6 +212,7 @@ Item {
     pendingPassword = ""
     failedAttempts += 1
     failureMessage = "Authentication failed (" + failedAttempts + ")"
+    playSound("error")
     runWake()
   }
 

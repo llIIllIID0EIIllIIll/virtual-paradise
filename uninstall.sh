@@ -373,6 +373,7 @@ if [[ -f $autostart ]]; then
     -e '/o\.launch_on_start("toggle_live_wallpaper\.sh init")/d' \
     -e '/o\.launch_on_start("session_splash\.sh")/d' \
     -e '/o\.launch_on_start("vp_death_daemon\.sh")/d' \
+    -e '/o\.launch_on_start("vp-sound\.sh login")/d' \
     "$autostart" 2>/dev/null || true
 fi
 
@@ -415,6 +416,12 @@ rm -f "$hypr_state" 2>/dev/null || true
 
 # btop theme is additive.
 rm -f "$CONFIG_DIR/btop/themes/virtual-paradise.theme"
+
+# qt6ct colour scheme is additive.
+rm -f "$CONFIG_DIR/qt6ct/colors/VirtualParadise.conf"
+
+# Theme UI sounds are additive.
+rm -rf "$HOME/.local/share/sounds/virtual-paradise"
 
 # Bat theme is additive; rebuild the cache so `bat` stops advertising it.
 rm -f "$CONFIG_DIR/bat/themes/VirtualParadise.tmTheme"

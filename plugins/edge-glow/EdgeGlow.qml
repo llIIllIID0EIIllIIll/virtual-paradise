@@ -35,6 +35,9 @@ Item {
         } else if (text.indexOf("openlayer>>omarchy-notifications") === 0) {
           root.glowColor = "#ff2bd6"
           root.generation++
+          // Soft notification ping. Best-effort and opt-out through the same
+          // flag vp-sound.sh checks.
+          Quickshell.execDetached(["vp-sound.sh", "notify"])
         }
       }
     }

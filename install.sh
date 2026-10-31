@@ -1225,6 +1225,11 @@ if [[ -f "$CONFIG_DIR/hypr/autostart.lua" ]]; then
     echo 'o.launch_on_start("toggle_live_wallpaper.sh init")' >> "$CONFIG_DIR/hypr/autostart.lua"
     log_sub "Hooked live wallpaper to ~/.config/hypr/autostart.lua"
   fi
+  if ! grep -q "vp-sound.sh" "$CONFIG_DIR/hypr/autostart.lua"; then
+    hypr_backup "$CONFIG_DIR/hypr/autostart.lua"
+    echo 'o.launch_on_start("vp-sound.sh login")' >> "$CONFIG_DIR/hypr/autostart.lua"
+    log_sub "Hooked the login chime to ~/.config/hypr/autostart.lua"
+  fi
 elif [[ -f "$REPO_DIR/hypr/autostart.lua" ]]; then
   cp "$REPO_DIR/hypr/autostart.lua" "$CONFIG_DIR/hypr/autostart.lua"
 fi
@@ -1610,6 +1615,20 @@ if command -v gsettings &>/dev/null; then
   gsettings set org.gnome.desktop.interface color-scheme "prefer-dark" 2>/dev/null || true
   gsettings set org.gnome.desktop.interface gtk-theme "Adwaita-dark" 2>/dev/null || true
 fi
+
+# Optional qt6ct colour scheme. Omarchy points Qt at the GTK platform theme, so
+# this is only used by machines that switch to qt6ct themselves.
+if [[ -f "$REPO_DIR/config/qt6ct/colors/VirtualParadise.conf" ]]; then
+  mkdir -p "$CONFIG_DIR/qt6ct/colors"
+  cp "$REPO_DIR/config/qt6ct/colors/VirtualParadise.conf" \
+     "$CONFIG_DIR/qt6ct/colors/VirtualParadise.conf"
+fi
+
+# Theme UI sounds (login, lock, unlock, error, notify). Played by vp-sound.sh.
+if [[ -d "$REPO_DIR/sounds" ]]; then
+  mkdir -p "$HOME/.local/share/sounds/virtual-paradise"
+  cp "$REPO_DIR/sounds"/*.oga "$HOME/.local/share/sounds/virtual-paradise/" 2>/dev/null || true
+fi
 log_sub "Component themes installed (Cava, Btop, Fastfetch, Micro, Yazi, Bat, tmux, GTK/Nautilus & Tela-Circle Icons)"
 
 # ------------------------------------------------------------------------------
@@ -1640,7 +1659,7 @@ if [[ "$REPO_DIR" != "$CONFIG_DIR/omarchy/themes/$THEME_NAME" ]]; then
   # or a stripped directory would linger forever.
   THEME_STRIP=(
     .git .github .githooks .gitignore
-    tests tools docs backgrounds
+    tests tools docs backgrounds sounds
     install.sh uninstall.sh README.md LICENSE CONTRIBUTING.md
     plugins bars bin lib shell systemd sddm plymouth micro cava fastfetch
   )

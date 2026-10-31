@@ -1,7 +1,7 @@
 # ==============================================================================
 #  Virtual☆Paradise — CI Test Matrix
 # ==============================================================================
-#  Runs the 395-assertion test suite on Ubuntu and Arch Linux, plus a static
+#  Runs the 396-assertion test suite on Ubuntu and Arch Linux, plus a static
 #  lint pass. Arch is where most users install this theme, so it matters for
 #  catching package name and path drift. Ubuntu is the GitHub-hosted runner
 #  and keeps CI fast for PRs.
@@ -101,7 +101,7 @@ jobs:
   #  Test suite on Ubuntu (GitHub-hosted runner, fast).
   # --------------------------------------------------------------------------
   ubuntu:
-    name: Ubuntu — TC-1..TC-24 (395 assertions)
+    name: Ubuntu — TC-1..TC-24 (396 assertions)
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -154,7 +154,7 @@ jobs:
   #  Test suite on Arch Linux (container, slower but production-like).
   # --------------------------------------------------------------------------
   arch:
-    name: Arch Linux — TC-1..TC-24 (395 assertions)
+    name: Arch Linux — TC-1..TC-24 (396 assertions)
     runs-on: ubuntu-latest
     container:
       image: archlinux:latest
