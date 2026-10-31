@@ -3,7 +3,7 @@
 
 [bar]
 background       = "#0f081d"
-background-alpha = 0.88
+background-alpha = 0.78
 text             = "#eafbfa"
 active           = "#00ffdd"
 scale-with-font  = true
@@ -74,7 +74,7 @@ icon-large    = 19
 
 [popups]
 background       = "#0f081d"
-background-alpha = 0.92
+background-alpha = 0.84
 text             = "#eafbfa"
 border           = "hyprland.active-border"
 border-alpha     = 0.90
@@ -82,14 +82,14 @@ border-width     = 2
 
 [tooltip]
 background       = "#0f081d"
-background-alpha = 0.96
+background-alpha = 0.90
 text             = "#ffffff"
 border           = "hyprland.active-border"
 border-alpha     = 0.90
 
 [notifications]
 background       = "#0f081d"
-background-alpha = 0.94
+background-alpha = 0.86
 text             = "#eafbfa"
 text-error       = "#ff0055"
 border           = "hyprland.active-border"
@@ -117,7 +117,7 @@ selected-border-width     = 1
 
 [menu]
 background                = "#0f081d"
-background-alpha          = 0.94
+background-alpha          = 0.86
 text                      = "#eafbfa"
 border                    = "hyprland.active-border"
 border-alpha              = 0.90
