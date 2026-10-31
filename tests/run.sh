@@ -2250,13 +2250,13 @@ if want tc22; then
     "$([[ $(grep -c 'rimAngle: root.rimAngle' "$bar") -eq 6 ]] && echo 0 || echo 1)"
   check "the centre bloom samples the rim ramp" \
     "$(grep -q 'ramp.colorAt' "$island" && echo 0 || echo 1)"
-  check "the Super+Space menu border rides the same spin" \
-    "$(grep -q 'function applyMenuRim' "$bar" \
-      && grep -q 'panelLoaders\["omarchy.menu"\]' "$bar" \
-      && grep -q 'running: root.menuOpen' "$bar" && echo 0 || echo 1)"
-  check "the menu hook fails soft on an upstream rename" \
+  check "every panel border rides the same spin" \
+    "$(grep -q 'function applyPanelRims' "$bar" \
+      && grep -q 'panelLoaders' "$bar" \
+      && grep -q 'running: root.anyPanelOpen' "$bar" && echo 0 || echo 1)"
+  check "the panel hook fails soft on a missing property" \
     "$(grep -q '!("borderSpec" in item)' "$bar" \
-      && grep -q '!("border" in item)' "$bar" && echo 0 || echo 1)"
+      && grep -q '!spec.gradient.enabled' "$bar" && echo 0 || echo 1)"
 fi
 
 # ─────────────────────────────────────────────────────────────────────────────
