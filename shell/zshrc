@@ -52,13 +52,17 @@ export ZSH="$HOME/.oh-my-zsh"
 # Declare terminal type to support full 256-color palette (optimized for modern TUIs)
 export TERM=xterm-256color
 
-# Standard LS_COLORS configuration for file and folder highlighting. 
-# ow: other-writable directory (green bg, black text)
-# tw: sticky and other-writable directory
-# st: sticky directory without other-write permissions
-# di: standard directory (blue)
-# fi: regular file (default white)
-export LS_COLORS="ow=01;30;44:tw=01;30;44:st=01;30;44:di=01;34:fi=0"
+# Virtual☆Paradise LS_COLORS: Miku cyan directories, sakura symlinks, hacker
+# green executables. Truecolor sequences, so the palette matches the rest of
+# the theme instead of the stock blue/green.
+# ow/tw/st: other-writable & sticky directories (magenta)
+# di: directory (cyan) | ln: symlink (sakura) | ex: executable (green)
+# fi: regular file (default foreground)
+export LS_COLORS="ow=01;30;45:tw=01;30;45:st=01;30;45:di=01;38;2;0;255;221:ln=01;38;2;255;183;213:ex=01;38;2;0;255;136:fi=0"
+
+# eza reads EZA_COLORS instead of LS_COLORS. Hex is supported, so use the
+# exact palette: cyan dirs, sakura links, green executables, yellow specials.
+export EZA_COLORS="di=#00ffdd:ln=#ffb7d5:ex=#00ff88:fi=#eafbfa:uu=#ff2bd6:un=#ff2bd6:gu=#ff2bd6:gn=#ff2bd6:ur=#ffe066:uw=#ffe066:ux=#ffe066:tr=#ffe066:tw=#ffe066:tx=#ffe066:sn=#ffe066:nb=#00ffdd:nk=#00ff88:nm=#ffb7d5:ng=#5a3e85:nt=#eafbfa:da=#5a3e85:ga=#5a3e85:gm=#00ff88:gd=#ffb7d5:gv=#00ffdd:gt=#eafbfa:xx=#5a3e85:cc=#ff0055"
 
 # Set default system editor for git and terminal sessions
 # When editor is invoked (e.g. git commit), terminal waits for editor close
@@ -224,6 +228,8 @@ fi
 # Replace plain `cat` with `bat` (Rust-powered syntax highlighter with line numbers)
 # Priority 1: `bat`
 if (( $+commands[bat] )); then
+  # Bat theme shipped by the installer under ~/.config/bat/themes.
+  export BAT_THEME="VirtualParadise"
   alias cat='bat --style=plain'        # Replace cat with bat (plain style for easy copying)
   alias preview='bat'                  # Full syntax-highlighted preview with borders and line numbers
 # Priority 2: `batcat` fallback (Debian/Ubuntu package naming)

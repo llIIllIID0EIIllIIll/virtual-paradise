@@ -290,7 +290,8 @@ fi
 for pair in \
   "$CONFIG_DIR/ghostty/config" \
   "$CONFIG_DIR/fcitx5/profile" \
-  "$CONFIG_DIR/micro/settings.json"; do
+  "$CONFIG_DIR/micro/settings.json" \
+  "$CONFIG_DIR/yazi/theme.toml"; do
   if [[ -f "$pair.paradise.bak" ]]; then
     cp "$pair.paradise.bak" "$pair"
     rm -f "$pair.paradise.bak"
@@ -409,6 +410,25 @@ rm -f "$hypr_state" 2>/dev/null || true
 
 # btop theme is additive.
 rm -f "$CONFIG_DIR/btop/themes/virtual-paradise.theme"
+
+# Bat theme is additive; rebuild the cache so `bat` stops advertising it.
+rm -f "$CONFIG_DIR/bat/themes/VirtualParadise.tmTheme"
+if command -v bat >/dev/null 2>&1; then
+  RUN_AS_INSTALL_USER bat cache --build >/dev/null 2>&1 || true
+fi
+
+# tmux: the installer appended a marker block to the user's tmux.conf and kept
+# a pre-install copy. Restore that copy when it exists; otherwise strip the
+# marker block in place and leave the rest of the file alone.
+tmux_conf="$CONFIG_DIR/tmux/tmux.conf"
+if [[ -f "$tmux_conf.paradise.bak" ]]; then
+  cp "$tmux_conf.paradise.bak" "$tmux_conf"
+  rm -f "$tmux_conf.paradise.bak"
+  printf 'Restored %s\n' "${tmux_conf#"$HOME"/}"
+elif [[ -f $tmux_conf ]]; then
+  sed -i '/# Virtual☆Paradise tmux theme (managed by install.sh/,+1d' "$tmux_conf" 2>/dev/null || true
+fi
+rm -f "$CONFIG_DIR/tmux/paradise.conf"
 
 # fastfetch: drop the shipped logos and the generated config, restoring the
 # user's own config when the installer had to move it aside.

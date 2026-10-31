@@ -633,11 +633,13 @@ if want tc7; then
   C="$H/.config"
 
   # Pre-seed files with recognisable content so restoration is provable.
-  mkdir -p "$C/ghostty" "$C/fcitx5" "$C/micro/colorschemes" "$C/hypr"
+  mkdir -p "$C/ghostty" "$C/fcitx5" "$C/micro/colorschemes" "$C/hypr" "$C/yazi" "$C/tmux"
   printf 'export ORIGINAL_ZSHRC=1\n' >"$H/.zshrc"
   printf '# user ghostty config\ntheme = user-theme\n' >"$C/ghostty/config"
   printf '[Groups/0]\nName=UserProfile\n' >"$C/fcitx5/profile"
   printf '{"user":"micro"}\n' >"$C/micro/settings.json"
+  printf '# user yazi theme\n' >"$C/yazi/theme.toml"
+  printf '# user tmux config\n' >"$C/tmux/tmux.conf"
   printf '# user look and feel\n' >"$C/hypr/looknfeel.lua"
   printf -- '-- user bindings\n' >"$C/hypr/bindings.lua"
   printf -- '-- user input tuning\n' >"$C/hypr/input.lua"
@@ -659,6 +661,15 @@ if want tc7; then
     "$([[ -f "$C/fcitx5/profile.paradise.bak" ]] && echo 0 || echo 1)"
   check "installer backed up micro settings" \
     "$([[ -f "$C/micro/settings.json.paradise.bak" ]] && echo 0 || echo 1)"
+  check "installer backed up the yazi theme" \
+    "$([[ -f "$C/yazi/theme.toml.paradise.bak" ]] && echo 0 || echo 1)"
+  check "installer replaced the yazi theme" \
+    "$(grep -q '#00ffdd' "$C/yazi/theme.toml" 2>/dev/null && echo 0 || echo 1)"
+  check "installer added the bat theme" \
+    "$([[ -f "$C/bat/themes/VirtualParadise.tmTheme" ]] && echo 0 || echo 1)"
+  check "installer sourced the tmux theme" \
+    "$(grep -q 'Virtual☆Paradise tmux theme' "$C/tmux/tmux.conf" 2>/dev/null \
+      && [[ -f "$C/tmux/paradise.conf" ]] && echo 0 || echo 1)"
   check "installer added the window-rule block despite the user's note" \
     "$(grep -q 'Virtual Paradise Add-on Window Rules' "$C/hypr/hyprland.lua" && echo 0 || echo 1)"
 
@@ -681,6 +692,14 @@ if want tc7; then
   check "fcitx5 profile restored to the original" $?
   grep -q '"user":"micro"' "$C/micro/settings.json" 2>/dev/null
   check "micro settings restored to the original" $?
+  grep -q 'user yazi theme' "$C/yazi/theme.toml" 2>/dev/null
+  check "yazi theme restored to the original" $?
+  check "the bat theme is removed" \
+    "$([[ ! -f "$C/bat/themes/VirtualParadise.tmTheme" ]] && echo 0 || echo 1)"
+  grep -q 'user tmux config' "$C/tmux/tmux.conf" 2>/dev/null
+  check "tmux config restored to the original" $?
+  check "the tmux theme file is removed" \
+    "$([[ ! -f "$C/tmux/paradise.conf" ]] && echo 0 || echo 1)"
   grep -q 'user look and feel' "$C/hypr/looknfeel.lua" 2>/dev/null
   check "hypr looknfeel restored to the original" $?
   grep -q -- '-- user bindings' "$C/hypr/bindings.lua" 2>/dev/null

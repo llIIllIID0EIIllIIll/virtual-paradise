@@ -1,0 +1,130 @@
+# ==============================================================================
+#  Virtual☆Paradise — Yazi theme
+# ==============================================================================
+#  Yazi merges this on top of its dark preset, so only the surfaces we want to
+#  tint are listed here; the preset's icon tables stay untouched.
+
+[flavor]
+dark = ""
+light = ""
+
+[mgr]
+cwd = { fg = "#00ffdd" }
+
+find_keyword = { fg = "#ffe066", bold = true, italic = true }
+find_position = { fg = "#ff2bd6", bg = "reset", bold = true }
+
+symlink_target = { fg = "#ffb7d5", italic = true }
+
+marker_copied = { fg = "#00ff88", bg = "#00ff88" }
+marker_cut = { fg = "#ff0055", bg = "#ff0055" }
+marker_marked = { fg = "#00ffdd", bg = "#00ffdd" }
+marker_selected = { fg = "#ffe066", bg = "#ffe066" }
+marker_symbol = "│"
+
+count_copied = { fg = "#0f081d", bg = "#00ff88" }
+count_cut = { fg = "#0f081d", bg = "#ff0055" }
+count_selected = { fg = "#0f081d", bg = "#ffe066" }
+
+border_symbol = "│"
+border_style = { fg = "#5a3e85" }
+
+[tabs]
+active = { fg = "#0f081d", bg = "#00ffdd", bold = true }
+inactive = { fg = "#00ffdd", bg = "#1a1030" }
+sep_inner = { open = "", close = "" }
+sep_outer = { open = "", close = "" }
+
+[mode]
+normal_main = { fg = "#0f081d", bg = "#00ffdd", bold = true }
+normal_alt = { fg = "#00ffdd", bg = "#1a1030" }
+select_main = { fg = "#0f081d", bg = "#ffb7d5", bold = true }
+select_alt = { fg = "#ffb7d5", bg = "#1a1030" }
+unset_main = { fg = "#0f081d", bg = "#ff0055", bold = true }
+unset_alt = { fg = "#ff0055", bg = "#1a1030" }
+
+[indicator]
+parent = { reversed = true, fg = "#5a3e85" }
+current = { reversed = true, fg = "#00ffdd" }
+preview = { underline = true }
+padding = { open = "", close = "" }
+
+[status]
+sep_left = { open = "", close = "" }
+sep_right = { open = "", close = "" }
+perm_type = { fg = "#00ff88" }
+perm_read = { fg = "#ffe066" }
+perm_write = { fg = "#ff0055" }
+perm_exec = { fg = "#00ffdd" }
+progress_label = { fg = "#eafbfa", bold = true }
+progress_normal = { fg = "#00ff88", bg = "#0f081d" }
+progress_error = { fg = "#ffe066", bg = "#ff0055" }
+
+[which]
+border = { fg = "#00ffdd" }
+cols = 3
+mask = {}
+cand = { fg = "#00ff88" }
+rest = { fg = "#5a3e85" }
+desc = { fg = "#ffb7d5" }
+separator = "  "
+separator_style = { fg = "#5a3e85" }
+
+[confirm]
+border = { fg = "#00ffdd" }
+title = { fg = "#00ffdd" }
+body = { fg = "#eafbfa" }
+list = { fg = "#eafbfa" }
+btn_yes = { fg = "#00ff88", reversed = true }
+btn_no = { fg = "#ffb7d5" }
+btn_labels = [ "  [Y]es  ", "  (N)o  " ]
+
+[spot]
+border = { fg = "#00ffdd" }
+title = { fg = "#00ffdd" }
+tbl_col = { fg = "#00ffdd" }
+tbl_cell = { fg = "#ffe066", reversed = true }
+
+[notify]
+title_info = { fg = "#00ff88" }
+title_warn = { fg = "#ffe066" }
+title_error = { fg = "#ff0055" }
+
+[pick]
+border = { fg = "#00ffdd" }
+active = { fg = "#ff2bd6", bold = true }
+inactive = {}
+
+[input]
+border = { fg = "#00ffdd" }
+title = { fg = "#ffb7d5" }
+value = { fg = "#eafbfa" }
+selected = { reversed = true }
+
+[cmp]
+border = { fg = "#00ffdd" }
+active = { reversed = true }
+inactive = {}
+
+[tasks]
+border = { fg = "#00ffdd" }
+title = { fg = "#eafbfa" }
+hovered = { fg = "#ff2bd6", bold = true }
+
+[help]
+border = { fg = "#00ffdd" }
+chord = { fg = "#00ff88" }
+action = { fg = "#eafbfa" }
+hovered = { reversed = true, bold = true }
+
+[filetype]
+rules = [
+	{ mime = "**/image/*", fg = "#ffe066" },
+	{ mime = "**/{audio,video}/*", fg = "#ff2bd6" },
+	{ mime = "**/application/{zip,rar,7z*,tar,gzip,xz,zstd,bzip*,lzma,compress,archive,cpio,arj,xar,ms-cab*}", fg = "#ff0055" },
+	{ mime = "**/application/{pdf,doc,rtf}", fg = "#00ffdd" },
+	{ mime = "vfs/{absent,stale}", fg = "#5a3e85" },
+	{ url = "*", is = "orphan", bg = "#ff0055" },
+	{ url = "*", is = "exec", fg = "#00ff88" },
+	{ url = "*/", fg = "#00ffdd" },
+]
