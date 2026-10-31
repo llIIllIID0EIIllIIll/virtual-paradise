@@ -7,6 +7,7 @@
 #    theme-switcher.sh cyberpunk    # Switch to cyberpunk variant
 #    theme-switcher.sh cozy         # Switch to cozy variant
 #    theme-switcher.sh monochrome   # Switch to monochrome variant
+#    theme-switcher.sh wallpaper    # Derive the palette from the wallpaper
 #    theme-switcher.sh list         # List available variants
 #    theme-switcher.sh reset        # Restore the original palette
 # ==============================================================================
@@ -316,6 +317,86 @@ interactive_menu() {
   fi
 }
 
+# Read the most vivid dominant colour of an image or a video frame.
+wallpaper_accent() {
+  local src="$1"
+  [[ -f $src ]] || return 1
+  local tmp best="" best_score=0 hex score s v
+  tmp="$(mktemp --suffix=.png)" || return 1
+  case "$src" in
+    *.mp4|*.webm|*.mkv|*.mov|*.gif)
+      command -v ffmpeg >/dev/null 2>&1 || { rm -f "$tmp"; return 1; }
+      ffmpeg -y -loglevel error -ss 1 -i "$src" -frames:v 1 "$tmp" >/dev/null 2>&1 \
+        || { rm -f "$tmp"; return 1; }
+      ;;
+    *)
+      magick "$src" -resize 160x160 "$tmp" >/dev/null 2>&1 \
+        || { rm -f "$tmp"; return 1; }
+      ;;
+  esac
+  while IFS= read -r hex; do
+    [[ -n $hex ]] || continue
+    read -r s v < <(magick xc:"#$hex" -colorspace HSL \
+      -format '%[fx:s*100] %[fx:lightness*100]' info: 2>/dev/null) || true
+    score=$(awk -v s="${s:-0}" -v v="${v:-0}" 'BEGIN { printf "%d", s*v }')
+    if (( score > best_score )); then
+      best_score=$score
+      best=$hex
+    fi
+  done < <(magick "$tmp" -resize 25% -colors 12 -unique-colors txt:- 2>/dev/null \
+    | awk -F'#' 'NR>1 {print $2}' | cut -c1-6)
+  rm -f "$tmp"
+  [[ -n $best ]] || return 1
+  # Lift saturation so the accent reads as neon instead of mud.
+  magick xc:"#$best" -colorspace HSL -channel G -evaluate multiply 1.3 +channel \
+    -colorspace sRGB -depth 8 -format '%[hex:p{0,0}]' info: 2>/dev/null | cut -c1-6
+}
+
+# Rotate a hex colour's hue. ImageMagick's modulate hue is a percentage of the
+# wheel: 100 keeps it, 150 is the complement.
+hue_shift() {
+  magick xc:"#$1" -modulate 100,110,"$2" -depth 8 \
+    -format '%[hex:p{0,0}]' info: 2>/dev/null | cut -c1-6
+}
+
+# Derive a whole palette from the current wallpaper and apply it through the
+# same pristine-backup machinery the named variants use.
+wallpaper_variant() {
+  local src="${1:-$HOME/.local/state/omarchy/current/background}"
+  if [[ ! -f "$THEME_DIR/colors.toml" ]]; then
+    echo "Virtual Paradise is not installed: $THEME_DIR/colors.toml is missing." >&2
+    echo "Run the installer first (./install.sh)." >&2
+    exit 1
+  fi
+  local accent secondary tertiary background
+  # Keep the untouched palette first: the background baseline and the
+  # reset path both come from it.
+  if [[ ! -f "$(pristine_colors_file)" ]]; then
+    mkdir -p "$ORIGINAL_DIR"
+    cp "$THEME_DIR/colors.toml" "$(pristine_colors_file)"
+  fi
+  accent="$(wallpaper_accent "$src")"
+  if [[ -z $accent ]]; then
+    echo "Could not derive a colour from '$src'." >&2
+    exit 1
+  fi
+  secondary="$(hue_shift "$accent" 150)"
+  tertiary="$(hue_shift "$accent" 125)"
+  background="$(toml_value "$(pristine_colors_file)" background)"
+  [[ -n $background ]] || background="0f081d"
+
+  local map_file="$STATE_DIR/theme-variant-map"
+  build_color_map "$(pristine_colors_file)" "$accent" "$secondary" "$tertiary" "$background" >"$map_file"
+  apply_to_theme_files "$map_file"
+  echo "wallpaper" >"$CURRENT_VARIANT_FILE"
+  apply_theme || true
+  echo ""
+  echo "✓ Wallpaper accent applied from $(basename "$src")"
+  echo "  Accent:    #$accent"
+  echo "  Secondary: #$secondary"
+  echo "  Tertiary:  #$tertiary"
+}
+
 # Main logic
 case "${1:-}" in
   "")
@@ -330,15 +411,21 @@ case "${1:-}" in
   "cyberpunk"|"cozy"|"monochrome"|"neon"|"sakura")
     apply_variant "$1"
     ;;
+  "wallpaper")
+    wallpaper_variant "${2:-}"
+    ;;
   *)
-    echo "Usage: $0 [variant|list|reset]"
+    echo "Usage: $0 [variant|wallpaper [image]|list|reset]"
     echo ""
     echo "Variants: cyberpunk, cozy, monochrome, neon, sakura"
+    echo "wallpaper derives the palette from the current background (or the"
+    echo "image passed as the second argument)."
     echo ""
     echo "Examples:"
     echo "  $0              # Interactive menu"
     echo "  $0 list         # List available variants"
     echo "  $0 cyberpunk    # Switch to cyberpunk"
+    echo "  $0 wallpaper    # Palette from the current wallpaper"
     echo "  $0 reset        # Restore the original palette"
     exit 1
     ;;

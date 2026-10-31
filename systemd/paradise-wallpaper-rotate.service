@@ -1,0 +1,11 @@
+[Unit]
+Description=Advance the Virtual☆Paradise live wallpaper playlist
+# The script only exists while the theme is installed; after uninstall the
+# unit can outlive it for one reload cycle, so skip cleanly.
+ConditionPathExists=%h/.local/bin/toggle_live_wallpaper.sh
+
+[Service]
+Type=oneshot
+ExecStart=%h/.local/bin/toggle_live_wallpaper.sh next
+Nice=10
+IOSchedulingClass=idle

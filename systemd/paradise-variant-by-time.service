@@ -1,0 +1,9 @@
+[Unit]
+Description=Pick the Virtual☆Paradise variant for the time of day
+ConditionPathExists=%h/.local/bin/variant-by-time.sh
+
+[Service]
+Type=oneshot
+ExecStart=%h/.local/bin/variant-by-time.sh
+Nice=10
+IOSchedulingClass=idle

@@ -66,8 +66,12 @@ restart.
 
 The repository also ships `theme-switcher.sh` for changing the Virtual☆Paradise
 palette from a terminal (`theme-switcher.sh list` shows the variants,
-`theme-switcher.sh reset` restores the original palette). It is a terminal
-tool, not bound to a key.
+`theme-switcher.sh reset` restores the original palette). `theme-switcher.sh
+wallpaper` derives the accent and its two companions from the current
+background image instead of a fixed variant. It is a terminal tool, not bound
+to a key. A systemd timer switches cyberpunk in the morning and sakura in the
+evening (`paradise-variant-by-time.timer`), and another rotates the live
+wallpaper hourly (`paradise-wallpaper-rotate.timer`).
 
 ### ✨ Visual Effects
 
@@ -367,6 +371,12 @@ from `~/.config/hypr/autostart.lua`.
 ```bash
 systemctl --user stop paradise-plugin-check.timer
 systemctl --user disable paradise-plugin-check.timer
+```
+
+**Disable wallpaper rotation / day-night variant:**
+```bash
+systemctl --user disable --now paradise-wallpaper-rotate.timer
+systemctl --user disable --now paradise-variant-by-time.timer
 ```
 
 **Disable audio watchdog:**

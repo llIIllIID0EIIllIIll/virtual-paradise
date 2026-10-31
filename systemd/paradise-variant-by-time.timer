@@ -1,0 +1,13 @@
+[Unit]
+Description=Switch the Virtual☆Paradise variant with the clock
+
+[Timer]
+OnCalendar=*-*-* 07:00:00
+OnCalendar=*-*-* 19:00:00
+# Catch up after a suspend so the palette matches the time of day.
+Persistent=true
+RandomizedDelaySec=10m
+AccuracySec=1m
+
+[Install]
+WantedBy=timers.target
