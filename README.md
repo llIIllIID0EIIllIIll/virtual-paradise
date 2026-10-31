@@ -32,13 +32,13 @@
 
 ### 🏝️ Floating Island Bar
 
-Three floating glass pills over a faint hex underlay, a comet stream crossing the gaps, a soft hover halo on every widget, and live telemetry. Built as a first-party Quickshell plugin so `serviceFor()` works correctly — third-party bars get a scoped shell where services resolve to null.
+Three floating glass pills over a faint hex underlay, a sparse comet stream in the gaps, a scanner spark orbiting the bar's rim, and a lit hover pill on every widget - all riding the same rotating gradient as the window borders. Built as a first-party Quickshell plugin so `serviceFor()` works correctly — third-party bars get a scoped shell where services resolve to null.
 
 - **Left island**: quick menu, Japanese workspace numerals, active window
-- **Center island**: waveform visualizer, weather, clock, vitals (CPU/GPU/RAM/disk/net)
-- **Right island**: system tray, network, audio, battery, power
+- **Center island**: waveform visualizer, weather, clock, vitals (CPU/GPU/RAM/disk/net), CPU temperature, microphone, indicator dots
+- **Right island**: system tray, network, VPN, notifications, audio, battery, power
 
-Both ambient effects are opt-out in `~/.config/omarchy/shell.json`; see [Bar Effects](#bar-effects).
+The gap stream, the rim scanner and the hover chrome are opt-out in `~/.config/omarchy/shell.json`; see [Bar Effects](#bar-effects).
 
 ### 🎬 Animated Wallpapers
 
@@ -50,7 +50,7 @@ Wallpapers are H.264 MP4 (not GIF) for better performance and smaller file size.
 
 Every surface follows the same neon pastel palette:
 
-- **Hyprland**: cyberSpring animations, frosted glass blur, multi-stop gradient borders
+- **Hyprland**: cyberSpring animations, frosted glass blur, rotating multi-stop gradient borders and shadows
 - **Terminal**: Ghostty, Alacritty, Foot, Kitty all themed identically
 - **GTK**: CSS overrides for Nautilus, dialogs, and Libadwaita apps
 - **Boot**: Plymouth splash with Miku animation, SDDM login theme
@@ -70,7 +70,10 @@ tool, not bound to a key.
 
 ### ✨ Visual Effects
 
-Optional effects are available as scripts:
+The rotating gradient border, window shadow and glow ship enabled by default:
+`borderangle`, `shadowangle` and `glowangle` in `hypr/looknfeel.lua` spin the
+theme's cyan/green/pink ramp around every window edge and its spill. The
+scripts below are optional extras on top of that:
 
 - **Rainbow Borders** — `effects.sh rainbow`
 - **Glow Effect** — `effects.sh glow`
@@ -324,9 +327,9 @@ This ensures your theme survives upstream changes.
 
 ### Bar Effects
 
-The gap stream and the per-widget hover halo are opt-out. Add the keys under
-`bar` in `~/.config/omarchy/shell.json`; the installer and theme hooks preserve
-a file you have edited.
+The gap stream, the rim scanner and the hover chrome are opt-out. Add the keys
+under `bar` in `~/.config/omarchy/shell.json`; the installer and theme hooks
+preserve a file you have edited.
 
 ```json
 {
@@ -337,10 +340,12 @@ a file you have edited.
 }
 ```
 
-`gapEffects` controls the travelling comet stream between islands and freezes
-the hex drift. `hoverGlow` controls the accent halo behind the widget under the
-pointer. Setting `gapEffects` to `false` also turns off the hover halo, so the
-bar can be made completely still with one key.
+`gapEffects` controls the comet stream that crosses the gaps, freezes the hex
+underlay's drift and stops the scanner spark that laps the bar's outer rim.
+`hoverGlow` controls the lit hover pill: the rotating ramp rim, the hex
+shimmer, the ramp-sampled bloom and the scale pop. Setting `gapEffects` to
+`false` also turns off the hover chrome, so the bar can be made completely
+still with one key.
 
 ### Disabling Components
 
@@ -423,7 +428,7 @@ Test cases:
 - **TC-18**: Post-update repair hook (bar repair, host fallback, no layout rewrite)
 - **TC-19**: Stability guards (no tray patch, unit conditions, plugin fallback)
 - **TC-20**: Hover glow (effect ships, follows the toggle, hides while dragging)
-- **TC-21**: Island chrome and gap effects (hex underlay, glass fill, single comet)
+- **TC-21**: Island chrome and gap effects (hex underlay, glass fill, comet stream)
 - **TC-22**: Rotating gradient chrome (bar rim, bloom and menu border share one spin)
 - **TC-23**: Hover chrome (rotating rim, ramp bloom, hex shimmer, lazy loader)
 - **TC-24**: Bar border chrome (scanner spark, inner hairline, ramp aura, no spacer)

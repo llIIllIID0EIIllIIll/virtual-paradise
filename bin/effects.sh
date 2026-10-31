@@ -6,6 +6,11 @@
 #
 #  Run as `effects.sh <effect>`; the functions are also safe to source.
 #
+#  NOTE: the theme already ships rotating gradient borders, shadows and glow
+#  (`borderangle` / `shadowangle` / `glowangle` in hypr/looknfeel.lua). The
+#  `rainbow` mode below is an optional colour-cycle on top of that, and `glow`
+#  is an optional breathing pulse; neither is required for the default look.
+#
 #  NOTE: Hyprland 0.5x loads a Lua config, and `hyprctl keyword` refuses to
 #  work with it ("keyword can't work with non-legacy parsers. Use eval.").
 #  Every setting below therefore goes through `hyprctl eval` with the same

@@ -44,6 +44,8 @@ These are intentionally **not** rebound by the theme:
 
 - `SUPER + RETURN` — terminal
 - `SUPER + K` — keybindings menu
+- `SUPER + SPACE` — Omarchy menu (the card's border rides the theme's rotating
+  gradient, same as the window borders)
 - `SUPER + F` — fullscreen, `SUPER + T` — toggle floating
 - `SUPER + P` — pseudo window, `SUPER + O` — pop window out (float & pin)
 - `SUPER + TAB` / `SUPER + SHIFT + TAB` — next/previous workspace
@@ -66,3 +68,7 @@ These live in `~/.local/bin` after installation and are run from a terminal:
 - `theme-switcher.sh` — switch the Virtual☆Paradise palette variant (`list`, `reset`)
 - `effects.sh` — `rainbow`, `glow`, `toggle-blur`, `shake`, `focus-pulse`
 - `toggle_live_wallpaper.sh` — `init`, `next`, `prev` (also used by the keys above)
+
+The rotating gradient window borders, shadows and glow are part of the theme
+itself (`borderangle` / `shadowangle` / `glowangle` in `hypr/looknfeel.lua`),
+not one of these scripts.
