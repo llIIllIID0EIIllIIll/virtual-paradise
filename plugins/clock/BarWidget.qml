@@ -229,6 +229,21 @@ BarWidget {
             font.family: root.bar.fontFamily
             font.pixelSize: Style.font.body
             font.bold: true
+
+            // One soft pulse per second: the seconds digit breathes instead
+            // of just ticking.
+            SequentialAnimation on opacity {
+              running: true
+              loops: Animation.Infinite
+              NumberAnimation {
+                from: 1.0; to: 0.55
+                duration: 500; easing.type: Easing.InOutSine
+              }
+              NumberAnimation {
+                from: 0.55; to: 1.0
+                duration: 500; easing.type: Easing.InOutSine
+              }
+            }
           }
         }
 

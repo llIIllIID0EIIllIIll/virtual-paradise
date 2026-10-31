@@ -48,6 +48,11 @@ Conventional Commits.
   frame), rotates two companion hues and applies them through the same
   pristine-backup machinery as the named variants, so `reset` still restores
   the original.
+- **The bar widgets breathe.** The weather glyph pulses and tints by
+  temperature, the clock's seconds heartbeat, the CPU temperature has an amber
+  warning tier between normal and overheating, the microphone glyph pulses
+  while an app is recording, active indicators glow, and the workspace
+  underline grows between workspaces instead of blinking.
 - **`install.sh --force-shell-layout`** replaces a customised `shell.json`
   when that is what the user actually wants. Without it, the installer, the
   theme hook and the post-update hook preserve the user's layout.

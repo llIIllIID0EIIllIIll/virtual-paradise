@@ -1,4 +1,5 @@
 import QtQuick
+import QtQuick.Effects
 import qs.Commons
 import qs.Ui
 
@@ -53,4 +54,31 @@ BarIconButton {
   scale: tooltipHovered ? 1.15 : 1.0
 
   Behavior on scale { NumberAnimation { duration: 150; easing.type: Easing.OutBack } }
+
+  // An active indicator glows and breathes, so a state that is easy to miss in
+  // a row of glyphs still reads at a glance.
+  RectangularShadow {
+    anchors.fill: parent
+    anchors.margins: -2
+    radius: Math.min(width, height) / 2
+    blur: 10
+    spread: 0
+    offset: Qt.vector2d(0, 0)
+    color: Qt.rgba(0.0, 1.0, 0.867, 0.35)
+    visible: root.effectiveActive
+    z: -1
+
+    SequentialAnimation on opacity {
+      running: root.effectiveActive
+      loops: Animation.Infinite
+      NumberAnimation {
+        from: 0.55; to: 1.0
+        duration: 1400; easing.type: Easing.InOutSine
+      }
+      NumberAnimation {
+        from: 1.0; to: 0.55
+        duration: 1400; easing.type: Easing.InOutSine
+      }
+    }
+  }
 }
