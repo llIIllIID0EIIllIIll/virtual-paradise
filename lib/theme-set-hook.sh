@@ -219,6 +219,14 @@ if [[ "$THEME_NAME" == "virtual-paradise" ]]; then
       _plugin_replace "${u}.${_uw}" "omarchy.${_uw}"
     done
     unset _uw
+
+    # Overlay plugins and the theme lock: no stock equivalent for the first
+    # four, and the lock replaces omarchy.lock.
+    _plugin_replace "${u}.lock" "omarchy.lock"
+    for _overlay in cursor-glow edge-glow hex-spotlight window-death; do
+      _plugin_installed "${u}.${_overlay}" && _plugin_enable "${u}.${_overlay}"
+    done
+    unset _overlay
   fi
 
   # 2b. Apply the tracked override layer. The old hook copied overrides without
@@ -327,6 +335,13 @@ else
       _plugin_enable "omarchy.${_uw}"
     done
     unset _uw
+
+    _plugin_disable "${u}.lock"
+    _plugin_enable "omarchy.lock"
+    for _overlay in cursor-glow edge-glow hex-spotlight window-death; do
+      _plugin_disable "${u}.${_overlay}"
+    done
+    unset _overlay
 
     _plugin_enable "omarchy.agents"
     _plugin_enable "omarchy.keyboard-layout"

@@ -489,7 +489,8 @@ if command -v omarchy &>/dev/null; then
   RUN_AS_INSTALL_USER omarchy plugin disable "io.github.kristoferlund.webcam" 2>/dev/null || true
 
   # Disable user custom widgets
-  for u_widget in clock weather cputemp indicators active-window menu system-update network microphone; do
+  for u_widget in clock weather cputemp indicators active-window menu system-update network microphone \
+                  lock cursor-glow edge-glow hex-spotlight window-death; do
     RUN_AS_INSTALL_USER omarchy plugin disable "${CURRENT_USER}.${u_widget}" 2>/dev/null || true
   done
 
@@ -509,6 +510,7 @@ if command -v omarchy &>/dev/null; then
   RUN_AS_INSTALL_USER omarchy plugin enable "omarchy.system-update" 2>/dev/null || true
   RUN_AS_INSTALL_USER omarchy plugin enable "omarchy.network" 2>/dev/null || true
   RUN_AS_INSTALL_USER omarchy plugin enable "omarchy.microphone" 2>/dev/null || true
+  RUN_AS_INSTALL_USER omarchy plugin enable "omarchy.lock" 2>/dev/null || true
   RUN_AS_INSTALL_USER omarchy plugin enable "omarchy.agents" 2>/dev/null || true
   RUN_AS_INSTALL_USER omarchy plugin enable "omarchy.keyboard-layout" 2>/dev/null || true
   RUN_AS_INSTALL_USER omarchy plugin enable "omarchy.tray" 2>/dev/null || true
