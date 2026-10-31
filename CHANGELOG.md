@@ -15,6 +15,19 @@ Conventional Commits.
   `"bar": { "hoverGlow": false }` in `shell.json`, and turning off
   `gapEffects` disables every ambient bar effect so the bar can be made
   completely still.
+- **Frosted glass reaches the shell surfaces.** Hyprland's layer blur now
+  covers the bar, menu, bar panels, notifications and OSD, and the fills on
+  those surfaces dropped a few points of alpha, so the wallpaper shows
+  through as soft light instead of flat colour.
+- **The terminal gets a hex backdrop.** A low-alpha hex-circuitry PNG ships
+  with the theme and is referenced by the Ghostty and Kitty configs, so the
+  terminal carries the same HUD texture as the bar without hurting
+  legibility.
+- **Yazi, Bat and tmux are themed too.** The file manager gets a palette
+  theme, Bat gets a `VirtualParadise` syntax theme plus `BAT_THEME`, and tmux
+  gets a truecolor status bar sourced from a marker block in `tmux.conf` -
+  each installed with a pre-theme backup and restored on uninstall or when
+  the theme is left.
 - **`install.sh --force-shell-layout`** replaces a customised `shell.json`
   when that is what the user actually wants. Without it, the installer, the
   theme hook and the post-update hook preserve the user's layout.
@@ -415,7 +428,8 @@ Conventional Commits.
 - TC-20 through TC-24 cover the bar work in this cycle: the hover glow, the
   island chrome and gap stream, the rotating gradient chrome (bar rim, menu
   border and window shadow), the hover chrome and the bar border chrome. The
-  suite is now 387 assertions with `shellcheck` installed (386 without).
+  suite is now 395 assertions with `shellcheck` installed (394 without), and
+  TC-7 also proves the Yazi, Bat and tmux themes are installed and restored.
 
 ---
 

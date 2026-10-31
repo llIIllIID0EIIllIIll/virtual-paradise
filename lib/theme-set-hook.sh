@@ -255,6 +255,37 @@ if [[ "$THEME_NAME" == "virtual-paradise" ]]; then
     cp "$CFG/omarchy/themes/virtual-paradise/config/gtk.css" "$CFG/gtk-3.0/gtk.css" 2>/dev/null || true
   fi
 
+  # 2e2. Tool themes that Omarchy does not manage itself: Yazi, Bat and tmux.
+  # The theme directory carries the sources; the hook only has to put them
+  # back in place and keep the pre-theme copies when the user had their own.
+  _vp_tools="$CFG/omarchy/themes/virtual-paradise/config"
+  if [[ -f "$_vp_tools/yazi/theme.toml" ]]; then
+    mkdir -p "$CFG/yazi"
+    if [[ -f "$CFG/yazi/theme.toml" ]] \
+      && ! cmp -s "$_vp_tools/yazi/theme.toml" "$CFG/yazi/theme.toml" \
+      && [[ ! -f "$CFG/yazi/theme.toml.paradise.bak" ]]; then
+      cp "$CFG/yazi/theme.toml" "$CFG/yazi/theme.toml.paradise.bak" 2>/dev/null || true
+    fi
+    cp "$_vp_tools/yazi/theme.toml" "$CFG/yazi/theme.toml" 2>/dev/null || true
+  fi
+  if [[ -d "$_vp_tools/bat/themes" ]]; then
+    mkdir -p "$CFG/bat/themes"
+    cp "$_vp_tools/bat/themes"/*.tmTheme "$CFG/bat/themes/" 2>/dev/null || true
+    command -v bat >/dev/null 2>&1 && bat cache --build >/dev/null 2>&1 || true
+  fi
+  if [[ -f "$_vp_tools/tmux/paradise.conf" ]]; then
+    mkdir -p "$CFG/tmux"
+    cp "$_vp_tools/tmux/paradise.conf" "$CFG/tmux/paradise.conf" 2>/dev/null || true
+    if [[ -f "$CFG/tmux/tmux.conf" ]] \
+      && ! grep -q 'Virtual☆Paradise tmux theme' "$CFG/tmux/tmux.conf"; then
+      [[ -f "$CFG/tmux/tmux.conf.paradise.bak" ]] \
+        || cp "$CFG/tmux/tmux.conf" "$CFG/tmux/tmux.conf.paradise.bak" 2>/dev/null || true
+      printf '\n# Virtual☆Paradise tmux theme (managed by install.sh; remove this block to opt out)\nsource-file %s\n' \
+        "$CFG/tmux/paradise.conf" >> "$CFG/tmux/tmux.conf"
+    fi
+  fi
+  unset _vp_tools
+
   # 2f. Live wallpaper: start if not already running.
   if [[ -x "$HOME/.local/bin/toggle_live_wallpaper.sh" ]]; then
     if ! pgrep -f mpvpaper >/dev/null 2>&1; then
@@ -322,6 +353,24 @@ else
     fi
   done
   unset _gtk
+
+  # 2e2. Restore the tool themes that are not part of the Omarchy theme
+  # system: Yazi, Bat and tmux.
+  if [[ -f "$CFG/yazi/theme.toml.paradise.bak" ]]; then
+    cp "$CFG/yazi/theme.toml.paradise.bak" "$CFG/yazi/theme.toml" 2>/dev/null || true
+    rm -f "$CFG/yazi/theme.toml.paradise.bak" 2>/dev/null || true
+  else
+    rm -f "$CFG/yazi/theme.toml" 2>/dev/null || true
+  fi
+  rm -f "$CFG/bat/themes/VirtualParadise.tmTheme" 2>/dev/null || true
+  command -v bat >/dev/null 2>&1 && bat cache --build >/dev/null 2>&1 || true
+  if [[ -f "$CFG/tmux/tmux.conf.paradise.bak" ]]; then
+    cp "$CFG/tmux/tmux.conf.paradise.bak" "$CFG/tmux/tmux.conf" 2>/dev/null || true
+    rm -f "$CFG/tmux/tmux.conf.paradise.bak" 2>/dev/null || true
+  elif [[ -f "$CFG/tmux/tmux.conf" ]]; then
+    sed -i '/# Virtual☆Paradise tmux theme (managed by install.sh/,+1d' "$CFG/tmux/tmux.conf" 2>/dev/null || true
+  fi
+  rm -f "$CFG/tmux/paradise.conf" 2>/dev/null || true
 
   # 2f. Restore the stock shell layout only if the live file is still the theme
   # layout or the last layout this theme applied. A user edit survives.

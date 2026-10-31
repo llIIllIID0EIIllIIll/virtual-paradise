@@ -14,7 +14,7 @@
 [![Arch Linux](https://img.shields.io/badge/Arch_Linux-1793D1?style=flat-square&logo=arch-linux&logoColor=white)](https://archlinux.org)
 [![Omarchy 4.0+](https://img.shields.io/badge/Omarchy-4.0+-8A2BE2?style=flat-square)](https://omarchy.org)
 [![Hyprland](https://img.shields.io/badge/Hyprland-Wayland-00ffdd?style=flat-square)](https://hyprland.org)
-[![Tests](https://img.shields.io/badge/tests-387%20passed-00ff88?style=flat-square)](tests/)
+[![Tests](https://img.shields.io/badge/tests-395%20passed-00ff88?style=flat-square)](tests/)
 [![License](https://img.shields.io/badge/license-MIT-ffe066?style=flat-square)](LICENSE)
 [![Version](https://img.shields.io/badge/version-1.2.2-ff00ff?style=flat-square)](VERSION)
 
@@ -50,8 +50,8 @@ Wallpapers are H.264 MP4 (not GIF) for better performance and smaller file size.
 
 Every surface follows the same neon pastel palette:
 
-- **Hyprland**: cyberSpring animations, frosted glass blur, rotating multi-stop gradient borders and shadows
-- **Terminal**: Ghostty, Alacritty, Foot, Kitty all themed identically
+- **Hyprland**: cyberSpring animations, frosted glass blur (windows *and* the shell's bar/menu/popup layers), rotating multi-stop gradient borders and shadows
+- **Terminal**: Ghostty, Alacritty, Foot, Kitty all themed identically, with a faint hex backdrop and matching Yazi, Bat and tmux themes
 - **GTK**: CSS overrides for Nautilus, dialogs, and Libadwaita apps
 - **Boot**: Plymouth splash with Miku animation, SDDM login theme
 - **Editors**: Micro, VS Code, btop all follow the palette
@@ -73,7 +73,10 @@ tool, not bound to a key.
 The rotating gradient border, window shadow and glow ship enabled by default:
 `borderangle`, `shadowangle` and `glowangle` in `hypr/looknfeel.lua` spin the
 theme's cyan/green/pink ramp around every window edge and its spill. The
-scripts below are optional extras on top of that:
+shell's own surfaces - bar, menu, popups, notifications and OSD - are frosted
+by a Hyprland layer-blur rule, so their translucent fills show the wallpaper
+as soft light instead of flat colour. The scripts below are optional extras on
+top of that:
 
 - **Rainbow Borders** — `effects.sh rainbow`
 - **Glow Effect** — `effects.sh glow`
@@ -175,7 +178,8 @@ The installer is **idempotent**: run it as many times as you want. It will only 
 | Bar | `/usr/share/omarchy/shell/plugins/__USER__.island-bar/` | Floating island bar (first-party) |
 | Plugins | `~/.config/omarchy/plugins/` | 12+ themed widgets |
 | Hyprland | `~/.config/hypr/` | Animations, window rules, keybindings |
-| Terminal | `~/.config/ghostty/`, `~/.config/alacritty/`, etc. | Terminal themes |
+| Terminal | `~/.config/ghostty/`, `~/.config/alacritty/`, etc. | Terminal themes plus the hex backdrop |
+| Tool themes | `~/.config/yazi/`, `~/.config/bat/themes/`, `~/.config/tmux/` | Yazi, Bat and tmux palettes (restored on uninstall) |
 | Plymouth | `/usr/share/plymouth/themes/virtual-paradise/` | Boot splash; selected in `/etc/plymouth/plymouthd.conf` (if sudo) |
 | SDDM | `/usr/share/sddm/themes/virtual-paradise/` | Login theme; selected in `/etc/sddm.conf.d/zz-virtual-paradise-theme.conf` (if sudo) |
 | Systemd | `~/.config/systemd/user/` | Plugin update timer, audio watchdog |
@@ -399,9 +403,9 @@ The uninstaller will:
 
 ### Running Tests
 
-The test suite has twenty-four test cases and 387 assertions; optional tools
+The test suite has twenty-four test cases and 395 assertions; optional tools
 (`shellcheck`, `qmllint`, `hyprctl`) enable extra checks when present, so the
-exact count varies between machines (387 with `shellcheck`, 386 without). It
+exact count varies between machines (395 with `shellcheck`, 394 without). It
 runs in a sandbox and never touches your real system.
 
 ```bash
@@ -446,8 +450,11 @@ virtual-paradise/
 ├── bin/                  # Helper scripts (rice layout, wallpaper picker, etc.)
 ├── cava/                 # Cava visualizer config
 ├── config/
+│   ├── bat/              # Bat syntax theme (VirtualParadise.tmTheme)
 │   ├── editor/           # VS Code theme
-│   └── terminal/         # Ghostty, Alacritty, Foot, Kitty configs
+│   ├── terminal/         # Ghostty, Alacritty, Foot, Kitty configs
+│   ├── tmux/             # tmux status bar palette
+│   └── yazi/             # Yazi file manager palette
 ├── fastfetch/            # Fastfetch config and anime logo
 ├── hypr/                 # Hyprland config (animations, keybindings, rules)
 ├── lib/

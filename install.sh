@@ -1506,7 +1506,7 @@ fi
 # ------------------------------------------------------------------------------
 # 7. Install Component Themes (Btop, Cava, Fastfetch, Micro)
 # ------------------------------------------------------------------------------
-log_step "7" "$TOTAL_STEPS" "Installing Cava, Btop, Fastfetch & Micro editor theme profiles..."
+log_step "7" "$TOTAL_STEPS" "Installing Cava, Btop, Fastfetch, Micro, Yazi, Bat & tmux theme profiles..."
 
 # Cava
 if [[ -f "$REPO_DIR/cava/config_bar" ]]; then
@@ -1558,6 +1558,45 @@ if [[ -d "$REPO_DIR/micro" ]]; then
   fi
 fi
 
+# Yazi file manager rice
+if [[ -f "$REPO_DIR/config/yazi/theme.toml" ]]; then
+  mkdir -p "$CONFIG_DIR/yazi"
+  if [[ -f "$CONFIG_DIR/yazi/theme.toml" ]] \
+    && ! cmp -s "$REPO_DIR/config/yazi/theme.toml" "$CONFIG_DIR/yazi/theme.toml"; then
+    if [[ ! -f "$CONFIG_DIR/yazi/theme.toml.paradise.bak" ]]; then
+      cp "$CONFIG_DIR/yazi/theme.toml" \
+        "$CONFIG_DIR/yazi/theme.toml.paradise.bak" || true
+    fi
+  fi
+  cp "$REPO_DIR/config/yazi/theme.toml" "$CONFIG_DIR/yazi/theme.toml"
+fi
+
+# Bat syntax highlighter theme (additive: the file is ours, the cache rebuild
+# is what makes `bat` see it).
+if [[ -d "$REPO_DIR/config/bat/themes" ]]; then
+  mkdir -p "$CONFIG_DIR/bat/themes"
+  cp -r "$REPO_DIR/config/bat/themes"/* "$CONFIG_DIR/bat/themes/" 2>/dev/null || true
+  if command -v bat >/dev/null 2>&1; then
+    RUN_AS_INSTALL_USER bat cache --build >/dev/null 2>&1 || true
+  fi
+fi
+
+# tmux status bar theme: install the palette file and source it from the
+# user's tmux.conf behind a marker block, so uninstall can strip it again.
+if [[ -f "$REPO_DIR/config/tmux/paradise.conf" ]]; then
+  mkdir -p "$CONFIG_DIR/tmux"
+  cp "$REPO_DIR/config/tmux/paradise.conf" "$CONFIG_DIR/tmux/paradise.conf"
+  if [[ -f "$CONFIG_DIR/tmux/tmux.conf" ]] \
+    && ! grep -q 'Virtual☆Paradise tmux theme' "$CONFIG_DIR/tmux/tmux.conf"; then
+    if [[ ! -f "$CONFIG_DIR/tmux/tmux.conf.paradise.bak" ]]; then
+      cp "$CONFIG_DIR/tmux/tmux.conf" \
+        "$CONFIG_DIR/tmux/tmux.conf.paradise.bak" || true
+    fi
+    printf '\n# Virtual☆Paradise tmux theme (managed by install.sh; remove this block to opt out)\nsource-file %s\n' \
+      "$CONFIG_DIR/tmux/paradise.conf" >> "$CONFIG_DIR/tmux/tmux.conf"
+  fi
+fi
+
 # GTK4 & GTK3 Styling (Nautilus & Libadwaita) and Minimal Cybertech Icons
 if [[ -f "$REPO_DIR/config/gtk.css" ]]; then
   mkdir -p "$CONFIG_DIR/gtk-4.0" "$CONFIG_DIR/gtk-3.0"
@@ -1571,7 +1610,7 @@ if command -v gsettings &>/dev/null; then
   gsettings set org.gnome.desktop.interface color-scheme "prefer-dark" 2>/dev/null || true
   gsettings set org.gnome.desktop.interface gtk-theme "Adwaita-dark" 2>/dev/null || true
 fi
-log_sub "Component themes installed (Cava, Btop, Fastfetch, Micro, GTK/Nautilus & Tela-Circle Icons)"
+log_sub "Component themes installed (Cava, Btop, Fastfetch, Micro, Yazi, Bat, tmux, GTK/Nautilus & Tela-Circle Icons)"
 
 # ------------------------------------------------------------------------------
 # 8. Install Theme Assets & Backgrounds
@@ -1703,12 +1742,15 @@ fi
 unset f
 log_sub "Flattened hypr/ Omarchy-required files to theme root"
 
-# Flatten assets (preview.png, unlock.png) into theme root for Omarchy theme picker & Plymouth switcher
+# Flatten assets (preview.png, unlock.png, terminal-bg.png) into theme root for
+# Omarchy theme picker & Plymouth switcher, and so the terminal configs can
+# reference the hex backdrop next to themselves.
 if [[ -d "$THEME_DEST/assets" ]]; then
   cp -f "$THEME_DEST/assets/preview.png" "$THEME_DEST/preview.png" 2>/dev/null || true
   cp -f "$THEME_DEST/assets/unlock.png" "$THEME_DEST/unlock.png" 2>/dev/null || true
   cp -f "$THEME_DEST/assets/unlock.png" "$THEME_DEST/preview-unlock.png" 2>/dev/null || true
-  log_sub "Flattened assets/ (preview.png, unlock.png) to Omarchy theme root"
+  cp -f "$THEME_DEST/assets/terminal-bg.png" "$THEME_DEST/terminal-bg.png" 2>/dev/null || true
+  log_sub "Flattened assets/ (preview.png, unlock.png, terminal-bg.png) to Omarchy theme root"
 fi
 
 # Post-theme-set hook
