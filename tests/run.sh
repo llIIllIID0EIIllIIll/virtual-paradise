@@ -2162,7 +2162,7 @@ fi
 #
 # The bar reads as three floating pills, not one outlined plate: the hex layer
 # is an underlay with no fill or border, the islands carry the only rims, the
-# gap effect is a single comet, and the centre gets the focal treatment.
+# gap effect is a fixed comet stream, and the centre gets the focal treatment.
 # ─────────────────────────────────────────────────────────────────────────────
 if want tc21; then
   section "TC-21  Island chrome and gap effects"
@@ -2277,8 +2277,8 @@ fi
 # ─────────────────────────────────────────────────────────────────────────────
 # TC-24  Bar border chrome.
 #
-# The bar border has to read as its own thing next to the hover chrome: a
-# scanner spark walking each island's rim, an inner hairline and a faint ramp
+# The bar border has to read as its own thing next to the hover chrome: one
+# scanner spark orbiting the whole bar, an inner hairline and a faint ramp
 # aura on every island. The empty omarchy.spacer must not come back into the
 # centre layout, where it showed up as a hoverable hole.
 # ─────────────────────────────────────────────────────────────────────────────
