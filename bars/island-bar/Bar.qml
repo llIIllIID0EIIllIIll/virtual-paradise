@@ -3,6 +3,7 @@ import Quickshell.Hyprland
 import Quickshell.Io
 import Quickshell.Wayland
 import QtQuick
+import QtQuick.Effects
 import QtQuick.Layouts
 import qs.Commons
 import qs.Ui
@@ -1246,29 +1247,30 @@ Item {
     clearTooltip()
   }
 
-  // --- Rotating Super+Space menu rim ---------------------------------------
-  // The menu is the first-party omarchy.menu plugin in /usr/share, so the
-  // user-writable override layer cannot reach it and patching a package file
-  // is off the table. The first-party bar is handed the shell root, so it
-  // swaps the loaded menu item's border spec for the same rotating gradient
-  // the windows use. Every step is guarded on the host API and the item's
-  // properties: an upstream rename disables the effect instead of breaking
-  // the menu.
-  readonly property bool menuOpen: !!(root.shell && root.shell.openPanelIds
-    && root.shell.openPanelIds["omarchy.menu"] === true)
-
-  function menuPanelItem() {
-    if (!root.shell || !root.shell.panelLoaders) return null
-    var loader = root.shell.panelLoaders["omarchy.menu"]
-    return loader && loader.item ? loader.item : null
+  // --- Rotating rim for every panel ----------------------------------------
+  // The menu, clipboard, emoji picker and any third-party panel that exposes
+  // a `borderSpec` property get the same rotating gradient the windows use.
+  // The panel keeps its own token colours; only the gradient angle is swapped,
+  // and only while the panel is open. The lock screen is a service, not a
+  // panel, so it carries its own RimRamp. Every step is guarded: a panel
+  // without the property, or with a flat border, is left alone.
+  readonly property bool anyPanelOpen: {
+    if (!root.shell || !root.shell.openPanelIds) return false
+    for (var id in root.shell.openPanelIds) {
+      if (root.shell.openPanelIds[id] === true) return true
+    }
+    return false
   }
 
-  function applyMenuRim() {
-    var item = root.menuPanelItem()
-    if (!item || !("borderSpec" in item) || !("border" in item)) return
-    try {
-      var spec = Border.surfaceSpec("menu", "border", item.border, Math.max(1, Style.space(2)))
-      if (!spec || !spec.gradient || !spec.gradient.enabled) return
+  function applyPanelRims() {
+    if (!root.shell || !root.shell.panelLoaders) return
+    for (var id in root.shell.panelLoaders) {
+      if (root.shell.openPanelIds && root.shell.openPanelIds[id] !== true) continue
+      var loader = root.shell.panelLoaders[id]
+      var item = loader && loader.item ? loader.item : null
+      if (!item || !("borderSpec" in item)) continue
+      var spec = item.borderSpec
+      if (!spec || !spec.gradient || !spec.gradient.enabled) continue
       item.borderSpec = {
         color: spec.color,
         widths: spec.widths,
@@ -1278,19 +1280,17 @@ Item {
           colors: spec.gradient.colors
         }
       }
-    } catch (e) {
-      // The menu is not ours to break: leave the upstream spec in place.
     }
   }
 
   // 80ms is enough for a 15s turn to read as continuous on a 1px rim, and
-  // keeps the menu card from repainting every frame. Only runs while the menu
-  // is actually open, so a closed menu costs nothing.
+  // keeps the panel cards from repainting every frame. Only runs while a panel
+  // is actually open, so a closed panel costs nothing.
   Timer {
     interval: 80
     repeat: true
-    running: root.menuOpen
-    onTriggered: root.applyMenuRim()
+    running: root.anyPanelOpen
+    onTriggered: root.applyPanelRims()
   }
 
   Timer {
@@ -1484,12 +1484,45 @@ Item {
         }
       }
 
+      RimRamp {
+        id: tooltipRamp
+
+        alphaScale: 1.0
+        angle: root.rimAngle
+      }
+
+      // Soft ramp bloom behind the bubble, so the tooltip carries the same
+      // material as the islands and the panels.
+      RectangularShadow {
+        anchors.fill: tooltipBubble
+        radius: tooltipBubble.radius
+        blur: 14
+        spread: 1
+        offset: Qt.vector2d(0, 0)
+        color: Qt.rgba(tooltipRamp.colorAt.r, tooltipRamp.colorAt.g,
+          tooltipRamp.colorAt.b, 0.22)
+      }
+
       BorderSurface {
         id: tooltipBubble
         implicitWidth: tooltipLabel.implicitWidth + 20
         implicitHeight: tooltipLabel.implicitHeight + 14
         color: Color.tooltip.background
-        borderSpec: Border.surfaceSpec("tooltip", "border", Color.tooltip.border, 1)
+        borderSpec: {
+          var spec = Border.surfaceSpec("tooltip", "border", Color.tooltip.border, 1)
+          if (spec && spec.gradient && spec.gradient.enabled) {
+            return {
+              color: spec.color,
+              widths: spec.widths,
+              gradient: {
+                enabled: true,
+                angle: root.rimAngle,
+                colors: spec.gradient.colors
+              }
+            }
+          }
+          return spec
+        }
         radius: Style.cornerRadius
 
         Text {
