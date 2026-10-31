@@ -1,0 +1,15 @@
+{
+  "schemaVersion": 1,
+  "id": "__USER__.window-death",
+  "name": "Paradise Window Death",
+  "version": "1.0.0",
+  "author": "Virtual☆Paradise",
+  "description": "Warm window-close glitch burst. Runs inside the shell instead of a second Quickshell process.",
+  "kinds": [
+    "overlay"
+  ],
+  "keepLoaded": true,
+  "entryPoints": {
+    "overlay": "WindowDeath.qml"
+  }
+}

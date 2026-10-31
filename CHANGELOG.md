@@ -76,6 +76,15 @@ Conventional Commits.
   an update left them disabled.
 
 ### Changed
+- **The theme uses far less RAM for the same features.** The window-close
+  burst moved out of a second resident Quickshell (`~180 MB` PSS) into a
+  `doe.window-death` overlay plugin inside the main shell, so the burst still
+  maps in a couple of frames but there is no second QML engine. The lock
+  preview and its Sleeping Miku GIF now load only while the lock or preview is
+  actually shown, the terminal backdrop is 960×540 (the cursor spotlight draws
+  the detailed hex), and mpvpaper's demuxer cache is capped at 16 MiB. Measured
+  on the development machine: theme PSS fell from ~836 MB to ~488 MB, and the
+  layout/effects are unchanged.
 - **The island bar now reads as three floating glass pills instead of one
   outlined plate.** The hex layer is a borderless underlay that only shows in
   the gaps, each island carries the sole rim plus a top-lit gradient and a

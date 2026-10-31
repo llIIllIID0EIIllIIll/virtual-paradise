@@ -741,6 +741,11 @@ INSTALL_AND_ENABLE_PLUGINS() {
       po_apply_all
       log_sub "Enabled all ${enabled_count} Virtual Paradise plugins in Omarchy shell"
 
+      # The window-death burst moved from a second resident Quickshell into an
+      # overlay plugin in this shell. Stop the old daemon if this install is
+      # replacing it live; the autostart line is removed further down.
+      pkill -f 'vp_death_daemon.qml' 2>/dev/null || true
+
       # Install & enable external Omarchy webcam plugin
       if [[ ! -d "$CONFIG_DIR/omarchy/plugins/io.github.kristoferlund.webcam" ]] && ! RUN_AS_INSTALL_USER omarchy plugin list --json 2>/dev/null | jq -e 'any(.[]; .id == "io.github.kristoferlund.webcam")' >/dev/null; then
         log_sub "Adding external Omarchy webcam plugin from git..."
@@ -1224,6 +1229,15 @@ if [[ -f "$CONFIG_DIR/hypr/autostart.lua" ]]; then
     hypr_backup "$CONFIG_DIR/hypr/autostart.lua"
     echo 'o.launch_on_start("toggle_live_wallpaper.sh init")' >> "$CONFIG_DIR/hypr/autostart.lua"
     log_sub "Hooked live wallpaper to ~/.config/hypr/autostart.lua"
+  fi
+  # The window death burst moved into the shell as an overlay plugin. Remove
+  # the old daemon line so an updated install does not keep a second
+  # Quickshell resident.
+  if grep -q "vp_death_daemon.sh" "$CONFIG_DIR/hypr/autostart.lua"; then
+    hypr_backup "$CONFIG_DIR/hypr/autostart.lua"
+    sed -i '/o\.launch_on_start("vp_death_daemon\.sh")/d' \
+      "$CONFIG_DIR/hypr/autostart.lua" 2>/dev/null || true
+    log_sub "Retired the old window-death daemon from ~/.config/hypr/autostart.lua"
   fi
   if ! grep -q "vp-sound.sh" "$CONFIG_DIR/hypr/autostart.lua"; then
     hypr_backup "$CONFIG_DIR/hypr/autostart.lua"

@@ -1673,10 +1673,13 @@ if want tc16; then
   check "the daemon writes its pidfile before exec" \
     "$(awk '/vp_death_daemon\.pid/{if (!p) p=NR} /exec quickshell/{if (!e) e=NR} END {exit !(p && e && p < e)}' \
       "$REPO_DIR/bin/vp_death_daemon.sh" && echo 0 || echo 1)"
-  check "the death daemon is autostarted with the theme" \
-    "$(grep -q 'vp_death_daemon.sh' "$REPO_DIR/hypr/autostart.lua" && echo 0 || echo 1)"
-  check "the installer hooks the death daemon to autostart" \
-    "$(grep -q 'vp_death_daemon.sh' "$REPO_DIR/install.sh" && echo 0 || echo 1)"
+  check "the death burst ships as a warm overlay plugin" \
+    "$([[ -f "$REPO_DIR/plugins/window-death/WindowDeath.qml" ]] \
+      && grep -q '"overlay"' "$REPO_DIR/plugins/window-death/manifest.json" \
+      && grep -q 'keepLoaded' "$REPO_DIR/plugins/window-death/manifest.json" && echo 0 || echo 1)"
+  check "the installer retires the old death daemon" \
+    "$(! grep -q 'vp_death_daemon.sh' "$REPO_DIR/hypr/autostart.lua" \
+      && grep -q 'vp_death_daemon.qml' "$REPO_DIR/install.sh" && echo 0 || echo 1)"
   check "the uninstaller removes the death daemon" \
     "$(grep -q 'vp_death_daemon.qml' "$REPO_DIR/uninstall.sh" && echo 0 || echo 1)"
   # The ambient tear is a whisper: one or two pixels at a fifth of full

@@ -41,6 +41,11 @@ Three floating glass pills over a faint hex underlay, a sparse comet stream in t
 
 The gap stream, the rim scanner and the hover chrome are opt-out in `~/.config/omarchy/shell.json`; see [Bar Effects](#bar-effects).
 
+The theme keeps its effects without a second Quickshell: the window-close burst
+is an overlay plugin inside the main shell, the lock preview loads on demand,
+and the terminal backdrop is a low-resolution texture that the cursor spotlight
+sharpens locally. See [Memory](#memory) for the details.
+
 ### 🎬 Animated Wallpapers
 
 Live video wallpapers with cyberpunk glitch transitions. Cycle through 7 animated backgrounds with `SUPER + ALT + ←` / `SUPER + ALT + →` (or `SUPER + ALT + N` / `SUPER + ALT + SHIFT + N`), or toggle between live and static with `SUPER + ALT + W`.
@@ -364,6 +369,29 @@ underlay's drift and stops the scanner spark that laps the bar's outer rim.
 shimmer, the ramp-sampled bloom and the scale pop. Setting `gapEffects` to
 `false` also turns off the hover chrome, so the bar can be made completely
 still with one key.
+
+### Memory
+
+Every effect is still here; the memory cost was moved off the always-resident
+path instead:
+
+- The window-close burst lives in a `doe.window-death` overlay inside the main
+  shell. It used to be a second `quickshell` process kept warm (~180 MB PSS).
+- The lock screen preview and its Sleeping Miku GIF are created only while the
+  lock or preview is visible.
+- The terminal hex backdrop is a 960×540 texture (a quarter of the old decoded
+  size per terminal); the cursor spotlight paints the detailed grid locally.
+- `mpvpaper` is capped at a 16 MiB demuxer cache instead of mpv's default.
+- The theme's overlay plugins are disabled when the theme is left and removed
+  on uninstall, so they do not linger in another theme.
+
+On the development machine the theme's resident PSS dropped from ~836 MB to
+~488 MB with the same bar, effects, terminals and lock screen. Check the live
+number with:
+
+```bash
+ps -o pid,rss,args -C quickshell
+```
 
 ### Disabling Components
 

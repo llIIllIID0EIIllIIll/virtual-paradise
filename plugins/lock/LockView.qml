@@ -149,16 +149,19 @@ Item {
     anchors.fill: parent
     color: "#0f081d"
 
-    // 100% Unblurred, Sharp, Vivid 1080p Animated GIF (Sleeping Miku)
+    // 100% Unblurred, Sharp, Vivid 1080p Animated GIF (Sleeping Miku).
+    // Loaded only while the lock screen is actually showing: at startup the
+    // preview LockView and the lock surface both exist, and keeping two copies
+    // of a multi-frame GIF decoded around the clock was pure memory cost.
     AnimatedImage {
       id: wallpaperGif
       anchors.fill: parent
-      source: Qt.resolvedUrl("Sleeping_miku.gif")
+      source: root.loadBackground ? Qt.resolvedUrl("Sleeping_miku.gif") : ""
       fillMode: Image.PreserveAspectCrop
-      asynchronous: false
-      cache: true
-      playing: true
-      visible: true
+      asynchronous: true
+      cache: false
+      playing: root.loadBackground
+      visible: root.loadBackground
     }
 
     // High clarity subtle dark tint so Sleeping Miku is crystal clear and vivid

@@ -306,17 +306,26 @@ Item {
     WlrLayershell.keyboardFocus: WlrKeyboardFocus.Exclusive
     exclusionMode: ExclusionMode.Ignore
 
-    LockView {
+    // The preview is only built when it is actually requested: its LockView is
+    // a full input field, quote process and background machinery that must
+    // not sit around for the whole session just to be shown for a moment.
+    Loader {
       anchors.fill: parent
-      backgroundPath: root.backgroundPath
-      backgroundVersion: root.backgroundVersion
-      fingerprintConfigured: root.fingerprintConfigured
-      authenticatingPassword: false
-      failureMessage: ""
-      failedAttempts: 0
-      inputEnabled: false
-      loadBackground: root.previewVisible
-      passwordText: ""
+      active: root.previewVisible
+      sourceComponent: Component {
+        LockView {
+          anchors.fill: parent
+          backgroundPath: root.backgroundPath
+          backgroundVersion: root.backgroundVersion
+          fingerprintConfigured: root.fingerprintConfigured
+          authenticatingPassword: false
+          failureMessage: ""
+          failedAttempts: 0
+          inputEnabled: false
+          loadBackground: root.previewVisible
+          passwordText: ""
+        }
+      }
     }
 
     MouseArea {
