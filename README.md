@@ -37,6 +37,7 @@ Three floating glass pills over a faint hex underlay, a sparse comet stream in t
 - **Left island**: quick menu, Japanese workspace numerals, active window
 - **Center island**: waveform visualizer, weather, clock, vitals (CPU/GPU/RAM/disk/net), CPU temperature, microphone, indicator dots
 - **Right island**: system tray, network, VPN, notifications, audio, battery, power
+- **Ambient overlays**: a neon glow trails the pointer, and the screen edges flash cyan on a workspace change and magenta when a notification arrives
 
 The gap stream, the rim scanner and the hover chrome are opt-out in `~/.config/omarchy/shell.json`; see [Bar Effects](#bar-effects).
 

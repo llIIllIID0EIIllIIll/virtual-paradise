@@ -1,0 +1,15 @@
+{
+  "schemaVersion": 1,
+  "id": "__USER__.edge-glow",
+  "name": "Paradise Edge Glow",
+  "version": "1.0.0",
+  "author": "Virtual☆Paradise",
+  "description": "Screen-edge neon flash on workspace changes and notifications. Click-through, overlay layer.",
+  "kinds": [
+    "overlay"
+  ],
+  "keepLoaded": true,
+  "entryPoints": {
+    "overlay": "EdgeGlow.qml"
+  }
+}
