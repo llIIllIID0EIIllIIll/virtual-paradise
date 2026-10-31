@@ -1824,24 +1824,19 @@ if [[ -f "$REPO_DIR/systemd/paradise-plugin-check.timer" ]]; then
     else
       log_sub "Audio watchdog installed but not enabled; enable with: systemctl --user enable --now paradise-audio-watchdog.timer"
     fi
-    # Wallpaper rotation and the day/night variant switch are rice features
-    # that only touch the theme; both are safe to enable and easy to disable.
+    # Wallpaper rotation and the day/night variant switch change the desktop
+    # behind the user's back, so they are installed as opt-in units and left
+    # disabled. The palette timer in particular must not surprise anyone with
+    # a pink evening; `systemctl --user enable --now` turns either one on.
     if [[ -f "$REPO_DIR/systemd/paradise-wallpaper-rotate.timer" ]]; then
       cp "$REPO_DIR/systemd/paradise-wallpaper-rotate.service" \
          "$REPO_DIR/systemd/paradise-wallpaper-rotate.timer" \
          "$REPO_DIR/systemd/paradise-variant-by-time.service" \
          "$REPO_DIR/systemd/paradise-variant-by-time.timer" \
          "$CONFIG_DIR/systemd/user/"
-      if systemctl --user enable --now paradise-wallpaper-rotate.timer >/dev/null 2>&1; then
-        log_sub "Enabled hourly live-wallpaper rotation"
-      else
-        log_sub "Wallpaper rotation installed but not enabled; enable with: systemctl --user enable --now paradise-wallpaper-rotate.timer"
-      fi
-      if systemctl --user enable --now paradise-variant-by-time.timer >/dev/null 2>&1; then
-        log_sub "Enabled day/night variant switch (07:00 cyberpunk, 19:00 sakura)"
-      else
-        log_sub "Variant timer installed but not enabled; enable with: systemctl --user enable --now paradise-variant-by-time.timer"
-      fi
+      log_sub "Wallpaper rotation + day/night variant installed (opt-in, disabled)"
+      log_sub "  enable wallpaper rotation: systemctl --user enable --now paradise-wallpaper-rotate.timer"
+      log_sub "  enable day/night variant:  systemctl --user enable --now paradise-variant-by-time.timer"
     fi
   fi
 fi
