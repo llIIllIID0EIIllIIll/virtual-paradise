@@ -32,7 +32,7 @@ FORCE_SHELL_LAYOUT=0
 for arg in "$@"; do
   case "$arg" in
     -h|--help)
-      printf 'Usage: %s [--no-boot] [--boot-only] [--sddm-only] [--user-only|--no-sudo] [--no-autologin] [--force-shell-layout]\n' "$0"
+      printf 'Usage: %s [--no-boot] [--boot-only] [--sddm-only] [--user-only|--no-sudo] [--no-autologin] [--force-shell-layout] [--hook]\n' "$0"
       printf '\nInstalls the Virtual☆Paradise theme.\n\n'
       printf '  --no-boot        skip the Plymouth/SDDM setup (needs sudo)\n'
       printf '  --boot-only      install only the boot and login themes (needs sudo)\n'
@@ -41,6 +41,8 @@ for arg in "$@"; do
       printf '  --no-sudo        alias for --user-only\n'
       printf '  --no-autologin   show the login screen instead of logging in automatically\n'
       printf '  --force-shell-layout  replace a customised shell.json with the theme layout\n'
+      printf '  --hook           re-apply the overrides and the bar layout only (for scripts)\n'
+      printf '  --dry-run        refused on purpose: there is no preview mode\n'
       exit 0
       ;;
     --hook)

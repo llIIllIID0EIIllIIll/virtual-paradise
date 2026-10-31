@@ -161,7 +161,9 @@ The installer will:
 | `./install.sh --user-only` | Skip Plymouth/SDDM, no sudo needed |
 | `./install.sh --no-boot` | Skip Plymouth/SDDM even with sudo |
 | `./install.sh --sddm-only` | Install only the SDDM login theme (requires sudo) |
-| `./install.sh --hook` | Re-apply overrides only (for scripts) |
+| `./install.sh --boot-only` | Install only the Plymouth/SDDM boot themes (requires sudo) |
+| `./install.sh --no-autologin` | Show the SDDM login screen instead of auto-login |
+| `./install.sh --hook` | Re-apply overrides and the bar layout (for scripts) |
 
 The installer is **idempotent**: run it as many times as you want. It will only update what changed.
 
@@ -449,6 +451,8 @@ virtual-paradise/
 ├── fastfetch/            # Fastfetch config and anime logo
 ├── hypr/                 # Hyprland config (animations, keybindings, rules)
 ├── lib/
+│   ├── file-ops.sh            # Backup/restore helpers
+│   ├── omarchy-env.sh         # Omarchy environment resolution
 │   ├── plugin-overrides.sh    # Override layer implementation
 │   ├── shell-layout.sh        # Three-way shell.json ownership rules
 │   ├── post-update-hook.sh    # Bar repair and override re-apply after updates
@@ -465,6 +469,7 @@ virtual-paradise/
 ├── tests/                # Test suite
 ├── theme/                # colors.toml, shell.toml, GTK CSS
 ├── tools/
+│   ├── check-bindings.py        # Duplicate/shadowed binding check
 │   ├── shrink-history.sh        # Git history cleanup
 │   └── convert-gifs-to-mp4.sh   # Wallpaper compression
 ├── install.sh            # Installer
