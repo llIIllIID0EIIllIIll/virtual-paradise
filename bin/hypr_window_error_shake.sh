@@ -6,6 +6,9 @@
 CURRENT_THEME="$(cat "$HOME/.local/state/omarchy/current/theme.name" 2>/dev/null || echo "")"
 [[ "$CURRENT_THEME" != "virtual-paradise" ]] && exit 0
 
+# Error blip. Best-effort, and silent when the theme sounds are off.
+"$HOME/.local/bin/vp-sound.sh" error >/dev/null 2>&1 &
+
 # Extract active window address robustly (works with jq, grep, or awk)
 addr=""
 if command -v hyprctl >/dev/null 2>&1; then

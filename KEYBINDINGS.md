@@ -65,8 +65,9 @@ These are intentionally **not** rebound by the theme:
 
 These live in `~/.local/bin` after installation and are run from a terminal:
 
-- `theme-switcher.sh` — switch the Virtual☆Paradise palette variant (`list`, `reset`)
+- `theme-switcher.sh` — switch the Virtual☆Paradise palette variant (`list`, `reset`, `wallpaper`)
 - `effects.sh` — `rainbow`, `glow`, `toggle-blur`, `shake`, `focus-pulse`
+- `screensaver.sh` — `matrix`, `starfield`, `miku`
 - `toggle_live_wallpaper.sh` — `init`, `next`, `prev` (also used by the keys above)
 
 The rotating gradient window borders, shadows and glow are part of the theme

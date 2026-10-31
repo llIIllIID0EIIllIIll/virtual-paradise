@@ -53,6 +53,15 @@ Conventional Commits.
   warning tier between normal and overheating, the microphone glyph pulses
   while an app is recording, active indicators glow, and the workspace
   underline grows between workspaces instead of blinking.
+- **The theme has a voice.** Five short synth blips - login, lock, unlock,
+  error and notification - ship with the theme and play through `vp-sound.sh`;
+  one flag file mutes them all.
+- **More screensaver modes.** `screensaver.sh` picks the matrix, a neon
+  starfield or the Miku animation fullscreen.
+- **GTK polish and an optional qt6ct scheme.** Headerbars, tabs, progress
+  bars, popovers, selection and switches follow the palette, and
+  `config/qt6ct/colors/VirtualParadise.conf` is installed for machines that
+  use qt6ct instead of Omarchy's GTK platform theme.
 - **`install.sh --force-shell-layout`** replaces a customised `shell.json`
   when that is what the user actually wants. Without it, the installer, the
   theme hook and the post-update hook preserve the user's layout.
@@ -453,7 +462,7 @@ Conventional Commits.
 - TC-20 through TC-24 cover the bar work in this cycle: the hover glow, the
   island chrome and gap stream, the rotating gradient chrome (bar rim, menu
   border and window shadow), the hover chrome and the bar border chrome. The
-  suite is now 395 assertions with `shellcheck` installed (394 without), and
+  suite is now 396 assertions with `shellcheck` installed (395 without), and
   TC-7 also proves the Yazi, Bat and tmux themes are installed and restored.
 
 ---

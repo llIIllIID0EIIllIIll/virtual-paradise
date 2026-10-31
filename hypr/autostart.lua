@@ -13,3 +13,8 @@ o.launch_on_start("vp_death_daemon.sh")
 
 --  Default to live video wallpaper; auto-fallback to static Miku wallpaper if unavailable
 o.launch_on_start("toggle_live_wallpaper.sh init")
+
+--  Login chime. vp-sound.sh is best-effort: it exits silently when the player
+--  or the sound pack is missing, and `~/.local/state/virtual-paradise/sound-off`
+--  turns every theme sound off.
+o.launch_on_start("vp-sound.sh login")

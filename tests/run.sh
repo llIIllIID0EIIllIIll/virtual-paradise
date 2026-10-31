@@ -709,6 +709,8 @@ if want tc7; then
   check "the wallpaper hook is gone from the user's autostart" \
     "$(grep -q -- '-- user autostart' "$C/hypr/autostart.lua" 2>/dev/null \
        && ! grep -q 'toggle_live_wallpaper' "$C/hypr/autostart.lua" && echo 0 || echo 1)"
+  check "the login chime hook is gone from the user's autostart" \
+    "$(grep -q 'vp-sound.sh' "$C/hypr/autostart.lua" 2>/dev/null && echo 1 || echo 0)"
   check "the window-rule block is removed" \
     "$(grep -q 'Virtual Paradise Add-on Window Rules' "$C/hypr/hyprland.lua" && echo 1 || echo 0)"
   check "the user's own hyprland line survives" \

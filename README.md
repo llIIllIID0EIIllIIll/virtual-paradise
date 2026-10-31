@@ -14,7 +14,7 @@
 [![Arch Linux](https://img.shields.io/badge/Arch_Linux-1793D1?style=flat-square&logo=arch-linux&logoColor=white)](https://archlinux.org)
 [![Omarchy 4.0+](https://img.shields.io/badge/Omarchy-4.0+-8A2BE2?style=flat-square)](https://omarchy.org)
 [![Hyprland](https://img.shields.io/badge/Hyprland-Wayland-00ffdd?style=flat-square)](https://hyprland.org)
-[![Tests](https://img.shields.io/badge/tests-395%20passed-00ff88?style=flat-square)](tests/)
+[![Tests](https://img.shields.io/badge/tests-396%20passed-00ff88?style=flat-square)](tests/)
 [![License](https://img.shields.io/badge/license-MIT-ffe066?style=flat-square)](LICENSE)
 [![Version](https://img.shields.io/badge/version-1.2.2-ff00ff?style=flat-square)](VERSION)
 
@@ -87,6 +87,11 @@ The scripts below are optional extras on top of that:
 - **Glow Effect** — `effects.sh glow`
 - **Toggle Blur** — `effects.sh toggle-blur`
 - **Window Shake** — `effects.sh shake`
+- **Screensaver modes** — `screensaver.sh matrix|starfield|miku`
+
+The theme also has a voice: `vp-sound.sh` plays five short synth blips on
+login, lock, unlock, an error shake and a notification. One flag file mutes
+them all (`touch ~/.local/state/virtual-paradise/sound-off`).
 
 They run in the foreground or background as you choose; the theme does not bind
 them to keys of their own. Every effect writes its setting through
@@ -414,9 +419,9 @@ The uninstaller will:
 
 ### Running Tests
 
-The test suite has twenty-four test cases and 395 assertions; optional tools
+The test suite has twenty-four test cases and 396 assertions; optional tools
 (`shellcheck`, `qmllint`, `hyprctl`) enable extra checks when present, so the
-exact count varies between machines (395 with `shellcheck`, 394 without). It
+exact count varies between machines (396 with `shellcheck`, 395 without). It
 runs in a sandbox and never touches your real system.
 
 ```bash
