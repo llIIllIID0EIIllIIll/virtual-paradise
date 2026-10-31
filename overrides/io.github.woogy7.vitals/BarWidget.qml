@@ -75,6 +75,14 @@ BarWidget {
     return value >= 0 ? String(Math.round(value)) : "—"
   }
 
+  // Usage tiers: normal keeps the widget's base colour, busy turns amber and
+  // saturated turns red, so a glance at the number reads the load.
+  function usageColor(value, base) {
+    if (value >= 85) return "#ff0055"
+    if (value >= 65) return "#ffe066"
+    return base
+  }
+
   // --- panel plumbing (unchanged from upstream) ---
   function injectPanel() {
     var target = panelLoader.item
@@ -267,11 +275,13 @@ BarWidget {
           }
           Text {
             text: root.percentText(root.cpuPercent) + "%"
-            color: root.accent
+            color: root.usageColor(root.cpuPercent, root.accent)
             font.family: root.bar ? root.bar.fontFamily : Style.font.family
             font.pixelSize: Style.font.caption
             font.bold: true
             anchors.verticalCenter: parent.verticalCenter
+
+            Behavior on color { ColorAnimation { duration: 180 } }
           }
         }
 
@@ -289,11 +299,13 @@ BarWidget {
           }
           Text {
             text: root.percentText(root.gpuPercent) + "%"
-            color: root.live
+            color: root.usageColor(root.gpuPercent, root.live)
             font.family: root.bar ? root.bar.fontFamily : Style.font.family
             font.pixelSize: Style.font.caption
             font.bold: true
             anchors.verticalCenter: parent.verticalCenter
+
+            Behavior on color { ColorAnimation { duration: 180 } }
           }
         }
       }

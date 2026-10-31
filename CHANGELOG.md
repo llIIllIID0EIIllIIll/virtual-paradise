@@ -50,9 +50,10 @@ Conventional Commits.
   the original.
 - **The bar widgets breathe.** The weather glyph pulses and tints by
   temperature, the clock's seconds heartbeat, the CPU temperature has an amber
-  warning tier between normal and overheating, the microphone glyph pulses
-  while an app is recording, active indicators glow, and the workspace
-  underline grows between workspaces instead of blinking.
+  warning tier between normal and overheating, the vitals percentages turn
+  amber then red as they climb, the microphone glyph pulses while an app is
+  recording, active indicators glow, and the workspace underline grows
+  between workspaces instead of blinking.
 - **The theme has a voice.** Five short synth blips - login, lock, unlock,
   error and notification - ship with the theme and play through `vp-sound.sh`;
   one flag file mutes them all.
