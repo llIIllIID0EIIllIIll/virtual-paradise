@@ -2138,7 +2138,7 @@ if want tc20; then
   glow="$REPO_DIR/bars/island-bar/HoverGlow.qml"
   check "HoverGlow.qml ships with the island bar" \
     "$([[ -f $glow ]] && echo 0 || echo 1)"
-  check "the hover glow is a shape-following accent halo" \
+  check "the hover glow is a shape-following ramp halo" \
     "$(grep -q 'import QtQuick.Effects' "$glow" \
       && grep -q 'RectangularShadow' "$glow" && grep -q 'blur:' "$glow" \
       && grep -q 'root.accent' "$glow" \
@@ -2198,7 +2198,7 @@ if want tc21; then
   check "the bar gives the islands a wider gutter" \
     "$(grep -q 'readonly property int islandPad: Style.space(8)' "$bar" \
       && grep -q 'spacing: Style.space(5)' "$bar" && echo 0 || echo 1)"
-  check "the hover halo is a soft lozenge, not a hard box" \
+  check "the hover halo stays inside the island" \
     "$(grep -q 'Keep the halo inside the island' "$bar" \
       && grep -q 'radius: Math.min(width, height) / 2' "$bar" && echo 0 || echo 1)"
 fi

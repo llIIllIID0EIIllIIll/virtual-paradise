@@ -9,11 +9,12 @@ Conventional Commits.
 ## [Unreleased]
 
 ### Added
-- **The island bar marks the widget under the pointer.** A soft accent halo
-  follows the rounded shape of the hovered widget and fades in and out instead
-  of popping. It is disabled by `"bar": { "hoverGlow": false }` in
-  `shell.json`, and turning off `gapEffects` disables both ambient effects so
-  the bar can be made completely still.
+- **The island bar marks the widget under the pointer.** A lit pill follows
+  the hovered widget - a rotating ramp rim, a hex shimmer clipped inside it, a
+  bloom sampled from the ramp and a soft scale pop. It is disabled by
+  `"bar": { "hoverGlow": false }` in `shell.json`, and turning off
+  `gapEffects` disables every ambient bar effect so the bar can be made
+  completely still.
 - **`install.sh --force-shell-layout`** replaces a customised `shell.json`
   when that is what the user actually wants. Without it, the installer, the
   theme hook and the post-update hook preserve the user's layout.
@@ -29,10 +30,9 @@ Conventional Commits.
   the gaps, each island carries the sole rim plus a top-lit gradient and a
   softer shadow, and the centre island gets a faint accent bloom. Gap motion
   was reduced to a fixed stream of comets with short trails over an
-  edge-faded rail, the centre widgets got more breathing room, and the hover
-  halo became a soft lozenge that follows the widget's full height. The
-  stream is deliberately sparse and slow - 260px apart at 40px/s, painted at
-  60fps - so the gaps read as air with an occasional spark.
+  edge-faded rail, and the centre widgets got more breathing room. The stream
+  is deliberately sparse and slow - 260px apart at 40px/s, painted at 60fps -
+  so the gaps read as air with an occasional spark.
 - **The window shadow now rotates with the border gradient.** `shadowangle`
   spins the shadow's gradient on the same `linearSpin` loop as `borderangle`,
   and `glowangle` does the same for `decoration:glow` if it is ever enabled,
@@ -410,6 +410,12 @@ Conventional Commits.
 - `install.sh --help` lists the supported options, and an unknown option is
   now an error instead of being ignored. A typo like `--user-onyl` used to
   run a full install with the wrong privileges.
+
+### Tests
+- TC-20 through TC-24 cover the bar work in this cycle: the hover glow, the
+  island chrome and gap stream, the rotating gradient chrome (bar rim, menu
+  border and window shadow), the hover chrome and the bar border chrome. The
+  suite is now 387 assertions with `shellcheck` installed (386 without).
 
 ---
 
