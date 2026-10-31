@@ -12,6 +12,8 @@ BarWidget {
   property bool coolerActive: false
   readonly property int tempValue: parseInt(root.cpuTemp.replace("°C", ""), 10) || 0
   readonly property bool isOverheating: tempValue >= 85
+  // Middle tier: warm enough to warn, not yet throttling.
+  readonly property bool isWarm: tempValue >= 70 && tempValue < 85
 
   function refresh() {
     if (!tempProc.running) tempProc.running = true
@@ -87,16 +89,20 @@ BarWidget {
       radius: 14
       color: root.isOverheating
         ? Qt.rgba(1.0, 0.0, 0.33, 0.32) // Neon Red Warning glow
-        : (root.coolerActive
-          ? Qt.rgba(0.0, 1.0, 0.53, 0.20) // Hacker Green active glow, kept dim so it
-          //                    does not outshine the themed widgets beside it
-          : (button.tooltipHovered ? Qt.rgba(1.0, 0.72, 0.84, 0.16) : Qt.rgba(1.0, 0.72, 0.84, 0.09)))
+        : (root.isWarm
+          ? Qt.rgba(1.0, 0.88, 0.40, 0.24) // Amber warning glow
+          : (root.coolerActive
+            ? Qt.rgba(0.0, 1.0, 0.53, 0.20) // Hacker Green active glow, kept dim so it
+            //                    does not outshine the themed widgets beside it
+            : (button.tooltipHovered ? Qt.rgba(1.0, 0.72, 0.84, 0.16) : Qt.rgba(1.0, 0.72, 0.84, 0.09))))
       border.color: root.isOverheating
         ? "#ff0055" // Neon Warning Red
-        : (root.coolerActive
-          ? "#00ff88"
-          : (button.tooltipHovered ? "#ffb7d5" : Qt.rgba(1.0, 0.72, 0.84, 0.38)))
-      border.width: (root.coolerActive || root.isOverheating) ? 1.6 : 1
+        : (root.isWarm
+          ? "#ffe066" // Amber
+          : (root.coolerActive
+            ? "#00ff88"
+            : (button.tooltipHovered ? "#ffb7d5" : Qt.rgba(1.0, 0.72, 0.84, 0.38))))
+      border.width: (root.coolerActive || root.isOverheating || root.isWarm) ? 1.6 : 1
       scale: button.tooltipHovered ? 1.04 : 1
 
       Behavior on color { ColorAnimation { duration: 180 } }
@@ -163,7 +169,7 @@ BarWidget {
             id: tempIcon
             anchors.centerIn: parent
             text: root.isOverheating ? "󰈸" : (root.coolerActive ? "󰈐" : "")
-            color: root.isOverheating ? "#ff0055" : (root.coolerActive ? "#00ff88" : "#ffb7d5")
+            color: root.isOverheating ? "#ff0055" : (root.isWarm ? "#ffe066" : (root.coolerActive ? "#00ff88" : "#ffb7d5"))
             font.family: root.bar.fontFamily
             font.pixelSize: Style.font.body + 1
             rotation: (!root.isOverheating && root.coolerActive) ? fanRotation : 0
@@ -186,7 +192,7 @@ BarWidget {
           id: tempLabel
           anchors.verticalCenter: parent.verticalCenter
           text: root.cpuTemp
-          color: root.isOverheating ? "#ff0055" : (root.coolerActive ? "#00ff88" : "#ffffff")
+          color: root.isOverheating ? "#ff0055" : (root.isWarm ? "#ffe066" : (root.coolerActive ? "#00ff88" : "#ffffff"))
           font.family: root.bar.fontFamily
           font.pixelSize: Style.font.body
           font.bold: true

@@ -170,9 +170,35 @@ BarWidget {
         Text {
           anchors.verticalCenter: parent.verticalCenter
           text: root.weatherIcon
-          color: "#ffe066" // Cyber Neon Yellow
+          // Temperature tiers: hot runs sakura, mild yellow, cool green, cold
+          // cyan, so a glance at the colour reads the temperature.
+          color: {
+            var t = parseFloat(root.weatherTemp)
+            if (!isFinite(t)) return "#ffe066"
+            if (t >= 32) return "#ff79a8"
+            if (t >= 24) return "#ffe066"
+            if (t >= 16) return "#00ff88"
+            return "#00ffdd"
+          }
           font.family: root.bar.fontFamily
           font.pixelSize: Style.font.body + 1
+
+          // A slow breath so the weather mark feels alive without moving the
+          // text beside it.
+          scale: 1.0
+          transformOrigin: Item.Center
+          SequentialAnimation on scale {
+            running: true
+            loops: Animation.Infinite
+            NumberAnimation {
+              from: 1.0; to: 1.08
+              duration: 1300; easing.type: Easing.InOutSine
+            }
+            NumberAnimation {
+              from: 1.08; to: 1.0
+              duration: 1300; easing.type: Easing.InOutSine
+            }
+          }
         }
 
         Text {

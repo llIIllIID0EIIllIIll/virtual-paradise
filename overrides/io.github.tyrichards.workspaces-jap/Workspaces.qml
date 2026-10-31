@@ -1,4 +1,5 @@
 import QtQuick
+import QtQuick.Effects
 import QtQuick.Layouts
 import Quickshell.Hyprland
 import qs.Commons
@@ -121,13 +122,30 @@ BarWidget {
           }
 
           Rectangle {
-            visible: wsBtn.focused
+            id: underline
+
+            // Grows and shrinks between workspaces instead of popping, so a
+            // focus change reads as a slide rather than a blink.
+            visible: width > 0.5
             anchors.bottom: parent.bottom
             anchors.horizontalCenter: parent.horizontalCenter
-            width: 14
+            width: wsBtn.focused ? 14 : 0
             height: 2
             radius: 1
             color: Color.accent
+
+            Behavior on width {
+              NumberAnimation { duration: 180; easing.type: Easing.OutCubic }
+            }
+
+            RectangularShadow {
+              anchors.fill: parent
+              radius: parent.radius
+              blur: 6
+              spread: 1
+              offset: Qt.vector2d(0, 0)
+              color: Qt.rgba(Color.accent.r, Color.accent.g, Color.accent.b, 0.55)
+            }
           }
         }
       }

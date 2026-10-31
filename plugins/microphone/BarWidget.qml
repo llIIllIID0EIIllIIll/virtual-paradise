@@ -131,6 +131,21 @@ BarWidget {
 
         Behavior on color { ColorAnimation { duration: 160 } }
         Behavior on scale { NumberAnimation { duration: 150; easing.type: Easing.OutBack } }
+
+        // Recording heartbeat: the glyph dims and returns once per 1.2s while
+        // an app is capturing the microphone.
+        SequentialAnimation on opacity {
+          running: root.inUse && !button.tooltipHovered
+          loops: Animation.Infinite
+          NumberAnimation {
+            from: 1.0; to: 0.55
+            duration: 600; easing.type: Easing.InOutSine
+          }
+          NumberAnimation {
+            from: 0.55; to: 1.0
+            duration: 600; easing.type: Easing.InOutSine
+          }
+        }
       }
     }
   }
