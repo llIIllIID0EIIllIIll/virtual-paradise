@@ -73,10 +73,10 @@ tool, not bound to a key.
 The rotating gradient border, window shadow and glow ship enabled by default:
 `borderangle`, `shadowangle` and `glowangle` in `hypr/looknfeel.lua` spin the
 theme's cyan/green/pink ramp around every window edge and its spill. The
-shell's own surfaces - bar, menu, popups, notifications and OSD - are frosted
-by a Hyprland layer-blur rule, so their translucent fills show the wallpaper
-as soft light instead of flat colour. The scripts below are optional extras on
-top of that:
+shell's own surfaces - bar, menu, popups, notifications, OSD and the lock
+screen's password field - are frosted or rimmed by the same ramp, so their
+translucent fills show the wallpaper as soft light instead of flat colour.
+The scripts below are optional extras on top of that:
 
 - **Rainbow Borders** — `effects.sh rainbow`
 - **Glow Effect** — `effects.sh glow`

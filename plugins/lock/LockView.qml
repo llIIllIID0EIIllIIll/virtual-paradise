@@ -32,9 +32,43 @@ Item {
     : 1
   readonly property bool showPasswordCursor: inputEnabled && !authenticatingPassword && failureMessage.length === 0
   readonly property bool errorState: failureMessage.length > 0
-  readonly property var inputBorderSpec: errorState
-    ? Border.surfaceSpec("lock", "border-error", Color.lock.borderError, root.outlineThickness, "border-alpha")
-    : Border.surfaceSpec("lock", "border-active", Color.lock.borderActive, root.outlineThickness, "border-alpha")
+  // The lock chrome rides the same rotating ramp as the windows and the bar:
+  // the input border's gradient angle is animated, and a bloom behind the
+  // field is sampled from the ramp at the current angle.
+  property real rimAngle: 0
+  readonly property var inputBorderSpec: {
+    var spec = errorState
+      ? Border.surfaceSpec("lock", "border-error", Color.lock.borderError, root.outlineThickness, "border-alpha")
+      : Border.surfaceSpec("lock", "border-active", Color.lock.borderActive, root.outlineThickness, "border-alpha")
+    if (spec && spec.gradient && spec.gradient.enabled) {
+      return {
+        color: spec.color,
+        widths: spec.widths,
+        gradient: {
+          enabled: true,
+          angle: root.rimAngle,
+          colors: spec.gradient.colors
+        }
+      }
+    }
+    return spec
+  }
+
+  RimRamp {
+    id: lockRamp
+
+    alphaScale: 1.0
+    angle: root.rimAngle
+  }
+
+  NumberAnimation on rimAngle {
+    running: true
+    loops: Animation.Infinite
+    from: 0
+    to: 360
+    duration: 15000
+    easing.type: Easing.Linear
+  }
 
   property string currentQuote: "“Loading system wisdom…”"
 
@@ -195,6 +229,17 @@ Item {
     // =========================================================================
     // BOTTOM SECTION: Password Input Box
     // =========================================================================
+    // Soft ramp bloom behind the password field, sampled from the same angle
+    // as the border so the lock chrome keeps the window/bar material.
+    RectangularShadow {
+      anchors.fill: inputField
+      radius: inputField.radius
+      blur: 18
+      spread: 1
+      offset: Qt.vector2d(0, 0)
+      color: Qt.rgba(lockRamp.colorAt.r, lockRamp.colorAt.g, lockRamp.colorAt.b, 0.22)
+    }
+
     BorderSurface {
       id: inputField
       width: root.fieldWidth

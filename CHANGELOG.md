@@ -19,6 +19,10 @@ Conventional Commits.
   covers the bar, menu, bar panels, notifications and OSD, and the fills on
   those surfaces dropped a few points of alpha, so the wallpaper shows
   through as soft light instead of flat colour.
+- **The lock screen joins the rotating chrome.** The password field's border
+  spins on the same `hyprland.active-border` ramp as the windows and the bar,
+  with a ramp-sampled bloom behind it; the animated Miku still sits behind the
+  field.
 - **The terminal gets a hex backdrop.** A low-alpha hex-circuitry PNG ships
   with the theme and is referenced by the Ghostty and Kitty configs, so the
   terminal carries the same HUD texture as the bar without hurting
