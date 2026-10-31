@@ -52,7 +52,7 @@ Wallpapers are H.264 MP4 (not GIF) for better performance and smaller file size.
 Every surface follows the same neon pastel palette:
 
 - **Hyprland**: cyberSpring animations, frosted glass blur (windows *and* the shell's bar/menu/popup layers), rotating multi-stop gradient borders and shadows
-- **Terminal**: Ghostty, Alacritty, Foot, Kitty all themed identically, with a faint hex backdrop and matching Yazi, Bat and tmux themes
+- **Terminal**: Ghostty, Alacritty, Foot, Kitty all themed identically, with a nearly invisible hex backdrop that the pointer reveals in a pool of light, plus matching Yazi, Bat and tmux themes
 - **GTK**: CSS overrides for Nautilus, dialogs, and Libadwaita apps
 - **Boot**: Plymouth splash with Miku animation, SDDM login theme
 - **Editors**: Micro, VS Code, btop all follow the palette

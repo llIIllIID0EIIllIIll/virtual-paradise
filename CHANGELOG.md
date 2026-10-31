@@ -23,10 +23,12 @@ Conventional Commits.
   spins on the same `hyprland.active-border` ramp as the windows and the bar,
   with a ramp-sampled bloom behind it; the animated Miku still sits behind the
   field.
-- **The terminal gets a hex backdrop.** A low-alpha hex-circuitry PNG ships
-  with the theme and is referenced by the Ghostty and Kitty configs, so the
-  terminal carries the same HUD texture as the bar without hurting
-  legibility.
+- **The terminal gets a hex backdrop the cursor reveals.** A nearly invisible
+  hex-circuitry PNG ships with the theme and is referenced by the Ghostty and
+  Kitty configs. A click-through overlay (`doe.hex-spotlight`) paints a
+  brighter copy of the same grid inside a soft radial pool that follows the
+  pointer, but only while a terminal window is focused - the terminal reads as
+  a dark board until the cursor lights a small piece of it.
 - **Yazi, Bat and tmux are themed too.** The file manager gets a palette
   theme, Bat gets a `VirtualParadise` syntax theme plus `BAT_THEME`, and tmux
   gets a truecolor status bar sourced from a marker block in `tmux.conf` -
