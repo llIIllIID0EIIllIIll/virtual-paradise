@@ -39,6 +39,15 @@ Conventional Commits.
 - **The screen edges flash with the desktop.** A second click-through overlay
   (`doe.edge-glow`) lights the screen border cyan when the workspace changes
   and magenta when a notification layer opens.
+- **Wallpaper rotation and a day/night variant.** `paradise-wallpaper-rotate.timer`
+  advances the live wallpaper every hour, and `paradise-variant-by-time.timer`
+  switches cyberpunk in the morning and sakura in the evening; both are user
+  timers, easy to disable.
+- **`theme-switcher.sh wallpaper` derives the palette from the current
+  background.** It samples the most vivid colour of the image (or a video
+  frame), rotates two companion hues and applies them through the same
+  pristine-backup machinery as the named variants, so `reset` still restores
+  the original.
 - **`install.sh --force-shell-layout`** replaces a customised `shell.json`
   when that is what the user actually wants. Without it, the installer, the
   theme hook and the post-update hook preserve the user's layout.

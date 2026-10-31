@@ -175,7 +175,8 @@ rm -f "$CONFIG_DIR/omarchy/hooks/post-update.d/virtual-paradise.sh"
 # Plugin update check + audio backend watchdog. Stop the timers before removing
 # the units, otherwise systemd keeps re-running commands that no longer exist.
 if command -v systemctl &>/dev/null; then
-  for paradise_timer in paradise-plugin-check.timer paradise-audio-watchdog.timer; do
+  for paradise_timer in paradise-plugin-check.timer paradise-audio-watchdog.timer \
+                        paradise-wallpaper-rotate.timer paradise-variant-by-time.timer; do
     systemctl --user disable --now "$paradise_timer" >/dev/null 2>&1 || true
   done
   systemctl --user reset-failed >/dev/null 2>&1 || true
@@ -183,7 +184,11 @@ fi
 rm -f "$CONFIG_DIR/systemd/user/paradise-plugin-check.service" \
       "$CONFIG_DIR/systemd/user/paradise-plugin-check.timer" \
       "$CONFIG_DIR/systemd/user/paradise-audio-watchdog.service" \
-      "$CONFIG_DIR/systemd/user/paradise-audio-watchdog.timer"
+      "$CONFIG_DIR/systemd/user/paradise-audio-watchdog.timer" \
+      "$CONFIG_DIR/systemd/user/paradise-wallpaper-rotate.service" \
+      "$CONFIG_DIR/systemd/user/paradise-wallpaper-rotate.timer" \
+      "$CONFIG_DIR/systemd/user/paradise-variant-by-time.service" \
+      "$CONFIG_DIR/systemd/user/paradise-variant-by-time.timer"
 systemctl --user daemon-reload >/dev/null 2>&1 || true
 
 # The override layer is recorded in a state file; drop it and restore any plugin

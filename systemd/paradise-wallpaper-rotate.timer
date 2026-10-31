@@ -1,0 +1,12 @@
+[Unit]
+Description=Rotate the Virtual☆Paradise live wallpaper
+
+[Timer]
+OnCalendar=hourly
+# Catch up after a suspend; spread the load so a login does not bunch timers.
+Persistent=true
+RandomizedDelaySec=3m
+AccuracySec=1m
+
+[Install]
+WantedBy=timers.target
