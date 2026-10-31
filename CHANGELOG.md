@@ -43,8 +43,9 @@ Conventional Commits.
   and magenta when a notification layer opens.
 - **Wallpaper rotation and a day/night variant.** `paradise-wallpaper-rotate.timer`
   advances the live wallpaper every hour, and `paradise-variant-by-time.timer`
-  switches cyberpunk in the morning and sakura in the evening; both are user
-  timers, easy to disable.
+  switches cyberpunk in the morning and sakura in the evening. Both are
+  installed as opt-in timers and left disabled, so neither changes the
+  desktop without being asked for.
 - **`theme-switcher.sh wallpaper` derives the palette from the current
   background.** It samples the most vivid colour of the image (or a video
   frame), rotates two companion hues and applies them through the same

@@ -69,9 +69,11 @@ palette from a terminal (`theme-switcher.sh list` shows the variants,
 `theme-switcher.sh reset` restores the original palette). `theme-switcher.sh
 wallpaper` derives the accent and its two companions from the current
 background image instead of a fixed variant. It is a terminal tool, not bound
-to a key. A systemd timer switches cyberpunk in the morning and sakura in the
-evening (`paradise-variant-by-time.timer`), and another rotates the live
-wallpaper hourly (`paradise-wallpaper-rotate.timer`).
+to a key. Two opt-in timers are installed but left disabled:
+`paradise-variant-by-time.timer` switches cyberpunk in the morning and sakura
+in the evening, and `paradise-wallpaper-rotate.timer` rotates the live
+wallpaper hourly. Enable either with `systemctl --user enable --now <timer>`;
+they do nothing until then.
 
 ### ✨ Visual Effects
 
@@ -378,8 +380,10 @@ systemctl --user stop paradise-plugin-check.timer
 systemctl --user disable paradise-plugin-check.timer
 ```
 
-**Disable wallpaper rotation / day-night variant:**
+**Enable or disable wallpaper rotation / day-night variant:**
 ```bash
+systemctl --user enable --now paradise-wallpaper-rotate.timer
+systemctl --user enable --now paradise-variant-by-time.timer
 systemctl --user disable --now paradise-wallpaper-rotate.timer
 systemctl --user disable --now paradise-variant-by-time.timer
 ```
