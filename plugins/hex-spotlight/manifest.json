@@ -1,0 +1,15 @@
+{
+  "schemaVersion": 1,
+  "id": "__USER__.hex-spotlight",
+  "name": "Paradise Hex Spotlight",
+  "version": "1.0.0",
+  "author": "Virtual☆Paradise",
+  "description": "Reveals the terminal's hex circuitry in a soft pool of light around the pointer. Click-through, overlay layer.",
+  "kinds": [
+    "overlay"
+  ],
+  "keepLoaded": true,
+  "entryPoints": {
+    "overlay": "HexSpotlight.qml"
+  }
+}
