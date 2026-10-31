@@ -241,6 +241,13 @@ hl.layer_rule({ match = { namespace = "^(omarchy-menu|omarchy-keyboard-panel|oma
 hl.layer_rule({ match = { namespace = "omarchy-notifications" }, animation = "slidefade 25%" })
 hl.layer_rule({ match = { namespace = "omarchy-osd" }, animation = "slidefadevert 30%" })
 
+-- Frosted glass: blur what is behind the shell's translucent surfaces. The
+-- bar islands, menu card, popups, notifications and OSD all ship a fill below
+-- full opacity, so with the layer blur the wallpaper shows through as soft
+-- light instead of flat colour. ignorealpha keeps the fully transparent parts
+-- of those surfaces (the bar gaps, the menu scrim) sharp.
+hl.layer_rule({ match = { namespace = "^(omarchy-bar|omarchy-menu|omarchy-bar-panel|omarchy-notifications|omarchy-osd|omarchy-keyboard-panel|omarchy-clipboard|omarchy-emojis|omarchy-image-selector)$" }, blur = true, ignore_alpha = 0.05 })
+
 -- ==============================================================================
 --  10. URGENT & ERROR WINDOWS (Blazing Neon Red Warning Border & Glow on Error)
 -- ==============================================================================
