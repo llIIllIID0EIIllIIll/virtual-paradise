@@ -57,7 +57,7 @@ Wallpapers are H.264 MP4 (not GIF) for better performance and smaller file size.
 Every surface follows the same neon pastel palette:
 
 - **Hyprland**: cyberSpring animations, frosted glass blur (windows *and* the shell's bar/menu/popup layers), rotating multi-stop gradient borders and shadows
-- **Terminal**: Ghostty, Alacritty, Foot, Kitty all themed identically, with a nearly invisible hex backdrop that the pointer reveals in a pool of light, plus matching Yazi, Bat and tmux themes
+- **Terminal**: Ghostty, Alacritty, Foot, Kitty all themed identically, with a ghost hex backdrop at one fixed cell size (the pointer reveals it in a hazy pool of light), plus matching Yazi, Bat and tmux themes
 - **GTK**: CSS overrides for Nautilus, dialogs, and Libadwaita apps
 - **Boot**: Plymouth splash with Miku animation, SDDM login theme
 - **Editors**: Micro, VS Code, btop all follow the palette
@@ -379,8 +379,10 @@ path instead:
   shell. It used to be a second `quickshell` process kept warm (~180 MB PSS).
 - The lock screen preview and its Sleeping Miku GIF are created only while the
   lock or preview is visible.
-- The terminal hex backdrop is a 960×540 texture (a quarter of the old decoded
-  size per terminal); the cursor spotlight paints the detailed grid locally.
+- The terminal hex backdrop is a 158×168 seamless tile repeated at its native
+  size, so it costs ~100 KB of decoded texture per terminal instead of a
+  scaled 1920×1080 image, and the cursor spotlight paints the detailed grid
+  locally.
 - `mpvpaper` is capped at a 16 MiB demuxer cache instead of mpv's default.
 - The theme's overlay plugins are disabled when the theme is left and removed
   on uninstall, so they do not linger in another theme.
