@@ -2342,4 +2342,42 @@ if want tc24; then
     "$(grep -q 'omarchy.spacer' "$shell" && echo 1 || echo 0)"
 fi
 
+# ─────────────────────────────────────────────────────────────────────────────
+# TC-25  Terminal hex backdrop.
+#
+# The backdrop must read as one fixed hex size in every terminal window: the
+# tile is repeated at its native size instead of being scaled with the window,
+# and the cursor spotlight must paint the same lattice so the reveal lands on
+# the ghost hexes. The tile is a pure lattice crop (158x168 = 13.03 columns by
+# exactly 16 rows), because a wrap at a non-lattice offset doubles the lines.
+# ─────────────────────────────────────────────────────────────────────────────
+if want tc25; then
+  section "TC-25  Terminal hex backdrop"
+
+  gconf="$REPO_DIR/config/terminal/ghostty.conf"
+  kconf="$REPO_DIR/config/terminal/kitty.conf"
+  spot="$REPO_DIR/plugins/hex-spotlight/HexSpotlight.qml"
+
+  check "ghostty tiles the backdrop at its native size" \
+    "$(grep -q '^background-image-fit = none' "$gconf" \
+      && grep -q '^background-image-position = top-left' "$gconf" \
+      && grep -q '^background-image-repeat = true' "$gconf" && echo 0 || echo 1)"
+  check "kitty tiles the backdrop too" \
+    "$(grep -q '^background_image_layout tiled' "$kconf" && echo 0 || echo 1)"
+  check "the tile is a seamless 158x168 lattice crop" \
+    "$(python3 - "$REPO_DIR/assets/terminal-bg.png" <<'PY'
+import struct, sys
+data = open(sys.argv[1], "rb").read(26)
+w, h = struct.unpack(">II", data[16:24])
+print(0 if (w, h, data[25]) == (158, 168, 6) else 1)
+PY
+)"
+  check "the spotlight paints one fixed hex size" \
+    "$(grep -q 'var s = 7' "$spot" && echo 0 || echo 1)"
+  check "the spotlight anchors the reveal to the tile repetition" \
+    "$(grep -q 'var tileW = 158' "$spot" \
+      && grep -q 'tileDrift' "$spot" \
+      && grep -q 'rowOffset' "$spot" && echo 0 || echo 1)"
+fi
+
 summary

@@ -127,8 +127,8 @@ Item {
         Item {
           id: spotlight
 
-          width: 260
-          height: 260
+          width: 320
+          height: 320
           visible: root.cursorX > -9000
           x: root.cursorX - modelData.x - root.winX - width / 2
           y: root.cursorY - modelData.y - root.winY - height / 2
@@ -153,19 +153,21 @@ Item {
               var cx = width / 2
               var cy = height / 2
               var a = root.accent
+              var rgb = Math.round(a.r * 255) + "," + Math.round(a.g * 255)
+                + "," + Math.round(a.b * 255)
 
               // Soft light pool first; the hex grid sits on top of it.
               var pool = ctx.createRadialGradient(cx, cy, 0, cx, cy, width / 2)
-              pool.addColorStop(0.0, "rgba(" + Math.round(a.r * 255) + ","
-                + Math.round(a.g * 255) + "," + Math.round(a.b * 255) + ",0.12)")
-              pool.addColorStop(0.5, "rgba(" + Math.round(a.r * 255) + ","
-                + Math.round(a.g * 255) + "," + Math.round(a.b * 255) + ",0.05)")
+              pool.addColorStop(0.0, "rgba(" + rgb + ",0.11)")
+              pool.addColorStop(0.55, "rgba(" + rgb + ",0.04)")
               pool.addColorStop(1.0, "rgba(0,0,0,0)")
               ctx.fillStyle = pool
               ctx.fillRect(0, 0, width, height)
 
               // Hex grid aligned to the terminal window, not to the moving
               // canvas: shift by where this canvas sits inside the window.
+              // The cell size is fixed (s = 7) so every terminal window shows
+              // the same hexes; the background tile uses the same size.
               var originX = root.cursorX - modelData.x - root.winX - width / 2
               var originY = root.cursorY - modelData.y - root.winY - height / 2
               var s = 7
@@ -173,35 +175,58 @@ Item {
               var rowStep = 1.5 * s
               var cols = Math.ceil(width / hexW) + 3
               var rows = Math.ceil(height / rowStep) + 3
-              var shiftX = ((originX % hexW) + hexW) % hexW
+              // The background tile is 158x168: 13.03 hex columns and exactly
+              // 16 rows. Its repetition restarts the lattice every 158px, so
+              // the horizontal phase drifts by (158 - 13*hexW) per tile.
+              // Anchor the reveal to the tile under the canvas, or the lit
+              // hexes walk off the ghost ones towards the far window edge.
+              var tileW = 158
+              var tileDrift = tileW - 13 * hexW
+              var tileIndex = Math.floor(originX / tileW)
+              var shiftX = ((originX - tileDrift * tileIndex) % hexW + hexW) % hexW
               var shiftY = ((originY % rowStep) + rowStep) % rowStep
+              // The tile is exactly 16 rows tall, so the row parity that
+              // decides the half-cell offset repeats every tile; count it
+              // from the window origin, not from the canvas.
+              var rowOffset = Math.floor(originY / rowStep)
 
-              ctx.strokeStyle = "rgba(" + Math.round(a.r * 255) + ","
-                + Math.round(a.g * 255) + "," + Math.round(a.b * 255) + ",0.38)"
-              ctx.lineWidth = 1
-              ctx.lineJoin = "round"
-              ctx.beginPath()
-              for (var col = -1; col < cols; col++) {
-                for (var row = -1; row < rows; row++) {
-                  var hx = col * hexW + (row % 2 ? hexW / 2 : 0) - shiftX
-                  var hy = row * rowStep + s - shiftY
-                  for (var i = 0; i < 6; i++) {
-                    var angle = Math.PI / 180 * (60 * i - 30)
-                    var px = hx + s * Math.cos(angle)
-                    var py = hy + s * Math.sin(angle)
-                    if (i === 0) ctx.moveTo(px, py)
-                    else ctx.lineTo(px, py)
+              function hexPath() {
+                ctx.beginPath()
+                for (var col = -1; col < cols; col++) {
+                  for (var row = -1; row < rows; row++) {
+                    var hx = col * hexW + ((row + rowOffset) % 2 ? hexW / 2 : 0) - shiftX
+                    var hy = row * rowStep + s - shiftY
+                    for (var i = 0; i < 6; i++) {
+                      var angle = Math.PI / 180 * (60 * i - 30)
+                      var px = hx + s * Math.cos(angle)
+                      var py = hy + s * Math.sin(angle)
+                      if (i === 0) ctx.moveTo(px, py)
+                      else ctx.lineTo(px, py)
+                    }
+                    ctx.closePath()
                   }
-                  ctx.closePath()
                 }
               }
+
+              // Haze first: a wide, faint stroke that turns the grid into mist
+              // around the cursor. Then the crisp circuitry line on top.
+              ctx.lineJoin = "round"
+              ctx.strokeStyle = "rgba(" + rgb + ",0.10)"
+              ctx.lineWidth = 3.2
+              hexPath()
+              ctx.stroke()
+
+              ctx.strokeStyle = "rgba(" + rgb + ",0.30)"
+              ctx.lineWidth = 1
+              hexPath()
               ctx.stroke()
 
               // Circular reveal: everything fades out at the pool's edge.
               ctx.globalCompositeOperation = "destination-in"
               var mask = ctx.createRadialGradient(cx, cy, 0, cx, cy, width / 2)
               mask.addColorStop(0.0, "rgba(255,255,255,1)")
-              mask.addColorStop(0.55, "rgba(255,255,255,0.9)")
+              mask.addColorStop(0.35, "rgba(255,255,255,0.92)")
+              mask.addColorStop(0.70, "rgba(255,255,255,0.35)")
               mask.addColorStop(1.0, "rgba(255,255,255,0)")
               ctx.fillStyle = mask
               ctx.fillRect(0, 0, width, height)
