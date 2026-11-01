@@ -4,7 +4,7 @@
 #   ./tests/run.sh            run everything
 #   ./tests/run.sh tc2 tc4    run only the named cases
 #
-# Cases are numbered TC-1..TC-24 and each maps to one numbered section of the
+# Cases are numbered TC-1..TC-27 and each maps to one numbered section of the
 # README's test matrix, so the two cannot drift apart silently.
 
 set -uo pipefail
@@ -2457,6 +2457,86 @@ if want tc26; then
     bash "$script" state 2>/dev/null)
   check "state follows the hardware back down" \
     "$([[ "$out" == "off" ]] && echo 0 || echo 1)" "got: $out"
+fi
+
+# ─────────────────────────────────────────────────────────────────────────────
+# TC-27  Shared cursor server.
+#
+# Two overlays (pointer glow, hex spotlight) need the pointer at cursor rate.
+# Each used to run its own Python poller; one server now broadcasts on
+# `$XDG_RUNTIME_DIR/vp-cursor.sock` and both plugins read it, so the session
+# pays for one process instead of two. A second copy must find the socket
+# taken and exit at once instead of doubling the process count.
+# ─────────────────────────────────────────────────────────────────────────────
+if want tc27; then
+  section "TC-27  Shared cursor server"
+
+  pub="$REPO_DIR/bin/vp_cursor_track.py"
+  spot="$REPO_DIR/plugins/hex-spotlight/HexSpotlight.qml"
+  glow="$REPO_DIR/plugins/cursor-glow/CursorGlow.qml"
+
+  check "one shared cursor server serves both overlays" \
+    "$([[ -f "$pub" ]] \
+      && grep -q 'vp_cursor_track.py' "$spot" \
+      && grep -q 'vp_cursor_track.py' "$glow" \
+      && grep -q 'vp-cursor.sock' "$spot" \
+      && grep -q 'vp-cursor.sock' "$glow" \
+      && ! grep -qF 'resolvedUrl("cursor_track.py")' "$spot" \
+      && ! grep -qF 'resolvedUrl("cursor_track.py")' "$glow" && echo 0 || echo 1)"
+  check "the server takes the socket only when it is free" \
+    "$(grep -q 'probe.connect' "$pub" \
+      && grep -q 'os.unlink' "$pub" && echo 0 || echo 1)"
+
+  # Functional: a fake Hyprland command socket answers cursorpos, the server
+  # broadcasts it, and a client receives it.
+  root="$(new_sandbox tc27)"
+  fake_rt="$root/run"
+  mkdir -p "$fake_rt/hypr/FAKESIG"
+  cat > "$root/fake_hypr.py" <<'PY'
+import os, socket, sys
+path = sys.argv[1]
+try:
+    os.unlink(path)
+except FileNotFoundError:
+    pass
+srv = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+srv.bind(path)
+srv.listen(8)
+while True:
+    conn, _ = srv.accept()
+    data = conn.recv(64)
+    if b"cursorpos" in data:
+        conn.sendall(b"321, 654\n")
+    conn.close()
+PY
+  python3 "$root/fake_hypr.py" "$fake_rt/hypr/FAKESIG/.socket.sock" &
+  fake_pid=$!
+  sleep 0.4
+
+  XDG_RUNTIME_DIR="$fake_rt" HYPRLAND_INSTANCE_SIGNATURE=FAKESIG \
+    python3 "$pub" &
+  pub_pid=$!
+  sleep 0.6
+  out=$(python3 - "$fake_rt/vp-cursor.sock" <<'PY'
+import socket, sys
+conn = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+conn.settimeout(2)
+conn.connect(sys.argv[1])
+print(conn.recv(64).decode().strip())
+PY
+)
+  check "the server broadcasts the pointer to a client" \
+    "$([[ "$out" == "321, 654" ]] && echo 0 || echo 1)" "got: $out"
+
+  XDG_RUNTIME_DIR="$fake_rt" HYPRLAND_INSTANCE_SIGNATURE=FAKESIG \
+    timeout 2 python3 "$pub" >/dev/null 2>&1
+  rc=$?
+  check "a second server yields to the first" \
+    "$([[ $rc -eq 0 ]] && echo 0 || echo 1)" "rc=$rc"
+
+  kill "$pub_pid" "$fake_pid" 2>/dev/null || true
+  wait "$pub_pid" 2>/dev/null || true
+  wait "$fake_pid" 2>/dev/null || true
 fi
 
 summary

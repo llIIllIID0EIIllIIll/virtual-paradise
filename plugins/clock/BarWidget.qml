@@ -49,8 +49,22 @@ BarWidget {
 
   readonly property bool opened: panelLoader.item ? panelLoader.item.opened === true : false
 
+  // The calendar popup is only built the first time it is asked for: it is a
+  // month grid with its own timers, and most sessions never open it, so
+  // keeping it alive from startup is pure resident cost.
+  property bool panelWanted: false
+
+  function ensurePanel() {
+    if (!panelLoader.item) {
+      panelLoader.active = true
+      root.injectPanel()
+    }
+    return panelLoader.item
+  }
+
   function open() {
-    if (panelLoader.item) panelLoader.item.open()
+    var panel = ensurePanel()
+    if (panel) panel.open()
   }
 
   function close() {
@@ -58,11 +72,13 @@ BarWidget {
   }
 
   function togglePanel() {
-    if (panelLoader.item) panelLoader.item.toggle()
+    var panel = ensurePanel()
+    if (panel) panel.toggle()
   }
 
   function toggleWeekStart() {
-    if (panelLoader.item) panelLoader.item.toggleWeekStart()
+    var panel = ensurePanel()
+    if (panel) panel.toggleWeekStart()
   }
 
   readonly property real openPanelIndicatorWidth: button.labelWidth
@@ -97,7 +113,7 @@ BarWidget {
 
   Loader {
     id: panelLoader
-    active: true
+    active: root.panelWanted
     source: Qt.resolvedUrl("Panel.qml")
     visible: false
     onLoaded: {
