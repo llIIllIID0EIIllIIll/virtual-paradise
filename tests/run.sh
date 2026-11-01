@@ -2378,6 +2378,12 @@ PY
     "$(grep -q 'var tileW = 158' "$spot" \
       && grep -q 'tileDrift' "$spot" \
       && grep -q 'rowOffset' "$spot" && echo 0 || echo 1)"
+  # onThisScreen lives on the delegate (the PanelWindow), not on the outer
+  # root item; `root.onThisScreen` is always undefined and leaves the panel
+  # permanently invisible.
+  check "the spotlight gates on the delegate's own onThisScreen" \
+    "$(grep -q 'visible: !!(root.terminalFocused && onThisScreen' "$spot" \
+      && ! grep -q 'root\.onThisScreen' "$spot" && echo 0 || echo 1)"
 fi
 
 summary
