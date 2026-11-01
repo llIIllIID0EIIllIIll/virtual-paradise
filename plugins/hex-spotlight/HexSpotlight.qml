@@ -135,20 +135,67 @@ Item {
           width: 320
           height: 320
           visible: root.cursorX > -9000
-          x: root.cursorX - modelData.x - root.winX - width / 2
-          y: root.cursorY - modelData.y - root.winY - height / 2
+
+          // The pool lives in screen coordinates. Only cursor movement is
+          // smoothed: the panel's origin moves with the focused window, so
+          // animating the item's position across a focus change made the
+          // glow race in from a corner of the terminal. Keeping the source
+          // position in screen space means a focus change only recomputes
+          // the item's offset and the pool is already under the cursor.
+          property real poolX: -10000
+          property real poolY: -10000
+          property bool placed: false
+
+          Behavior on poolX {
+            enabled: spotlight.placed
+            NumberAnimation { duration: 60; easing.type: Easing.OutCubic }
+          }
+          Behavior on poolY {
+            enabled: spotlight.placed
+            NumberAnimation { duration: 60; easing.type: Easing.OutCubic }
+          }
+
+          x: poolX - modelData.x - root.winX - width / 2
+          y: poolY - modelData.y - root.winY - height / 2
 
           readonly property int cell: 7
           readonly property real hexW: Math.sqrt(3) * cell
           readonly property real rowStep: 1.5 * cell
 
-          Behavior on x { NumberAnimation { duration: 60; easing.type: Easing.OutCubic } }
-          Behavior on y { NumberAnimation { duration: 60; easing.type: Easing.OutCubic } }
-
           // The grid must stay fixed to the terminal window while the pool
           // moves over it, so every move repaints with a new phase.
           onXChanged: canvas.requestPaint()
           onYChanged: canvas.requestPaint()
+
+          Connections {
+            target: root
+            function onCursorXChanged() { spotlight.follow() }
+            function onCursorYChanged() { spotlight.follow() }
+          }
+
+          function follow() {
+            var x = root.cursorX
+            var y = root.cursorY
+            if (x < -9000) return
+            if (!placed) {
+              // The first fix of a session: place, do not glide.
+              poolX = x
+              poolY = y
+              placed = true
+              return
+            }
+            // A jump this large is a warp, not a movement; gliding it would
+            // read as the same race from a corner.
+            if (Math.abs(x - poolX) > 600 || Math.abs(y - poolY) > 600) {
+              placed = false
+              poolX = x
+              poolY = y
+              placed = true
+            } else {
+              poolX = x
+              poolY = y
+            }
+          }
 
           // The lattice is painted once into this offscreen canvas and never
           // shown directly. A full repaint is ~37ms (a thousand hex strokes),
