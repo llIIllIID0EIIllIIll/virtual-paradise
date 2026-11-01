@@ -1659,20 +1659,23 @@ if want tc16; then
   # own neon edge: four gradient sides, violet at two corners and sakura
   # at the other two.
   check "the corpse carries its own neon gradient border" \
-    "$(grep -q 'anchors { top: parent.top; left: parent.left; right: parent.right }' "$REPO_DIR/bin/vp_death_daemon.qml" \
-      && grep -q 'anchors { bottom: parent.bottom; left: parent.left; right: parent.right }' "$REPO_DIR/bin/vp_death_daemon.qml" \
-      && grep -q 'GradientStop { position: 1.0; color: "#ffb7d5" }' "$REPO_DIR/bin/vp_death_daemon.qml" \
+    "$(grep -q 'anchors { top: parent.top; left: parent.left; right: parent.right }' "$REPO_DIR/plugins/window-death/WindowDeath.qml" \
+      && grep -q 'anchors { bottom: parent.bottom; left: parent.left; right: parent.right }' "$REPO_DIR/plugins/window-death/WindowDeath.qml" \
+      && grep -q 'GradientStop { position: 1.0; color: "#ffb7d5" }' "$REPO_DIR/plugins/window-death/WindowDeath.qml" \
       && echo 0 || echo 1)"
-  # The daemon is found through its pidfile and /proc, not pgrep: a pgrep
-  # per close cost ~30 ms and matched unrelated shells.
-  check "the death script finds the daemon without pgrep" \
-    "$(grep -q 'vp_death_daemon.pid' "$REPO_DIR/bin/window_death.sh" \
+  # The warm overlay is found through its PID file and /proc, not pgrep: a
+  # pgrep per close cost ~30 ms and matched unrelated shells.
+  check "the death script finds the warm overlay without pgrep" \
+    "$(grep -q 'vp_death_ready' "$REPO_DIR/bin/window_death.sh" \
       && ! grep -q 'pgrep' "$REPO_DIR/bin/window_death.sh" && echo 0 || echo 1)"
-  # exec keeps the wrapper's PID, so the pidfile written before exec stays
-  # valid for the daemon's whole life.
-  check "the daemon writes its pidfile before exec" \
-    "$(awk '/vp_death_daemon\.pid/{if (!p) p=NR} /exec quickshell/{if (!e) e=NR} END {exit !(p && e && p < e)}' \
-      "$REPO_DIR/bin/vp_death_daemon.sh" && echo 0 || echo 1)"
+  # The plugin writes its shell PID on load and removes the file on a clean
+  # shutdown; a stale file fails the liveness check and the script falls back
+  # to the one-shot burst instead of closing silently.
+  check "the overlay announces readiness by PID" \
+    "$(grep -q 'vp_death_ready' "$REPO_DIR/plugins/window-death/WindowDeath.qml" \
+      && grep -q 'Quickshell.processId' "$REPO_DIR/plugins/window-death/WindowDeath.qml" \
+      && grep -q 'Component.onDestruction' "$REPO_DIR/plugins/window-death/WindowDeath.qml" \
+      && echo 0 || echo 1)"
   check "the death burst ships as a warm overlay plugin" \
     "$([[ -f "$REPO_DIR/plugins/window-death/WindowDeath.qml" ]] \
       && grep -q '"overlay"' "$REPO_DIR/plugins/window-death/manifest.json" \
