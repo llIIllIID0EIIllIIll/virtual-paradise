@@ -16,8 +16,11 @@ Item {
   id: root
 
   readonly property color accent: Color.accent !== undefined ? Color.accent : "#00ffdd"
-  readonly property string trackScript: Qt.resolvedUrl("cursor_track.py").toString().replace(/^file:\/\//, "")
   readonly property string windowTrackScript: Qt.resolvedUrl("window_track.py").toString().replace(/^file:\/\//, "")
+  readonly property string publishScript: (Quickshell.env("HOME") || "")
+    + "/.local/bin/vp_cursor_track.py"
+  readonly property string cursorSocket: (Quickshell.env("XDG_RUNTIME_DIR") || "/tmp")
+    + "/vp-cursor.sock"
 
   readonly property var terminalClasses: [
     "com.mitchellh.ghostty",
@@ -37,22 +40,53 @@ Item {
   property real winW: 0
   property real winH: 0
 
+  // The pointer comes from the shared cursor server: one Python process per
+  // session serves `$XDG_RUNTIME_DIR/vp-cursor.sock`, and this plugin (and
+  // the pointer glow) read the broadcast instead of polling on their own.
   Process {
-    id: tracker
+    id: publisher
 
-    command: ["python3", root.trackScript]
+    command: ["python3", root.publishScript]
     running: true
+  }
 
-    stdout: SplitParser {
+  Socket {
+    id: cursorFeed
+
+    path: root.cursorSocket
+    connected: true
+
+    parser: SplitParser {
       onRead: function (line) {
+        root.lastFix = Date.now() / 1000
         var parts = String(line).split(",")
         if (parts.length < 2) return
-        var x = Number(parts[0])
-        var y = Number(parts[1])
+        var x = parseInt(parts[0], 10)
+        var y = parseInt(parts[1], 10)
         if (!isFinite(x) || !isFinite(y)) return
         root.cursorX = x
         root.cursorY = y
       }
+    }
+
+    onConnectionStateChanged: if (!connected) reconnectTimer.start()
+  }
+
+  Timer {
+    id: reconnectTimer
+    interval: 500
+    onTriggered: if (!cursorFeed.connected) cursorFeed.connected = true
+  }
+
+  // If nobody is serving (the other plugin stopped its copy, or it died),
+  // take the socket back by starting our own.
+  property double lastFix: 0
+  Timer {
+    interval: 2000
+    repeat: true
+    running: true
+    onTriggered: {
+      if (!cursorFeed.connected && !publisher.running) publisher.running = true
     }
   }
 

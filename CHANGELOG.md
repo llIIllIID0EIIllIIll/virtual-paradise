@@ -8,6 +8,21 @@ Conventional Commits.
 
 ## [Unreleased]
 
+### Changed
+- **One cursor poller serves both overlays.** The pointer glow and the hex
+  spotlight each ran their own Python poller; `vp_cursor_track.py` is now a
+  single server that broadcasts the pointer on
+  `$XDG_RUNTIME_DIR/vp-cursor.sock` (the second plugin to start it finds the
+  socket taken and exits at once), so two cursor effects cost one process
+  instead of two. The server answers a new client with the current position
+  immediately, so an overlay that loads while the pointer is still does not
+  wait for the next move.
+- **The clock's calendar popup is built on demand.** It is a month grid with
+  its own timers and most sessions never open it, so it is created the first
+  time the clock is clicked instead of at startup.
+
+## [1.3.0] — 2026-11-01
+
 ### Added
 - **The island bar marks the widget under the pointer.** A lit pill follows
   the hovered widget - a rotating ramp rim, a hex shimmer clipped inside it, a
@@ -767,7 +782,9 @@ full installer/uninstaller.
 
 ## Links
 
-- [Unreleased]: https://github.com/vuhuudo/virtual-paradise/compare/v1.2.1...HEAD
+- [Unreleased]: https://github.com/vuhuudo/virtual-paradise/compare/v1.3.0...HEAD
+- [1.3.0]: https://github.com/vuhuudo/virtual-paradise/compare/v1.2.2...v1.3.0
+- [1.2.2]: https://github.com/vuhuudo/virtual-paradise/compare/v1.2.1...v1.2.2
 - [1.2.1]: https://github.com/vuhuudo/virtual-paradise/compare/v1.2.0...v1.2.1
 - [1.2.0]: https://github.com/vuhuudo/virtual-paradise/compare/v1.1.0...v1.2.0
 - [1.1.0]: https://github.com/vuhuudo/virtual-paradise/compare/v1.0.0...v1.1.0

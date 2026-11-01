@@ -6,37 +6,70 @@ import qs.Commons
 
 // A soft neon glow that trails the pointer.
 //
-// The position comes from a small Python helper that polls Hyprland's command
-// socket (one connection per poll, no process per frame) and prints `x, y`
-// lines. The canvas is painted once and only moved afterwards, so the effect
-// costs a position update and a translate per frame, not a repaint.
+// The position comes from the shared cursor publisher (`vp_cursor_track.py`):
+// one flock'd Python process per session polls Hyprland and writes
+// `$XDG_RUNTIME_DIR/vp-cursor`; this plugin (and the hex spotlight) watch
+// that file, so two overlays cost one poller instead of two. The canvas is
+// painted once and only moved afterwards, so the effect costs a position
+// update and a translate per frame, not a repaint.
 Item {
   id: root
 
   readonly property color accent: Color.accent !== undefined ? Color.accent : "#00ffdd"
   readonly property color secondary: Color.urgent !== undefined ? Color.urgent : "#ff2bd6"
-  readonly property string trackScript: Qt.resolvedUrl("cursor_track.py").toString().replace(/^file:\/\//, "")
+  readonly property string publishScript: (Quickshell.env("HOME") || "")
+    + "/.local/bin/vp_cursor_track.py"
+  readonly property string cursorSocket: (Quickshell.env("XDG_RUNTIME_DIR") || "/tmp")
+    + "/vp-cursor.sock"
 
   property real cursorX: -10000
   property real cursorY: -10000
   readonly property bool tracked: cursorX > -9000
 
   Process {
-    id: tracker
+    id: publisher
 
-    command: ["python3", root.trackScript]
+    command: ["python3", root.publishScript]
     running: true
+  }
 
-    stdout: SplitParser {
+  Socket {
+    id: cursorFeed
+
+    path: root.cursorSocket
+    connected: true
+
+    parser: SplitParser {
       onRead: function (line) {
+        root.lastFix = Date.now() / 1000
         var parts = String(line).split(",")
         if (parts.length < 2) return
-        var x = Number(parts[0])
-        var y = Number(parts[1])
+        var x = parseInt(parts[0], 10)
+        var y = parseInt(parts[1], 10)
         if (!isFinite(x) || !isFinite(y)) return
         root.cursorX = x
         root.cursorY = y
       }
+    }
+
+    onConnectionStateChanged: if (!connected) reconnectTimer.start()
+  }
+
+  Timer {
+    id: reconnectTimer
+    interval: 500
+    onTriggered: if (!cursorFeed.connected) cursorFeed.connected = true
+  }
+
+  // The server is shared: if nobody is serving (the other plugin stopped its
+  // copy, or it died), take the socket back by starting our own.
+  property double lastFix: 0
+  Timer {
+    interval: 2000
+    repeat: true
+    running: true
+    onTriggered: {
+      if (!cursorFeed.connected && !publisher.running) publisher.running = true
     }
   }
 

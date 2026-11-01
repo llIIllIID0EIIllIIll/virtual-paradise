@@ -16,7 +16,7 @@
 [![Hyprland](https://img.shields.io/badge/Hyprland-Wayland-00ffdd?style=flat-square)](https://hyprland.org)
 [![Tests](https://img.shields.io/badge/tests-396%20passed-00ff88?style=flat-square)](tests/)
 [![License](https://img.shields.io/badge/license-MIT-ffe066?style=flat-square)](LICENSE)
-[![Version](https://img.shields.io/badge/version-1.2.2-ff00ff?style=flat-square)](VERSION)
+[![Version](https://img.shields.io/badge/version-1.3.0-ff00ff?style=flat-square)](VERSION)
 
 *A complete desktop experience: floating island bar, animated wallpapers, Plymouth boot splash, and every widget restyled in Miku cyan.*
 
@@ -384,6 +384,12 @@ path instead:
   cursor spotlight, whose lattice is painted once into an offscreen canvas and
   blitted per frame (~0.3ms), so a terminal decodes nothing and the spotlight
   costs a texture blit per cursor frame.
+- The pointer feed is shared: `vp_cursor_track.py` is one server per session
+  (the second plugin to start it finds the socket taken and exits) and both
+  overlays read the broadcast, so two effects cost one Python process instead
+  of two.
+- The clock's calendar popup is built the first time it is asked for; a
+  session that never opens it never pays for the month grid.
 - `mpvpaper` is capped at a 16 MiB demuxer cache instead of mpv's default.
 - The theme's overlay plugins are disabled when the theme is left and removed
   on uninstall, so they do not linger in another theme.
@@ -489,6 +495,9 @@ Test cases:
 - **TC-22**: Rotating gradient chrome (bar rim, bloom and menu border share one spin)
 - **TC-23**: Hover chrome (rotating rim, ramp bloom, hex shimmer, lazy loader)
 - **TC-24**: Bar border chrome (scanner spark, inner hairline, ramp aura, no spacer)
+- **TC-25**: Terminal hex spotlight (plain glass, cached lattice blit, grid anchoring)
+- **TC-26**: Cooler Boost state (hardware read, file fallback, stale-state toggle)
+- **TC-27**: Shared cursor server (one process for both overlays, socket handoff)
 
 ### Project Structure
 
@@ -532,7 +541,7 @@ virtual-paradise/
 │   └── convert-gifs-to-mp4.sh   # Wallpaper compression
 ├── install.sh            # Installer
 ├── uninstall.sh          # Uninstaller
-├── VERSION               # Semantic version (1.2.2)
+├── VERSION               # Semantic version (1.3.0)
 └── README.md             # This file
 ```
 
