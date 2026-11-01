@@ -2380,6 +2380,13 @@ if want tc25; then
   check "the spotlight anchors the grid to its own position" \
     "$(grep -q 'spotlight.x % spotlight.hexW' "$spot" \
       && grep -q '2 \* spotlight.rowStep' "$spot" && echo 0 || echo 1)"
+  # The pool lives in screen coordinates so a focus change (which moves the
+  # panel's origin) recomputes the item's offset instead of gliding across
+  # it - that glide was the glow racing in from a corner of the terminal.
+  check "the pool is screen-anchored and snaps on a jump" \
+    "$(grep -q 'property real poolX' "$spot" \
+      && grep -q 'x: poolX - modelData.x - root.winX' "$spot" \
+      && grep -q 'Math.abs(x - poolX) > 600' "$spot" && echo 0 || echo 1)"
   # onThisScreen lives on the delegate (the PanelWindow), not on the outer
   # root item; `root.onThisScreen` is always undefined and leaves the panel
   # permanently invisible.
