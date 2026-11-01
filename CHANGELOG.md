@@ -23,17 +23,17 @@ Conventional Commits.
   spins on the same `hyprland.active-border` ramp as the windows and the bar,
   with a ramp-sampled bloom behind it; the animated Miku still sits behind the
   field.
-- **The terminal gets a hex backdrop the cursor reveals.** A ghost-faint,
-  seamless hex tile ships with the theme and is repeated at its native size
-  (`fit = none`, `repeat = true`), so every terminal window shows the same
-  fixed hex size instead of scaling the pattern with the window. A
-  click-through overlay (`doe.hex-spotlight`) paints a brighter copy of the
-  same grid inside a soft, hazy pool that follows the pointer, but only while
-  a terminal window is focused - the terminal reads as a dark board until the
-  cursor lights a small piece of it. The tile is a pure lattice crop
-  (158×168: whole columns by exactly 16 rows), so the repeat never doubles
-  the lines, and the reveal is anchored to the tile's repetition, so the lit
-  hexes land on the ghost ones in every window size.
+- **The terminal gets a hex glow the cursor paints.** The terminal itself
+  stays plain glass - no background image - and a click-through overlay
+  (`doe.hex-spotlight`) draws a hex grid in a soft, hazy pool of light that
+  follows the pointer, but only while a terminal window is focused. The grid
+  is anchored to the terminal window at one fixed cell size (`s = 7`), and
+  its phase comes from where the canvas actually sits, so the lit hexes stay
+  put in the window while the pool animates towards the pointer - the
+  terminal reads as clean glass until the cursor lights a piece of it. The
+  lattice is painted once into an offscreen canvas and each frame blits it
+  (~0.3ms instead of a ~37ms thousand-hex repaint), so the pool canvas can
+  paint synchronously and never lag the grid behind the moving pool.
 - **Yazi, Bat and tmux are themed too.** The file manager gets a palette
   theme, Bat gets a `VirtualParadise` syntax theme plus `BAT_THEME`, and tmux
   gets a truecolor status bar sourced from a marker block in `tmux.conf` -

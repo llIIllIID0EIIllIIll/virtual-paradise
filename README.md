@@ -43,8 +43,9 @@ The gap stream, the rim scanner and the hover chrome are opt-out in `~/.config/o
 
 The theme keeps its effects without a second Quickshell: the window-close burst
 is an overlay plugin inside the main shell, the lock preview loads on demand,
-and the terminal backdrop is a low-resolution texture that the cursor spotlight
-sharpens locally. See [Memory](#memory) for the details.
+and the terminal hex grid exists only inside the cursor spotlight's small
+canvas, so no terminal decodes a background texture at all. See
+[Memory](#memory) for the details.
 
 ### 🎬 Animated Wallpapers
 
@@ -57,7 +58,7 @@ Wallpapers are H.264 MP4 (not GIF) for better performance and smaller file size.
 Every surface follows the same neon pastel palette:
 
 - **Hyprland**: cyberSpring animations, frosted glass blur (windows *and* the shell's bar/menu/popup layers), rotating multi-stop gradient borders and shadows
-- **Terminal**: Ghostty, Alacritty, Foot, Kitty all themed identically, with a ghost hex backdrop at one fixed cell size (the pointer reveals it in a hazy pool of light), plus matching Yazi, Bat and tmux themes
+- **Terminal**: Ghostty, Alacritty, Foot, Kitty all themed identically, with a hex grid the pointer lights up in a hazy pool of light (the terminal stays plain glass at rest), plus matching Yazi, Bat and tmux themes
 - **GTK**: CSS overrides for Nautilus, dialogs, and Libadwaita apps
 - **Boot**: Plymouth splash with Miku animation, SDDM login theme
 - **Editors**: Micro, VS Code, btop all follow the palette
@@ -195,7 +196,7 @@ The installer is **idempotent**: run it as many times as you want. It will only 
 | Bar | `/usr/share/omarchy/shell/plugins/__USER__.island-bar/` | Floating island bar (first-party) |
 | Plugins | `~/.config/omarchy/plugins/` | 12+ themed widgets |
 | Hyprland | `~/.config/hypr/` | Animations, window rules, keybindings |
-| Terminal | `~/.config/ghostty/`, `~/.config/alacritty/`, etc. | Terminal themes plus the hex backdrop |
+| Terminal | `~/.config/ghostty/`, `~/.config/alacritty/`, etc. | Terminal themes plus the hex spotlight |
 | Tool themes | `~/.config/yazi/`, `~/.config/bat/themes/`, `~/.config/tmux/` | Yazi, Bat and tmux palettes (restored on uninstall) |
 | Plymouth | `/usr/share/plymouth/themes/virtual-paradise/` | Boot splash; selected in `/etc/plymouth/plymouthd.conf` (if sudo) |
 | SDDM | `/usr/share/sddm/themes/virtual-paradise/` | Login theme; selected in `/etc/sddm.conf.d/zz-virtual-paradise-theme.conf` (if sudo) |
@@ -379,10 +380,10 @@ path instead:
   shell. It used to be a second `quickshell` process kept warm (~180 MB PSS).
 - The lock screen preview and its Sleeping Miku GIF are created only while the
   lock or preview is visible.
-- The terminal hex backdrop is a 158×168 seamless tile repeated at its native
-  size, so it costs ~100 KB of decoded texture per terminal instead of a
-  scaled 1920×1080 image, and the cursor spotlight paints the detailed grid
-  locally.
+- The terminal ships no background image: the hex grid exists only inside the
+  cursor spotlight, whose lattice is painted once into an offscreen canvas and
+  blitted per frame (~0.3ms), so a terminal decodes nothing and the spotlight
+  costs a texture blit per cursor frame.
 - `mpvpaper` is capped at a 16 MiB demuxer cache instead of mpv's default.
 - The theme's overlay plugins are disabled when the theme is left and removed
   on uninstall, so they do not linger in another theme.
