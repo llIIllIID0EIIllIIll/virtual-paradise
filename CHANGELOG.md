@@ -135,6 +135,13 @@ Conventional Commits.
   never read as the same effect.
 
 ### Fixed
+- **The cursor spotlight actually appears now.** The hex reveal panel was
+  gated on `root.onThisScreen`, but `onThisScreen` is a property of the
+  delegate (the `PanelWindow`), not of the plugin root, so the condition was
+  always `undefined` and the overlay stayed invisible - the "reveal" seen in
+  testing was the ghost tile plus the separate cursor glow. The gate now uses
+  the delegate's own `onThisScreen`, and the lit hexes sit on the ghost ones
+  (verified pixel-aligned in a live window).
 - **The window-close burst leads the close again.** Moving the burst into the
   shell left the death script looking for the old daemon's pidfile, so it took
   the slow one-shot path and the glitch trailed the close. The overlay now

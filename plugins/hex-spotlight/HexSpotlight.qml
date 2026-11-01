@@ -115,7 +115,7 @@ Item {
         }
         implicitWidth: Math.max(0, root.winW)
         implicitHeight: Math.max(0, root.winH)
-        visible: !!(root.terminalFocused && root.onThisScreen
+        visible: !!(root.terminalFocused && onThisScreen
           && root.winW > 40 && root.winH > 40)
         color: "transparent"
         WlrLayershell.namespace: "vp-hex-spotlight"
