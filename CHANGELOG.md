@@ -135,6 +135,13 @@ Conventional Commits.
   never read as the same effect.
 
 ### Fixed
+- **The hex glow no longer fades in late.** Focus was polled with `hyprctl`
+  every 500ms, so the glow could appear half a second after a terminal was
+  focused, and the compositor's default `layersIn` slidefade animated the
+  panel in as if it were a dialog. Focus and geometry now stream from
+  Hyprland's event socket (`window_track.py`), and `vp-hex-spotlight` joined
+  the theme's no-animation layer rule, so the pool appears in the same frame
+  as the focus change.
 - **The cursor spotlight actually appears now.** The hex reveal panel was
   gated on `root.onThisScreen`, but `onThisScreen` is a property of the
   delegate (the `PanelWindow`), not of the plugin root, so the condition was

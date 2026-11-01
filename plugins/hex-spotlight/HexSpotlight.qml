@@ -17,6 +17,7 @@ Item {
 
   readonly property color accent: Color.accent !== undefined ? Color.accent : "#00ffdd"
   readonly property string trackScript: Qt.resolvedUrl("cursor_track.py").toString().replace(/^file:\/\//, "")
+  readonly property string windowTrackScript: Qt.resolvedUrl("window_track.py").toString().replace(/^file:\/\//, "")
 
   readonly property var terminalClasses: [
     "com.mitchellh.ghostty",
@@ -55,42 +56,45 @@ Item {
     }
   }
 
+  // Focus and geometry come from Hyprland's event socket, not from a poll:
+  // polling `hyprctl` every 500ms made the glow appear half a second after
+  // focus landed on a terminal. The helper prints `class|x,y wxh` lines.
   Process {
-    id: windowProbe
+    id: windowTracker
 
-    command: ["hyprctl", "-j", "activewindow"]
+    command: ["python3", root.windowTrackScript]
+    running: true
 
-    stdout: StdioCollector {
-      waitForEnd: true
-      onStreamFinished: {
-        var data = null
-        try {
-          data = JSON.parse(text)
-        } catch (e) {
-          data = null
-        }
-        if (!data || !data.class || !data.at || !data.size) {
-          root.terminalFocused = false
-          return
-        }
-        var isTerminal = root.terminalClasses.indexOf(String(data.class)) !== -1
-        root.terminalFocused = isTerminal
-        if (!isTerminal) return
-        root.winX = Number(data.at[0])
-        root.winY = Number(data.at[1])
-        root.winW = Number(data.size[0])
-        root.winH = Number(data.size[1])
+    stdout: SplitParser {
+      onRead: function (line) {
+        var parts = String(line).split("|")
+        if (parts.length < 2) return
+        var geom = parts[1].split(" ")
+        if (geom.length < 2) return
+        var at = geom[0].split(",")
+        var size = geom[1].split("x")
+        if (at.length < 2 || size.length < 2) return
+        var x = Number(at[0])
+        var y = Number(at[1])
+        var w = Number(size[0])
+        var h = Number(size[1])
+        if (!isFinite(x) || !isFinite(y) || !isFinite(w) || !isFinite(h)) return
+        root.terminalFocused = root.terminalClasses.indexOf(parts[0]) !== -1
+        root.winX = x
+        root.winY = y
+        root.winW = w
+        root.winH = h
       }
     }
   }
 
-  // Geometry only changes on focus/move/resize; 500ms keeps it current without
-  // polling per frame.
+  // If the helper ever dies (a Hyprland restart racing the socket, a bad
+  // environment), bring it back: the glow would otherwise never return.
   Timer {
-    interval: 500
+    interval: 2000
     repeat: true
     running: true
-    onTriggered: if (!windowProbe.running) windowProbe.running = true
+    onTriggered: if (!windowTracker.running) windowTracker.running = true
   }
 
   Variants {

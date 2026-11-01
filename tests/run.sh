@@ -2386,6 +2386,17 @@ if want tc25; then
   check "the spotlight gates on the delegate's own onThisScreen" \
     "$(grep -q 'visible: !!(root.terminalFocused && onThisScreen' "$spot" \
       && ! grep -q 'root\.onThisScreen' "$spot" && echo 0 || echo 1)"
+  # Focus must arrive the moment it changes: polling hyprctl made the glow
+  # appear up to half a second after a terminal was focused.
+  check "focus is tracked from the event socket, not a poll" \
+    "$([[ -f "$REPO_DIR/plugins/hex-spotlight/window_track.py" ]] \
+      && grep -q 'window_track.py' "$spot" \
+      && ! grep -q 'command: \["hyprctl"' "$spot" && echo 0 || echo 1)"
+  # The spotlight maps and unmaps with focus, so the default layersIn
+  # slidefade would read as the glow fading in late.
+  check "the spotlight layer is excluded from the layer animation" \
+    "$(grep -q 'vp-scanlines|vp-hex-spotlight' "$REPO_DIR/hypr/looknfeel.lua" \
+      && echo 0 || echo 1)"
 fi
 
 summary
