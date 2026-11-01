@@ -241,12 +241,13 @@ Item {
               }
 
               // Haze first: a wide, faint stroke that turns the grid into
-              // mist. Then the crisp circuitry line on top.
+              // mist. Then the crisp circuitry line on top. Both stay low
+              // enough that text under the pool is still easy to read.
               ctx.lineJoin = "round"
-              ctx.strokeStyle = "rgba(" + rgb + ",0.10)"
-              ctx.lineWidth = 3.2
+              ctx.strokeStyle = "rgba(" + rgb + ",0.055)"
+              ctx.lineWidth = 3.0
               ctx.stroke()
-              ctx.strokeStyle = "rgba(" + rgb + ",0.30)"
+              ctx.strokeStyle = "rgba(" + rgb + ",0.15)"
               ctx.lineWidth = 1
               ctx.stroke()
             }
@@ -274,9 +275,11 @@ Item {
                 + "," + Math.round(a.b * 255)
 
               // Soft light pool first; the lattice is blitted on top of it.
+              // The whole effect is deliberately gentle: the terminal text
+              // stays readable and selecting it is not a fight with the glow.
               var pool = ctx.createRadialGradient(cx, cy, 0, cx, cy, width / 2)
-              pool.addColorStop(0.0, "rgba(" + rgb + ",0.11)")
-              pool.addColorStop(0.55, "rgba(" + rgb + ",0.04)")
+              pool.addColorStop(0.0, "rgba(" + rgb + ",0.06)")
+              pool.addColorStop(0.55, "rgba(" + rgb + ",0.02)")
               pool.addColorStop(1.0, "rgba(0,0,0,0)")
               ctx.fillStyle = pool
               ctx.fillRect(0, 0, width, height)
@@ -295,8 +298,8 @@ Item {
               ctx.globalCompositeOperation = "destination-in"
               var mask = ctx.createRadialGradient(cx, cy, 0, cx, cy, width / 2)
               mask.addColorStop(0.0, "rgba(255,255,255,1)")
-              mask.addColorStop(0.35, "rgba(255,255,255,0.92)")
-              mask.addColorStop(0.70, "rgba(255,255,255,0.35)")
+              mask.addColorStop(0.35, "rgba(255,255,255,0.85)")
+              mask.addColorStop(0.70, "rgba(255,255,255,0.28)")
               mask.addColorStop(1.0, "rgba(255,255,255,0)")
               ctx.fillStyle = mask
               ctx.fillRect(0, 0, width, height)
