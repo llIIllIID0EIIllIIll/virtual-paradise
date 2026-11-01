@@ -4,10 +4,11 @@
 # ==============================================================================
 #  Close the active window the way it deserves, faster than the close itself.
 #
-#  The glitch leads, the close follows. The resident daemon keeps its burst
-#  surfaces mapped, so announcing the death puts the neon static on screen in
-#  a couple of frames - while the window is still alive. Only then is the
-#  window captured, torn into slices and closed underneath the burst.
+#  The glitch leads, the close follows. The overlay plugin inside the shell
+#  keeps its burst surfaces mapped, so announcing the death puts the neon
+#  static on screen in a couple of frames - while the window is still alive.
+#  Only then is the window captured, torn into slices and closed underneath
+#  the burst.
 #
 #  The capture is a foreign-toplevel grab (grim -T): it takes the window's
 #  own surface tree, so the burst overlay already covering it does not end
@@ -18,10 +19,10 @@
 #    "x,y,w,h /path/to/pending"  -> the glitch takes the live window
 #    "x,y,w,h /path/to/frame"    -> the captured corpse snaps into it
 #
-#  Without the daemon (fresh session, not yet autostarted) the script falls
+#  Without a warm overlay (fresh session, shell not running) the script falls
 #  back to a one-shot burst: capture the screen region, spawn the overlay,
 #  close at once. The burst then trails the close by its startup time,
-#  which is exactly why the daemon exists.
+#  which is exactly why the resident overlay exists.
 # ==============================================================================
 
 set -euo pipefail
@@ -52,12 +53,24 @@ FRAME="$RUNTIME_DIR/vp_death_frame.$NS.jpg"
 PENDING="$RUNTIME_DIR/vp_death_frame.pending.$NS.jpg"
 QML="${VP_DEATH_QML:-$HOME/.local/bin/window_death.qml}"
 
-# The daemon is found through its pidfile - a process search matches any
-# shell whose command line mentions the qml file, and spawning one costs
-# ~30 ms per close.
+# The burst is warm when either the in-shell overlay (`doe.window-death`)
+# or the legacy daemon is alive. Both announce themselves with a PID file;
+# a plain process search is avoided because it matches any shell whose
+# command line mentions the QML and costs ~30 ms per close.
+WARM=0
+READY_PID="$(cat "$RUNTIME_DIR/vp_death_ready" 2>/dev/null || true)"
+if [[ -n "$READY_PID" ]] && kill -0 "$READY_PID" 2>/dev/null \
+  && grep -qa 'quickshell' "/proc/$READY_PID/cmdline" 2>/dev/null \
+  && grep -qa '/usr/share/omarchy/shell' "/proc/$READY_PID/cmdline" 2>/dev/null; then
+  WARM=1
+fi
 DAEMON_PID="$(cat "$RUNTIME_DIR/vp_death_daemon.pid" 2>/dev/null || true)"
-if [[ -n "$DAEMON_PID" ]] && kill -0 "$DAEMON_PID" 2>/dev/null \
+if (( WARM == 0 )) && [[ -n "$DAEMON_PID" ]] && kill -0 "$DAEMON_PID" 2>/dev/null \
   && grep -qa 'vp_death_daemon\.qml' "/proc/$DAEMON_PID/cmdline" 2>/dev/null; then
+  WARM=1
+fi
+
+if (( WARM == 1 )); then
 
   # 1. The glitch first: the burst surfaces are already mapped, so this
   #    lands on screen in a couple of frames, before the close.

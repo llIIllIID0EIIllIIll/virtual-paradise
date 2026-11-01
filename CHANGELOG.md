@@ -130,6 +130,12 @@ Conventional Commits.
   never read as the same effect.
 
 ### Fixed
+- **The window-close burst leads the close again.** Moving the burst into the
+  shell left the death script looking for the old daemon's pidfile, so it took
+  the slow one-shot path and the glitch trailed the close. The overlay now
+  announces itself with a `vp_death_ready` pid file, and the script takes the
+  instant trigger path whenever that shell is alive; the close timing itself is
+  unchanged.
 - **The empty `omarchy.spacer` between the waveform and the weather is gone.**
   It rendered as an invisible but hoverable hole in the centre island; the
   theme layout no longer ships it.

@@ -22,6 +22,10 @@ Item {
   id: root
 
   property string runtime: Quickshell.env("XDG_RUNTIME_DIR") || "/tmp"
+  // The death script reads this file to know the burst is warm. It carries the
+  // shell's PID, so a stale file left by a crash fails the liveness check and
+  // the script falls back to the one-shot path instead of closing silently.
+  readonly property string readyPath: root.runtime + "/vp_death_ready"
   property int rx: 0
   property int ry: 0
   property int rw: 0
@@ -34,6 +38,17 @@ Item {
   // Bumped on every death so a burst can re-arm even if the previous one
   // is still on screen (mashing SUPER+W must not swallow a death).
   property int generation: 0
+
+  // Announce readiness the moment the overlay is live, and take the flag away
+  // on a clean shell shutdown. This is what lets window_death.sh take the
+  // instant path instead of spawning a one-shot Quickshell per close.
+  Component.onCompleted: {
+    Quickshell.execDetached(["bash", "-c",
+      "printf %s " + Quickshell.processId + " > '" + root.readyPath + "'"])
+  }
+  Component.onDestruction: {
+    Quickshell.execDetached(["rm", "-f", root.readyPath])
+  }
 
   FileView {
     id: trigger
@@ -61,6 +76,8 @@ Item {
       root.frame = parts.slice(1).join(" ")
       root.armed = true
       root.generation++
+      console.log("omarchy window-death " + root.rx + "," + root.ry
+        + " " + root.rw + "x" + root.rh)
       hideTimer.restart()
     }
   }
