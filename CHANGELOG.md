@@ -33,7 +33,9 @@ Conventional Commits.
   terminal reads as clean glass until the cursor lights a piece of it. The
   lattice is painted once into an offscreen canvas and each frame blits it
   (~0.3ms instead of a ~37ms thousand-hex repaint), so the pool canvas can
-  paint synchronously and never lag the grid behind the moving pool.
+  paint synchronously and never lag the grid behind the moving pool. The
+  glow is kept low (pool 0.06, haze 0.055, line 0.15), so text under the
+  pointer stays readable and selecting it is not a fight with the effect.
 - **Yazi, Bat and tmux are themed too.** The file manager gets a palette
   theme, Bat gets a `VirtualParadise` syntax theme plus `BAT_THEME`, and tmux
   gets a truecolor status bar sourced from a marker block in `tmux.conf` -
