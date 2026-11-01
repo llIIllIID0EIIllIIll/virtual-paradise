@@ -30,7 +30,7 @@ BarWidget {
 
   Process {
     id: tempProc
-    command: ["bash", "-c", "for z in /sys/class/thermal/thermal_zone*; do type=$(cat $z/type 2>/dev/null); case $type in *x86_pkg_temp*|*coretemp*|*k10temp*|*cpu*|*CPU*) t=$(cat $z/temp 2>/dev/null); if [ -n \"$t\" ] && [ \"$t\" -gt 0 ]; then echo $((t/1000)); break; fi ;; esac; done; if [ -z \"$t\" ]; then t=$(cat /sys/class/thermal/thermal_zone0/temp 2>/dev/null || echo 0); echo $((t/1000)); fi; cat /tmp/cooler_boost_state 2>/dev/null || echo off"]
+    command: ["bash", "-c", "for z in /sys/class/thermal/thermal_zone*; do type=$(cat $z/type 2>/dev/null); case $type in *x86_pkg_temp*|*coretemp*|*k10temp*|*cpu*|*CPU*) t=$(cat $z/temp 2>/dev/null); if [ -n \"$t\" ] && [ \"$t\" -gt 0 ]; then echo $((t/1000)); break; fi ;; esac; done; if [ -z \"$t\" ]; then t=$(cat /sys/class/thermal/thermal_zone0/temp 2>/dev/null || echo 0); echo $((t/1000)); fi; ~/.local/bin/toggle_cooler_boost.sh state 2>/dev/null || echo off"]
     stdout: StdioCollector {
       waitForEnd: true
       onStreamFinished: {

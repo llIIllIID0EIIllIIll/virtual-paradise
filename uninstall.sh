@@ -202,7 +202,9 @@ rm -f "$HOME/.local/state/virtual-paradise/overrides.state" \
       "$HOME/.local/state/virtual-paradise/plugin-versions.lock" \
       "$HOME/.local/state/virtual-paradise/current_variant" \
       "$HOME/.local/state/virtual-paradise/current_live_wallpaper" \
+      "$HOME/.local/state/virtual-paradise/cooler_boost" \
       "$HOME/.local/state/virtual-paradise/theme-variant-map"
+rm -f /tmp/cooler_boost_state 2>/dev/null || true
 rm -rf "$HOME/.local/state/virtual-paradise/plugin-backups" \
        "$HOME/.local/state/virtual-paradise/theme-variant-orig"
 rm -f /tmp/virtual_paradise_wallpaper_ready /tmp/mpv-live.sock 2>/dev/null || true

@@ -4,8 +4,15 @@
 # ==============================================================================
 # Automatically detects the hardware vendor / machine model and toggles fan
 # speeds between 100% Boost and Auto mode via ISW, Asusctl, NBFC, or EC tools.
+#
+# The state of truth is the hardware itself: the embedded controller keeps the
+# fan profile across reboots, so a state file alone lies (a reboot wipes /tmp
+# while the fans are still at 100%). Every read asks the EC first and only
+# falls back to the persisted state file for backends that cannot be queried.
 
-STATE_FILE="/tmp/cooler_boost_state"
+STATE_DIR="${XDG_STATE_HOME:-$HOME/.local/state}/virtual-paradise"
+STATE_FILE="$STATE_DIR/cooler_boost"
+LEGACY_STATE_FILE="/tmp/cooler_boost_state"
 ACTION="${1:-toggle}"
 
 # --- 1. Dynamic Hardware Vendor Detection ---
@@ -67,6 +74,11 @@ PRODUCT=$(detect_product)
 
 # Find acer-nitro-ec hwmon path if driver is loaded
 find_acer_nitro_hwmon() {
+    # Test hook: point the detection at a fixture tree instead of the real EC.
+    if [[ -n "${COOLER_BOOST_HWMON:-}" ]]; then
+        echo "$COOLER_BOOST_HWMON"
+        return 0
+    fi
     for h in /sys/class/hwmon/hwmon*; do
         if [[ -r "$h/name" ]]; then
             local n
@@ -80,18 +92,55 @@ find_acer_nitro_hwmon() {
     return 1
 }
 
-# --- 2. Read State ---
-if [ ! -f "$STATE_FILE" ]; then
-    echo "off" > "$STATE_FILE"
-fi
+# --- 2. Read the real fan state ---
+# acer-nitro-ec (and most EC drivers) keep the profile in the embedded
+# controller, so read it: after a reboot the state file is gone while the
+# fans may still be at 100%, and the bar must show what the machine is doing.
+ACER_HWMON=$(find_acer_nitro_hwmon || true)
 
-CURRENT_STATE=$(cat "$STATE_FILE")
+read_hw_state() {
+    if [[ -n "$ACER_HWMON" && -r "$ACER_HWMON/pwm1_enable" ]]; then
+        # 0 = turbo (100% fans), 2 = auto; 1 is a manual duty we never set.
+        case "$(< "$ACER_HWMON/pwm1_enable")" in
+            0) echo "on"; return 0 ;;
+            2) echo "off"; return 0 ;;
+        esac
+    fi
+    if command -v asusctl >/dev/null 2>&1; then
+        local profile
+        profile=$(asusctl profile -p 2>/dev/null | awk -F': ' '/Active profile/ {print tolower($2)}')
+        case "$profile" in
+            performance|turbo) echo "on"; return 0 ;;
+            balanced|quiet|silent) echo "off"; return 0 ;;
+        esac
+    fi
+    # isw and nbfc expose no queryable boost bit: fall back to the file.
+    return 1
+}
+
+# The persisted file is the fallback and is re-synced whenever the hardware
+# tells a different story, so the two never disagree for long.
+mkdir -p "$STATE_DIR" 2>/dev/null || true
+if [[ ! -f "$STATE_FILE" && -f "$LEGACY_STATE_FILE" ]]; then
+    cp "$LEGACY_STATE_FILE" "$STATE_FILE" 2>/dev/null || true
+fi
+[[ -f "$STATE_FILE" ]] || echo "off" > "$STATE_FILE"
+
+CURRENT_STATE=$(read_hw_state || cat "$STATE_FILE" 2>/dev/null || echo off)
+if [[ "$(cat "$STATE_FILE" 2>/dev/null || echo off)" != "$CURRENT_STATE" ]]; then
+    echo "$CURRENT_STATE" > "$STATE_FILE" 2>/dev/null || true
+fi
 
 case "$ACTION" in
     on|enable|start)
         TARGET_ACTION="enable" ;;
     off|disable|stop)
         TARGET_ACTION="disable" ;;
+    state)
+        # One word, for the bar widget: the hardware's answer, not the file's.
+        echo "$CURRENT_STATE"
+        exit 0
+        ;;
     status)
         echo "Cooler Boost hiện tại: ${CURRENT_STATE^^} (${VENDOR} ${PRODUCT})"
         exit 0
@@ -107,7 +156,6 @@ esac
 
 # --- 3. Execute Fan Profile ---
 APPLIED=0
-ACER_HWMON=$(find_acer_nitro_hwmon || true)
 
 if [ "$TARGET_ACTION" == "enable" ]; then
     # Enable Cooler Boost (100% Maximum Fan Speed)
