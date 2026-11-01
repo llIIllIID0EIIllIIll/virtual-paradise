@@ -235,7 +235,9 @@ hl.animation({ leaf = "specialWorkspace", enabled = true, speed = 5.0, spring = 
 -- (Ensures only curtain_transition.qml internal animation runs cleanly with zero bounce)
 -- The death burst and the ambient layers must appear in a single frame too:
 -- a glitch that slides or fades in reads as a panel, not as signal loss.
-hl.layer_rule({ match = { namespace = "^(curtain-transition|glitch-transition|mpvpaper|omarchy-background|logout-splash|vp-window-death|vp-ambient-glitch|vp-scanlines)$" }, no_anim = true, animation = "none" })
+-- The hex spotlight maps and unmaps with terminal focus, so the default
+-- `layersIn` slidefade would read as the glow fading in late.
+hl.layer_rule({ match = { namespace = "^(curtain-transition|glitch-transition|mpvpaper|omarchy-background|logout-splash|vp-window-death|vp-ambient-glitch|vp-scanlines|vp-hex-spotlight)$" }, no_anim = true, animation = "none" })
 
 hl.layer_rule({ match = { namespace = "^(omarchy-menu|omarchy-keyboard-panel|omarchy-clipboard|omarchy-emojis|omarchy-bar-panel|omarchy-image-selector)$" }, animation = "slidefade 25%" })
 hl.layer_rule({ match = { namespace = "omarchy-notifications" }, animation = "slidefade 25%" })
