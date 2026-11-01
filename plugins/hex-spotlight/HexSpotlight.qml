@@ -4,13 +4,14 @@ import Quickshell.Io
 import Quickshell.Wayland
 import qs.Commons
 
-// A pool of light that reveals the terminal's hex circuitry around the pointer.
+// A pool of light that paints a hex grid around the pointer.
 //
-// The terminal background image is nearly invisible on purpose; this overlay
-// paints a brighter copy of the same hex grid inside a soft radial mask that
-// follows the cursor, but only while a terminal window is focused. The canvas
-// is small and only repaints while it moves, so the cost is a 260x260 paint at
-// cursor rate, not a full-window shader.
+// The terminal itself stays plain glass; this overlay draws the grid only
+// inside a soft radial mask that follows the cursor, but only while a
+// terminal window is focused. The grid is anchored to the terminal window,
+// so the hexes light up in the same places no matter where the pointer is.
+// The canvas is small and only repaints while it moves, so the cost is a
+// 320x320 paint at cursor rate, not a full-window shader.
 Item {
   id: root
 
@@ -133,19 +134,84 @@ Item {
           x: root.cursorX - modelData.x - root.winX - width / 2
           y: root.cursorY - modelData.y - root.winY - height / 2
 
+          readonly property int cell: 7
+          readonly property real hexW: Math.sqrt(3) * cell
+          readonly property real rowStep: 1.5 * cell
+
           Behavior on x { NumberAnimation { duration: 60; easing.type: Easing.OutCubic } }
           Behavior on y { NumberAnimation { duration: 60; easing.type: Easing.OutCubic } }
 
-          // The pattern must stay fixed to the terminal window while the
-          // spotlight moves over it, so every move repaints with a shift.
+          // The grid must stay fixed to the terminal window while the pool
+          // moves over it, so every move repaints with a new phase.
           onXChanged: canvas.requestPaint()
           onYChanged: canvas.requestPaint()
+
+          // The lattice is painted once into this offscreen canvas and never
+          // shown directly. A full repaint is ~37ms (a thousand hex strokes),
+          // which no cursor-rate canvas can afford; blitting this texture is
+          // ~0.3ms, so the pool canvas can repaint synchronously and the grid
+          // never lags behind the pool while it animates towards the pointer.
+          Canvas {
+            id: lattice
+
+            property color accent: root.accent
+
+            width: Math.ceil(spotlight.width + spotlight.hexW) + 4
+            height: Math.ceil(spotlight.height + 2 * spotlight.rowStep) + 4
+            visible: false
+            renderStrategy: Canvas.Threaded
+
+            onPaint: {
+              var ctx = getContext("2d")
+              ctx.clearRect(0, 0, width, height)
+              var a = accent
+              var rgb = Math.round(a.r * 255) + "," + Math.round(a.g * 255)
+                + "," + Math.round(a.b * 255)
+              var s = spotlight.cell
+              var hexW = spotlight.hexW
+              var rowStep = spotlight.rowStep
+              var cols = Math.ceil(width / hexW) + 3
+              var rows = Math.ceil(height / rowStep) + 3
+
+              ctx.beginPath()
+              for (var col = -1; col < cols; col++) {
+                for (var row = -1; row < rows; row++) {
+                  var hx = col * hexW + (row % 2 ? hexW / 2 : 0)
+                  var hy = row * rowStep + s
+                  for (var i = 0; i < 6; i++) {
+                    var angle = Math.PI / 180 * (60 * i - 30)
+                    var px = hx + s * Math.cos(angle)
+                    var py = hy + s * Math.sin(angle)
+                    if (i === 0) ctx.moveTo(px, py)
+                    else ctx.lineTo(px, py)
+                  }
+                  ctx.closePath()
+                }
+              }
+
+              // Haze first: a wide, faint stroke that turns the grid into
+              // mist. Then the crisp circuitry line on top.
+              ctx.lineJoin = "round"
+              ctx.strokeStyle = "rgba(" + rgb + ",0.10)"
+              ctx.lineWidth = 3.2
+              ctx.stroke()
+              ctx.strokeStyle = "rgba(" + rgb + ",0.30)"
+              ctx.lineWidth = 1
+              ctx.stroke()
+            }
+
+            onAccentChanged: requestPaint()
+            Component.onCompleted: requestPaint()
+          }
 
           Canvas {
             id: canvas
 
             anchors.fill: parent
-            renderStrategy: Canvas.Threaded
+            // Synchronous on purpose: a threaded paint can be displayed a
+            // frame late, which slides the grid for a moment every time the
+            // pool moves. The paint is a blit now, so it is cheap enough.
+            renderStrategy: Canvas.Immediate
 
             onPaint: {
               var ctx = getContext("2d")
@@ -156,7 +222,7 @@ Item {
               var rgb = Math.round(a.r * 255) + "," + Math.round(a.g * 255)
                 + "," + Math.round(a.b * 255)
 
-              // Soft light pool first; the hex grid sits on top of it.
+              // Soft light pool first; the lattice is blitted on top of it.
               var pool = ctx.createRadialGradient(cx, cy, 0, cx, cy, width / 2)
               pool.addColorStop(0.0, "rgba(" + rgb + ",0.11)")
               pool.addColorStop(0.55, "rgba(" + rgb + ",0.04)")
@@ -164,62 +230,15 @@ Item {
               ctx.fillStyle = pool
               ctx.fillRect(0, 0, width, height)
 
-              // Hex grid aligned to the terminal window, not to the moving
-              // canvas: shift by where this canvas sits inside the window.
-              // The cell size is fixed (s = 7) so every terminal window shows
-              // the same hexes; the background tile uses the same size.
-              var originX = root.cursorX - modelData.x - root.winX - width / 2
-              var originY = root.cursorY - modelData.y - root.winY - height / 2
-              var s = 7
-              var hexW = Math.sqrt(3) * s
-              var rowStep = 1.5 * s
-              var cols = Math.ceil(width / hexW) + 3
-              var rows = Math.ceil(height / rowStep) + 3
-              // The background tile is 158x168: 13.03 hex columns and exactly
-              // 16 rows. Its repetition restarts the lattice every 158px, so
-              // the horizontal phase drifts by (158 - 13*hexW) per tile.
-              // Anchor the reveal to the tile under the canvas, or the lit
-              // hexes walk off the ghost ones towards the far window edge.
-              var tileW = 158
-              var tileDrift = tileW - 13 * hexW
-              var tileIndex = Math.floor(originX / tileW)
-              var shiftX = ((originX - tileDrift * tileIndex) % hexW + hexW) % hexW
-              var shiftY = ((originY % rowStep) + rowStep) % rowStep
-              // The tile is exactly 16 rows tall, so the row parity that
-              // decides the half-cell offset repeats every tile; count it
-              // from the window origin, not from the canvas.
-              var rowOffset = Math.floor(originY / rowStep)
-
-              function hexPath() {
-                ctx.beginPath()
-                for (var col = -1; col < cols; col++) {
-                  for (var row = -1; row < rows; row++) {
-                    var hx = col * hexW + ((row + rowOffset) % 2 ? hexW / 2 : 0) - shiftX
-                    var hy = row * rowStep + s - shiftY
-                    for (var i = 0; i < 6; i++) {
-                      var angle = Math.PI / 180 * (60 * i - 30)
-                      var px = hx + s * Math.cos(angle)
-                      var py = hy + s * Math.sin(angle)
-                      if (i === 0) ctx.moveTo(px, py)
-                      else ctx.lineTo(px, py)
-                    }
-                    ctx.closePath()
-                  }
-                }
-              }
-
-              // Haze first: a wide, faint stroke that turns the grid into mist
-              // around the cursor. Then the crisp circuitry line on top.
-              ctx.lineJoin = "round"
-              ctx.strokeStyle = "rgba(" + rgb + ",0.10)"
-              ctx.lineWidth = 3.2
-              hexPath()
-              ctx.stroke()
-
-              ctx.strokeStyle = "rgba(" + rgb + ",0.30)"
-              ctx.lineWidth = 1
-              hexPath()
-              ctx.stroke()
+              // Blit the lattice at the phase that anchors it to the window:
+              // the vertical shift is taken modulo two rows, so the row
+              // parity that offsets every other row never flips, and the
+              // horizontal one modulo a column.
+              var shiftX = ((spotlight.x % spotlight.hexW) + spotlight.hexW)
+                % spotlight.hexW
+              var shiftY = ((spotlight.y % (2 * spotlight.rowStep))
+                + 2 * spotlight.rowStep) % (2 * spotlight.rowStep)
+              ctx.drawImage(lattice, -shiftX, -shiftY)
 
               // Circular reveal: everything fades out at the pool's edge.
               ctx.globalCompositeOperation = "destination-in"

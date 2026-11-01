@@ -1775,15 +1775,13 @@ fi
 unset f
 log_sub "Flattened hypr/ Omarchy-required files to theme root"
 
-# Flatten assets (preview.png, unlock.png, terminal-bg.png) into theme root for
-# Omarchy theme picker & Plymouth switcher, and so the terminal configs can
-# reference the hex backdrop next to themselves.
+# Flatten assets (preview.png, unlock.png) into theme root for the Omarchy
+# theme picker & Plymouth switcher.
 if [[ -d "$THEME_DEST/assets" ]]; then
   cp -f "$THEME_DEST/assets/preview.png" "$THEME_DEST/preview.png" 2>/dev/null || true
   cp -f "$THEME_DEST/assets/unlock.png" "$THEME_DEST/unlock.png" 2>/dev/null || true
   cp -f "$THEME_DEST/assets/unlock.png" "$THEME_DEST/preview-unlock.png" 2>/dev/null || true
-  cp -f "$THEME_DEST/assets/terminal-bg.png" "$THEME_DEST/terminal-bg.png" 2>/dev/null || true
-  log_sub "Flattened assets/ (preview.png, unlock.png, terminal-bg.png) to Omarchy theme root"
+  log_sub "Flattened assets/ (preview.png, unlock.png) to Omarchy theme root"
 fi
 
 # Post-theme-set hook
