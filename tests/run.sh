@@ -2486,6 +2486,12 @@ if want tc27; then
   check "the server takes the socket only when it is free" \
     "$(grep -q 'probe.connect' "$pub" \
       && grep -q 'os.unlink' "$pub" && echo 0 || echo 1)"
+  # Quickshell's Socket does not signal a failed first connect, so the feed
+  # must retry on a timer or it stays dead for the whole session.
+  check "the socket feed retries a failed first connect" \
+    "$(grep -q 'if (!cursorFeed.connected) cursorFeed.connected = true' "$spot" \
+      && grep -q 'if (!cursorFeed.connected) cursorFeed.connected = true' "$glow" \
+      && echo 0 || echo 1)"
 
   # Functional: a fake Hyprland command socket answers cursorpos, the server
   # broadcasts it, and a client receives it.

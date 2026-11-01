@@ -54,7 +54,10 @@ Item {
     id: cursorFeed
 
     path: root.cursorSocket
-    connected: true
+    // The first connect is left to the retry timer below: the server binds a
+    // moment after the plugin loads, and connecting eagerly logged a
+    // ConnectionRefused at every login.
+    connected: false
 
     parser: SplitParser {
       onRead: function (line) {
@@ -69,12 +72,15 @@ Item {
       }
     }
 
-    onConnectionStateChanged: if (!connected) reconnectTimer.start()
   }
 
+  // Quickshell's Socket does not emit connectionStateChanged when the very
+  // first connect fails (the server may not have bound yet at login), so a
+  // steady retry - not just a signal - is what keeps the feed alive.
   Timer {
-    id: reconnectTimer
-    interval: 500
+    interval: 1000
+    repeat: true
+    running: true
     onTriggered: if (!cursorFeed.connected) cursorFeed.connected = true
   }
 
