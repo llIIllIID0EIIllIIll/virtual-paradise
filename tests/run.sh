@@ -2406,4 +2406,57 @@ if want tc25; then
       && echo 0 || echo 1)"
 fi
 
+# ─────────────────────────────────────────────────────────────────────────────
+# TC-26  Cooler Boost state.
+#
+# The embedded controller keeps the fan profile across reboots, so a state
+# file alone lies: after a reboot /tmp is gone while the fans may still be at
+# 100%. The toggle must answer from the hardware, repair the fallback file,
+# and a bare toggle from a stale "off" file must turn the boost OFF, not
+# re-enable it.
+# ─────────────────────────────────────────────────────────────────────────────
+if want tc26; then
+  section "TC-26  Cooler Boost state"
+
+  script="$REPO_DIR/bin/toggle_cooler_boost.sh"
+  widget="$REPO_DIR/plugins/cputemp/BarWidget.qml"
+
+  check "the toggle reads the fan state from the hardware" \
+    "$(grep -q 'read_hw_state' "$script" \
+      && grep -q 'pwm1_enable' "$script" && echo 0 || echo 1)"
+  check "the bar widget asks the hardware instead of the stale file" \
+    "$(grep -q 'toggle_cooler_boost.sh state' "$widget" \
+      && ! grep -q 'cat /tmp/cooler_boost_state' "$widget" && echo 0 || echo 1)"
+  check "the fallback state file survives a reboot" \
+    "$(! grep -q '^STATE_FILE="/tmp/' "$script" \
+      && grep -q '^STATE_DIR=' "$script" && echo 0 || echo 1)"
+
+  # Functional: a fake EC that says turbo, a fallback file that says off -
+  # exactly the post-reboot situation.
+  root="$(new_sandbox tc26)"
+  fake="$root/hwmon"
+  state="$root/state/virtual-paradise"
+  mkdir -p "$fake" "$state"
+  printf 'acer_nitro_ec\n' > "$fake/name"
+  printf '0\n' > "$fake/pwm1_enable"
+  printf '0\n' > "$fake/pwm2_enable"
+  printf 'off\n' > "$state/cooler_boost"
+
+  out=$(COOLER_BOOST_HWMON="$fake" XDG_STATE_HOME="$root/state" \
+    bash "$script" state 2>/dev/null)
+  check "state answers from the EC, not the stale file" \
+    "$([[ "$out" == "on" ]] && echo 0 || echo 1)" "got: $out"
+  check "the stale file was re-synced to the hardware" \
+    "$([[ "$(cat "$state/cooler_boost")" == "on" ]] && echo 0 || echo 1)"
+
+  COOLER_BOOST_HWMON="$fake" XDG_STATE_HOME="$root/state" \
+    bash "$script" >/dev/null 2>&1
+  check "toggling from the stale-off state turns the boost off" \
+    "$([[ "$(cat "$fake/pwm1_enable")" == "2" ]] && echo 0 || echo 1)"
+  out=$(COOLER_BOOST_HWMON="$fake" XDG_STATE_HOME="$root/state" \
+    bash "$script" state 2>/dev/null)
+  check "state follows the hardware back down" \
+    "$([[ "$out" == "off" ]] && echo 0 || echo 1)" "got: $out"
+fi
+
 summary

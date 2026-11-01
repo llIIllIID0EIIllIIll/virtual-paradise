@@ -137,6 +137,15 @@ Conventional Commits.
   never read as the same effect.
 
 ### Fixed
+- **The Cooler Boost toggle tells the truth after a reboot.** The bar read a
+  `/tmp` state file, and a reboot wipes it, so a machine that came back still
+  in boost showed "off" until the toggle was pressed again. The script now
+  reads the fan profile from the embedded controller (`pwm1_enable`: 0 =
+  boost, 2 = auto) and only falls back to the state file for backends without
+  a queryable boost bit; the file moved to `~/.local/state/virtual-paradise/`
+  and is re-synced whenever the hardware disagrees. The bar widget asks the
+  script (`toggle_cooler_boost.sh state`) instead of reading the file, so the
+  pill always mirrors the fans.
 - **The hex glow no longer fades in late.** Focus was polled with `hyprctl`
   every 500ms, so the glow could appear half a second after a terminal was
   focused, and the compositor's default `layersIn` slidefade animated the
