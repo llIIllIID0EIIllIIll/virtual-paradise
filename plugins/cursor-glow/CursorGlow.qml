@@ -4,14 +4,13 @@ import Quickshell.Io
 import Quickshell.Wayland
 import qs.Commons
 
-// A soft neon glow that trails the pointer.
+// A soft neon glow that trails the pointer over terminals.
 //
-// The position comes from the shared cursor publisher (`vp_cursor_track.py`):
-// one flock'd Python process per session polls Hyprland and writes
-// `$XDG_RUNTIME_DIR/vp-cursor`; this plugin (and the hex spotlight) watch
-// that file, so two overlays cost one poller instead of two. The canvas is
-// painted once and only moved afterwards, so the effect costs a position
-// update and a translate per frame, not a repaint.
+// The position comes from the shared cursor server (`vp_cursor_track.py`) and
+// the focused window from the shared window server (`vp_window_track.py`):
+// one process each per session, shared with the hex spotlight. The glow only
+// appears while the pointer is inside a focused terminal - over a game or a
+// browser it is a bright spot with no business being there.
 Item {
   id: root
 
@@ -21,10 +20,33 @@ Item {
     + "/.local/bin/vp_cursor_track.py"
   readonly property string cursorSocket: (Quickshell.env("XDG_RUNTIME_DIR") || "/tmp")
     + "/vp-cursor.sock"
+  readonly property string windowPublishScript: (Quickshell.env("HOME") || "")
+    + "/.local/bin/vp_window_track.py"
+  readonly property string windowSocket: (Quickshell.env("XDG_RUNTIME_DIR") || "/tmp")
+    + "/vp-window.sock"
+
+  readonly property var terminalClasses: [
+    "com.mitchellh.ghostty",
+    "ghostty",
+    "foot",
+    "Alacritty",
+    "kitty",
+    "org.wezfurlong.wezterm",
+    "wezterm"
+  ]
 
   property real cursorX: -10000
   property real cursorY: -10000
+  property bool terminalFocused: false
+  property real winX: 0
+  property real winY: 0
+  property real winW: 0
+  property real winH: 0
+
   readonly property bool tracked: cursorX > -9000
+  readonly property bool overTerminal: terminalFocused && tracked
+    && cursorX >= winX && cursorX < winX + winW
+    && cursorY >= winY && cursorY < winY + winH
 
   Process {
     id: publisher
@@ -79,6 +101,64 @@ Item {
     }
   }
 
+  // Focused window, from the shared window server: the glow is gated on the
+  // pointer being inside a terminal, and the same feed drives the hex
+  // spotlight.
+  Process {
+    id: windowPublisher
+
+    command: ["python3", root.windowPublishScript]
+    running: true
+  }
+
+  Socket {
+    id: windowFeed
+
+    path: root.windowSocket
+    connected: false
+
+    parser: SplitParser {
+      onRead: function (line) {
+        root.windowFix = Date.now() / 1000
+        var parts = String(line).split("|")
+        if (parts.length < 2) return
+        var geom = parts[1].split(" ")
+        if (geom.length < 2) return
+        var at = geom[0].split(",")
+        var size = geom[1].split("x")
+        if (at.length < 2 || size.length < 2) return
+        var x = Number(at[0])
+        var y = Number(at[1])
+        var w = Number(size[0])
+        var h = Number(size[1])
+        if (!isFinite(x) || !isFinite(y) || !isFinite(w) || !isFinite(h)) return
+        root.terminalFocused = root.terminalClasses.indexOf(parts[0]) !== -1
+        root.winX = x
+        root.winY = y
+        root.winW = w
+        root.winH = h
+      }
+    }
+  }
+
+  Timer {
+    interval: 1000
+    repeat: true
+    running: true
+    onTriggered: if (!windowFeed.connected) windowFeed.connected = true
+  }
+
+  property double windowFix: 0
+  Timer {
+    interval: 2000
+    repeat: true
+    running: true
+    onTriggered: {
+      if (!windowFeed.connected && !windowPublisher.running)
+        windowPublisher.running = true
+    }
+  }
+
   Variants {
     model: Quickshell.screens
 
@@ -105,7 +185,9 @@ Item {
 
           width: 150
           height: 150
-          visible: root.tracked
+          // Only over a focused terminal: over a game, a browser or the bar
+          // the glow is a bright spot with nothing to light up.
+          visible: root.overTerminal
           x: root.cursorX - modelData.x - width / 2
           y: root.cursorY - modelData.y - height / 2
 

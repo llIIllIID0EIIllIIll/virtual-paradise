@@ -37,7 +37,7 @@ Three floating glass pills over a faint hex underlay, a sparse comet stream in t
 - **Left island**: quick menu, Japanese workspace numerals, active window
 - **Center island**: waveform visualizer, weather, clock, vitals (CPU/GPU/RAM/disk/net), CPU temperature, microphone, indicator dots
 - **Right island**: system tray, network, VPN, notifications, audio, battery, power
-- **Ambient overlays**: a neon glow trails the pointer, and the screen edges flash cyan on a workspace change and magenta when a notification arrives
+- **Ambient overlays**: a neon glow trails the pointer over terminals (it stays out of the way on games, browsers and the bar), and the screen edges flash cyan on a workspace change and magenta when a notification arrives
 
 The gap stream, the rim scanner and the hover chrome are opt-out in `~/.config/omarchy/shell.json`; see [Bar Effects](#bar-effects).
 
@@ -384,10 +384,11 @@ path instead:
   cursor spotlight, whose lattice is painted once into an offscreen canvas and
   blitted per frame (~0.3ms), so a terminal decodes nothing and the spotlight
   costs a texture blit per cursor frame.
-- The pointer feed is shared: `vp_cursor_track.py` is one server per session
-  (the second plugin to start it finds the socket taken and exits) and both
-  overlays read the broadcast, so two effects cost one Python process instead
-  of two.
+- The pointer feed is shared: `vp_cursor_track.py` and `vp_window_track.py`
+  are one server each per session (the second plugin to start one finds its
+  socket taken and exits) and both overlays read the broadcasts, so the
+  pointer glow and the hex spotlight cost two Python processes instead of
+  four.
 - The clock's calendar popup is built the first time it is asked for; a
   session that never opens it never pays for the month grid.
 - `mpvpaper` is capped at a 16 MiB demuxer cache instead of mpv's default.

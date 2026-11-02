@@ -2410,8 +2410,8 @@ if want tc25; then
   # Focus must arrive the moment it changes: polling hyprctl made the glow
   # appear up to half a second after a terminal was focused.
   check "focus is tracked from the event socket, not a poll" \
-    "$([[ -f "$REPO_DIR/plugins/hex-spotlight/window_track.py" ]] \
-      && grep -q 'window_track.py' "$spot" \
+    "$([[ -f "$REPO_DIR/bin/vp_window_track.py" ]] \
+      && grep -q 'vp_window_track.py' "$spot" \
       && ! grep -q 'command: \["hyprctl"' "$spot" && echo 0 || echo 1)"
   # The spotlight maps and unmaps with focus, so the default layersIn
   # slidefade would read as the glow fading in late.
@@ -2557,6 +2557,87 @@ PY
   kill "$pub_pid" "$fake_pid" 2>/dev/null || true
   wait "$pub_pid" 2>/dev/null || true
   wait "$fake_pid" 2>/dev/null || true
+
+  # --- the shared window server -------------------------------------------
+  win_pub="$REPO_DIR/bin/vp_window_track.py"
+
+  check "one shared window server serves both overlays" \
+    "$([[ -f "$win_pub" ]] \
+      && grep -q 'vp_window_track.py' "$spot" \
+      && grep -q 'vp_window_track.py' "$glow" \
+      && [[ ! -f "$REPO_DIR/plugins/hex-spotlight/window_track.py" ]] \
+      && echo 0 || echo 1)"
+  # The glow is a terminal effect: over a game or a browser it is a bright
+  # spot with nothing to light up.
+  check "the pointer glow only shows over a terminal" \
+    "$(grep -q 'visible: root.overTerminal' "$glow" \
+      && grep -q 'cursorX >= winX && cursorX < winX + winW' "$glow" \
+      && echo 0 || echo 1)"
+
+  # Functional: a fake Hyprland with both sockets; the server turns the active
+  # window into a broadcast line.
+  fake2_rt="$root/run2"
+  mkdir -p "$fake2_rt/hypr/FAKESIG2"
+  cat > "$root/fake_hypr2.py" <<'PY'
+import json, os, socket, sys, threading, time
+base = sys.argv[1]
+cmd_path = os.path.join(base, ".socket.sock")
+evt_path = os.path.join(base, ".socket2.sock")
+for p in (cmd_path, evt_path):
+    try:
+        os.unlink(p)
+    except FileNotFoundError:
+        pass
+win = {"class": "com.mitchellh.ghostty", "at": [100, 200], "size": [800, 600]}
+
+def serve_cmd():
+    srv = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+    srv.bind(cmd_path)
+    srv.listen(8)
+    while True:
+        conn, _ = srv.accept()
+        data = conn.recv(64)
+        if b"j/activewindow" in data:
+            conn.sendall(json.dumps(win).encode())
+        conn.close()
+
+def serve_evt():
+    srv = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+    srv.bind(evt_path)
+    srv.listen(8)
+    while True:
+        conn, _ = srv.accept()
+        time.sleep(0.2)
+        try:
+            conn.sendall(b"activewindowv2>>deadbeef\n")
+        except OSError:
+            pass
+        time.sleep(3)
+
+threading.Thread(target=serve_cmd, daemon=True).start()
+serve_evt()
+PY
+  python3 "$root/fake_hypr2.py" "$fake2_rt/hypr/FAKESIG2" &
+  fake2_pid=$!
+  sleep 0.4
+  XDG_RUNTIME_DIR="$fake2_rt" HYPRLAND_INSTANCE_SIGNATURE=FAKESIG2 \
+    python3 "$win_pub" &
+  win_pub_pid=$!
+  sleep 0.8
+  out=$(python3 - "$fake2_rt/vp-window.sock" <<'PY'
+import socket, sys
+conn = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+conn.settimeout(2)
+conn.connect(sys.argv[1])
+print(conn.recv(256).decode().strip())
+PY
+)
+  check "the window server broadcasts the focused terminal" \
+    "$([[ "$out" == "com.mitchellh.ghostty|100,200 800x600" ]] && echo 0 || echo 1)" \
+    "got: $out"
+  kill "$win_pub_pid" "$fake2_pid" 2>/dev/null || true
+  wait "$win_pub_pid" 2>/dev/null || true
+  wait "$fake2_pid" 2>/dev/null || true
 fi
 
 summary
