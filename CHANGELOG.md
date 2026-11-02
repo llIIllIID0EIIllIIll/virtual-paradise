@@ -9,6 +9,11 @@ Conventional Commits.
 ## [Unreleased]
 
 ### Changed
+- **The pointer stays where it is when you switch workspaces.** The theme
+  used to set `cursor:warp_on_change_workspace = 1`, which warped the cursor
+  to the focused window on every workspace change - and with `follow_mouse`
+  on, the focus jumped with it. It is now `0`: the pointer is left alone, and
+  a test guards the setting so it cannot come back by accident.
 - **The bar's hex underlay drifts smoothly now.** A full lattice repaint is
   ~15ms - one path per hex across the whole bar - which is the entire 60fps
   frame budget, so the drift could only be painted every other frame and read
