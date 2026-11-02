@@ -2203,6 +2203,11 @@ if want tc21; then
     "$(grep -q 'patternOpacity' "$neon" \
       && ! grep -q 'border.width' "$neon" \
       && ! grep -q 'Qt.rgba(root.base' "$neon" && echo 0 || echo 1)"
+  # A full lattice repaint is ~15ms - the whole frame budget - so the drift
+  # stuttered. The pattern is painted once and blitted at the drift offset.
+  check "the hex drift blits a cached lattice" \
+    "$(grep -q 'ctx.drawImage(lattice' "$neon" \
+      && grep -q 'renderStrategy: Canvas.Immediate' "$neon" && echo 0 || echo 1)"
   check "the islands carry a glass gradient and a focal accent bloom" \
     "$(grep -q 'gradient: Gradient' "$island" \
       && grep -q 'glowStrength' "$island" \
