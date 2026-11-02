@@ -9,6 +9,12 @@ Conventional Commits.
 ## [Unreleased]
 
 ### Changed
+- **The pointer glow only shows over terminals.** It used to trail the
+  pointer everywhere, which read as a bright spot with nothing to light up on
+  games, browsers and the bar. It is now gated on the pointer being inside a
+  focused terminal, and the window feed behind that gate is shared with the
+  hex spotlight (`vp_window_track.py`, one server per session), so the two
+  overlays cost two Python processes together instead of four.
 - **The pointer stays where it is when you switch workspaces.** The theme
   used to set `cursor:warp_on_change_workspace = 1`, which warped the cursor
   to the focused window on every workspace change - and with `follow_mouse`

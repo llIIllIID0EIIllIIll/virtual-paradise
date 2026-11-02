@@ -16,7 +16,10 @@ Item {
   id: root
 
   readonly property color accent: Color.accent !== undefined ? Color.accent : "#00ffdd"
-  readonly property string windowTrackScript: Qt.resolvedUrl("window_track.py").toString().replace(/^file:\/\//, "")
+  readonly property string windowPublishScript: (Quickshell.env("HOME") || "")
+    + "/.local/bin/vp_window_track.py"
+  readonly property string windowSocket: (Quickshell.env("XDG_RUNTIME_DIR") || "/tmp")
+    + "/vp-window.sock"
   readonly property string publishScript: (Quickshell.env("HOME") || "")
     + "/.local/bin/vp_cursor_track.py"
   readonly property string cursorSocket: (Quickshell.env("XDG_RUNTIME_DIR") || "/tmp")
@@ -96,17 +99,28 @@ Item {
     }
   }
 
-  // Focus and geometry come from Hyprland's event socket, not from a poll:
-  // polling `hyprctl` every 500ms made the glow appear half a second after
-  // focus landed on a terminal. The helper prints `class|x,y wxh` lines.
+  // Focus and geometry come from the shared window server (one process per
+  // session for both overlays). It subscribes to Hyprland's event socket and
+  // prints `class|x,y wxh` lines; polling `hyprctl` every 500ms made the glow
+  // appear half a second after focus landed on a terminal.
   Process {
-    id: windowTracker
+    id: windowPublisher
 
-    command: ["python3", root.windowTrackScript]
+    command: ["python3", root.windowPublishScript]
     running: true
+  }
 
-    stdout: SplitParser {
+  Socket {
+    id: windowFeed
+
+    path: root.windowSocket
+    // The first connect is left to the retry timer below: the server binds a
+    // moment after the plugin loads.
+    connected: false
+
+    parser: SplitParser {
       onRead: function (line) {
+        root.windowFix = Date.now() / 1000
         var parts = String(line).split("|")
         if (parts.length < 2) return
         var geom = parts[1].split(" ")
@@ -128,13 +142,26 @@ Item {
     }
   }
 
-  // If the helper ever dies (a Hyprland restart racing the socket, a bad
-  // environment), bring it back: the glow would otherwise never return.
+  // Quickshell's Socket does not emit connectionStateChanged when the very
+  // first connect fails, so a steady retry keeps the feed alive.
+  Timer {
+    interval: 1000
+    repeat: true
+    running: true
+    onTriggered: if (!windowFeed.connected) windowFeed.connected = true
+  }
+
+  // If nobody is serving (the other plugin stopped its copy, or it died),
+  // take the socket back by starting our own.
+  property double windowFix: 0
   Timer {
     interval: 2000
     repeat: true
     running: true
-    onTriggered: if (!windowTracker.running) windowTracker.running = true
+    onTriggered: {
+      if (!windowFeed.connected && !windowPublisher.running)
+        windowPublisher.running = true
+    }
   }
 
   Variants {
