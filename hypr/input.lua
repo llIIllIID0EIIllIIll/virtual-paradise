@@ -42,7 +42,10 @@ hl.config({
   cursor = {
     hide_on_key_press = true,         -- Auto-hide cursor when typing
     inactive_timeout = 5,             -- Auto-hide cursor after 5s of inactivity (clean screen)
-    warp_on_change_workspace = 1,     -- Warp cursor to active window when switching workspaces
+    -- Leave the pointer where it is when the workspace changes. Warping it to
+    -- the focused window (Hyprland's mode 1) read as the cursor jumping on its
+    -- own, and with follow_mouse above the focus jumped along with it.
+    warp_on_change_workspace = 0,
     enable_hyprcursor = true,         -- Use high-performance Hyprcursor engine
   },
 })

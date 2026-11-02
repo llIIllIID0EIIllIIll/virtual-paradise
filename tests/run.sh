@@ -1235,7 +1235,7 @@ fi
 # ─────────────────────────────────────────────────────────────────────────────
 # TC-13  Responsive typography and display layout.
 #
-# Two things the theme must not do:
+# Three things the theme must not do:
 #   - pin a font size. Ghostty applies a config-file include after the file
 #     that pulls it in, so a size in the theme's ghostty.conf beats the
 #     user's own config: a fresh install turned 9pt text into 12pt text.
@@ -1243,6 +1243,9 @@ fi
 #     and switches between them on hotplug; static rules for eDP-1/HDMI-A-1/
 #     DP-1/DP-2 with a fixed scale of 1.0 kept the laptop panel alive and
 #     made every HiDPI display render at 1x.
+#   - move the pointer on its own. Warping it to the focused window on a
+#     workspace change read as the cursor jumping, and with follow_mouse on
+#     the focus jumped with it.
 # ─────────────────────────────────────────────────────────────────────────────
 if want tc13; then
   section "TC-13  Responsive typography and display layout"
@@ -1261,7 +1264,13 @@ if want tc13; then
   check "the theme does not pin a scale for an output" \
     "$(grep -qE 'scale[[:space:]]*=[[:space:]]*1\.0' "$REPO_DIR/hypr/monitors.lua" && echo 1 || echo 0)"
 
-  # 3. Functional: a machine that ran the old installer has the static
+  # 3. The pointer must not be warped on a workspace change. Warping it to the
+  #    focused window read as the cursor jumping on its own, and with
+  #    follow_mouse on, the focus jumped with it.
+  check "the theme does not warp the cursor on workspace change" \
+    "$(grep -qE 'warp_on_change_workspace[[:space:]]*=[[:space:]]*0' "$REPO_DIR/hypr/input.lua" && echo 0 || echo 1)"
+
+  # 4. Functional: a machine that ran the old installer has the static
   #    presets in monitors.lua and the window rules behind hyprmoncfg's
   #    "load last" line. Both have to be repaired.
   root="$(new_sandbox tc13)"
