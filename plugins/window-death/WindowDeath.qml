@@ -73,7 +73,12 @@ Item {
       root.ry = +p[1]
       root.rw = +p[2]
       root.rh = +p[3]
-      root.frame = parts.slice(1).join(" ")
+      // The first beat carries a placeholder path that is never written: the
+      // glitch runs over the live window until the captured frame arrives.
+      // Binding the slices to it logged a failed load per slice, so keep the
+      // source empty for that beat.
+      var frame = parts.slice(1).join(" ")
+      root.frame = frame.indexOf(".pending.") !== -1 ? "" : frame
       root.armed = true
       root.generation++
       console.log("omarchy window-death " + root.rx + "," + root.ry
