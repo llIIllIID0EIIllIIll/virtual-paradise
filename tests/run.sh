@@ -1692,6 +1692,11 @@ if want tc16; then
   check "the installer retires the old death daemon" \
     "$(! grep -q 'vp_death_daemon.sh' "$REPO_DIR/hypr/autostart.lua" \
       && grep -q 'vp_death_daemon.qml' "$REPO_DIR/install.sh" && echo 0 || echo 1)"
+  # The first beat's payload names a file that is never written; binding the
+  # slices to it logged a failed load per slice on every close.
+  check "the corpse ignores the pending placeholder path" \
+    "$(grep -q 'frame.indexOf(".pending.") !== -1 ? "" : frame' \
+      "$REPO_DIR/plugins/window-death/WindowDeath.qml" && echo 0 || echo 1)"
   check "the uninstaller removes the death daemon" \
     "$(grep -q 'vp_death_daemon.qml' "$REPO_DIR/uninstall.sh" && echo 0 || echo 1)"
   # The ambient tear is a whisper: one or two pixels at a fifth of full

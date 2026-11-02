@@ -396,8 +396,10 @@ path instead:
   on uninstall, so they do not linger in another theme.
 
 On the development machine the theme's resident PSS dropped from ~836 MB to
-~488 MB with the same bar, effects, terminals and lock screen. Check the live
-number with:
+~490 MB at login, settling around ~550 MB once the caches warm, with the same
+bar, effects, terminals and lock screen. The two shared Python servers (the
+cursor feed and the window feed) add ~9 MB together. Check the live number
+with:
 
 ```bash
 ps -o pid,rss,args -C quickshell
