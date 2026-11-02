@@ -9,6 +9,13 @@ Conventional Commits.
 ## [Unreleased]
 
 ### Changed
+- **The bar's hex underlay drifts smoothly now.** A full lattice repaint is
+  ~15ms - one path per hex across the whole bar - which is the entire 60fps
+  frame budget, so the drift could only be painted every other frame and read
+  as stepping. The pattern is painted once into an offscreen canvas and the
+  visible canvas blits it at the drift offset (~0.22ms per frame), so the
+  motion runs at the display rate and the fractional offset resamples the
+  lines instead of jumping whole pixels.
 - **One cursor poller serves both overlays.** The pointer glow and the hex
   spotlight each ran their own Python poller; `vp_cursor_track.py` is now a
   single server that broadcasts the pointer on
