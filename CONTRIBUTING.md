@@ -4,7 +4,7 @@
 
 ```bash
 git config core.hooksPath .githooks   # enables the commit-msg hook, once per clone
-./tests/run.sh                        # ~1 minute, touches nothing outside a temp HOME
+./tests/run.sh                        # ~3 minutes, touches nothing outside a temp HOME
 ```
 
 The suite runs the installer and uninstaller against a throwaway `HOME` with a
@@ -45,6 +45,23 @@ shellcheck -S warning install.sh uninstall.sh lib/*.sh bin/*.sh tools/*.sh
 Write the body as *why*, not what — the diff already says what. If a change
 fixes something subtle, say what broke and what it looked like, because that is
 what the next person searches for.
+
+## Keeping the forks in sync
+
+Nine plugins under `plugins/` are forks of Omarchy's first-party plugins; the
+manifest records the source as `omarchy.clonedFrom`. An upstream fix does not
+reach a fork on its own — the background fork ran for months without the
+black-desktop workaround and the `Style` refresh — so the repo records a hash
+of every upstream file at the last review:
+
+```bash
+tools/check-upstream-drift.py            # report what changed upstream
+tools/check-upstream-drift.py --update   # re-record after rebasing a fork
+```
+
+Run the report after an Omarchy update, port what matters into the fork, then
+record. TC-28 keeps the baseline honest: it fails when a fork has no recorded
+entry and when the tool misses a change.
 
 ## Adding an override
 

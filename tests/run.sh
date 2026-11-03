@@ -2119,7 +2119,7 @@ if want tc19; then
 #!/usr/bin/env bash
 printf '%s\n' "$*" >>"${SHIM_LOG:-/dev/null}"
 if [[ ${1:-} == plugin && ${2:-} == list && ${3:-} == --json ]]; then
-  printf '[{"id":"omarchy.audio","enabled":false},{"id":"omarchy.bluetooth","enabled":false},{"id":"omarchy.bar","enabled":false}]\n'
+  cat "${PLUGIN_STATE_FILE:-/dev/null}" 2>/dev/null || printf '[]\n'
   exit 0
 fi
 exit 0
@@ -2142,9 +2142,15 @@ EOF
 
   : >"$root/hook.log"
   : >"$root/layer.log"
+  # The background fork is installed but disabled while the stock service is
+  # still on (the state on a machine that just installed the theme): entering
+  # must enable ours and hand the stock one over.
+  printf '[{"id":"omarchy.audio","enabled":false},{"id":"omarchy.bluetooth","enabled":false},{"id":"omarchy.bar","enabled":false},{"id":"omarchy.background","enabled":true},{"id":"tester.background","enabled":false}]\n' \
+    >"$root/plugin-state.json"
   ( PATH="$root/bin:$PATH" HOME="$root/home" XDG_CONFIG_HOME="$cfg" \
     XDG_DATA_HOME="$root/home/.local/share" XDG_STATE_HOME="$root/home/.local/state" \
     USER=tester SHIM_LOG="$root/hook.log" VP_TEST_LOG="$root/layer.log" \
+    PLUGIN_STATE_FILE="$root/plugin-state.json" \
     bash "$REPO_DIR/lib/theme-set-hook.sh" virtual-paradise >/dev/null 2>&1 )
   check "theme hook entering applies the tracked override layer" \
     "$(grep -qx apply "$root/layer.log" 2>/dev/null && echo 0 || echo 1)"
@@ -2154,16 +2160,27 @@ EOF
     "$(grep -q 'plugin disable omarchy.audio' "$root/hook.log" && echo 1 || echo 0)"
   check "theme hook entering does not enable a missing replacement" \
     "$(grep -q 'plugin enable ssupt.audio-control' "$root/hook.log" && echo 1 || echo 0)"
+  check "theme hook entering swaps in the background fork" \
+    "$(grep -q 'plugin enable tester.background' "$root/hook.log" \
+      && grep -q 'plugin disable omarchy.background' "$root/hook.log" && echo 0 || echo 1)"
 
   : >"$root/hook.log"
+  # The fork is enabled now and the stock service is off, so leaving must
+  # hand the layer back.
+  printf '[{"id":"omarchy.audio","enabled":false},{"id":"omarchy.bluetooth","enabled":false},{"id":"omarchy.bar","enabled":false},{"id":"omarchy.background","enabled":false},{"id":"tester.background","enabled":true}]\n' \
+    >"$root/plugin-state.json"
   ( PATH="$root/bin:$PATH" HOME="$root/home" XDG_CONFIG_HOME="$cfg" \
     XDG_DATA_HOME="$root/home/.local/share" XDG_STATE_HOME="$root/home/.local/state" \
     USER=tester SHIM_LOG="$root/hook.log" VP_TEST_LOG="$root/layer.log" \
+    PLUGIN_STATE_FILE="$root/plugin-state.json" \
     bash "$REPO_DIR/lib/theme-set-hook.sh" catppuccin >/dev/null 2>&1 )
   check "theme hook leaving reverts the tracked override layer" \
     "$(grep -qx revert "$root/layer.log" 2>/dev/null && echo 0 || echo 1)"
   check "theme hook leaving enables the stock audio widget" \
     "$(grep -q 'plugin enable omarchy.audio' "$root/hook.log" && echo 0 || echo 1)"
+  check "theme hook leaving hands the background layer back" \
+    "$(grep -q 'plugin disable tester.background' "$root/hook.log" \
+      && grep -q 'plugin enable omarchy.background' "$root/hook.log" && echo 0 || echo 1)"
 fi
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -2643,6 +2660,84 @@ PY
   kill "$win_pub_pid" "$fake2_pid" 2>/dev/null || true
   wait "$win_pub_pid" 2>/dev/null || true
   wait "$fake2_pid" 2>/dev/null || true
+fi
+
+# ─────────────────────────────────────────────────────────────────────────────
+# TC-28  Fork drift and the documented tree.
+#
+# Nine plugins under plugins/ are forks of omarchy.* first-party plugins, and
+# upstream fixes do not reach a fork on their own (the background fork was
+# missing the black-desktop workaround). check-upstream-drift.py records the
+# upstream hashes and reports what changed; the fixture has to cover every
+# fork, and the tool has to notice a change. The README tree must also name
+# every top-level directory, or the map of the repo drifts from the repo.
+# ─────────────────────────────────────────────────────────────────────────────
+if want tc28; then
+  section "TC-28  Fork drift and the documented tree"
+
+  drift="$REPO_DIR/tools/check-upstream-drift.py"
+
+  check "the drift tool ships with the repo" \
+    "$([[ -f $drift ]] && echo 0 || echo 1)"
+
+  # Every fork has to be in the recorded baseline, or the tool cannot warn
+  # about it.
+  forks=$(python3 - "$REPO_DIR" <<'PY'
+import json, sys
+from pathlib import Path
+repo = Path(sys.argv[1])
+fixture = repo / "tests/fixtures/upstream-hashes.json"
+recorded = set(json.loads(fixture.read_text())["plugins"]) if fixture.is_file() else set()
+forks = set()
+for manifest in (repo / "plugins").glob("*/manifest.json"):
+    data = json.loads(manifest.read_text())
+    cloned = (data.get("omarchy") or {}).get("clonedFrom")
+    if cloned:
+        forks.add(str(cloned).split(".")[-1])
+print(0 if forks and forks <= recorded else 1)
+PY
+)
+  check "the drift baseline covers every fork" "$forks"
+
+  # Every top-level directory is named in the README tree.
+  missing=""
+  for d in "$REPO_DIR"/*/; do
+    name="$(basename "$d")"
+    [[ $name == .git ]] && continue
+    grep -q "── $name/" "$REPO_DIR/README.md" || missing="$missing $name"
+  done
+  check "the README tree names every top-level directory" \
+    "$([[ -z $missing ]] && echo 0 || echo 1)" "missing:$missing"
+
+  # Functional: a fixture upstream tree, recorded, then nudged.
+  root="$(new_sandbox tc28)"
+  stock="$root/stock"
+  mkdir -p "$stock/background" "$stock/lock" "$stock/panels/clock" \
+    "$stock/panels/weather" "$stock/panels/bluetooth" "$stock/panels/network" \
+    "$stock/bar/widgets"
+  for pair in "background/Background.qml" "lock/Lock.qml" "panels/clock/Clock.qml" \
+              "panels/weather/Weather.qml" "panels/bluetooth/Bluetooth.qml" \
+              "panels/network/Network.qml" "bar/widgets/Indicators.qml" \
+              "bar/widgets/ActiveWindow.qml" "bar/widgets/SystemUpdate.qml"; do
+    printf '// upstream\n' >"$stock/$pair"
+  done
+
+  out=$(OMARCHY_PLUGINS_DIR="$stock" VP_UPSTREAM_HASHES="$root/hashes.json" \
+    python3 "$drift" --update 2>&1)
+  check "the drift tool records a baseline" \
+    "$([[ -f "$root/hashes.json" ]] && echo 0 || echo 1)" "$out"
+  out=$(OMARCHY_PLUGINS_DIR="$stock" VP_UPSTREAM_HASHES="$root/hashes.json" \
+    python3 "$drift" 2>&1); rc=$?
+  check "a recorded baseline reports no drift" \
+    "$([[ $rc -eq 0 ]] && echo 0 || echo 1)" "$out"
+
+  printf '// upstream changed\n' >>"$stock/bar/widgets/SystemUpdate.qml"
+  out=$(OMARCHY_PLUGINS_DIR="$stock" VP_UPSTREAM_HASHES="$root/hashes.json" \
+    python3 "$drift" 2>&1); rc=$?
+  check "an upstream change is reported" \
+    "$([[ $rc -eq 1 ]] && echo 0 || echo 1)" "$out"
+  check "the report names the changed file" \
+    "$(grep -q 'SystemUpdate.qml changed upstream' <<<"$out" && echo 0 || echo 1)" "$out"
 fi
 
 summary

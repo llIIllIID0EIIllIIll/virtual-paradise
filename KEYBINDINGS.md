@@ -16,6 +16,7 @@ See every active binding with `SUPER + K` (or
 | Shortcut | Action |
 |----------|--------|
 | `SUPER + Q` | Rice layout (fastfetch → btop → cava → unimatrix) |
+| `SUPER + W` | Close the window (red glitch death) |
 | `SUPER + N` | Next static wallpaper |
 | `SUPER + ALT + W` | Toggle live video wallpaper |
 | `SUPER + ALT + N` | Next live wallpaper |
@@ -35,8 +36,8 @@ See every active binding with `SUPER + K` (or
 
 ### Resize mode
 
-Press `SUPER + R`, then use `H`/`J`/`K`/`L` or the arrow keys. `ESC` or `RETURN`
-leaves the mode.
+Press `SUPER + R`, then use `H`/`J`/`K`/`L` or `LEFT`/`RIGHT`/`UP`/`DOWN`.
+`ESC` or `RETURN` leaves the mode.
 
 ## Omarchy defaults
 
