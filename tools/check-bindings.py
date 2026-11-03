@@ -5,13 +5,20 @@ Hyprland does not replace a binding when the same chord is bound again: every
 matching bind runs. That is why SUPER + RETURN launched two terminals (Omarchy's
 default plus this theme's copy). This script fails on:
 
-  1. the same chord bound twice in our own file (per submap), and
-  2. a chord we bind that Omarchy already binds, unless we hl.unbind() it first.
+  1. the same chord bound twice in our own file (per submap),
+  2. a chord we bind that Omarchy already binds, unless we hl.unbind() it first,
+     and
+  3. a chord we bind that KEYBINDINGS.md does not document. A signature binding
+     the docs forget is invisible until someone asks; SUPER + W (the glitch
+     death close) was missing until this check was added.
 
 Upstream defaults are read from the installed Omarchy tree when available and
 from tests/fixtures/omarchy-binds.txt otherwise (CI containers do not ship
 Omarchy). Run with --write-fixture to refresh the fixture from an installed
 Omarchy after a package update.
+
+The docs are read as chords in backticks ("`SUPER + Q`", "`H`/`LEFT`"), so a
+cell may list several and "arrows" stands for the four arrow keys.
 """
 
 from __future__ import annotations
@@ -24,6 +31,7 @@ from pathlib import Path
 
 REPO = Path(__file__).resolve().parent.parent
 OURS = Path(os.environ.get("VP_BINDINGS_FILE", REPO / "hypr" / "bindings.lua"))
+DOC = Path(os.environ.get("VP_KEYBINDINGS_DOC", REPO / "KEYBINDINGS.md"))
 DEFAULTS_DIR = Path(
     os.environ.get("OMARCHY_BINDINGS_DIR", "/usr/share/omarchy/default/hypr/bindings")
 )
@@ -32,6 +40,8 @@ FIXTURE = REPO / "tests" / "fixtures" / "omarchy-binds.txt"
 BIND_RE = re.compile(r'o\.bind(?:_toggle)?\(\s*"([^"]+)"')
 UNBIND_RE = re.compile(r'hl\.unbind\(\s*"([^"]+)"')
 SUBMAP_RE = re.compile(r'hl\.define_submap\(\s*"([^"]+)"')
+SPAN_RE = re.compile(r"`([^`]+)`")
+ARROWS = ("LEFT", "RIGHT", "UP", "DOWN")
 
 # Chords that Hyprland treats as the same key even though the names differ.
 ALIASES = {
@@ -70,6 +80,25 @@ def read_ours() -> tuple[list[str], dict[str, list[str]], set[str]]:
 
     unbound = {norm(m.group(1)) for m in UNBIND_RE.finditer(text)}
     return global_binds, submap_binds, unbound
+
+
+def read_doc() -> set[str]:
+    """Every chord KEYBINDINGS.md promises, normalized for comparison."""
+    if not DOC.is_file():
+        return set()
+
+    chords: set[str] = set()
+    for span in SPAN_RE.findall(DOC.read_text()):
+        for part in span.split("/"):
+            chord = part.strip()
+            if not chord:
+                continue
+            if "arrows" in chord.lower():
+                for arrow in ARROWS:
+                    chords.add(norm(re.sub("arrows", arrow, chord, flags=re.I)))
+                continue
+            chords.add(norm(chord))
+    return chords
 
 
 def read_upstream() -> tuple[set[str], str]:
@@ -133,6 +162,7 @@ def main() -> int:
 
     global_binds, submap_binds, unbound = read_ours()
     upstream, source = read_upstream()
+    documented = read_doc()
     problems: list[str] = []
 
     def report_duplicates(scope: str, chords: list[str]) -> None:
@@ -152,6 +182,14 @@ def main() -> int:
                 f"global: {chord} is already bound by Omarchy; use a free chord "
                 'or add hl.unbind("...") first'
             )
+
+    for chord in sorted(set(global_binds) | {c for cs in submap_binds.values() for c in cs}):
+        if chord not in documented:
+            try:
+                doc_name = DOC.relative_to(REPO)
+            except ValueError:
+                doc_name = DOC
+            problems.append(f"{chord} is bound but not documented in {doc_name}")
 
     if problems:
         print(f"keybinding conflicts ({source}):", file=sys.stderr)

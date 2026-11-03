@@ -532,14 +532,17 @@ virtual-paradise/
 │   └── theme-set-hook.sh      # Theme-set hook (extracted from install.sh)
 ├── micro/                # Micro editor theme
 ├── overrides/            # Plugin overrides (QML patches)
+├── plugins/              # Theme plugins (widgets, panels, overlays, services)
 ├── plymouth/             # Plymouth boot splash (standalone, self-contained)
 ├── sddm/                 # SDDM login theme (standalone, self-contained)
 ├── shell/                # shell.json template, zshrc
+├── sounds/               # Login/lock/unlock/notify/error blips
 ├── systemd/              # Systemd unit files
 ├── tests/                # Test suite
 ├── theme/                # colors.toml, shell.toml, GTK CSS
 ├── tools/
 │   ├── check-bindings.py        # Duplicate/shadowed binding check
+│   ├── check-upstream-drift.py  # Fork-vs-upstream hash check
 │   ├── shrink-history.sh        # Git history cleanup
 │   └── convert-gifs-to-mp4.sh   # Wallpaper compression
 ├── install.sh            # Installer

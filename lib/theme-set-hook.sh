@@ -227,6 +227,10 @@ if [[ "$THEME_NAME" == "virtual-paradise" ]]; then
       _plugin_installed "${u}.${_overlay}" && _plugin_enable "${u}.${_overlay}"
     done
     unset _overlay
+
+    # The background service is a fork of omarchy.background: ours draws the
+    # theme's wallpaper, the stock one is kept for every other theme.
+    _plugin_replace "${u}.background" "omarchy.background"
   fi
 
   # 2b. Apply the tracked override layer. The old hook copied overrides without
@@ -342,6 +346,12 @@ else
       _plugin_disable "${u}.${_overlay}"
     done
     unset _overlay
+
+    # The background service is a fork of omarchy.background too, so leaving
+    # hands the layer back to the stock plugin instead of leaving the theme's
+    # copy rendering another theme.
+    _plugin_disable "${u}.background"
+    _plugin_enable "omarchy.background"
 
     _plugin_enable "omarchy.agents"
     _plugin_enable "omarchy.keyboard-layout"
