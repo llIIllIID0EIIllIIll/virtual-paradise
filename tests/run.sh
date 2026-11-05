@@ -1511,12 +1511,16 @@ if want tc16; then
   check "every static wallpaper is full resolution" \
     "$([[ $wallpaper_ok -eq 1 ]] && echo 0 || echo 1)"
 
-  # The live wallpaper is drawn on the same layer as the static background and
-  # a layer created later ends up on top: started too early, the video ended
-  # up under the static picture and the login screen showed the static
-  # wallpaper with the shell's diamond transition instead.
-  check "the live wallpaper waits for the shell's background layer" \
-    "$(grep -q 'wait_for_shell_background' "$REPO_DIR/bin/toggle_live_wallpaper.sh" && echo 0 || echo 1)"
+  # Omarchy 4.5 renders video wallpapers itself (owe); the theme's script is a
+  # picker that hands the path to `omarchy theme bg set` and plays the curtain,
+  # so there is exactly one decoder. Running mpvpaper alongside it decoded the
+  # same frames twice (~360 MB of RSS between them).
+  check "the live wallpaper rides Omarchy's background engine" \
+    "$(grep -q 'omarchy theme bg set' "$REPO_DIR/bin/toggle_live_wallpaper.sh" \
+      && ! grep -vE '^[[:space:]]*#' "$REPO_DIR/bin/toggle_live_wallpaper.sh" | grep -q 'mpvpaper' \
+      && echo 0 || echo 1)"
+  check "the theme no longer starts a second wallpaper decoder" \
+    "$(! grep -q 'toggle_live_wallpaper' "$REPO_DIR/hypr/autostart.lua" && echo 0 || echo 1)"
 
   # The session splash covers the gap between the greeter handing the screen
   # to the session and the desktop having something to show.
