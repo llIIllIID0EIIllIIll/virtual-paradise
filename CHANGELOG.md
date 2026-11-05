@@ -9,6 +9,27 @@ Conventional Commits.
 ## [Unreleased]
 
 ### Changed
+- **The third-party notification bell is retired.** Omarchy 4.5 ships its own
+  notification service (grouped stacks, inline actions, DND, history and
+  keybinds), and the third-party watcher leaked one `inotifywait` process per
+  shell reload - 121 orphans holding ~285 MB of RSS. The installer, the
+  theme-set hook and the uninstaller now remove the plugin and its stray
+  watchers, and the stock service keeps the themed toasts, the DND indicator
+  and the history keybinds.
+- **The 4.5 indicators and clock land in the forks.** `doe.indicators` gains
+  `PasswordlessSudo` and `RemoteSession` (and the layout its missing `Dnd`
+  entry), and `doe.clock` swaps Quickshell's `SystemClock` for the DST-safe
+  `WallClock`, which re-arms on epoch milliseconds instead of a wall time that
+  repeats when daylight saving ends.
+- **Floating windows get a raised titlebar surface.** `lighter_background` is
+  now in `colors.toml`, so the new `omarchy-hyprland-titlebars` bar reads a
+  deep purple raised surface instead of falling back to the accent `selection`
+  colour.
+- **Elsewhen joins the rice.** The 4.5 world-clock panel is enabled while the
+  theme is active, placed on the right island, and themed by the same
+  `shell.toml` tokens (gradient border, glass, spacing) as every other panel.
+  The dock, OSD and the 4.5 overlays already inherit those tokens, so they
+  pick up the island look without a fork.
 - **Theme keybindings defer to Omarchy.** The theme no longer aliases or
   shadows Omarchy defaults: `SUPER + CTRL + T` opens the theme menu,
   `SUPER + SHIFT + F` / `B` open the file manager and browser,

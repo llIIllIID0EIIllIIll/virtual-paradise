@@ -29,9 +29,12 @@
           "id": "__USER__.indicators",
           "items": [
             "Dictation",
+            "PasswordlessSudo",
             "ScreenRecording",
+            "RemoteSession",
             "Reminder",
             "NightLight",
+            "Dnd",
             "StayAwake"
           ]
         },
@@ -61,9 +64,6 @@
           "id": "io.github.grichard99.omaproton-vpn"
         },
         {
-          "id": "jankeesvw.notification-center"
-        },
-        {
           "id": "io.github.kristoferlund.webcam",
           "device": "/dev/video0"
         },
@@ -88,6 +88,9 @@
         },
         {
           "id": "__USER__.system-update"
+        },
+        {
+          "id": "omarchy.elsewhen"
         }
       ]
     },

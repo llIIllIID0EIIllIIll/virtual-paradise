@@ -761,14 +761,18 @@ INSTALL_AND_ENABLE_PLUGINS() {
         RUN_AS_INSTALL_USER omarchy plugin enable "io.github.kristoferlund.webcam" 2>/dev/null || true
       fi
 
-      # Install the notification center once, then ensure it stays enabled on
-      # subsequent theme installations.
-      if ! RUN_AS_INSTALL_USER omarchy plugin list --json 2>/dev/null | jq -e 'any(.[]; .id == "jankeesvw.notification-center")' >/dev/null; then
-        log_sub "Adding external Omarchy notification center plugin from git..."
-        RUN_AS_INSTALL_USER omarchy plugin add https://github.com/jankeesvw/omarchy-notification-center.git --enable --yes 2>/dev/null || true
-      else
-        RUN_AS_INSTALL_USER omarchy plugin enable "jankeesvw.notification-center" 2>/dev/null || true
+      # The notification bell was retired: Omarchy 4.5 ships its own
+      # notification service (grouped stacks, inline actions, DND, history and
+      # keybinds), and the third-party watcher leaked one inotifywait process
+      # per shell reload - 121 of them, ~285 MB of RSS. Remove the stale
+      # plugin and any orphaned watchers on every install.
+      if [[ -d "$CONFIG_DIR/omarchy/plugins/jankeesvw.notification-center" ]] \
+        || RUN_AS_INSTALL_USER omarchy plugin list --json 2>/dev/null | jq -e 'any(.[]; .id == "jankeesvw.notification-center")' >/dev/null; then
+        log_sub "Retiring the third-party notification center (stock service owns it now)..."
+        RUN_AS_INSTALL_USER omarchy plugin remove "jankeesvw.notification-center" --yes 2>/dev/null || true
       fi
+      rm -rf "$CONFIG_DIR/omarchy/plugins/jankeesvw.notification-center"
+      pkill -f 'inotifywait.*omarchy/notifications' 2>/dev/null || true
 
       # hyprmoncfg replaces the cloned Display & Scaling widget in this
       # theme. Keep the old widget disabled to avoid duplicate controls.
@@ -988,11 +992,9 @@ if [[ -f "$REPO_DIR/shell/shell.json" ]]; then
   fi
 
   # The shell layout copy above can reset plugin enablement. Restore the
-  # external notification center after the layout is installed.
+  # external plugins after the layout is installed.
   if command -v omarchy &>/dev/null; then
     po_apply_all
-    enable_plugin_retry "jankeesvw.notification-center" || \
-      log_warn "Notification center could not be enabled after shell layout sync: ${LAST_PLUGIN_ERROR:-unknown error}"
     enable_plugin_retry "crmne.hyprmoncfg" || \
       log_warn "hyprmoncfg could not be enabled after shell layout sync: ${LAST_PLUGIN_ERROR:-unknown error}"
     enable_plugin_retry "io.github.jeffcortez23.omarchy-projector-cast" || \
@@ -2102,10 +2104,9 @@ if [[ $IS_HOOK -eq 0 ]]; then
     RUN_AS_INSTALL_USER omarchy restart shell 2>/dev/null || true
 
     # Theme activation can restart the shell and briefly race plugin
-    # discovery, so enforce the notification center state last.
-    enable_plugin_retry "jankeesvw.notification-center" || \
-      log_warn "Notification center could not be enabled after theme activation: ${LAST_PLUGIN_ERROR:-unknown error}"
+    # discovery, so enforce the external plugin state last.
     enable_plugin_retry "crmne.hyprmoncfg" || true
+    enable_plugin_retry "omarchy.elsewhen" || true
     enable_plugin_retry "onlyvishesh.power-manager" || true
     RUN_AS_INSTALL_USER omarchy plugin disable "${CURRENT_USER}.power" 2>/dev/null || true
     RUN_AS_INSTALL_USER omarchy plugin disable "omarchy.power" 2>/dev/null || true

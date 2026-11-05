@@ -183,7 +183,12 @@ if [[ "$THEME_NAME" == "virtual-paradise" ]]; then
 
     _plugin_replace "crmne.hyprmoncfg" ""
     _plugin_replace "io.github.jeffcortez23.omarchy-projector-cast" ""
-    _plugin_replace "jankeesvw.notification-center" ""
+
+    # The notification bell was retired: Omarchy 4.5's own notification
+    # service (DND, history, keybinds) owns this now, and the third-party
+    # watcher leaked one inotifywait per shell reload. Remove any stale copy.
+    omarchy plugin remove "jankeesvw.notification-center" --yes >/dev/null 2>&1 || true
+    rm -rf "$CFG/omarchy/plugins/jankeesvw.notification-center"
 
     # Vitals supersedes both the memory widget and harshith.system-monitor. If
     # it is missing, keep the stock memory widget instead of an empty slot.
@@ -236,6 +241,10 @@ if [[ "$THEME_NAME" == "virtual-paradise" ]]; then
       _plugin_installed "${u}.${_overlay}" && _plugin_enable "${u}.${_overlay}"
     done
     unset _overlay
+
+    # The world clock panel is part of the rice while the theme is active;
+    # the leaving branch hands it back to its default (disabled).
+    _plugin_enable "omarchy.elsewhen"
   fi
 
   # 2b. Apply the tracked override layer. The old hook copied overrides without
@@ -319,7 +328,9 @@ else
 
     _plugin_disable "crmne.hyprmoncfg"
     _plugin_disable "io.github.jeffcortez23.omarchy-projector-cast"
-    _plugin_disable "jankeesvw.notification-center"
+    omarchy plugin remove "jankeesvw.notification-center" --yes >/dev/null 2>&1 || true
+    rm -rf "$CFG/omarchy/plugins/jankeesvw.notification-center"
+    _plugin_disable "omarchy.elsewhen"
     _plugin_disable "harshith.system-monitor"
     _plugin_enable "omarchy.memory"
     _plugin_enable "omarchy.monitor"

@@ -48,7 +48,7 @@ what the next person searches for.
 
 ## Keeping the forks in sync
 
-Nine plugins under `plugins/` are forks of Omarchy's first-party plugins; the
+Eight plugins under `plugins/` are forks of Omarchy's first-party plugins; the
 manifest records the source as `omarchy.clonedFrom`. An upstream fix does not
 reach a fork on its own — the background fork ran for months without the
 black-desktop workaround and the `Style` refresh — so the repo records a hash
