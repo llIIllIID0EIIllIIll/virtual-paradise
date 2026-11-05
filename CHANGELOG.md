@@ -20,11 +20,13 @@ Conventional Commits.
   is gone: the crowded right island was mostly the centre island's eight
   always-on indicator slots, so indicators now take space only while one is
   active, the active-window label is capped at 180px, and the right island
-  keeps the six essentials (tray, network, audio, power, updates, world
-  clock). The specialized widgets - X-Ray, VPN, webcam, monitor config,
-  projector cast and Bluetooth audio - stay installed but are switched off
-  while the theme is active, so an enabled bar-widget cannot repopulate the
-  bar; `omarchy plugin enable <id>` brings one back (and rejoins the bar).
+  keeps the five essentials (tray, network, audio, power, updates) plus the
+  Tools button. The specialized widgets - X-Ray, VPN, webcam, monitor config,
+  projector cast and Bluetooth audio - stay enabled and mounted with
+  `"hidden": true`, so their services keep running and their panels open from
+  the bar, but they take no space in the row. The Tools dropdown gathers them
+  with voice dictation (`omarchy-dictation toggle`): one button, no horizontal
+  stretch.
 - **The third-party notification bell is retired.** Omarchy 4.5 ships its own
   notification service (grouped stacks, inline actions, DND, history and
   keybinds), and the third-party watcher leaked one `inotifywait` process per

@@ -181,15 +181,13 @@ if [[ "$THEME_NAME" == "virtual-paradise" ]]; then
   if command -v omarchy >/dev/null 2>&1; then
     u="${USER:-$(id -un)}"
 
-    # The minimal bar keeps these installed but switched off: enabling a
-    # bar-widget auto-adds it to shell.json, so the theme turns them off and
-    # drops any stale bar entry below. `omarchy plugin enable <id>` brings one
-    # back (and rejoins the bar).
-    _plugin_disable "crmne.hyprmoncfg"
-    _plugin_disable "io.github.jeffcortez23.omarchy-projector-cast"
-    _plugin_disable "io.github.randazraik.xray"
-    _plugin_disable "io.github.grichard99.omaproton-vpn"
-    _plugin_disable "io.github.kristoferlund.webcam"
+    # The specialized widgets stay enabled - their services power the Tools
+    # dropdown - but their bar entries are rewritten hidden below.
+    _plugin_enable "crmne.hyprmoncfg"
+    _plugin_enable "io.github.jeffcortez23.omarchy-projector-cast"
+    _plugin_enable "io.github.randazraik.xray"
+    _plugin_enable "io.github.grichard99.omaproton-vpn"
+    _plugin_enable "io.github.kristoferlund.webcam"
 
     # The notification bell was retired: Omarchy 4.5's own notification
     # service (DND, history, keybinds) owns this now, and the third-party
@@ -217,7 +215,7 @@ if [[ "$THEME_NAME" == "virtual-paradise" ]]; then
     _plugin_replace "ssupt.audio-control" "omarchy.audio"
     _plugin_installed "ssupt.audio-control" && _plugin_disable "${u}.audio"
 
-    _plugin_disable "ssupt.bluetooth-audio"
+    _plugin_enable "ssupt.bluetooth-audio"
     _plugin_installed "ssupt.bluetooth-audio" && _plugin_disable "${u}.bluetooth"
 
     _plugin_replace "io.github.tyrichards.workspaces-jap" "omarchy.workspaces"
@@ -236,7 +234,7 @@ if [[ "$THEME_NAME" == "virtual-paradise" ]]; then
       _plugin_enable "omarchy.bar"
     fi
 
-    for _uw in clock weather cputemp indicators active-window menu system-update network microphone; do
+    for _uw in clock weather cputemp indicators active-window menu tools system-update network microphone; do
       _plugin_replace "${u}.${_uw}" "omarchy.${_uw}"
     done
     unset _uw
@@ -286,20 +284,20 @@ try:
         d = json.load(fh)
 except Exception:
     sys.exit(0)
-ids = {"io.github.randazraik.xray", "io.github.grichard99.omaproton-vpn",
+ids = ["io.github.randazraik.xray", "io.github.grichard99.omaproton-vpn",
        "io.github.kristoferlund.webcam", "crmne.hyprmoncfg",
-       "io.github.jeffcortez23.omarchy-projector-cast", "ssupt.bluetooth-audio"}
-changed = False
+       "io.github.jeffcortez23.omarchy-projector-cast", "ssupt.bluetooth-audio"]
+layout = d.setdefault("bar", {}).setdefault("layout", {})
 for section in ("left", "center", "right"):
-    entries = (d.get("bar", {}).get("layout", {}).get(section) or [])
-    kept = [e for e in entries if not (isinstance(e, dict) and str(e.get("id", "")) in ids)]
-    if len(kept) != len(entries):
-        d["bar"]["layout"][section] = kept
-        changed = True
-if changed:
-    with open(p, "w") as fh:
-        json.dump(d, fh, indent=2, ensure_ascii=False)
-        fh.write("\n")
+    entries = layout.get(section) or []
+    layout[section] = [e for e in entries
+                       if not (isinstance(e, dict) and str(e.get("id", "")) in ids)]
+right = layout.setdefault("right", [])
+for widget_id in ids:
+    right.append({"id": widget_id, "hidden": True})
+with open(p, "w") as fh:
+    json.dump(d, fh, indent=2, ensure_ascii=False)
+    fh.write("\n")
 PY
   fi
 
@@ -386,7 +384,7 @@ else
     _plugin_disable "mscurtescu.island-bar"
     _plugin_enable "omarchy.bar"
 
-    for _uw in clock weather cputemp indicators active-window menu system-update network microphone; do
+    for _uw in clock weather cputemp indicators active-window menu tools system-update network microphone; do
       _plugin_disable "${u}.${_uw}"
       _plugin_enable "omarchy.${_uw}"
     done

@@ -452,25 +452,27 @@ sys.exit(0 if ok else 1)
 PY
   check "the clock carries the world clock and no standalone panel does" $?
 
-  # The minimal layout: the right island keeps the five essentials, the
-  # specialized widgets stay installed off-bar, indicators only take space
-  # while one is active, and the active-window label is capped.
+  # The minimal layout: the right island keeps the five essentials plus the
+  # Tools button, the specialized widgets are mounted hidden behind it,
+  # indicators only take space while one is active, and the active-window
+  # label is capped.
   python3 - "$root/home/.config/omarchy/shell.json" <<'PY'
 import json, os, sys
 d = json.load(open(sys.argv[1]))
 user = os.environ.get("USER") or ""
 right = d["bar"]["layout"]["right"]
-ids = [e.get("id") for e in right]
+visible = [e.get("id") for e in right if not e.get("hidden")]
+hidden = [e.get("id") for e in right if e.get("hidden")]
 want = ["omarchy.tray", user + ".network", "ssupt.audio-control",
-        "onlyvishesh.power-manager", user + ".system-update"]
+        "onlyvishesh.power-manager", user + ".system-update", user + ".tools"]
 special = ["io.github.randazraik.xray", "io.github.grichard99.omaproton-vpn",
            "io.github.kristoferlund.webcam", "crmne.hyprmoncfg",
            "io.github.jeffcortez23.omarchy-projector-cast", "ssupt.bluetooth-audio"]
 indicators = next(e for e in d["bar"]["layout"]["center"] if str(e.get("id", "")).endswith("indicators"))
 active = next(e for e in d["bar"]["layout"]["left"] if str(e.get("id", "")).endswith("active-window"))
-ok = (ids == want
+ok = (visible == want
+      and hidden == special
       and not any(e.get("fold") for e in right)
-      and all(s not in ids for s in special)
       and indicators.get("alwaysShow") is False
       and 0 < int(active.get("maxWidth", 999)) <= 200)
 sys.exit(0 if ok else 1)
@@ -839,8 +841,8 @@ if want tc8; then
   check "entering the theme enables the custom audio widget" $?
   grep -q 'plugin disable omarchy.audio' "$root/shim.log"
   check "entering the theme disables the stock audio widget" $?
-  grep -q 'plugin disable crmne.hyprmoncfg' "$root/shim.log"
-  check "entering the theme keeps hyprmoncfg off the minimal bar" $?
+  grep -q 'plugin enable crmne.hyprmoncfg' "$root/shim.log"
+  check "entering the theme enables hyprmoncfg behind the Tools menu" $?
 
   run_hook "Catppuccin"
   grep -q 'plugin disable ssupt.audio-control' "$root/shim.log"
@@ -2844,15 +2846,20 @@ PY
   # The minimal bar keeps the specialized widgets installed but switched off:
   # enabling a bar-widget auto-adds it to shell.json, so the theme disables
   # them and drops any stale entry.
-  check "the theme keeps the specialized widgets off the minimal bar" \
-    "$(grep -Fq 'omarchy plugin disable "$_off"' "$REPO_DIR/install.sh" \
+  check "the theme mounts the specialized widgets hidden for the Tools menu" \
+    "$(grep -Fq 'omarchy plugin enable "$_tool"' "$REPO_DIR/install.sh" \
       && grep -q 'io.github.randazraik.xray' "$REPO_DIR/install.sh" \
-      && grep -q '_plugin_disable "crmne.hyprmoncfg"' "$REPO_DIR/lib/theme-set-hook.sh" \
-      && grep -q '_plugin_disable "io.github.kristoferlund.webcam"' "$REPO_DIR/lib/theme-set-hook.sh" \
+      && grep -q '_plugin_enable "crmne.hyprmoncfg"' "$REPO_DIR/lib/theme-set-hook.sh" \
+      && grep -q '_plugin_enable "io.github.kristoferlund.webcam"' "$REPO_DIR/lib/theme-set-hook.sh" \
       && echo 0 || echo 1)"
-  check "stale specialized bar entries are dropped" \
-    "$(grep -q 'for section in ("left", "center", "right")' "$REPO_DIR/install.sh" \
-      && grep -q 'for section in ("left", "center", "right")' "$REPO_DIR/lib/theme-set-hook.sh" \
+  check "stale specialized bar entries are rewritten hidden" \
+    "$(grep -q 'for widget_id in ids' "$REPO_DIR/install.sh" \
+      && grep -q 'for widget_id in ids' "$REPO_DIR/lib/theme-set-hook.sh" \
+      && grep -Fq '"hidden": True' "$REPO_DIR/install.sh" && echo 0 || echo 1)"
+  check "the Tools menu ships the plugin and dictation rows" \
+    "$([[ -f "$REPO_DIR/plugins/tools/BarWidget.qml" ]] \
+      && grep -q 'omarchy-dictation toggle' "$REPO_DIR/plugins/tools/Panel.qml" \
+      && grep -q 'io.github.randazraik.xray' "$REPO_DIR/plugins/tools/Panel.qml" \
       && echo 0 || echo 1)"
 fi
 

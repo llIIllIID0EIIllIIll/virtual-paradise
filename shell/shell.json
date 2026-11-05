@@ -75,6 +75,33 @@
         },
         {
           "id": "__USER__.system-update"
+        },
+        {
+          "id": "__USER__.tools"
+        },
+        {
+          "id": "io.github.randazraik.xray",
+          "hidden": true
+        },
+        {
+          "id": "io.github.grichard99.omaproton-vpn",
+          "hidden": true
+        },
+        {
+          "id": "io.github.kristoferlund.webcam",
+          "hidden": true
+        },
+        {
+          "id": "crmne.hyprmoncfg",
+          "hidden": true
+        },
+        {
+          "id": "io.github.jeffcortez23.omarchy-projector-cast",
+          "hidden": true
+        },
+        {
+          "id": "ssupt.bluetooth-audio",
+          "hidden": true
         }
       ]
     },

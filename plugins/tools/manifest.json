@@ -1,0 +1,22 @@
+{
+  "schemaVersion": 1,
+  "id": "__USER__.tools",
+  "name": "Paradise Tools",
+  "version": "1.0.0",
+  "author": "Virtual☆Paradise",
+  "license": "MIT",
+  "description": "One dropdown for the specialized plugins and voice dictation",
+  "kinds": [
+    "bar-widget"
+  ],
+  "entryPoints": {
+    "barWidget": "BarWidget.qml"
+  },
+  "barWidget": {
+    "displayName": "Tools",
+    "description": "Specialized plugins and voice dictation in one dropdown",
+    "category": "Utilities",
+    "allowMultiple": false,
+    "defaultSection": "right"
+  }
+}
