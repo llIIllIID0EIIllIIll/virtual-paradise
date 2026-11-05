@@ -808,16 +808,16 @@ INSTALL_AND_ENABLE_PLUGINS() {
         RUN_AS_INSTALL_USER omarchy plugin add https://github.com/JeffCortez23/omarchy-projector-cast.git --yes 2>/dev/null || true
       fi
 
-      # The minimal bar does not carry the specialized widgets. An enabled
-      # bar-widget is auto-added to shell.json, so they are installed disabled
-      # and any stale layout entries are dropped; `omarchy plugin enable <id>`
-      # brings one back (and rejoins the bar).
-      for _off in io.github.randazraik.xray io.github.grichard99.omaproton-vpn \
-                  io.github.kristoferlund.webcam crmne.hyprmoncfg \
-                  io.github.jeffcortez23.omarchy-projector-cast ssuppt.bluetooth-audio; do
-        RUN_AS_INSTALL_USER omarchy plugin disable "$_off" 2>/dev/null || true
+      # The specialized widgets stay enabled (their services power the Tools
+      # dropdown) but hidden: an enabled bar-widget is auto-added to
+      # shell.json, so the layout below rewrites every one of them with
+      # `"hidden": true`. The Tools button is their visible entry point.
+      for _tool in io.github.randazraik.xray io.github.grichard99.omaproton-vpn \
+                   io.github.kristoferlund.webcam crmne.hyprmoncfg \
+                   io.github.jeffcortez23.omarchy-projector-cast ssuppt.bluetooth-audio; do
+        RUN_AS_INSTALL_USER omarchy plugin enable "$_tool" 2>/dev/null || true
       done
-      unset _off
+      unset _tool
       if [[ -f "$CONFIG_DIR/omarchy/shell.json" ]]; then
         python3 - "$CONFIG_DIR/omarchy/shell.json" <<'PY'
 import json, sys
@@ -827,20 +827,20 @@ try:
         d = json.load(fh)
 except Exception:
     sys.exit(0)
-ids = {"io.github.randazraik.xray", "io.github.grichard99.omaproton-vpn",
+ids = ["io.github.randazraik.xray", "io.github.grichard99.omaproton-vpn",
        "io.github.kristoferlund.webcam", "crmne.hyprmoncfg",
-       "io.github.jeffcortez23.omarchy-projector-cast", "ssupt.bluetooth-audio"}
-changed = False
+       "io.github.jeffcortez23.omarchy-projector-cast", "ssupt.bluetooth-audio"]
+layout = d.setdefault("bar", {}).setdefault("layout", {})
 for section in ("left", "center", "right"):
-    entries = (d.get("bar", {}).get("layout", {}).get(section) or [])
-    kept = [e for e in entries if not (isinstance(e, dict) and str(e.get("id", "")) in ids)]
-    if len(kept) != len(entries):
-        d["bar"]["layout"][section] = kept
-        changed = True
-if changed:
-    with open(p, "w") as fh:
-        json.dump(d, fh, indent=2, ensure_ascii=False)
-        fh.write("\n")
+    entries = layout.get(section) or []
+    layout[section] = [e for e in entries
+                       if not (isinstance(e, dict) and str(e.get("id", "")) in ids)]
+right = layout.setdefault("right", [])
+for widget_id in ids:
+    right.append({"id": widget_id, "hidden": True})
+with open(p, "w") as fh:
+    json.dump(d, fh, indent=2, ensure_ascii=False)
+    fh.write("\n")
 PY
       fi
       po_apply_all

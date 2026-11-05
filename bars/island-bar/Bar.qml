@@ -2465,6 +2465,11 @@ Item {
       if (hint !== undefined && hint !== null && hint > 0) return Math.round(hint)
       return Math.max(Style.space(10), Math.round((root.vertical ? slot.height : slot.width) * 0.55))
     }
+    // A hidden entry stays mounted - its panel target lives - but takes no
+    // space in the row. The tools dropdown uses this for the specialized
+    // plugins: their panels open from the bar, not from a nested dropdown.
+    readonly property bool hidden: root.entrySettings(entry).hidden === true
+    visible: !hidden
     implicitWidth: activeItem && activeItem.visible ? (root.vertical ? root.barSize : activeItem.implicitWidth) : 0
     implicitHeight: activeItem && activeItem.visible ? activeItem.implicitHeight : 0
     width: implicitWidth
