@@ -215,22 +215,24 @@ The installer is **idempotent**: run it as many times as you want. It will only 
 | `SUPER + ALT + N` | Next live wallpaper |
 | `SUPER + ALT + SHIFT + N` | Previous live wallpaper |
 | `SUPER + ALT + C` | Toggle cooler boost (laptop fan) |
-| `SUPER + CTRL + Q` | Close the window with the red glitch death |
 | `SUPER + SHIFT + K` | Cast screen (wireless display) |
+| `SUPER + Q` / `SUPER + W` | Close the window with the red glitch death |
 | `SUPER + SHIFT + R` | Reload Hyprland config |
 | `SUPER + R` | Resize mode (H/J/K/L or arrows, ESC/RETURN to exit) |
 | `SUPER + BACKSLASH` | Matrix screensaver |
 
-Omarchy's own bindings are used as-is: `SUPER + Q` / `SUPER + W` close a
-window, `SUPER + CTRL + T` opens the theme menu, `SUPER + SHIFT + F` is the file
+Omarchy's own bindings are used as-is, with one deliberate exception:
+`SUPER + Q` / `SUPER + W` keep Omarchy's close mapping but run the theme's red
+glitch death. `SUPER + CTRL + T` opens the theme menu, `SUPER + SHIFT + F` is the file
 manager, `SUPER + SHIFT + B` the browser, `SUPER + CTRL + L` locks the system,
 `SUPER + CTRL + E` opens the emoji picker, and `SUPER + CTRL + SPACE` / `W`
 opens the background switcher. `SUPER + RETURN` opens the terminal, `SUPER + K`
 lists keybindings, `SUPER + F` is fullscreen, and so on.
 
 The theme only adds bindings on free chords, because Hyprland runs *every* bind
-for a chord — a duplicate performs both actions. It no longer unbinds or
-shadows an Omarchy default, including the `SUPER + ALT + ←` / `→` group move.
+for a chord — a duplicate performs both actions. Apart from the close pair, it
+no longer unbinds or shadows an Omarchy default, including the
+`SUPER + ALT + ←` / `→` group move.
 
 ### The Login Screen and the Boot Splash
 
