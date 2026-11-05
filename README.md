@@ -65,7 +65,7 @@ Every surface follows the same neon pastel palette:
 
 ### 🎭 Theme Menu
 
-`SUPER + SHIFT + T` opens Omarchy's theme menu (the same menu as
+`SUPER + CTRL + T` opens Omarchy's theme menu (the same menu as
 `SUPER + SHIFT + CTRL + SPACE`), where Virtual☆Paradise can be selected
 alongside any other installed theme. Switching themes does not require a
 restart.
@@ -210,35 +210,27 @@ The installer is **idempotent**: run it as many times as you want. It will only 
 
 | Shortcut | Action |
 |----------|--------|
-| `SUPER + Q` | Launch rice layout (btop, cava, matrix, fastfetch) |
-| `SUPER + N` | Next static wallpaper |
+| `SUPER + ALT + Q` | Launch rice layout (btop, cava, matrix, fastfetch) |
 | `SUPER + ALT + W` | Toggle live/static wallpaper |
 | `SUPER + ALT + N` | Next live wallpaper |
-| `SUPER + ALT + RIGHT` | Next live wallpaper (arrow) |
-| `SUPER + ALT + LEFT` | Previous live wallpaper (arrow) |
 | `SUPER + ALT + SHIFT + N` | Previous live wallpaper |
 | `SUPER + ALT + C` | Toggle cooler boost (laptop fan) |
-| `SUPER + SHIFT + T` | Omarchy theme menu |
-| `SUPER + E` | File manager |
-| `SUPER + B` | Web browser |
+| `SUPER + CTRL + Q` | Close the window with the red glitch death |
 | `SUPER + SHIFT + K` | Cast screen (wireless display) |
-| `SUPER + SHIFT + L` | Lock screen |
-| `SUPER + SHIFT + V` | VS Code |
-| `SUPER + PERIOD` | Emoji picker |
 | `SUPER + SHIFT + R` | Reload Hyprland config |
 | `SUPER + R` | Resize mode (H/J/K/L or arrows, ESC/RETURN to exit) |
 | `SUPER + BACKSLASH` | Matrix screensaver |
 
-Omarchy's own bindings are unchanged: `SUPER + RETURN` opens the terminal,
-`SUPER + K` lists keybindings, `SUPER + F` is fullscreen, and so on. The theme
-only adds bindings on free chords, because Hyprland runs *every* bind for a
-chord — a duplicate performs both actions.
+Omarchy's own bindings are used as-is: `SUPER + Q` / `SUPER + W` close a
+window, `SUPER + CTRL + T` opens the theme menu, `SUPER + SHIFT + F` is the file
+manager, `SUPER + SHIFT + B` the browser, `SUPER + CTRL + L` locks the system,
+`SUPER + CTRL + E` opens the emoji picker, and `SUPER + CTRL + SPACE` / `W`
+opens the background switcher. `SUPER + RETURN` opens the terminal, `SUPER + K`
+lists keybindings, `SUPER + F` is fullscreen, and so on.
 
-The one deliberate exception is `SUPER + ALT + ←` / `→`: Omarchy binds those to
-"move window into the group on the left/right", and the theme uses them for
-the live wallpaper. The theme removes Omarchy's two binds with `hl.unbind()`
-first, so only one action runs, and the group move moves to
-`SUPER + ALT + CTRL + ←` / `→`.
+The theme only adds bindings on free chords, because Hyprland runs *every* bind
+for a chord — a duplicate performs both actions. It no longer unbinds or
+shadows an Omarchy default, including the `SUPER + ALT + ←` / `→` group move.
 
 ### The Login Screen and the Boot Splash
 

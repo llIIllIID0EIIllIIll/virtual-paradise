@@ -233,19 +233,24 @@ $(basename "$f"): $out"
     printf '  %sSKIP%s python3 not installed\n' "$DIM" "$OFF"
   fi
 
-  # The live wallpaper used to be on SUPER + ALT + arrows, then disappeared
-  # because Omarchy binds the same chords. The pair has to be there, and it
-  # has to be taken over on purpose.
-  check "the live wallpaper is bound to the arrow keys" \
-    "$(grep -q 'o.bind("SUPER + ALT + RIGHT", "Next Live Wallpaper"' "$REPO_DIR/hypr/bindings.lua" \
-      && grep -q 'o.bind("SUPER + ALT + LEFT", "Previous Live Wallpaper"' "$REPO_DIR/hypr/bindings.lua" \
+  # The theme no longer takes over an Omarchy chord. The group move stays on
+  # SUPER + ALT + arrows and the live wallpaper stays on its free SUPER + ALT
+  # chords, so no default is unbound or shadowed.
+  check "the theme never unbinds an Omarchy default" \
+    "$(! grep -q 'hl.unbind' "$REPO_DIR/hypr/bindings.lua" && echo 0 || echo 1)"
+  check "Omarchy's group move keeps its default chord" \
+    "$(! grep -q 'o.bind("SUPER + ALT + LEFT"' "$REPO_DIR/hypr/bindings.lua" \
+      && ! grep -q 'o.bind("SUPER + ALT + RIGHT"' "$REPO_DIR/hypr/bindings.lua" \
       && echo 0 || echo 1)"
-  check "Omarchy's group bind on that chord is unbound first" \
-    "$(grep -q 'hl.unbind("SUPER + ALT + LEFT")' "$REPO_DIR/hypr/bindings.lua" \
-      && grep -q 'hl.unbind("SUPER + ALT + RIGHT")' "$REPO_DIR/hypr/bindings.lua" \
+  check "the live wallpaper keeps a free chord" \
+    "$(grep -q 'o.bind("SUPER + ALT + N", "Next Live Wallpaper"' "$REPO_DIR/hypr/bindings.lua" \
+      && grep -q 'o.bind("SUPER + ALT + SHIFT + N", "Previous Live Wallpaper"' "$REPO_DIR/hypr/bindings.lua" \
       && echo 0 || echo 1)"
-  check "the group move survives on a free chord" \
-    "$(grep -q 'o.bind("SUPER + ALT + CTRL + LEFT"' "$REPO_DIR/hypr/bindings.lua" && echo 0 || echo 1)"
+  # Omarchy owns these actions now. A theme alias on a free chord would give
+  # two ways to do the same thing, which is exactly what this policy retires.
+  check "the theme does not alias an action Omarchy already owns" \
+    "$(! grep -qE '"(File Manager|Web Browser|Emoji Picker|Lock Screen|VS Code|Next Wallpaper|Theme Menu)"' \
+      "$REPO_DIR/hypr/bindings.lua" && echo 0 || echo 1)"
 fi
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -1602,16 +1607,16 @@ if want tc16; then
   check "the gradient bands respect Hyprland's ten-colour cap" \
     "$(grep -q 'return { cyan, cyan, cyan, cyan, green, green, pink, pink, pink, pink }' \
       "$REPO_DIR/hypr/looknfeel.lua" && echo 0 || echo 1)"
-  # Closing a window burns a neon glitch burst in its place. Omarchy 4.5
-  # closes on both SUPER + Q and SUPER + W; both are unbound on purpose first,
-  # so exactly one action runs per press and the rice is what closing looks
-  # like on either chord.
-  check "both close chords are owned by the window death effect" \
-    "$(grep -q 'hl.unbind("SUPER + Q")' "$REPO_DIR/hypr/bindings.lua" \
-      && grep -A2 'hl.unbind("SUPER + Q")' "$REPO_DIR/hypr/bindings.lua" \
-        | grep -q 'o.bind("SUPER + Q", "Close Window (Red Glitch Death)"' \
-      && grep -A1 'hl.unbind("SUPER + W")' "$REPO_DIR/hypr/bindings.lua" \
-        | grep -q 'window_death.sh' && echo 0 || echo 1)"
+  # Closing a window burns a neon glitch burst in its place. Omarchy's
+  # SUPER + Q / SUPER + W close plainly; the effect has its own free chord so
+  # the defaults are not shadowed.
+  check "the default close chords are left to Omarchy" \
+    "$(! grep -q 'o.bind("SUPER + Q"' "$REPO_DIR/hypr/bindings.lua" \
+      && ! grep -q 'o.bind("SUPER + W"' "$REPO_DIR/hypr/bindings.lua" \
+      && echo 0 || echo 1)"
+  check "the window death effect has its own free chord" \
+    "$(grep -q 'o.bind("SUPER + CTRL + Q", "Close Window (Red Glitch Death)"' \
+      "$REPO_DIR/hypr/bindings.lua" && echo 0 || echo 1)"
   check "the window death burst is click-through" \
     "$(grep -q 'mask: Region {}' "$REPO_DIR/bin/window_death.qml" && echo 0 || echo 1)"
   # A glitch that slides in reads as a panel, not as signal loss: the death
