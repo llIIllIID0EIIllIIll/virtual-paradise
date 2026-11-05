@@ -2289,6 +2289,30 @@ if want tc21; then
   check "the hover halo stays inside the island" \
     "$(grep -q 'Keep the halo inside the island' "$bar" \
       && grep -q 'radius: Math.min(width, height) / 2' "$bar" && echo 0 || echo 1)"
+  # The three islands are anchored independently, so a long active-window
+  # title or the centre hover reveal used to run the right island into the
+  # centre. The right widgets marked `"fold": true` fold behind a pager chip
+  # first; the rest of the tail follows only if that is still not enough.
+  check "the bar folds the right island before it collides with the centre" \
+    "$(grep -q 'property bool rightOverflow: true' "$bar" \
+      && grep -q 'function rightSlotOverflowed' "$bar" \
+      && grep -q 'settings.fold === true' "$bar" \
+      && grep -q 'rightOverflowChipWidth' "$bar" \
+      && grep -q 'rightOverflowComfortGap' "$bar" && echo 0 || echo 1)"
+  check "the shipped layout marks the specialized widgets as foldable" \
+    "$(python3 - "$REPO_DIR/shell/shell.json" <<'PY'
+import json, sys
+d = json.load(open(sys.argv[1]))
+right = {e.get("id"): e for e in d["bar"]["layout"]["right"]}
+want = ["io.github.randazraik.xray", "io.github.grichard99.omaproton-vpn",
+        "io.github.kristoferlund.webcam", "crmne.hyprmoncfg",
+        "io.github.jeffcortez23.omarchy-projector-cast", "ssupt.bluetooth-audio"]
+keep = ["omarchy.tray", "__USER__.network", "ssupt.audio-control",
+        "onlyvishesh.power-manager", "__USER__.system-update", "omarchy.elsewhen"]
+sys.exit(0 if all(right.get(i, {}).get("fold") is True for i in want)
+         and all(not right.get(i, {}).get("fold", False) for i in keep) else 1)
+PY
+)"
 fi
 
 # ─────────────────────────────────────────────────────────────────────────────
