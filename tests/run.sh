@@ -2142,10 +2142,10 @@ EOF
 
   : >"$root/hook.log"
   : >"$root/layer.log"
-  # The background fork is installed but disabled while the stock service is
-  # still on (the state on a machine that just installed the theme): entering
-  # must enable ours and hand the stock one over.
-  printf '[{"id":"omarchy.audio","enabled":false},{"id":"omarchy.bluetooth","enabled":false},{"id":"omarchy.bar","enabled":false},{"id":"omarchy.background","enabled":true},{"id":"tester.background","enabled":false}]\n' \
+  # The stock background service is off and a stale fork copy is on (the state
+  # an older install leaves behind): the hook must put the stock one back and
+  # disable the leftover, which kept a second IPC handler on "background".
+  printf '[{"id":"omarchy.audio","enabled":false},{"id":"omarchy.bluetooth","enabled":false},{"id":"omarchy.bar","enabled":false},{"id":"omarchy.background","enabled":false},{"id":"tester.background","enabled":true}]\n' \
     >"$root/plugin-state.json"
   ( PATH="$root/bin:$PATH" HOME="$root/home" XDG_CONFIG_HOME="$cfg" \
     XDG_DATA_HOME="$root/home/.local/share" XDG_STATE_HOME="$root/home/.local/state" \
@@ -2160,13 +2160,13 @@ EOF
     "$(grep -q 'plugin disable omarchy.audio' "$root/hook.log" && echo 1 || echo 0)"
   check "theme hook entering does not enable a missing replacement" \
     "$(grep -q 'plugin enable ssupt.audio-control' "$root/hook.log" && echo 1 || echo 0)"
-  check "theme hook entering swaps in the background fork" \
-    "$(grep -q 'plugin enable tester.background' "$root/hook.log" \
-      && grep -q 'plugin disable omarchy.background' "$root/hook.log" && echo 0 || echo 1)"
+  check "theme hook entering restores the stock background service" \
+    "$(grep -q 'plugin enable omarchy.background' "$root/hook.log" \
+      && grep -q 'plugin disable tester.background' "$root/hook.log" && echo 0 || echo 1)"
 
   : >"$root/hook.log"
-  # The fork is enabled now and the stock service is off, so leaving must
-  # hand the layer back.
+  # Leaving does the same in reverse for a stale copy: the stock service stays
+  # the one renderer.
   printf '[{"id":"omarchy.audio","enabled":false},{"id":"omarchy.bluetooth","enabled":false},{"id":"omarchy.bar","enabled":false},{"id":"omarchy.background","enabled":false},{"id":"tester.background","enabled":true}]\n' \
     >"$root/plugin-state.json"
   ( PATH="$root/bin:$PATH" HOME="$root/home" XDG_CONFIG_HOME="$cfg" \
@@ -2178,9 +2178,9 @@ EOF
     "$(grep -qx revert "$root/layer.log" 2>/dev/null && echo 0 || echo 1)"
   check "theme hook leaving enables the stock audio widget" \
     "$(grep -q 'plugin enable omarchy.audio' "$root/hook.log" && echo 0 || echo 1)"
-  check "theme hook leaving hands the background layer back" \
-    "$(grep -q 'plugin disable tester.background' "$root/hook.log" \
-      && grep -q 'plugin enable omarchy.background' "$root/hook.log" && echo 0 || echo 1)"
+  check "theme hook leaving keeps the stock background service" \
+    "$(grep -q 'plugin enable omarchy.background' "$root/hook.log" \
+      && grep -q 'plugin disable tester.background' "$root/hook.log" && echo 0 || echo 1)"
 fi
 
 # ─────────────────────────────────────────────────────────────────────────────

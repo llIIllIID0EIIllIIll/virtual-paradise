@@ -222,6 +222,12 @@ if [[ -d "$REPO_DIR/plugins" ]]; then
   done
 fi
 
+# The background service clone was retired in favour of the stock plugin
+# (Omarchy 4.5 renders video wallpapers itself), so an install from before
+# that leaves a copy the plugin loop above can no longer see.
+rm -rf "$CONFIG_DIR/omarchy/plugins/${CURRENT_USER}.background"
+RUN_AS_INSTALL_USER omarchy plugin enable "omarchy.background" 2>/dev/null || true
+
 if [[ -d "$REPO_DIR/bin" ]]; then
   for bin_source in "$REPO_DIR"/bin/*; do
     rm -f "$LOCAL_BIN/$(basename "$bin_source")"

@@ -22,8 +22,10 @@ o.bind("SUPER + ALT + C", "Toggle Cooler Boost", "~/.local/bin/toggle_cooler_boo
 
 -- 2. RICE & THEME CONTROLS
 --------------------------------------------------------------------------------
--- Sequential Rice Layout: Fastfetch -> btop -> cava -> unimatrix
-o.bind("SUPER + Q", "Rice Layout", "~/.local/bin/rice_layout.sh")
+-- Sequential Rice Layout: Fastfetch -> btop -> cava -> unimatrix.
+-- Omarchy 4.5 took SUPER + Q for "close window", so the layout moved to the
+-- free SUPER + ALT + Q rather than fighting the new default.
+o.bind("SUPER + ALT + Q", "Rice Layout", "~/.local/bin/rice_layout.sh")
 
 -- Cycle to next wallpaper in Virtual☆Paradise theme
 o.bind("SUPER + N", "Next Wallpaper", "omarchy theme bg next")
@@ -59,8 +61,10 @@ o.bind("SUPER + ALT + SHIFT + N", "Previous Live Wallpaper", "~/.local/bin/toggl
 hl.unbind("SUPER + W")
 o.bind("SUPER + W", "Close Window (Red Glitch Death)", "~/.local/bin/window_death.sh")
 
--- Omarchy theme menu (the theme-variant script is a separate terminal tool)
-o.bind("SUPER + SHIFT + T", "Theme Menu", "omarchy-menu toggle theme")
+-- Omarchy theme menu (the theme-variant script is a separate terminal tool).
+-- Omarchy 4.5 took SUPER + SHIFT + T for "activity" (btop), so the menu moved
+-- to the free SUPER + ALT + T.
+o.bind("SUPER + ALT + T", "Theme Menu", "omarchy-menu toggle theme")
 
 -- Launch Matrix screensaver in terminal
 o.bind("SUPER + backslash", "Matrix Screensaver", "omarchy launch screensaver")
