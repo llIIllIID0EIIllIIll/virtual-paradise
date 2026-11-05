@@ -49,7 +49,7 @@ canvas, so no terminal decodes a background texture at all. See
 
 ### 🎬 Animated Wallpapers
 
-Live video wallpapers with cyberpunk glitch transitions. Cycle through 7 animated backgrounds with `SUPER + ALT + ←` / `SUPER + ALT + →` (or `SUPER + ALT + N` / `SUPER + ALT + SHIFT + N`), or toggle between live and static with `SUPER + ALT + W`.
+Live video wallpapers with cyberpunk glitch transitions. Cycle through 7 animated backgrounds with `SUPER + ALT + N` / `SUPER + ALT + SHIFT + N`, or toggle between live and static with `SUPER + ALT + W`.
 
 Wallpapers are H.264 MP4 (not GIF) for better performance and smaller file size. Plymouth extracts its animation frames with ffmpeg during install; the SDDM login theme plays the GIF directly.
 
@@ -353,7 +353,8 @@ preserve a file you have edited.
 {
   "bar": {
     "gapEffects": false,
-    "hoverGlow": false
+    "hoverGlow": false,
+    "rightOverflow": false
   }
 }
 ```
@@ -364,6 +365,16 @@ underlay's drift and stops the scanner spark that laps the bar's outer rim.
 shimmer, the ramp-sampled bloom and the scale pop. Setting `gapEffects` to
 `false` also turns off the hover chrome, so the bar can be made completely
 still with one key.
+
+`rightOverflow` (default on) keeps the right island from colliding with the
+centre when the live widths grow - a long active-window title, the centre
+hover reveal or a tray item appearing. The right widgets marked
+`"fold": true` in the layout fold behind a small `⋯` chip first, then the tail
+of whatever is left; clicking the chip pages between the primary set and the
+folded one. The shipped layout marks the specialized widgets (X-Ray, VPN,
+webcam, monitor config, projector cast, Bluetooth audio) so the tray, network,
+audio, power, updates and the world clock stay visible. Add or remove
+`"fold": true` on any right entry to change the priority.
 
 ### Memory
 

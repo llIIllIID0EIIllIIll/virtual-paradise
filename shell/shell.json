@@ -58,23 +58,29 @@
           "id": "omarchy.tray"
         },
         {
-          "id": "io.github.randazraik.xray"
+          "id": "io.github.randazraik.xray",
+          "fold": true
         },
         {
-          "id": "io.github.grichard99.omaproton-vpn"
+          "id": "io.github.grichard99.omaproton-vpn",
+          "fold": true
         },
         {
           "id": "io.github.kristoferlund.webcam",
-          "device": "/dev/video0"
+          "device": "/dev/video0",
+          "fold": true
         },
         {
-          "id": "crmne.hyprmoncfg"
+          "id": "crmne.hyprmoncfg",
+          "fold": true
         },
         {
-          "id": "io.github.jeffcortez23.omarchy-projector-cast"
+          "id": "io.github.jeffcortez23.omarchy-projector-cast",
+          "fold": true
         },
         {
-          "id": "ssupt.bluetooth-audio"
+          "id": "ssupt.bluetooth-audio",
+          "fold": true
         },
         {
           "id": "__USER__.network"

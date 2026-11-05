@@ -9,6 +9,16 @@ Conventional Commits.
 ## [Unreleased]
 
 ### Changed
+- **The right island folds instead of colliding with the centre.** The three
+  islands are anchored independently, so a long active-window title, the
+  centre hover reveal or one more widget could run the right island into the
+  centre. The bar now measures the registered right slots and folds the
+  specialized widgets (marked `"fold": true` in the layout) behind a small
+  pager chip first, then the tail of whatever is left; the chip pages between
+  the primary set and the folded one, and leaving the island folds back. The
+  shipped layout marks X-Ray, VPN, webcam, monitor config, projector cast and
+  Bluetooth audio, keeping the tray, network, audio, power, updates and the
+  world clock visible. Opt out with `"bar": { "rightOverflow": false }`.
 - **The third-party notification bell is retired.** Omarchy 4.5 ships its own
   notification service (grouped stacks, inline actions, DND, history and
   keybinds), and the third-party watcher leaked one `inotifywait` process per
