@@ -2856,10 +2856,10 @@ PY
     "$(grep -q 'for widget_id in ids' "$REPO_DIR/install.sh" \
       && grep -q 'for widget_id in ids' "$REPO_DIR/lib/theme-set-hook.sh" \
       && grep -Fq '"hidden": True' "$REPO_DIR/install.sh" && echo 0 || echo 1)"
-  check "the Tools menu ships the plugin and dictation rows" \
+  check "the Tools menu ships the plugin rows" \
     "$([[ -f "$REPO_DIR/plugins/tools/BarWidget.qml" ]] \
-      && grep -q 'omarchy-dictation toggle' "$REPO_DIR/plugins/tools/Panel.qml" \
       && grep -q 'io.github.randazraik.xray' "$REPO_DIR/plugins/tools/Panel.qml" \
+      && ! grep -q 'omarchy-dictation' "$REPO_DIR/plugins/tools/Panel.qml" \
       && echo 0 || echo 1)"
 fi
 
