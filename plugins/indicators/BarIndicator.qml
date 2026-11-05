@@ -15,9 +15,12 @@ BarIconButton {
   property string indicatorBlock: "single"
   property var indicatorHost: null
   property var activeOverride: null
+  // Upstream API: an indicator can opt out of the hover reveal (a remote
+  // session that is off should stay hidden rather than show as inactive).
+  property bool revealWhenInactive: true
   readonly property bool effectiveActive: activeOverride === null || activeOverride === undefined ? active : activeOverride === true
   readonly property bool belongsInBlock: indicatorBlock === "active" ? effectiveActive : (indicatorBlock === "inactive" ? !effectiveActive : true)
-  readonly property bool inactiveRevealed: !effectiveActive && !!indicatorHost && indicatorHost.revealInactiveIndicators
+  readonly property bool inactiveRevealed: !effectiveActive && revealWhenInactive && !!indicatorHost && indicatorHost.revealInactiveIndicators
 
   function extractData(raw) {
     return Util.parseModuleJson(raw)

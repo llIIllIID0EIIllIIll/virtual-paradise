@@ -36,7 +36,7 @@ Three floating glass pills over a faint hex underlay, a sparse comet stream in t
 
 - **Left island**: quick menu, Japanese workspace numerals, active window
 - **Center island**: waveform visualizer, weather, clock, vitals (CPU/GPU/RAM/disk/net), CPU temperature, microphone, indicator dots
-- **Right island**: system tray, network, VPN, notifications, audio, battery, power
+- **Right island**: system tray, network, VPN, world clock, audio, battery, power
 - **Ambient overlays**: a neon glow trails the pointer over terminals (it stays out of the way on games, browsers and the bar), and the screen edges flash cyan on a workspace change and magenta when a notification arrives
 
 The gap stream, the rim scanner and the hover chrome are opt-out in `~/.config/omarchy/shell.json`; see [Bar Effects](#bar-effects).
@@ -388,11 +388,15 @@ path instead:
 - The wallpaper rides Omarchy's own background engine (it renders video
   itself since 4.5) instead of a second `mpvpaper` decoder - the two engines
   together held ~360 MB of RSS for the same frames.
+- The third-party notification bell is retired. Omarchy 4.5's own service
+  (grouped stacks, inline actions, DND, history, keybinds) owns notifications
+  now; the old watcher leaked one `inotifywait` process per shell reload - 121
+  orphans holding ~285 MB of RSS before the cleanup.
 - The theme's overlay plugins are disabled when the theme is left and removed
   on uninstall, so they do not linger in another theme.
 
 On the development machine the theme's resident PSS dropped from ~836 MB to
-~490 MB at login, settling around ~550 MB once the caches warm, with the same
+~490 MB at login, settling around ~450 MB once the caches warm, with the same
 bar, effects, terminals and lock screen. The two shared Python servers (the
 cursor feed and the window feed) add ~9 MB together. Check the live number
 with:
@@ -497,6 +501,7 @@ Test cases:
 - **TC-25**: Terminal hex spotlight (plain glass, cached lattice blit, grid anchoring)
 - **TC-26**: Cooler Boost state (hardware read, file fallback, stale-state toggle)
 - **TC-27**: Shared cursor server (one process for both overlays, socket handoff)
+- **TC-28**: Fork drift, 4.5 parity (indicators, WallClock, titlebar colour, retired bell) and the documented tree
 
 ### Project Structure
 

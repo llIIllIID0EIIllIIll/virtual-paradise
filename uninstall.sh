@@ -487,7 +487,9 @@ if command -v omarchy &>/dev/null; then
   RUN_AS_INSTALL_USER omarchy plugin disable "io.github.grichard99.omaproton-vpn" 2>/dev/null || true
   RUN_AS_INSTALL_USER omarchy plugin disable "harshith.system-monitor" 2>/dev/null || true
   RUN_AS_INSTALL_USER omarchy plugin disable "${CURRENT_USER}.memory" 2>/dev/null || true
-  RUN_AS_INSTALL_USER omarchy plugin disable "jankeesvw.notification-center" 2>/dev/null || true
+  RUN_AS_INSTALL_USER omarchy plugin remove "jankeesvw.notification-center" --yes 2>/dev/null || true
+  rm -rf "$CONFIG_DIR/omarchy/plugins/jankeesvw.notification-center"
+  pkill -f 'inotifywait.*omarchy/notifications' 2>/dev/null || true
   RUN_AS_INSTALL_USER omarchy plugin disable "onlyvishesh.power-manager" 2>/dev/null || true
   RUN_AS_INSTALL_USER omarchy plugin disable "ssupt.audio-control" 2>/dev/null || true
   RUN_AS_INSTALL_USER omarchy plugin disable "ssupt.bluetooth-audio" 2>/dev/null || true

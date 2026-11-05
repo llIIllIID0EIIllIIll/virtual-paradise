@@ -17,6 +17,10 @@ background = "#0f081d"
 selection_foreground = "#0f081d"
 selection_background = "#00ffdd"
 
+# Raised surface (Hyprland titlebars on floating windows; falls back to
+# `selection` when missing, which painted them solid accent cyan)
+lighter_background = "#1a1033"
+
 # Normal colors (ANSI 0-7)
 color0 = "#0f081d"
 color1 = "#ff00ff"

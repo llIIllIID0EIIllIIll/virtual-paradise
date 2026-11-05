@@ -1,4 +1,8 @@
 // Pure date and format math for the clock widget and its calendar panel.
+//
+// `msUntilNextTick` drives WallClock: epoch milliseconds never repeat, so the
+// delay stays positive through the hour that daylight saving repeats (a local
+// wall-clock target resolves to the first pass and re-arms at 1 ms).
 // Everything here is locale- and Qt-free so it can be unit tested under node
 // (test/shell.d/clock-test.sh); the QML owns month/weekday naming through
 // Qt.locale().
@@ -38,6 +42,10 @@ var VERTICAL_CLOCK_FORMATS = [
   "dd\nMMM\n'W'ww\n''yy",
   "HH\nmm"
 ]
+
+function msUntilNextTick(nowMs, step) {
+  return step - nowMs % step
+}
 
 function clockFormats(vertical) {
   return vertical ? VERTICAL_CLOCK_FORMATS.slice() : CLOCK_FORMATS.slice()
@@ -291,6 +299,7 @@ if (typeof module !== "undefined") {
     clockFormats: clockFormats,
     clockFormatRing: clockFormatRing,
     nextClockFormat: nextClockFormat,
-    isoWeekLiteral: isoWeekLiteral
+    isoWeekLiteral: isoWeekLiteral,
+    msUntilNextTick: msUntilNextTick
   }
 }

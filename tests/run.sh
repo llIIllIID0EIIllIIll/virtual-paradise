@@ -4,7 +4,7 @@
 #   ./tests/run.sh            run everything
 #   ./tests/run.sh tc2 tc4    run only the named cases
 #
-# Cases are numbered TC-1..TC-27 and each maps to one numbered section of the
+# Cases are numbered TC-1..TC-28 and each maps to one numbered section of the
 # README's test matrix, so the two cannot drift apart silently.
 
 set -uo pipefail
@@ -436,6 +436,16 @@ bar = d["bar"]
 sys.exit(0 if bar.get("transparent") is True else 1)
 PY
   check "bar.transparent is true in the shipped layout" $?
+
+  # The world clock joined the layout with 4.5; the third-party notification
+  # bell left it (the stock service owns notifications now).
+  python3 - "$root/home/.config/omarchy/shell.json" <<'PY'
+import json, sys
+d = json.load(open(sys.argv[1]))
+ids = [e.get("id") for s in ("left", "center", "right") for e in d["bar"]["layout"][s]]
+sys.exit(0 if "omarchy.elsewhen" in ids and "jankeesvw.notification-center" not in ids else 1)
+PY
+  check "shell.json has Elsewhen and no retired notification bell" $?
 fi
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -2753,6 +2763,52 @@ PY
     "$([[ $rc -eq 1 ]] && echo 0 || echo 1)" "$out"
   check "the report names the changed file" \
     "$(grep -q 'SystemUpdate.qml changed upstream' <<<"$out" && echo 0 || echo 1)" "$out"
+
+  # ---- 4.5 parity: the new upstream surfaces are either forked or retired
+  # with a guard, so a package update cannot bring the old behaviour back.
+  for ind in PasswordlessSudo RemoteSession; do
+    check "the indicators fork ships $ind" \
+      "$([[ -f "$REPO_DIR/plugins/indicators/indicators/$ind.qml" ]] && echo 0 || echo 1)"
+  done
+  check "the indicators fork lists the 4.5 indicators" \
+    "$(grep -q 'PasswordlessSudo.*RemoteSession' "$REPO_DIR/plugins/indicators/Indicators.qml" && echo 0 || echo 1)"
+  check "the indicator manifest offers the 4.5 indicators" \
+    "$(grep -q '"PasswordlessSudo"' "$REPO_DIR/plugins/indicators/manifest.json" \
+      && grep -q '"RemoteSession"' "$REPO_DIR/plugins/indicators/manifest.json" && echo 0 || echo 1)"
+  check "the indicator base supports revealWhenInactive" \
+    "$(grep -q 'property bool revealWhenInactive' "$REPO_DIR/plugins/indicators/BarIndicator.qml" && echo 0 || echo 1)"
+
+  # The clock fork owns the DST-safe WallClock instead of Quickshell's
+  # SystemClock, which re-armed at 1 ms through the repeated DST hour.
+  check "the clock fork ships WallClock" \
+    "$([[ -f "$REPO_DIR/plugins/clock/WallClock.qml" ]] && echo 0 || echo 1)"
+  check "the clock fork uses WallClock, not SystemClock" \
+    "$(! grep -q 'SystemClock {' "$REPO_DIR/plugins/clock/BarWidget.qml" \
+      && ! grep -q 'SystemClock {' "$REPO_DIR/plugins/clock/Panel.qml" \
+      && grep -q 'WallClock {' "$REPO_DIR/plugins/clock/BarWidget.qml" && echo 0 || echo 1)"
+
+  # Floating-window titlebars read `lighter_background`; without it they fell
+  # back to the selection colour, a solid accent bar.
+  check "the palette has a raised titlebar surface" \
+    "$(grep -q '^lighter_background' "$REPO_DIR/theme/colors.toml" && echo 0 || echo 1)"
+
+  # The notification bell is retired: installer removes a stale copy, the
+  # hook does the same on a theme switch, and nothing re-adds it from git.
+  check "the installer retires the third-party notification bell" \
+    "$(grep -q 'plugin remove "jankeesvw.notification-center"' "$REPO_DIR/install.sh" \
+      && ! grep -q 'omarchy-notification-center.git' "$REPO_DIR/install.sh" && echo 0 || echo 1)"
+  check "the theme hook retires the notification bell too" \
+    "$(grep -q 'plugin remove "jankeesvw.notification-center"' "$REPO_DIR/lib/theme-set-hook.sh" && echo 0 || echo 1)"
+  check "the uninstaller removes the notification bell" \
+    "$(grep -q 'plugin remove "jankeesvw.notification-center"' "$REPO_DIR/uninstall.sh" && echo 0 || echo 1)"
+
+  # Elsewhen is theme state: enabled while the theme is active, disabled when
+  # it is left, and it is part of the shipped bar layout.
+  check "the theme hook enables Elsewhen on enter and disables it on leave" \
+    "$(grep -q '_plugin_enable "omarchy.elsewhen"' "$REPO_DIR/lib/theme-set-hook.sh" \
+      && grep -q '_plugin_disable "omarchy.elsewhen"' "$REPO_DIR/lib/theme-set-hook.sh" && echo 0 || echo 1)"
+  check "the shipped layout carries the Elsewhen panel" \
+    "$(grep -q '"omarchy.elsewhen"' "$REPO_DIR/shell/shell.json" && echo 0 || echo 1)"
 fi
 
 summary
