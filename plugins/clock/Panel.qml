@@ -1,5 +1,6 @@
 import QtQuick
 import Quickshell
+import Quickshell.Io
 import qs.Commons
 import qs.Ui
 import "Model.js" as Model
@@ -71,6 +72,45 @@ Panel {
   readonly property string nextWeekStartLabel: labelLocale.dayName(Model.toggledWeekStart(weekStart), Locale.LongFormat)
   readonly property var weekdays: Model.weekdayOrder(weekStart)
   readonly property var weeks: Model.monthGrid(viewYear, viewMonth, weekStart, todayKey)
+
+  // ---- World clock. Elsewhen's standalone panel is retired: the city times
+  //      live under the calendar in this same dropdown, each zone probed with
+  //      its own TZ so DST follows the system clock. Configure the list with
+  //      `worldZones` on the clock entry in shell.json.
+  readonly property var worldZones: {
+    var raw = setting("worldZones", null)
+    if (Array.isArray(raw) && raw.length > 0) return raw
+    return ["Asia/Tokyo", "Europe/London", "America/New_York"]
+  }
+  readonly property int worldColumns: Math.max(1, Math.min(3, worldZones.length))
+  property var worldTimes: ({})
+
+  function worldLabel(zone) {
+    var parts = String(zone || "").split("/")
+    return parts[parts.length - 1].replace(/_/g, " ")
+  }
+
+  // One `date` probe per zone. The probe is cheap and only runs while the
+  // panel is open, so a session that never opens the clock pays nothing.
+  function refreshWorldClock() {
+    for (var i = 0; i < worldProbeRepeater.count; i++) {
+      var proc = worldProbeRepeater.itemAt(i)
+      if (proc && typeof proc.refresh === "function") proc.refresh()
+    }
+  }
+
+  function recordWorldTime(zone, line) {
+    var parts = String(line || "").trim().split(/\s+/)
+    var time = parts[0] || "--:--"
+    var epoch = Number(parts[1] || 0)
+    var day = epoch > 0 ? Math.floor(epoch / 86400) - Math.floor(Date.now() / 86400000) : 0
+    var next = {}
+    for (var key in worldTimes) next[key] = worldTimes[key]
+    next[zone] = { time: time, day: day }
+    worldTimes = next
+  }
+
+  onOpenedChanged: if (opened) refreshWorldClock()
 
 
   // Guarded so the widget renders before the bar is injected (the bar-widget
@@ -233,6 +273,36 @@ Panel {
       var followToday = root.viewingCurrentMonth
       root.today = clock.date
       if (followToday) root.goToToday()
+    }
+  }
+
+  Timer {
+    interval: 60000
+    repeat: true
+    running: root.opened
+    onTriggered: root.refreshWorldClock()
+  }
+
+  Repeater {
+    id: worldProbeRepeater
+    model: root.worldZones
+
+    // A Repeater only accepts Item delegates, so the probe lives in a
+    // zero-sized Item; `refresh()` is the handle the timer calls.
+    delegate: Item {
+      required property string modelData
+      visible: false
+      width: 0
+      height: 0
+
+      function refresh() { if (!probe.running) probe.running = true }
+
+      Process {
+        id: probe
+        command: ["date", "+%H:%M %s"]
+        environment: ({ TZ: modelData })
+        stdout: SplitParser { onRead: function(line) { root.recordWorldTime(modelData, line) } }
+      }
     }
   }
 
@@ -745,6 +815,90 @@ Panel {
                 foreground: root.contentForeground
                 fontFamily: root.contentFontFamily
                 onClicked: root.moveMonth(1)
+              }
+            }
+          }
+
+          // ---- World clock, merged under the calendar: the same dropdown,
+          //      instead of a sideways panel hanging off the right island.
+          //      "+1d" marks a city whose date has already rolled over.
+          Item {
+            width: parent.width
+            height: worldColumn.implicitHeight
+
+            Column {
+              id: worldColumn
+              width: parent.width
+              spacing: Style.space(8)
+
+              Rectangle {
+                width: parent.width
+                height: 1
+                color: root.contentForeground
+                opacity: 0.08
+              }
+
+              Text {
+                text: "WORLD CLOCK"
+                color: Qt.darker(root.contentForeground, 1.4)
+                font.family: root.contentFontFamily
+                font.pixelSize: Style.font.caption
+                font.letterSpacing: 1
+              }
+
+              Flow {
+                id: worldFlow
+                width: parent.width
+                spacing: Style.space(8)
+
+                Repeater {
+                  model: root.worldZones
+
+                  delegate: Item {
+                    required property string modelData
+
+                    readonly property var reading: root.worldTimes[modelData] || ({})
+                    width: Math.floor((worldFlow.width - Style.space(8) * (root.worldColumns - 1)) / root.worldColumns)
+                    height: worldCell.implicitHeight
+
+                    Column {
+                      id: worldCell
+                      width: parent.width
+                      spacing: Style.space(1)
+
+                      Text {
+                        width: parent.width
+                        text: root.worldLabel(modelData)
+                        color: Qt.darker(root.contentForeground, 1.5)
+                        font.family: root.contentFontFamily
+                        font.pixelSize: Style.font.caption
+                        elide: Text.ElideRight
+                      }
+
+                      Row {
+                        spacing: Style.space(4)
+
+                        Text {
+                          text: reading.time || "--:--"
+                          color: root.contentForeground
+                          font.family: root.contentFontFamily
+                          font.pixelSize: Style.font.title
+                          font.bold: true
+                        }
+
+                        Text {
+                          visible: reading.day !== undefined && reading.day !== 0
+                          text: (reading.day > 0 ? "+" : "") + reading.day + "d"
+                          color: Color.accent
+                          font.family: root.contentFontFamily
+                          font.pixelSize: Style.font.caption
+                          anchors.bottom: parent.bottom
+                          anchors.bottomMargin: 2
+                        }
+                      }
+                    }
+                  }
+                }
               }
             }
           }

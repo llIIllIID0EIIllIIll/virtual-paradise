@@ -9,14 +9,22 @@ Conventional Commits.
 ## [Unreleased]
 
 ### Changed
+- **The world clock moved into the clock's calendar dropdown.** Elsewhen's
+  standalone panel - a sideways panel hanging off the right island - is
+  retired. The clock dropdown now carries a world clock row under the
+  calendar, one zone per city, each probed with its own TZ so DST follows the
+  system clock. The default cities are Tokyo, London and New York; configure
+  them with `worldZones` on the clock entry. The right island drops to the
+  five essentials.
 - **The bar is minimal again.** The overflow pager from the previous revision
   is gone: the crowded right island was mostly the centre island's eight
   always-on indicator slots, so indicators now take space only while one is
   active, the active-window label is capped at 180px, and the right island
   keeps the six essentials (tray, network, audio, power, updates, world
   clock). The specialized widgets - X-Ray, VPN, webcam, monitor config,
-  projector cast and Bluetooth audio - stay installed off-bar and can be
-  re-added with `omarchy bar put`.
+  projector cast and Bluetooth audio - stay installed but are switched off
+  while the theme is active, so an enabled bar-widget cannot repopulate the
+  bar; `omarchy plugin enable <id>` brings one back (and rejoins the bar).
 - **The third-party notification bell is retired.** Omarchy 4.5 ships its own
   notification service (grouped stacks, inline actions, DND, history and
   keybinds), and the third-party watcher leaked one `inotifywait` process per
@@ -33,11 +41,6 @@ Conventional Commits.
   now in `colors.toml`, so the new `omarchy-hyprland-titlebars` bar reads a
   deep purple raised surface instead of falling back to the accent `selection`
   colour.
-- **Elsewhen joins the rice.** The 4.5 world-clock panel is enabled while the
-  theme is active, placed on the right island, and themed by the same
-  `shell.toml` tokens (gradient border, glass, spacing) as every other panel.
-  The dock, OSD and the 4.5 overlays already inherit those tokens, so they
-  pick up the island look without a fork.
 - **Theme keybindings defer to Omarchy.** The theme no longer aliases or
   shadows Omarchy defaults: `SUPER + CTRL + T` opens the theme menu,
   `SUPER + SHIFT + F` / `B` open the file manager and browser,

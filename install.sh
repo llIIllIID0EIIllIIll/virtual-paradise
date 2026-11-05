@@ -753,12 +753,12 @@ INSTALL_AND_ENABLE_PLUGINS() {
       # replacing it live; the autostart line is removed further down.
       pkill -f 'vp_death_daemon.qml' 2>/dev/null || true
 
-      # Install & enable external Omarchy webcam plugin
+      # Install the external webcam plugin but leave it off the minimal bar.
+      # Enabling a bar-widget auto-adds it to shell.json; the user can bring
+      # it back with `omarchy plugin enable io.github.kristoferlund.webcam`.
       if [[ ! -d "$CONFIG_DIR/omarchy/plugins/io.github.kristoferlund.webcam" ]] && ! RUN_AS_INSTALL_USER omarchy plugin list --json 2>/dev/null | jq -e 'any(.[]; .id == "io.github.kristoferlund.webcam")' >/dev/null; then
-        log_sub "Adding external Omarchy webcam plugin from git..."
-        RUN_AS_INSTALL_USER omarchy plugin add https://github.com/kristoferlund/omarchy-webcam.git --enable --yes 2>/dev/null || true
-      else
-        RUN_AS_INSTALL_USER omarchy plugin enable "io.github.kristoferlund.webcam" 2>/dev/null || true
+        log_sub "Adding external Omarchy webcam plugin from git (kept off the bar)..."
+        RUN_AS_INSTALL_USER omarchy plugin add https://github.com/kristoferlund/omarchy-webcam.git --yes 2>/dev/null || true
       fi
 
       # The notification bell was retired: Omarchy 4.5 ships its own
@@ -774,13 +774,11 @@ INSTALL_AND_ENABLE_PLUGINS() {
       rm -rf "$CONFIG_DIR/omarchy/plugins/jankeesvw.notification-center"
       pkill -f 'inotifywait.*omarchy/notifications' 2>/dev/null || true
 
-      # hyprmoncfg replaces the cloned Display & Scaling widget in this
-      # theme. Keep the old widget disabled to avoid duplicate controls.
+      # hyprmoncfg is installed but kept off the minimal bar. The old
+      # Display & Scaling widgets stay disabled to avoid duplicate controls.
       if ! RUN_AS_INSTALL_USER omarchy plugin list --json 2>/dev/null | jq -e 'any(.[]; .id == "crmne.hyprmoncfg")' >/dev/null; then
-        log_sub "Adding external Omarchy monitor manager plugin from git..."
-        RUN_AS_INSTALL_USER omarchy plugin add https://github.com/crmne/omarchy-hyprmoncfg.git --enable --yes 2>/dev/null || true
-      else
-        RUN_AS_INSTALL_USER omarchy plugin enable "crmne.hyprmoncfg" 2>/dev/null || true
+        log_sub "Adding external Omarchy monitor manager plugin from git (kept off the bar)..."
+        RUN_AS_INSTALL_USER omarchy plugin add https://github.com/crmne/omarchy-hyprmoncfg.git --yes 2>/dev/null || true
       fi
       RUN_AS_INSTALL_USER omarchy plugin disable "${CURRENT_USER}.monitor" 2>/dev/null || true
       RUN_AS_INSTALL_USER omarchy plugin disable "omarchy.monitor" 2>/dev/null || true
@@ -804,12 +802,46 @@ INSTALL_AND_ENABLE_PLUGINS() {
       RUN_AS_INSTALL_USER omarchy plugin disable "${CURRENT_USER}.memory" 2>/dev/null || true
       RUN_AS_INSTALL_USER omarchy plugin disable "omarchy.memory" 2>/dev/null || true
 
-      # Projector & Cast adds screen-mirroring controls to the right bar.
+      # Projector & Cast is installed but kept off the minimal bar too.
       if ! RUN_AS_INSTALL_USER omarchy plugin list --json 2>/dev/null | jq -e 'any(.[]; .id == "io.github.jeffcortez23.omarchy-projector-cast")' >/dev/null; then
-        log_sub "Adding external Projector & Cast plugin from git..."
-        RUN_AS_INSTALL_USER omarchy plugin add https://github.com/JeffCortez23/omarchy-projector-cast.git --enable --yes 2>/dev/null || true
-      else
-        RUN_AS_INSTALL_USER omarchy plugin enable "io.github.jeffcortez23.omarchy-projector-cast" 2>/dev/null || true
+        log_sub "Adding external Projector & Cast plugin from git (kept off the bar)..."
+        RUN_AS_INSTALL_USER omarchy plugin add https://github.com/JeffCortez23/omarchy-projector-cast.git --yes 2>/dev/null || true
+      fi
+
+      # The minimal bar does not carry the specialized widgets. An enabled
+      # bar-widget is auto-added to shell.json, so they are installed disabled
+      # and any stale layout entries are dropped; `omarchy plugin enable <id>`
+      # brings one back (and rejoins the bar).
+      for _off in io.github.randazraik.xray io.github.grichard99.omaproton-vpn \
+                  io.github.kristoferlund.webcam crmne.hyprmoncfg \
+                  io.github.jeffcortez23.omarchy-projector-cast ssuppt.bluetooth-audio; do
+        RUN_AS_INSTALL_USER omarchy plugin disable "$_off" 2>/dev/null || true
+      done
+      unset _off
+      if [[ -f "$CONFIG_DIR/omarchy/shell.json" ]]; then
+        python3 - "$CONFIG_DIR/omarchy/shell.json" <<'PY'
+import json, sys
+p = sys.argv[1]
+try:
+    with open(p) as fh:
+        d = json.load(fh)
+except Exception:
+    sys.exit(0)
+ids = {"io.github.randazraik.xray", "io.github.grichard99.omaproton-vpn",
+       "io.github.kristoferlund.webcam", "crmne.hyprmoncfg",
+       "io.github.jeffcortez23.omarchy-projector-cast", "ssupt.bluetooth-audio"}
+changed = False
+for section in ("left", "center", "right"):
+    entries = (d.get("bar", {}).get("layout", {}).get(section) or [])
+    kept = [e for e in entries if not (isinstance(e, dict) and str(e.get("id", "")) in ids)]
+    if len(kept) != len(entries):
+        d["bar"]["layout"][section] = kept
+        changed = True
+if changed:
+    with open(p, "w") as fh:
+        json.dump(d, fh, indent=2, ensure_ascii=False)
+        fh.write("\n")
+PY
       fi
       po_apply_all
 
@@ -995,10 +1027,6 @@ if [[ -f "$REPO_DIR/shell/shell.json" ]]; then
   # external plugins after the layout is installed.
   if command -v omarchy &>/dev/null; then
     po_apply_all
-    enable_plugin_retry "crmne.hyprmoncfg" || \
-      log_warn "hyprmoncfg could not be enabled after shell layout sync: ${LAST_PLUGIN_ERROR:-unknown error}"
-    enable_plugin_retry "io.github.jeffcortez23.omarchy-projector-cast" || \
-      log_warn "Projector & Cast could not be enabled after shell layout sync: ${LAST_PLUGIN_ERROR:-unknown error}"
     enable_plugin_retry "onlyvishesh.power-manager" || \
       log_warn "power manager could not be enabled after shell layout sync: ${LAST_PLUGIN_ERROR:-unknown error}"
     RUN_AS_INSTALL_USER omarchy plugin disable "${CURRENT_USER}.monitor" 2>/dev/null || true
@@ -1016,8 +1044,6 @@ if [[ -f "$REPO_DIR/shell/shell.json" ]]; then
       log_warn "audio control could not be enabled after shell layout sync: ${LAST_PLUGIN_ERROR:-unknown error}"
     RUN_AS_INSTALL_USER omarchy plugin disable "${CURRENT_USER}.audio" 2>/dev/null || true
     RUN_AS_INSTALL_USER omarchy plugin disable "omarchy.audio" 2>/dev/null || true
-    enable_plugin_retry "ssupt.bluetooth-audio" || \
-      log_warn "Bluetooth audio could not be enabled after shell layout sync: ${LAST_PLUGIN_ERROR:-unknown error}"
     RUN_AS_INSTALL_USER omarchy plugin disable "${CURRENT_USER}.bluetooth" 2>/dev/null || true
     enable_plugin_retry "io.github.tyrichards.workspaces-jap" || \
       log_warn "Japanese workspace plugin could not be enabled after shell layout sync: ${LAST_PLUGIN_ERROR:-unknown error}"
@@ -2105,8 +2131,6 @@ if [[ $IS_HOOK -eq 0 ]]; then
 
     # Theme activation can restart the shell and briefly race plugin
     # discovery, so enforce the external plugin state last.
-    enable_plugin_retry "crmne.hyprmoncfg" || true
-    enable_plugin_retry "omarchy.elsewhen" || true
     enable_plugin_retry "onlyvishesh.power-manager" || true
     RUN_AS_INSTALL_USER omarchy plugin disable "${CURRENT_USER}.power" 2>/dev/null || true
     RUN_AS_INSTALL_USER omarchy plugin disable "omarchy.power" 2>/dev/null || true

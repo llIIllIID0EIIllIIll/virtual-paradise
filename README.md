@@ -36,7 +36,7 @@ Three floating glass pills over a faint hex underlay, a sparse comet stream in t
 
 - **Left island**: quick menu, Japanese workspace numerals, active window
 - **Center island**: waveform visualizer, weather, clock, vitals (CPU/GPU/RAM/disk/net), CPU temperature, microphone, indicator dots
-- **Right island**: system tray, network, audio, power, updates, world clock
+- **Right island**: system tray, network, audio, power, updates
 - **Ambient overlays**: a neon glow trails the pointer over terminals (it stays out of the way on games, browsers and the bar), and the screen edges flash cyan on a workspace change and magenta when a notification arrives
 
 The gap stream, the rim scanner and the hover chrome are opt-out in `~/.config/omarchy/shell.json`; see [Bar Effects](#bar-effects).
@@ -367,11 +367,16 @@ still with one key.
 
 The shipped layout keeps the islands balanced: indicators only take space
 while one is active, the active-window label is capped at 180px, and the right
-island carries the six essentials (tray, network, audio, power, updates, world
-clock). The specialized widgets - X-Ray, VPN, webcam, monitor config,
-projector cast and Bluetooth audio - stay installed; re-add any of them with
-`omarchy bar put <id> --after omarchy.tray`, or rearrange the bar from the
-theme menu.
+island carries the five essentials (tray, network, audio, power, updates).
+Clicking the clock opens the calendar; the world clock sits in the same
+dropdown - one zone per city, probed with its own TZ so DST follows the system
+- and the cities come from `worldZones` on the clock entry (defaults: Tokyo,
+London, New York). The specialized widgets - X-Ray, VPN, webcam, monitor
+config, projector cast and Bluetooth audio - stay installed but are switched
+off while the theme is active, so an enabled bar-widget cannot repopulate the
+bar. Bring one back with `omarchy plugin enable <id>` (it rejoins the bar),
+then move it with `omarchy bar put <id> --after omarchy.tray`, or rearrange the
+bar from the theme menu.
 
 ### Memory
 

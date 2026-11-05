@@ -13,7 +13,12 @@
           "id": "__USER__.clock",
           "format": "d MMMM 'W'ww yyyy",
           "formatAlt": "yyyy-MM-dd HH:mm:ss",
-          "verticalFormat": "HH\n—\nmm"
+          "verticalFormat": "HH\n—\nmm",
+          "worldZones": [
+            "Asia/Tokyo",
+            "Europe/London",
+            "America/New_York"
+          ]
         },
         {
           "id": "io.github.woogy7.vitals"
@@ -70,9 +75,6 @@
         },
         {
           "id": "__USER__.system-update"
-        },
-        {
-          "id": "omarchy.elsewhen"
         }
       ]
     },

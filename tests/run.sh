@@ -437,17 +437,22 @@ sys.exit(0 if bar.get("transparent") is True else 1)
 PY
   check "bar.transparent is true in the shipped layout" $?
 
-  # The world clock joined the layout with 4.5; the third-party notification
-  # bell left it (the stock service owns notifications now).
+  # The world clock is merged into the clock's calendar dropdown; the
+  # third-party notification bell left the layout (the stock service owns
+  # notifications now).
   python3 - "$root/home/.config/omarchy/shell.json" <<'PY'
 import json, sys
 d = json.load(open(sys.argv[1]))
 ids = [e.get("id") for s in ("left", "center", "right") for e in d["bar"]["layout"][s]]
-sys.exit(0 if "omarchy.elsewhen" in ids and "jankeesvw.notification-center" not in ids else 1)
+clock = next(e for e in d["bar"]["layout"]["center"] if str(e.get("id", "")).endswith("clock"))
+ok = ("omarchy.elsewhen" not in ids
+      and "jankeesvw.notification-center" not in ids
+      and isinstance(clock.get("worldZones"), list) and len(clock.get("worldZones")) > 0)
+sys.exit(0 if ok else 1)
 PY
-  check "shell.json has Elsewhen and no retired notification bell" $?
+  check "the clock carries the world clock and no standalone panel does" $?
 
-  # The minimal layout: the right island keeps the six essentials, the
+  # The minimal layout: the right island keeps the five essentials, the
   # specialized widgets stay installed off-bar, indicators only take space
   # while one is active, and the active-window label is capped.
   python3 - "$root/home/.config/omarchy/shell.json" <<'PY'
@@ -457,7 +462,7 @@ user = os.environ.get("USER") or ""
 right = d["bar"]["layout"]["right"]
 ids = [e.get("id") for e in right]
 want = ["omarchy.tray", user + ".network", "ssupt.audio-control",
-        "onlyvishesh.power-manager", user + ".system-update", "omarchy.elsewhen"]
+        "onlyvishesh.power-manager", user + ".system-update"]
 special = ["io.github.randazraik.xray", "io.github.grichard99.omaproton-vpn",
            "io.github.kristoferlund.webcam", "crmne.hyprmoncfg",
            "io.github.jeffcortez23.omarchy-projector-cast", "ssupt.bluetooth-audio"]
@@ -834,8 +839,8 @@ if want tc8; then
   check "entering the theme enables the custom audio widget" $?
   grep -q 'plugin disable omarchy.audio' "$root/shim.log"
   check "entering the theme disables the stock audio widget" $?
-  grep -q 'plugin enable crmne.hyprmoncfg' "$root/shim.log"
-  check "entering the theme enables hyprmoncfg" $?
+  grep -q 'plugin disable crmne.hyprmoncfg' "$root/shim.log"
+  check "entering the theme keeps hyprmoncfg off the minimal bar" $?
 
   run_hook "Catppuccin"
   grep -q 'plugin disable ssupt.audio-control' "$root/shim.log"
@@ -2827,13 +2832,28 @@ PY
   check "the uninstaller removes the notification bell" \
     "$(grep -q 'plugin remove "jankeesvw.notification-center"' "$REPO_DIR/uninstall.sh" && echo 0 || echo 1)"
 
-  # Elsewhen is theme state: enabled while the theme is active, disabled when
-  # it is left, and it is part of the shipped bar layout.
-  check "the theme hook enables Elsewhen on enter and disables it on leave" \
-    "$(grep -q '_plugin_enable "omarchy.elsewhen"' "$REPO_DIR/lib/theme-set-hook.sh" \
-      && grep -q '_plugin_disable "omarchy.elsewhen"' "$REPO_DIR/lib/theme-set-hook.sh" && echo 0 || echo 1)"
-  check "the shipped layout carries the Elsewhen panel" \
-    "$(grep -q '"omarchy.elsewhen"' "$REPO_DIR/shell/shell.json" && echo 0 || echo 1)"
+  # The world clock is merged into the clock's calendar dropdown, so the
+  # standalone Elsewhen panel stays off while the theme is active.
+  check "the theme hook keeps the standalone world clock off" \
+    "$(grep -q '_plugin_disable "omarchy.elsewhen"' "$REPO_DIR/lib/theme-set-hook.sh" \
+      && ! grep -q '_plugin_enable "omarchy.elsewhen"' "$REPO_DIR/lib/theme-set-hook.sh" && echo 0 || echo 1)"
+  check "the clock panel carries the merged world clock" \
+    "$(grep -q 'worldZones' "$REPO_DIR/plugins/clock/Panel.qml" \
+      && grep -q 'WORLD CLOCK' "$REPO_DIR/plugins/clock/Panel.qml" && echo 0 || echo 1)"
+
+  # The minimal bar keeps the specialized widgets installed but switched off:
+  # enabling a bar-widget auto-adds it to shell.json, so the theme disables
+  # them and drops any stale entry.
+  check "the theme keeps the specialized widgets off the minimal bar" \
+    "$(grep -Fq 'omarchy plugin disable "$_off"' "$REPO_DIR/install.sh" \
+      && grep -q 'io.github.randazraik.xray' "$REPO_DIR/install.sh" \
+      && grep -q '_plugin_disable "crmne.hyprmoncfg"' "$REPO_DIR/lib/theme-set-hook.sh" \
+      && grep -q '_plugin_disable "io.github.kristoferlund.webcam"' "$REPO_DIR/lib/theme-set-hook.sh" \
+      && echo 0 || echo 1)"
+  check "stale specialized bar entries are dropped" \
+    "$(grep -q 'for section in ("left", "center", "right")' "$REPO_DIR/install.sh" \
+      && grep -q 'for section in ("left", "center", "right")' "$REPO_DIR/lib/theme-set-hook.sh" \
+      && echo 0 || echo 1)"
 fi
 
 summary
