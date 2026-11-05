@@ -55,10 +55,13 @@ o.bind("SUPER + ALT + N", "Next Live Wallpaper", "~/.local/bin/toggle_live_wallp
 o.bind("SUPER + ALT + SHIFT + N", "Previous Live Wallpaper", "~/.local/bin/toggle_live_wallpaper.sh prev")
 
 -- Closing a window deserves a proper death: a red glitch burst burns where
--- the window was, then goes out half a second later. Omarchy's SUPER + W
--- closes plainly, so the chord is replaced on purpose - unbind first, then
--- own it, exactly like the arrow pair above.
+-- the window was, then goes out half a second later. Omarchy 4.5 closes on
+-- both SUPER + Q and SUPER + W, and both chords are claimed here - unbind
+-- first, then own them - so the rice is what closing looks like whichever
+-- chord the muscle memory reaches for.
+hl.unbind("SUPER + Q")
 hl.unbind("SUPER + W")
+o.bind("SUPER + Q", "Close Window (Red Glitch Death)", "~/.local/bin/window_death.sh")
 o.bind("SUPER + W", "Close Window (Red Glitch Death)", "~/.local/bin/window_death.sh")
 
 -- Omarchy theme menu (the theme-variant script is a separate terminal tool).
