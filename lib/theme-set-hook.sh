@@ -163,6 +163,15 @@ fi
 # ---------------------------------------------------------------------------
 # 2. Enter / leave Virtual Paradise
 # ---------------------------------------------------------------------------
+# 2a0. The background service is stock in both directions: Omarchy 4.5 renders
+# video wallpapers itself, so the theme retired its clone. A copy left over
+# from an older install is disabled here - two IPC handlers on the same
+# "background" target made the shell drop one with a warning.
+if command -v omarchy >/dev/null 2>&1; then
+  _plugin_enable "omarchy.background"
+  _plugin_disable "${USER:-$(id -un)}.background"
+fi
+
 if [[ "$THEME_NAME" == "virtual-paradise" ]]; then
   # ── ENTERING ──────────────────────────────────────────────────────────────
 
@@ -227,10 +236,6 @@ if [[ "$THEME_NAME" == "virtual-paradise" ]]; then
       _plugin_installed "${u}.${_overlay}" && _plugin_enable "${u}.${_overlay}"
     done
     unset _overlay
-
-    # The background service is a fork of omarchy.background: ours draws the
-    # theme's wallpaper, the stock one is kept for every other theme.
-    _plugin_replace "${u}.background" "omarchy.background"
   fi
 
   # 2b. Apply the tracked override layer. The old hook copied overrides without
@@ -346,12 +351,6 @@ else
       _plugin_disable "${u}.${_overlay}"
     done
     unset _overlay
-
-    # The background service is a fork of omarchy.background too, so leaving
-    # hands the layer back to the stock plugin instead of leaving the theme's
-    # copy rendering another theme.
-    _plugin_disable "${u}.background"
-    _plugin_enable "omarchy.background"
 
     _plugin_enable "omarchy.agents"
     _plugin_enable "omarchy.keyboard-layout"

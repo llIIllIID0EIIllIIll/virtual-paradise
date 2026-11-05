@@ -2,53 +2,53 @@
   "plugins": {
     "active-window": {
       "bar/widgets/ActiveWindow.manifest.json": "b329d7bbec36086c2f72f904029229b71d4c3ad3afb96ce0ff3cf05b9eda9b80",
-      "bar/widgets/ActiveWindow.qml": "a1750665ab005efec042da80390c58f8b9337e8b7800bb80dad88e3e2d62877f"
-    },
-    "background": {
-      "background/Background.qml": "6135a06b4c17c9a5a251053c294a657ecd80eb3a339f6eea146455b3925fd65b",
-      "background/manifest.json": "f1e3eeb5ebd67738bb3a6ed24cfefe831d0fd5785c7d85f8b050c18788b8f265"
+      "bar/widgets/ActiveWindow.qml": "c14da43b569c4a028f0c51eb176ba9a9fe12701b705f3fa6569555ecdabf54ee"
     },
     "bluetooth": {
       "panels/bluetooth/Model.js": "b34f3259c6553f20ce37619d2f390cd3293303266f89f2a6df0b6810da384417",
-      "panels/bluetooth/Panel.qml": "018af5e96d27fe1f09dca2b2f24904c06290e31d21d00974387e0d51de8ae4b2",
+      "panels/bluetooth/Panel.qml": "1e03d3ae942f4fe095a57252d1f8253a4de269428bc5444b75ac30da84e1b269",
       "panels/bluetooth/manifest.json": "c15c51ab8a6cb82df8ebe3a5195b8d69c69d2ff9bbd00d748204d81a3ddc1d8a"
     },
     "clock": {
-      "panels/clock/BarWidget.qml": "cfcdaeedc4ae5832b37271a84bb92ee762301022e2443a0f769992fa792acf28",
-      "panels/clock/Model.js": "255381c8a58ec33d3a870a4c2f25735508aba1ccec849ffe60ab84147c029971",
-      "panels/clock/Panel.qml": "ff6062b3a5714a727c345d239449d460c95e6087c99f4cda786942c33cdaa612",
+      "panels/clock/BarWidget.qml": "e73f7a17f74ade40711dffa8262c1773b7bf74fd65a3047011317f588af9f3f6",
+      "panels/clock/Model.js": "8a2645eb75b22d4ee4b278e19b5092a91638f4b3af9a704999f7cd86d7f1091e",
+      "panels/clock/Panel.qml": "9eed7b315a07c61aeb57aa9ed7ae27b126eea91ecc66af0b5f49ce792ef56b7c",
+      "panels/clock/WallClock.qml": "369c0c5313a56b9963e6b1853ebf9294b666c3ec9aa9fa819f3becb024a5261d",
       "panels/clock/manifest.json": "81d320cae7a86c14f961cf3586dbfeecbe689cd002e0a37a502a01c6da781d26"
     },
     "indicators": {
-      "bar/indicators/Dictation.qml": "581498154ecbfaa64dcc0612dbac417968b8567404c0cabb13fa092f339c7ac6",
-      "bar/indicators/Dnd.qml": "ef3dfda58d9a874d304d6c7742508535957d99e388d2140ca90d14f1b29050d1",
-      "bar/indicators/NightLight.qml": "9a7d5dbbcf5f2b1612d673cef8fba26c53584364e12b43935f1d02a66fb404d2",
+      "bar/indicators/Dnd.qml": "f8621b970c192426f32ca015bfd2f6d327f518997f6ddff0f7043bdb532cfe9f",
+      "bar/indicators/NightLight.qml": "c20e31acbe0b763dbb6bd46f215d16fd74e1d5f7d8eb017e80dc39eb5e9ac838",
+      "bar/indicators/PasswordlessSudo.qml": "3c6fc9cb15081ca8bebbce3f712c1370969b7fe3b04520a73593b8e09c8a9b4e",
       "bar/indicators/Reminder.qml": "51cef554abf4b4b28692cee73add20e2c34bd9883bfed74be10b5334d73f7c7b",
-      "bar/indicators/ScreenRecording.qml": "e336f4e14e0875fe56cb0c1008799506eb5023051c80e530b9e1f35fedbce2df",
-      "bar/indicators/StayAwake.qml": "0701f2231d292af5ab500cb7be574222d0be82a7831eb8188da038f2347bdd13",
-      "bar/widgets/Indicators.manifest.json": "3eea8a52c46d7e2436f8967abb4347d56163f7cef622caf0fe2d69bf6858d59b",
-      "bar/widgets/Indicators.qml": "36e3f0a49e62738551786bc2e82d47d0f3650f9a593f6c651d8f839d1eebdea4"
+      "bar/indicators/RemoteSession.qml": "c464abb97062bea847c596e26e1f92e0a9de0487fbcc855bcaf91ad400359b1b",
+      "bar/indicators/ScreenRecording.qml": "c68a8656764ccea79d052531c2f8603d36f815185bebf183f8bb80c3f18e1247",
+      "bar/indicators/StayAwake.qml": "80805a48636b7037649a905795e7fc57fc431618e3cda629548314f4cce2fa68",
+      "bar/widgets/Indicators.manifest.json": "b192e657959b2d5639cbccb2d59045723adc626a7760d358ed9df53643657228",
+      "bar/widgets/Indicators.qml": "1425a32ee64630d2ce083aba016209b4367b1d451d307549a05db596f9916893"
     },
     "lock": {
-      "lock/LockView.qml": "8cfb7acbe062086ae90939f1e9b925ed2beac18e903b5e7f9d14a638d7cf5807",
-      "lock/Service.qml": "661ce2b70e6deadb293b0a7a2c2f19d10086ab191913ceb6d716bcc9b24fc7c4",
-      "lock/manifest.json": "58af8610a79045dfc09b541a5c2fdfd2e8886624549a49114ba424b4833cc546"
+      "lock/FingerprintModel.js": "6684762de3e3b88445a165344a9093e8faedb0647137199f16ffd1861db6f87c",
+      "lock/LockView.qml": "e5ec598e4dfafc0c6acb3ab8de1c3be810437ae943f6888fdcf1f92a6400876a",
+      "lock/Service.qml": "cf9da581ab749194d44d5f7f73dc028704373f59dd6b131a90b9c07419fed7c9",
+      "lock/manifest.json": "58af8610a79045dfc09b541a5c2fdfd2e8886624549a49114ba424b4833cc546",
+      "lock/poster.sh": "4941c8ae143a0ed0b226a6c54e1f94cbdd5937907cc01d0d0866c0cf34d916df"
     },
     "network": {
-      "panels/network/Model.js": "344c5d34397840e3a059ddfacb2ce3281b7dafea0d0adcc050e03f6648fe4185",
-      "panels/network/Panel.qml": "1e551a8d109535d2673ec9bb08faea01acdba27141c82aae6b7ae3be8da3c002",
+      "panels/network/Model.js": "1562b0752495f693ef8231148f5e6d99c375d120852e9c312a2b47067aa9a8fa",
+      "panels/network/Panel.qml": "8beba301a1d87db144543ad888226099c3dd1c2999f2a52106964b5851959adb",
       "panels/network/manifest.json": "cd18affe2e42fb65bf5fe624d78d843876d5bdb3e097ce954ee92dd327fe5419"
     },
     "system-update": {
       "bar/widgets/SystemUpdate.manifest.json": "daf0806360b5c8ffd71a0d08d9ef0e0f69048ea85c4b10f45b4a8e30b4601328",
-      "bar/widgets/SystemUpdate.qml": "d615dbfb9c9cfd1557f98db1e78a812ba81847209ca87b98dc1f6539aa8fb3de"
+      "bar/widgets/SystemUpdate.qml": "20b4b7b1e8e5a9e7ac87eac64d7c23edf98cbad72072bf64d88b35c260830950"
     },
     "weather": {
       "panels/weather/BarWidget.qml": "ab3e32b97cf37847ff880a44013133eef9b9f04fe7258b692b30e7b24c6de4ca",
-      "panels/weather/Model.js": "66d2aa5e81bfe12b1b1b53b499a09968bc9ad660d066bc60af9b18102e836d17",
-      "panels/weather/Panel.qml": "3a5b1345741f699e426ac08a2e4548a8bc0e0c4c82a54600402f716c20736de5",
+      "panels/weather/Model.js": "3e7dee236b287a6b58fdb1ef9597a2e0bdbe014473795147e47ed97ff78ce579",
+      "panels/weather/Panel.qml": "55dfe63d84b5421a5e3cad0f619bc3e0a5b3b495a972b44af0fe3a32269ed829",
       "panels/weather/manifest.json": "74a2a679dfab7df793d24d96322bdad8f087385756bd8f1c0cd63aef9243a87c"
     }
   },
-  "recorded": "2026-11-03"
+  "recorded": "2026-11-05"
 }

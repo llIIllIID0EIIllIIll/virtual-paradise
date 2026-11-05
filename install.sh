@@ -696,6 +696,13 @@ INSTALL_AND_ENABLE_PLUGINS() {
     RUN_AS_INSTALL_USER omarchy plugin remove "${CURRENT_USER}.${replaced_plugin}" --yes 2>/dev/null || true
     rm -rf "$CONFIG_DIR/omarchy/plugins/${CURRENT_USER}.${replaced_plugin}"
   done
+
+  # The background service clone is retired too: Omarchy 4.5 renders video
+  # wallpapers itself, so the stock plugin takes the layer back. Leaving the
+  # old copy behind kept a second IPC handler on the "background" target.
+  RUN_AS_INSTALL_USER omarchy plugin remove "${CURRENT_USER}.background" --yes 2>/dev/null || true
+  rm -rf "$CONFIG_DIR/omarchy/plugins/${CURRENT_USER}.background"
+  RUN_AS_INSTALL_USER omarchy plugin enable "omarchy.background" 2>/dev/null || true
   if [[ -d "$REPO_DIR/plugins" ]]; then
     local count=0
     for pdir in "$REPO_DIR"/plugins/*; do

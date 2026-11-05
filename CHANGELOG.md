@@ -9,6 +9,15 @@ Conventional Commits.
 ## [Unreleased]
 
 ### Changed
+- **Omarchy 4.5 compatibility.** The update took `SUPER + Q` for "close window"
+  and `SUPER + SHIFT + T` for "activity" (btop); the theme's rice layout moved
+  to the free `SUPER + ALT + Q` and the theme menu to `SUPER + ALT + T`, so
+  exactly one action runs per press and the new defaults still work. The
+  background service clone is retired too - Omarchy 4.5 renders video
+  wallpapers itself, and the leftover copy kept a second IPC handler on the
+  `background` target. The installer and uninstaller remove the stale plugin,
+  the theme-set hook keeps the stock service in place in both directions, and
+  `tools/check-upstream-drift.py` re-recorded its baseline against 4.5.0.
 - **The pointer glow only shows over terminals.** It used to trail the
   pointer everywhere, which read as a bright spot with nothing to light up on
   games, browsers and the bar. It is now gated on the pointer being inside a
