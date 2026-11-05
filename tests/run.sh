@@ -446,6 +446,31 @@ ids = [e.get("id") for s in ("left", "center", "right") for e in d["bar"]["layou
 sys.exit(0 if "omarchy.elsewhen" in ids and "jankeesvw.notification-center" not in ids else 1)
 PY
   check "shell.json has Elsewhen and no retired notification bell" $?
+
+  # The minimal layout: the right island keeps the six essentials, the
+  # specialized widgets stay installed off-bar, indicators only take space
+  # while one is active, and the active-window label is capped.
+  python3 - "$root/home/.config/omarchy/shell.json" <<'PY'
+import json, os, sys
+d = json.load(open(sys.argv[1]))
+user = os.environ.get("USER") or ""
+right = d["bar"]["layout"]["right"]
+ids = [e.get("id") for e in right]
+want = ["omarchy.tray", user + ".network", "ssupt.audio-control",
+        "onlyvishesh.power-manager", user + ".system-update", "omarchy.elsewhen"]
+special = ["io.github.randazraik.xray", "io.github.grichard99.omaproton-vpn",
+           "io.github.kristoferlund.webcam", "crmne.hyprmoncfg",
+           "io.github.jeffcortez23.omarchy-projector-cast", "ssupt.bluetooth-audio"]
+indicators = next(e for e in d["bar"]["layout"]["center"] if str(e.get("id", "")).endswith("indicators"))
+active = next(e for e in d["bar"]["layout"]["left"] if str(e.get("id", "")).endswith("active-window"))
+ok = (ids == want
+      and not any(e.get("fold") for e in right)
+      and all(s not in ids for s in special)
+      and indicators.get("alwaysShow") is False
+      and 0 < int(active.get("maxWidth", 999)) <= 200)
+sys.exit(0 if ok else 1)
+PY
+  check "the shipped layout is the minimal one" $?
 fi
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -2289,30 +2314,6 @@ if want tc21; then
   check "the hover halo stays inside the island" \
     "$(grep -q 'Keep the halo inside the island' "$bar" \
       && grep -q 'radius: Math.min(width, height) / 2' "$bar" && echo 0 || echo 1)"
-  # The three islands are anchored independently, so a long active-window
-  # title or the centre hover reveal used to run the right island into the
-  # centre. The right widgets marked `"fold": true` fold behind a pager chip
-  # first; the rest of the tail follows only if that is still not enough.
-  check "the bar folds the right island before it collides with the centre" \
-    "$(grep -q 'property bool rightOverflow: true' "$bar" \
-      && grep -q 'function rightSlotOverflowed' "$bar" \
-      && grep -q 'settings.fold === true' "$bar" \
-      && grep -q 'rightOverflowChipWidth' "$bar" \
-      && grep -q 'rightOverflowComfortGap' "$bar" && echo 0 || echo 1)"
-  check "the shipped layout marks the specialized widgets as foldable" \
-    "$(python3 - "$REPO_DIR/shell/shell.json" <<'PY'
-import json, sys
-d = json.load(open(sys.argv[1]))
-right = {e.get("id"): e for e in d["bar"]["layout"]["right"]}
-want = ["io.github.randazraik.xray", "io.github.grichard99.omaproton-vpn",
-        "io.github.kristoferlund.webcam", "crmne.hyprmoncfg",
-        "io.github.jeffcortez23.omarchy-projector-cast", "ssupt.bluetooth-audio"]
-keep = ["omarchy.tray", "__USER__.network", "ssupt.audio-control",
-        "onlyvishesh.power-manager", "__USER__.system-update", "omarchy.elsewhen"]
-sys.exit(0 if all(right.get(i, {}).get("fold") is True for i in want)
-         and all(not right.get(i, {}).get("fold", False) for i in keep) else 1)
-PY
-)"
 fi
 
 # ─────────────────────────────────────────────────────────────────────────────
