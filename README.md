@@ -375,8 +375,9 @@ the system - and the cities come from `worldZones` on the clock entry
 
 The Tools dropdown is the home of the specialized plugins: X-Ray,
 OmaProton VPN, webcam controls, display config, projector cast and Bluetooth
-audio, plus voice dictation (`omarchy-dictation toggle`, also on `ALT + SPACE`).
-Their widgets stay enabled and mounted in the bar with `"hidden": true`, so
+audio. Voice dictation stays on the centre bar's Dictation indicator (and
+`ALT + SPACE`). The plugin widgets stay enabled and mounted with
+`"hidden": true`, so
 their services keep running and their panels open from the bar when selected;
 the hidden entries take no space in the row. Move one back into the visible
 row by removing `"hidden": true` from its entry in `shell.json` (or via

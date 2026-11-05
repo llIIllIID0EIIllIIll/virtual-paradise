@@ -25,8 +25,8 @@ Conventional Commits.
   projector cast and Bluetooth audio - stay enabled and mounted with
   `"hidden": true`, so their services keep running and their panels open from
   the bar, but they take no space in the row. The Tools dropdown gathers them
-  with voice dictation (`omarchy-dictation toggle`): one button, no horizontal
-  stretch.
+  into one button, with no horizontal stretch; voice dictation stays on the
+  centre bar's Dictation indicator and on `ALT + SPACE`.
 - **The third-party notification bell is retired.** Omarchy 4.5 ships its own
   notification service (grouped stacks, inline actions, DND, history and
   keybinds), and the third-party watcher leaked one `inotifywait` process per
