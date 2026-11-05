@@ -9,17 +9,18 @@ Conventional Commits.
 ## [Unreleased]
 
 ### Changed
-- **Theme keybindings defer to Omarchy.** The theme no longer unbinds or
-  shadows any Omarchy default: `SUPER + Q` / `SUPER + W` close normally,
-  `SUPER + CTRL + T` opens the theme menu, `SUPER + SHIFT + F` / `B` open the
-  file manager and browser, `SUPER + CTRL + L` locks, `SUPER + CTRL + E` opens
-  emojis, `SUPER + SHIFT + N` opens the configured editor, and
+- **Theme keybindings defer to Omarchy.** The theme no longer aliases or
+  shadows Omarchy defaults: `SUPER + CTRL + T` opens the theme menu,
+  `SUPER + SHIFT + F` / `B` open the file manager and browser,
+  `SUPER + CTRL + L` locks, `SUPER + CTRL + E` opens emojis,
+  `SUPER + SHIFT + N` opens the configured editor, and
   `SUPER + CTRL + SPACE` / `W` swaps the background. The theme keeps only its
   own actions on free chords: rice layout (`SUPER + ALT + Q`), live wallpaper
   (`SUPER + ALT + W` / `N` / `SHIFT + N`), cooler boost, cast screen, resize
-  mode, config reload, Matrix screensaver, and the red glitch death - which
-  moved to `SUPER + CTRL + Q` so closing can stay exactly as Omarchy ships it.
-  Omarchy's `SUPER + ALT + arrows` group move is restored too.
+  mode, config reload, and Matrix screensaver. The one deliberate exception is
+  close: `SUPER + Q` / `SUPER + W` keep Omarchy's mapping but run the theme's
+  red glitch death, as before. Omarchy's `SUPER + ALT + arrows` group move is
+  restored too.
 - **The wallpaper rides Omarchy's own engine.** Omarchy 4.5 renders video
   wallpapers itself (`owe`), so the theme's mpvpaper engine is retired: the
   wallpaper keys and the glitch curtain stay, but the script now picks the
@@ -28,14 +29,14 @@ Conventional Commits.
   between them). The old autostart line is removed on update, and the ready
   flag the curtain waits on is now raised by the engine's own state.
 - **Omarchy 4.5 compatibility.** The update took `SUPER + Q` for "close window"
-  and `SUPER + SHIFT + T` for "activity" (btop), so the theme stopped claiming
-  both: `Q` / `W` stay Omarchy's close, and the rice layout moved to the free
-  `SUPER + ALT + Q`. The background service clone is retired too - Omarchy 4.5
-  renders video wallpapers itself, and the leftover copy kept a second IPC
-  handler on the `background` target. The installer and uninstaller remove the
-  stale plugin, the theme-set hook keeps the stock service in place in both
-  directions, and `tools/check-upstream-drift.py` re-recorded its baseline
-  against 4.5.0.
+  and `SUPER + SHIFT + T` for "activity" (btop): `Q` / `W` keep Omarchy's close
+  mapping but run the theme's glitch death, and the rice layout moved to the
+  free `SUPER + ALT + Q`. The background service clone is retired too -
+  Omarchy 4.5 renders video wallpapers itself, and the leftover copy kept a
+  second IPC handler on the `background` target. The installer and uninstaller
+  remove the stale plugin, the theme-set hook keeps the stock service in place
+  in both directions, and `tools/check-upstream-drift.py` re-recorded its
+  baseline against 4.5.0.
 - **The pointer glow only shows over terminals.** It used to trail the
   pointer everywhere, which read as a bright spot with nothing to light up on
   games, browsers and the bar. It is now gated on the pointer being inside a

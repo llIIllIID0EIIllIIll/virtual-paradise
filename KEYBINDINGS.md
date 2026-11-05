@@ -3,8 +3,8 @@
 Omarchy already ships a full set of default bindings. Hyprland does **not**
 replace a binding when the same chord is bound again — it runs every matching
 bind. The theme therefore only adds bindings on chords Omarchy leaves free, and
-it never unbinds or shadows an Omarchy default: if Omarchy owns an action, that
-default is what runs.
+it does not shadow an Omarchy default - with one deliberate exception: the two
+close chords keep Omarchy's mapping but run the theme's red glitch death.
 
 `tools/check-bindings.py` fails when a chord is repeated or shadows an Omarchy
 default. See every active binding with `SUPER + K` (or
@@ -21,7 +21,6 @@ These are the features Omarchy does not have a default for:
 | `SUPER + ALT + N` | Next live wallpaper |
 | `SUPER + ALT + SHIFT + N` | Previous live wallpaper |
 | `SUPER + ALT + C` | Toggle cooler boost |
-| `SUPER + CTRL + Q` | Close the window with the red glitch death |
 | `SUPER + SHIFT + K` | Cast screen (wireless display) |
 | `SUPER + SHIFT + R` | Reload the Hyprland config |
 | `SUPER + BACKSLASH` | Matrix screensaver |
@@ -35,7 +34,8 @@ Press `SUPER + R`, then use `H`/`J`/`K`/`L` or `LEFT`/`RIGHT`/`UP`/`DOWN`.
 
 The theme leaves these to Omarchy — there are no theme aliases to remember:
 
-- `SUPER + Q` / `SUPER + W` — close window
+- `SUPER + Q` / `SUPER + W` — close window, with the theme's red glitch death
+  (the only deliberate exception: the chord is Omarchy's, the effect is ours)
 - `SUPER + RETURN` — terminal
 - `SUPER + K` — keybindings menu
 - `SUPER + SPACE` — Omarchy menu (the card's border rides the theme's rotating

@@ -4,13 +4,13 @@
 --  Omarchy already ships a complete set of default bindings, and Hyprland does
 --  not replace a binding when the same chord is bound again: every matching
 --  bind runs. The theme therefore only adds bindings on chords Omarchy leaves
---  free. It does not unbind or shadow a default - if Omarchy owns an action,
---  that default is what runs.
+--  free, and it does not shadow a default - with one deliberate exception:
+--  the two close chords keep Omarchy's mapping but run the theme's red glitch
+--  death (the burst leads, then the window goes out) instead of a plain close.
 --
---  Actions that used to have a theme alias (close, theme menu, file manager,
---  browser, lock, emoji, editor, wallpaper switcher) are now Omarchy's:
+--  Every other shared action is Omarchy's:
 --
---    SUPER + Q / SUPER + W      close window
+--    SUPER + Q / SUPER + W      close window (red glitch death)
 --    SUPER + CTRL + T           theme menu
 --    SUPER + SHIFT + F          file manager
 --    SUPER + SHIFT + B          browser
@@ -42,10 +42,14 @@ o.bind("SUPER + ALT + N", "Next Live Wallpaper", "~/.local/bin/toggle_live_wallp
 o.bind("SUPER + ALT + SHIFT + N", "Previous Live Wallpaper", "~/.local/bin/toggle_live_wallpaper.sh prev")
 
 -- Closing a window deserves a proper death: a red glitch burst burns where
--- the window was, then goes out half a second later. Omarchy's SUPER + Q and
--- SUPER + W close plainly now; the effect keeps its own free chord so the
--- default close stays exactly as Omarchy ships it.
-o.bind("SUPER + CTRL + Q", "Close Window (Red Glitch Death)", "~/.local/bin/window_death.sh")
+-- the window was, then goes out half a second later. Omarchy closes on both
+-- SUPER + Q and SUPER + W; the pair is taken over on purpose so the custom
+-- effect is what closing looks like, whichever chord the muscle memory
+-- reaches for. unbind first, then own them, or both actions would run.
+hl.unbind("SUPER + Q")
+hl.unbind("SUPER + W")
+o.bind("SUPER + Q", "Close Window (Red Glitch Death)", "~/.local/bin/window_death.sh")
+o.bind("SUPER + W", "Close Window (Red Glitch Death)", "~/.local/bin/window_death.sh")
 
 -- Launch Matrix screensaver in terminal
 o.bind("SUPER + backslash", "Matrix Screensaver", "omarchy launch screensaver")

@@ -233,11 +233,14 @@ $(basename "$f"): $out"
     printf '  %sSKIP%s python3 not installed\n' "$DIM" "$OFF"
   fi
 
-  # The theme no longer takes over an Omarchy chord. The group move stays on
-  # SUPER + ALT + arrows and the live wallpaper stays on its free SUPER + ALT
-  # chords, so no default is unbound or shadowed.
-  check "the theme never unbinds an Omarchy default" \
-    "$(! grep -q 'hl.unbind' "$REPO_DIR/hypr/bindings.lua" && echo 0 || echo 1)"
+  # The close pair is the one deliberate takeover: the chords stay Omarchy's,
+  # but the action is the theme's glitch death. Every other bind lives on a
+  # free chord, including the restored SUPER + ALT + arrows group move.
+  check "only the close pair is taken over from Omarchy" \
+    "$([[ $(grep -c '^hl.unbind(' "$REPO_DIR/hypr/bindings.lua") -eq 2 ]] \
+      && grep -q 'hl.unbind("SUPER + Q")' "$REPO_DIR/hypr/bindings.lua" \
+      && grep -q 'hl.unbind("SUPER + W")' "$REPO_DIR/hypr/bindings.lua" \
+      && echo 0 || echo 1)"
   check "Omarchy's group move keeps its default chord" \
     "$(! grep -q 'o.bind("SUPER + ALT + LEFT"' "$REPO_DIR/hypr/bindings.lua" \
       && ! grep -q 'o.bind("SUPER + ALT + RIGHT"' "$REPO_DIR/hypr/bindings.lua" \
@@ -1607,16 +1610,14 @@ if want tc16; then
   check "the gradient bands respect Hyprland's ten-colour cap" \
     "$(grep -q 'return { cyan, cyan, cyan, cyan, green, green, pink, pink, pink, pink }' \
       "$REPO_DIR/hypr/looknfeel.lua" && echo 0 || echo 1)"
-  # Closing a window burns a neon glitch burst in its place. Omarchy's
-  # SUPER + Q / SUPER + W close plainly; the effect has its own free chord so
-  # the defaults are not shadowed.
-  check "the default close chords are left to Omarchy" \
-    "$(! grep -q 'o.bind("SUPER + Q"' "$REPO_DIR/hypr/bindings.lua" \
-      && ! grep -q 'o.bind("SUPER + W"' "$REPO_DIR/hypr/bindings.lua" \
-      && echo 0 || echo 1)"
-  check "the window death effect has its own free chord" \
-    "$(grep -q 'o.bind("SUPER + CTRL + Q", "Close Window (Red Glitch Death)"' \
-      "$REPO_DIR/hypr/bindings.lua" && echo 0 || echo 1)"
+  # Closing a window burns a neon glitch burst in its place. Omarchy closes on
+  # SUPER + Q and SUPER + W; both are unbound first and then own the effect, so
+  # exactly one action runs and the custom close is what either chord does.
+  check "both close chords run the window death effect" \
+    "$(grep -A2 'hl.unbind("SUPER + Q")' "$REPO_DIR/hypr/bindings.lua" \
+        | grep -q 'o.bind("SUPER + Q", "Close Window (Red Glitch Death)"' \
+      && grep -A1 'hl.unbind("SUPER + W")' "$REPO_DIR/hypr/bindings.lua" \
+        | grep -q 'window_death.sh' && echo 0 || echo 1)"
   check "the window death burst is click-through" \
     "$(grep -q 'mask: Region {}' "$REPO_DIR/bin/window_death.qml" && echo 0 || echo 1)"
   # A glitch that slides in reads as a panel, not as signal loss: the death
