@@ -68,19 +68,6 @@ Item {
   // gap stream, and independently switchable from shell.json with
   // `"bar": { "hoverGlow": false }`.
   property bool hoverGlow: true
-  // Right-island overflow pager. When the three islands would sit closer than
-  // the comfort gap, the right widgets marked `"fold": true` in shell.json
-  // fold behind a small chip first, then the tail of whatever is left, and
-  // page back in on click instead of colliding with the centre. Widths are
-  // measured live, so a long active-window title, the centre hover reveal or
-  // a tray item appearing all resolve without overlap. Opt out with
-  // `"bar": { "rightOverflow": false }`.
-  property bool rightOverflow: true
-  property var rightOverflowFoldSlots: []
-  property bool rightOverflowPage: false
-  readonly property bool rightOverflowShown: rightOverflow && rightOverflowFoldSlots.length > 0
-  readonly property int rightOverflowChipWidth: Math.round(Style.space(20))
-  readonly property int rightOverflowComfortGap: Math.round(Style.space(16))
   readonly property bool hoverEffectsEnabled: islandsEnabled && gapEffects && hoverGlow
   // Surface language. false (default) draws the V2 continuous strip in
   // BarSurface.qml; true brings back the floating pill islands.
@@ -698,7 +685,6 @@ Item {
     // explicit false lets a user turn off ambient motion without editing QML.
     gapEffects = config.gapEffects !== false
     hoverGlow = config.hoverGlow !== false
-    rightOverflow = config.rightOverflow !== false
 
     // layoutEntries feeds plain JS arrays to the module Repeaters, and QML
     // cannot diff those: reassigning layoutConfig rebuilds every widget on
@@ -734,19 +720,6 @@ Item {
     var serial = barConfigSerial
     var entries = layoutConfig ? layoutConfig[region] : null
     return Array.isArray(entries) ? entries : []
-  }
-
-  // A right widget is folded when the live split says it does not fit next to
-  // the centre. Page 1 keeps the primary set, page 2 the folded rest; the chip
-  // flips between them without rebuilding any widget.
-  function rightSlotOverflowed(slot) {
-    if (!rightOverflow || rightOverflowFoldSlots.length === 0) return false
-    var folded = rightOverflowFoldSlots.indexOf(slot) !== -1
-    return rightOverflowPage ? !folded : folded
-  }
-
-  function toggleRightOverflowPage() {
-    rightOverflowPage = !rightOverflowPage
   }
 
   // Tab order for the panels in one bar region. Scoped to a single bar surface
@@ -1572,117 +1545,6 @@ Item {
       Item {
         anchors.fill: parent
 
-        // --- Right-island overflow pager --------------------------------
-        // The three islands are anchored independently (left to the edge,
-        // centre to the screen, right to the other edge), so when the live
-        // widths add up to more than the screen the right island used to run
-        // into the centre. The pager measures the registered right slots and
-        // folds the trailing ones behind the chip before that happens.
-        Timer {
-          id: rightOverflowTimer
-          interval: 140
-          repeat: false
-          onTriggered: recomputeRightOverflow()
-        }
-
-        function rightSlotsInOrder() {
-          var entries = root.layoutEntries("right")
-          var out = []
-          for (var i = 0; i < entries.length; i++) {
-            var id = root.entryId(entries[i])
-            for (var j = 0; j < root.moduleSlots.length; j++) {
-              var slot = root.moduleSlots[j]
-              if (slot && slot.region === "right" && slot.moduleName === id) {
-                out.push(slot)
-                break
-              }
-            }
-          }
-          return out
-        }
-
-        function recomputeRightOverflow() {
-          var reset = function() {
-            if (root.rightOverflowFoldSlots.length !== 0) root.rightOverflowFoldSlots = []
-            if (root.rightOverflowPage) root.rightOverflowPage = false
-          }
-
-          if (!root.rightOverflow || root.vertical) {
-            reset()
-            return
-          }
-
-          var slots = rightSlotsInOrder()
-          var n = slots.length
-          if (n < 2) {
-            reset()
-            return
-          }
-
-          var total = 0
-          var marked = []
-          var unmarked = []
-          for (var i = 0; i < n; i++) {
-            total += Math.max(0, slots[i].implicitWidth)
-            var settings = root.entrySettings(slots[i].entry)
-            if (settings && settings.fold === true) marked.push(slots[i])
-            else unmarked.push(slots[i])
-          }
-
-          // Space between the centre island's right edge (or the left island's
-          // when it is wider) and the right island's inner edge, minus the
-          // island padding the host adds on both sides.
-          var rightEdge = root.width - (root.barEdgeInset - root.islandPad)
-          var leftRight = leftHost.x + leftHost.width
-          var centerRect = centerModules.islandRect
-          var centerRight = (centerRect && centerRect.width > 0) ? centerRect.x + centerRect.width : 0
-          var limit = rightEdge - Math.max(leftRight, centerRight) - root.rightOverflowComfortGap
-          var available = limit - root.islandPad * 2
-
-          if (total <= available) {
-            reset()
-            return
-          }
-
-          var chip = root.rightOverflowChipWidth + Math.round(Style.space(2))
-          var budget = available - chip
-
-          // The `fold` hint decides what leaves first (the specialized
-          // widgets), then the tail of whatever is left; the widget nearest
-          // the chip is the first to go.
-          var order = []
-          for (var m = marked.length - 1; m >= 0; m--) order.push(marked[m])
-          for (var u = unmarked.length - 1; u >= 0; u--) order.push(unmarked[u])
-
-          var fold = []
-          var visible = total
-          for (var k = 0; k < order.length; k++) {
-            if (visible <= budget || fold.length >= n - 1) break
-            fold.push(order[k])
-            visible -= Math.max(0, order[k].implicitWidth)
-          }
-
-          if (fold.length === 0) {
-            reset()
-            return
-          }
-
-          var changed = fold.length !== root.rightOverflowFoldSlots.length
-          if (changed) root.rightOverflowPage = false
-          root.rightOverflowFoldSlots = fold
-        }
-
-        Connections {
-          target: root
-
-          function onModuleSlotsChanged() { rightOverflowTimer.restart() }
-          function onBarConfigChanged() { rightOverflowTimer.restart() }
-          function onRightOverflowChanged() { rightOverflowTimer.restart() }
-        }
-
-        Component.onCompleted: rightOverflowTimer.restart()
-        onWidthChanged: rightOverflowTimer.restart()
-
         // V2 continuous strip. One surface for the whole bar, replacing the
         // three floating pills when pillIslands is off.
         BarSurface {
@@ -1737,13 +1599,7 @@ Item {
           animated: root.gapEffects
         }
 
-        CenterModules {
-          id: centerModules
-          anchors.fill: parent
-          // The centre reveal widens the island on hover; fold the right tail
-          // before it reaches it.
-          onIslandRectChanged: rightOverflowTimer.restart()
-        }
+        CenterModules { id: centerModules; anchors.fill: parent }
 
         // Each side section is wrapped in a host that measures its own
         // content, so the island hugs the widgets instead of stretching to
@@ -1753,9 +1609,6 @@ Item {
           id: leftHost
 
           z: 10
-          // A long active-window title widens the left island continuously;
-          // re-measure once the animation settles.
-          onWidthChanged: rightOverflowTimer.restart()
           anchors.left: parent.left
           anchors.leftMargin: root.barEdgeInset - root.islandPad
           // A notch tab hangs off the screen edge, so it spans the full bar
@@ -1812,9 +1665,7 @@ Item {
           anchors.verticalCenter: root.notchIslands ? undefined : parent.verticalCenter
           anchors.top: root.notchIslands && root.position !== "bottom" ? parent.top : undefined
           anchors.bottom: root.notchIslands && root.position === "bottom" ? parent.bottom : undefined
-          readonly property bool overflowChipShown: root.rightOverflowShown
           width: rightContentWidth + root.islandPad * 2
-            + (overflowChipShown ? root.rightOverflowChipWidth + Math.round(Style.space(2)) : 0)
           height: root.notchIslands
             ? root.barSize
             : Math.max(1, root.barSize - root.islandInset * 2)
@@ -1857,48 +1708,6 @@ Item {
 
             x: root.islandPad
             anchors.verticalCenter: parent.verticalCenter
-          }
-
-          // Pager chip: appears only while widgets are folded. `⋯` pages to
-          // the folded group, `‹` pages back; leaving the island folds back to
-          // the primary set.
-          Item {
-            id: rightOverflowChip
-
-            visible: root.rightOverflowShown
-            x: root.islandPad + rightModules.width + Math.round(Style.space(2))
-            anchors.verticalCenter: parent.verticalCenter
-            width: root.rightOverflowChipWidth
-            height: Math.max(1, root.barSize - root.islandInset * 2)
-
-            Text {
-              anchors.centerIn: parent
-              text: root.rightOverflowPage ? "‹" : "⋯"
-              color: chipHover.hovered ? Color.accent : Color.bar.text
-              font.family: Style.font.family
-              font.pixelSize: Style.font.caption + 3
-              Behavior on color { ColorAnimation { duration: 120 } }
-            }
-
-            HoverHandler { id: chipHover }
-
-            MouseArea {
-              anchors.fill: parent
-              cursorShape: Qt.PointingHandCursor
-              onClicked: root.toggleRightOverflowPage()
-            }
-          }
-
-          HoverHandler {
-            id: rightHostHover
-            onHoveredChanged: if (!hovered) rightOverflowPageReset.restart()
-          }
-
-          Timer {
-            id: rightOverflowPageReset
-            interval: 1600
-            repeat: false
-            onTriggered: root.rightOverflowPage = false
           }
         }
 
@@ -2658,15 +2467,8 @@ Item {
     }
     implicitWidth: activeItem && activeItem.visible ? (root.vertical ? root.barSize : activeItem.implicitWidth) : 0
     implicitHeight: activeItem && activeItem.visible ? activeItem.implicitHeight : 0
-    // Folded slots keep their widget alive but collapse to zero width, so the
-    // right island never collides with the centre; the pager chip brings them
-    // back. The width animation makes the fold read as a slide, not a cut.
-    readonly property bool overflowed: root.rightSlotOverflowed(slot)
-    opacity: overflowed ? 0 : 1
-    width: overflowed ? 0 : implicitWidth
+    width: implicitWidth
     height: implicitHeight
-    Behavior on opacity { NumberAnimation { duration: 140; easing.type: Easing.OutCubic } }
-    Behavior on width { NumberAnimation { duration: 160; easing.type: Easing.OutCubic } }
     z: modulePointer.dragging ? 100 : 0
 
     Component.onCompleted: root.registerModuleSlot(slot)

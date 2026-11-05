@@ -36,7 +36,7 @@ Three floating glass pills over a faint hex underlay, a sparse comet stream in t
 
 - **Left island**: quick menu, Japanese workspace numerals, active window
 - **Center island**: waveform visualizer, weather, clock, vitals (CPU/GPU/RAM/disk/net), CPU temperature, microphone, indicator dots
-- **Right island**: system tray, network, VPN, world clock, audio, battery, power
+- **Right island**: system tray, network, audio, power, updates, world clock
 - **Ambient overlays**: a neon glow trails the pointer over terminals (it stays out of the way on games, browsers and the bar), and the screen edges flash cyan on a workspace change and magenta when a notification arrives
 
 The gap stream, the rim scanner and the hover chrome are opt-out in `~/.config/omarchy/shell.json`; see [Bar Effects](#bar-effects).
@@ -353,8 +353,7 @@ preserve a file you have edited.
 {
   "bar": {
     "gapEffects": false,
-    "hoverGlow": false,
-    "rightOverflow": false
+    "hoverGlow": false
   }
 }
 ```
@@ -366,15 +365,13 @@ shimmer, the ramp-sampled bloom and the scale pop. Setting `gapEffects` to
 `false` also turns off the hover chrome, so the bar can be made completely
 still with one key.
 
-`rightOverflow` (default on) keeps the right island from colliding with the
-centre when the live widths grow - a long active-window title, the centre
-hover reveal or a tray item appearing. The right widgets marked
-`"fold": true` in the layout fold behind a small `⋯` chip first, then the tail
-of whatever is left; clicking the chip pages between the primary set and the
-folded one. The shipped layout marks the specialized widgets (X-Ray, VPN,
-webcam, monitor config, projector cast, Bluetooth audio) so the tray, network,
-audio, power, updates and the world clock stay visible. Add or remove
-`"fold": true` on any right entry to change the priority.
+The shipped layout keeps the islands balanced: indicators only take space
+while one is active, the active-window label is capped at 180px, and the right
+island carries the six essentials (tray, network, audio, power, updates, world
+clock). The specialized widgets - X-Ray, VPN, webcam, monitor config,
+projector cast and Bluetooth audio - stay installed; re-add any of them with
+`omarchy bar put <id> --after omarchy.tray`, or rearrange the bar from the
+theme menu.
 
 ### Memory
 

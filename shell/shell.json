@@ -25,7 +25,7 @@
           "id": "__USER__.microphone"
         },
         {
-          "alwaysShow": true,
+          "alwaysShow": false,
           "id": "__USER__.indicators",
           "items": [
             "Dictation",
@@ -50,37 +50,13 @@
           "id": "io.github.tyrichards.workspaces-jap"
         },
         {
-          "id": "__USER__.active-window"
+          "id": "__USER__.active-window",
+          "maxWidth": 180
         }
       ],
       "right": [
         {
           "id": "omarchy.tray"
-        },
-        {
-          "id": "io.github.randazraik.xray",
-          "fold": true
-        },
-        {
-          "id": "io.github.grichard99.omaproton-vpn",
-          "fold": true
-        },
-        {
-          "id": "io.github.kristoferlund.webcam",
-          "device": "/dev/video0",
-          "fold": true
-        },
-        {
-          "id": "crmne.hyprmoncfg",
-          "fold": true
-        },
-        {
-          "id": "io.github.jeffcortez23.omarchy-projector-cast",
-          "fold": true
-        },
-        {
-          "id": "ssupt.bluetooth-audio",
-          "fold": true
         },
         {
           "id": "__USER__.network"
