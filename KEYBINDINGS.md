@@ -16,7 +16,7 @@ See every active binding with `SUPER + K` (or
 | Shortcut | Action |
 |----------|--------|
 | `SUPER + ALT + Q` | Rice layout (fastfetch → btop → cava → unimatrix) |
-| `SUPER + W` | Close the window (red glitch death) |
+| `SUPER + Q` / `SUPER + W` | Close the window (red glitch death) |
 | `SUPER + N` | Next static wallpaper |
 | `SUPER + ALT + W` | Toggle live video wallpaper |
 | `SUPER + ALT + N` | Next live wallpaper |
@@ -43,10 +43,10 @@ Press `SUPER + R`, then use `H`/`J`/`K`/`L` or `LEFT`/`RIGHT`/`UP`/`DOWN`.
 
 These are intentionally **not** rebound by the theme:
 
-- `SUPER + Q` — close window (Omarchy 4.5 added it, so the rice layout moved
-  to `SUPER + ALT + Q`)
 - `SUPER + SHIFT + T` — activity (btop); the theme menu moved to
   `SUPER + ALT + T`
+- `SUPER + CTRL + SPACE` / `SUPER + CTRL + W` — Omarchy's background switcher
+  (the theme's wallpaper keys cycle without opening it)
 - `SUPER + RETURN` — terminal
 - `SUPER + K` — keybindings menu
 - `SUPER + SPACE` — Omarchy menu (the card's border rides the theme's rotating

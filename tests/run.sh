@@ -1602,11 +1602,16 @@ if want tc16; then
   check "the gradient bands respect Hyprland's ten-colour cap" \
     "$(grep -q 'return { cyan, cyan, cyan, cyan, green, green, pink, pink, pink, pink }' \
       "$REPO_DIR/hypr/looknfeel.lua" && echo 0 || echo 1)"
-  # Closing a window burns a neon glitch burst in its place. Omarchy's plain
-  # SUPER + W is unbound on purpose first, so exactly one action runs.
-  check "SUPER + W is owned by the window death effect" \
-    "$(grep -A1 'hl.unbind("SUPER + W")' "$REPO_DIR/hypr/bindings.lua" \
-      | grep -q 'window_death.sh' && echo 0 || echo 1)"
+  # Closing a window burns a neon glitch burst in its place. Omarchy 4.5
+  # closes on both SUPER + Q and SUPER + W; both are unbound on purpose first,
+  # so exactly one action runs per press and the rice is what closing looks
+  # like on either chord.
+  check "both close chords are owned by the window death effect" \
+    "$(grep -q 'hl.unbind("SUPER + Q")' "$REPO_DIR/hypr/bindings.lua" \
+      && grep -A2 'hl.unbind("SUPER + Q")' "$REPO_DIR/hypr/bindings.lua" \
+        | grep -q 'o.bind("SUPER + Q", "Close Window (Red Glitch Death)"' \
+      && grep -A1 'hl.unbind("SUPER + W")' "$REPO_DIR/hypr/bindings.lua" \
+        | grep -q 'window_death.sh' && echo 0 || echo 1)"
   check "the window death burst is click-through" \
     "$(grep -q 'mask: Region {}' "$REPO_DIR/bin/window_death.qml" && echo 0 || echo 1)"
   # A glitch that slides in reads as a panel, not as signal loss: the death
