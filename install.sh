@@ -1232,10 +1232,14 @@ if [[ -f "$CONFIG_DIR/hypr/autostart.lua" ]]; then
     echo 'o.launch_on_start("vp_death_daemon.sh")' >> "$CONFIG_DIR/hypr/autostart.lua"
     log_sub "Hooked the window death daemon to ~/.config/hypr/autostart.lua"
   fi
-  if ! grep -q "toggle_live_wallpaper.sh" "$CONFIG_DIR/hypr/autostart.lua"; then
+  # Omarchy 4.5 renders video wallpapers itself, so the theme's mpvpaper
+  # engine is retired. Remove the old autostart line so an updated install
+  # does not start a second decoder.
+  if grep -q "toggle_live_wallpaper.sh" "$CONFIG_DIR/hypr/autostart.lua"; then
     hypr_backup "$CONFIG_DIR/hypr/autostart.lua"
-    echo 'o.launch_on_start("toggle_live_wallpaper.sh init")' >> "$CONFIG_DIR/hypr/autostart.lua"
-    log_sub "Hooked live wallpaper to ~/.config/hypr/autostart.lua"
+    sed -i '/o\.launch_on_start("toggle_live_wallpaper\.sh/d' \
+      "$CONFIG_DIR/hypr/autostart.lua" 2>/dev/null || true
+    log_sub "Retired the mpvpaper autostart from ~/.config/hypr/autostart.lua"
   fi
   # The window death burst moved into the shell as an overlay plugin. Remove
   # the old daemon line so an updated install does not keep a second

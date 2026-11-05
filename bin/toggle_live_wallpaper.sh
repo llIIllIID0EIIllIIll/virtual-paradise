@@ -1,15 +1,21 @@
 #!/bin/bash
 # ==============================================================================
-#  Virtual☆Paradise — Live Video & Animated GIF Wallpaper Engine
+#  Virtual☆Paradise — Live video wallpaper switcher
 # ==============================================================================
 #  Usage:
 #    toggle_live_wallpaper.sh          # Toggle live wallpaper on/off
-#    toggle_live_wallpaper.sh init     # Startup: start live wallpaper
 #    toggle_live_wallpaper.sh start    # Start live wallpaper
 #    toggle_live_wallpaper.sh stop     # Switch to static wallpaper
 #    toggle_live_wallpaper.sh next     # Cycle to next live wallpaper (video/GIF)
 #    toggle_live_wallpaper.sh prev     # Cycle to previous live wallpaper
 #    toggle_live_wallpaper.sh list     # List all live wallpapers
+#
+#  Omarchy 4.5 ships its own background engine (`owe`) and renders video
+#  wallpapers itself, so this script no longer runs mpvpaper: it picks the
+#  file, plays the theme's glitch curtain, and hands the path to
+#  `omarchy theme bg set`. That keeps the rice (the curtain, the cycle keys)
+#  without a second video engine decoding the same frames - two engines ran
+#  in parallel before, ~360 MB of RSS between them.
 # ==============================================================================
 
 # The wallpapers live outside the theme directory: Omarchy stages the whole
@@ -26,13 +32,11 @@ STATE_DIR="$HOME/.local/state/virtual-paradise"
 STATE_FILE="$STATE_DIR/current_live_wallpaper"
 STATIC_BG="$BG_DIR/Miku_missing.jpg"
 
-# The ready flag and the mpvpaper socket live in the per-user runtime
-# directory. A fixed path in /tmp can be taken by another user on the machine:
-# a socket that already exists keeps mpvpaper from starting, and a ready flag
-# that is already there ends the transition before the wallpaper is up.
+# The ready flag lives in the per-user runtime directory. A fixed path in
+# /tmp can be taken by another user on the machine: a ready flag that is
+# already there ends the curtain before the wallpaper is up.
 RUNTIME_DIR="${XDG_RUNTIME_DIR:-/tmp}"
 READY_FILE="$RUNTIME_DIR/virtual_paradise_wallpaper_ready"
-SOCKET_FILE="$RUNTIME_DIR/mpv-live.sock"
 
 CURRENT_THEME="$(cat "$HOME/.local/state/omarchy/current/theme.name" 2>/dev/null || echo "")"
 if [[ "$CURRENT_THEME" != "virtual-paradise" && "$1" != "--force" ]]; then
@@ -66,27 +70,31 @@ get_live_items() {
   fi
 }
 
-is_live_running() {
-  pgrep -x mpvpaper >/dev/null 2>&1
+# The name Omarchy uses for a background: the file name without extension.
+background_name() {
+  local base
+  base="$(basename "${1:-}" 2>/dev/null)"
+  printf '%s' "${base%.*}"
 }
 
-# Wait for the shell's background layer.
-#
-# The live wallpaper is drawn on the same layer as the static background, and
-# a layer created later ends up on top. Started too early - before the shell
-# puts its background up - the video ends up *under* the static picture, and
-# the login screen shows the static wallpaper with the shell's diamond
-# transition instead of the live one.
-wait_for_shell_background() {
-  local waited=0
-  while (( waited < 120 )); do
-    if hyprctl layers 2>/dev/null | grep -q "namespace: omarchy-background"; then
-      return 0
-    fi
-    sleep 0.25
-    waited=$((waited + 1))
-  done
-  return 1
+# What is on screen right now. The engine's own `current` drops the
+# extension, and this theme's static and video share a stem
+# (Miku_missing.jpg / .mp4), so read the symlink it manages instead.
+current_background() {
+  local link="$HOME/.local/state/omarchy/current/background"
+  if [[ -L "$link" ]]; then
+    readlink "$link" 2>/dev/null && return 0
+  fi
+  omarchy theme bg current 2>/dev/null | head -1
+}
+
+# Is the live video the current background? Drives the toggle.
+is_live_current() {
+  [[ -f "$STATE_FILE" ]] || return 1
+  local want current
+  want="$(cat "$STATE_FILE" 2>/dev/null)"
+  current="$(current_background)"
+  [[ -n "$want" && "$want" == "$current" ]]
 }
 
 play_curtain_transition() {
@@ -112,19 +120,37 @@ play_curtain_transition() {
   fi
 }
 
-wait_for_mpv_ready() {
+# Wait until the symlink points at the new media, then let the curtain go.
+# The curtain has its own timeout, so a slow decode cannot hold the screen.
+wait_for_background() {
+  local want="$1"
   local max_checks=60 # 60 * 0.05s = 3.0s maximum
   for ((i=0; i<max_checks; i++)); do
-    if [[ -S "$SOCKET_FILE" ]] && command -v socat &>/dev/null; then
-      local resp
-      resp=$(echo '{ "command": ["get_property", "playback-time"] }' | socat - "$SOCKET_FILE" 2>/dev/null || true)
-      if [[ "$resp" == *"\"data\":"* ]]; then
-        break
-      fi
+    if [[ -z "$want" ]] || [[ "$(current_background)" == "$want" ]]; then
+      break
     fi
     sleep 0.05
   done
   touch "$READY_FILE"
+}
+
+set_background() {
+  local target="$1"
+  local transition="${2:-true}"
+  if [[ -n "$target" && -f "$target" ]]; then
+    if [[ "$transition" == "true" ]]; then
+      play_curtain_transition "$target"
+    fi
+    omarchy theme bg set "$target" 2>/dev/null || true
+    if [[ "$transition" == "true" ]]; then
+      wait_for_background "$target" &
+    else
+      touch "$READY_FILE"
+    fi
+    echo "$target" > "$STATE_FILE"
+  else
+    set_static "$transition"
+  fi
 }
 
 set_live() {
@@ -137,42 +163,15 @@ set_live() {
       target="${items[0]}"
     fi
   fi
-
-  if [[ -n "$target" && -f "$target" ]]; then
-    rm -f "$READY_FILE" "$SOCKET_FILE"
-    if [[ "$transition" == "true" ]]; then
-      play_curtain_transition "$target"
-    fi
-
-    # Update static background symlink quietly without triggering duplicate compositor animation
-    if [[ -f "$STATIC_BG" ]]; then
-      ln -nsf "$STATIC_BG" "$HOME/.local/state/omarchy/current/background" 2>/dev/null || true
-    fi
-    # Launch mpvpaper hardware accelerated on all monitors (screen is already covered by Glitch)
-    killall -9 mpvpaper 2>/dev/null || true
-    if command -v mpvpaper &>/dev/null; then
-      setsid -f mpvpaper -vs -o "no-audio loop hwdec=auto-safe cache=yes demuxer-max-bytes=16MiB demuxer-max-back-bytes=8MiB demuxer-readahead-secs=1 --load-scripts=no --input-ipc-server=$SOCKET_FILE" '*' "$target" >/dev/null 2>&1
-      if [[ "$transition" == "true" ]]; then
-        wait_for_mpv_ready &
-      else
-        touch "$READY_FILE"
-      fi
-    else
-      touch "$READY_FILE"
-    fi
-    echo "$target" > "$STATE_FILE"
-  else
-    set_static "$transition"
-  fi
+  set_background "$target" "$transition"
 }
 
 set_static() {
   local transition="${1:-true}"
-  rm -f "$READY_FILE" "$SOCKET_FILE"
+  rm -f "$READY_FILE"
   if [[ "$transition" == "true" ]]; then
     play_curtain_transition
   fi
-  killall -9 mpvpaper 2>/dev/null || true
   if [[ -f "$STATIC_BG" ]]; then
     omarchy theme bg set "$STATIC_BG" 2>/dev/null || true
   fi
@@ -214,16 +213,9 @@ cycle_live() {
 
 case "$1" in
   init|autostart)
-    # The shell's background has to be up before the video starts, otherwise
-    # the video is drawn under the static picture and never shows.
-    wait_for_shell_background || true
-    # Brief delay on fresh login to ensure Wayland layer-shell is fully mapped
-    sleep 0.35
-    if [[ -f "$STATE_FILE" ]] && [[ -f "$(cat "$STATE_FILE" 2>/dev/null)" ]]; then
-      set_live "$(cat "$STATE_FILE")" false
-    else
-      set_live "" false
-    fi
+    # Omarchy restores the background itself at login, video included, so
+    # there is nothing to start. Kept so an old autostart line stays harmless.
+    exit 0
     ;;
   stop)
     set_static true
@@ -245,7 +237,7 @@ case "$1" in
     done
     ;;
   "")
-    if is_live_running; then
+    if is_live_current; then
       set_static true
     else
       if [[ -f "$STATE_FILE" ]] && [[ -f "$(cat "$STATE_FILE" 2>/dev/null)" ]]; then

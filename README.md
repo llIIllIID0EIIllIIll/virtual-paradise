@@ -391,7 +391,9 @@ path instead:
   four.
 - The clock's calendar popup is built the first time it is asked for; a
   session that never opens it never pays for the month grid.
-- `mpvpaper` is capped at a 16 MiB demuxer cache instead of mpv's default.
+- The wallpaper rides Omarchy's own background engine (it renders video
+  itself since 4.5) instead of a second `mpvpaper` decoder - the two engines
+  together held ~360 MB of RSS for the same frames.
 - The theme's overlay plugins are disabled when the theme is left and removed
   on uninstall, so they do not linger in another theme.
 
@@ -588,7 +590,6 @@ MIT License. See [LICENSE](LICENSE) for details.
 - **Omarchy** — The Hyprland rice framework
 - **Hyprland** — Wayland compositor
 - **Quickshell** — Status bar and widgets
-- **mpvpaper** — Video wallpaper player
 - **Cava** — Audio visualizer
 - **btop** — Resource monitor
 - **Fastfetch** — System info

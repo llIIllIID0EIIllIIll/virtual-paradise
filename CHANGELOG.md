@@ -9,6 +9,13 @@ Conventional Commits.
 ## [Unreleased]
 
 ### Changed
+- **The wallpaper rides Omarchy's own engine.** Omarchy 4.5 renders video
+  wallpapers itself (`owe`), so the theme's mpvpaper engine is retired: the
+  wallpaper keys and the glitch curtain stay, but the script now picks the
+  file and hands it to `omarchy theme bg set` instead of starting a second
+  decoder. Both engines used to decode the same frames (~360 MB of RSS
+  between them). The old autostart line is removed on update, and the ready
+  flag the curtain waits on is now raised by the engine's own state.
 - **Omarchy 4.5 compatibility.** The update took `SUPER + Q` for "close window"
   and `SUPER + SHIFT + T` for "activity" (btop); the theme's rice layout moved
   to the free `SUPER + ALT + Q` and the theme menu to `SUPER + ALT + T`, so
