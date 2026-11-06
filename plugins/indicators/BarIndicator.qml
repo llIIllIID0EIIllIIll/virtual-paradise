@@ -26,6 +26,17 @@ BarIconButton {
     return Util.parseModuleJson(raw)
   }
 
+  // First-party service proxy for this widget. The theme bar resolves it
+  // directly because the package facade gates the proxies on the widget
+  // manifest carrying the "bar" kind; fall back to the facade for older
+  // bar builds.
+  function firstPartyService(id) {
+    if (bar && typeof bar.firstPartyService === "function") return bar.firstPartyService(id)
+    if (bar && bar.shell && typeof bar.shell.firstPartyServiceFor === "function")
+      return bar.shell.firstPartyServiceFor(id)
+    return null
+  }
+
   function syncIndicatorOpacity() {
     root.opacity = !belongsInBlock ? 0 : (effectiveActive ? 1.0 : (inactiveRevealed ? 0.70 : (tooltipHovered ? 1.0 : 0.65)))
   }
