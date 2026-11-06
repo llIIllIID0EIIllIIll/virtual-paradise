@@ -1714,7 +1714,14 @@ Item {
           RightModules {
             id: rightModules
 
-            x: root.islandPad
+            // Anchored to the outer edge, not laid out from the left: when
+            // the tray drawer expands, the row grows leftward into the gap
+            // and every other icon keeps its screen position. Laid out from
+            // the left the whole row shifted with the drawer, and the host
+            // width animation (180ms) against the drawer reveal (600ms) made
+            // the icons drift in a wave while it opened.
+            anchors.right: parent.right
+            anchors.rightMargin: root.islandPad
             anchors.verticalCenter: parent.verticalCenter
           }
         }
