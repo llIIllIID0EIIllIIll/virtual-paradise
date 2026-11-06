@@ -7,7 +7,13 @@ import ".."
 BarIndicator {
   id: root
 
-  readonly property var remoteSessionService: root.firstPartyService("omarchy.remote-session")
+  property var remoteSessionService: null
+
+  function refreshService() {
+    remoteSessionService = root.firstPartyService("omarchy.remote-session")
+  }
+  onBarChanged: refreshService()
+  Component.onCompleted: refreshService()
   readonly property var peers: remoteSessionService && Array.isArray(remoteSessionService.peers) ? remoteSessionService.peers : []
 
   active: remoteSessionService ? remoteSessionService.active : false

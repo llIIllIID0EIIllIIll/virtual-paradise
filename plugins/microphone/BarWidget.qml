@@ -124,7 +124,7 @@ BarWidget {
       Text {
         anchors.centerIn: parent
         text: root.muted ? "󰍭" : "󰍬"
-        font.family: root.bar.fontFamily
+        font.family: (root.bar ? root.bar.fontFamily : Style.font.family)
         font.pixelSize: Style.font.icon
         color: root.inUse ? "#00ff88" : (!root.muted ? (button.tooltipHovered ? "#00ff88" : "#00ffdd") : (button.tooltipHovered ? "#ffffff" : "#9684c0"))
         scale: button.tooltipHovered ? 1.12 : 1.0

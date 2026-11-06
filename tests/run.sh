@@ -978,7 +978,7 @@ if want tc10; then
   check "the wallpaper transition stays visible for a moment" \
     "$(grep -q 'minimumVisible' "$REPO_DIR/bin/glitch_transition.qml" && echo 0 || echo 1)"
   check "there is a transition for logout, reboot and shutdown" \
-    "$([[ -f $REPO_DIR/bin/transition.sh ]] && grep -q 'omarchy-system-shutdown' "$REPO_DIR/bin/transition.sh" && echo 0 || echo 1)"
+    "$([[ -f $REPO_DIR/bin/transition.sh ]] && grep -q 'omarchy system' "$REPO_DIR/bin/transition.sh" && echo 0 || echo 1)"
   check "the menu offers the transitions" \
     "$(grep -q 'paradise.shutdown' "$REPO_DIR/install.sh" && grep -q 'paradise.logout' "$REPO_DIR/install.sh" && echo 0 || echo 1)"
   check "the greeter fades in like the splash" \
@@ -2860,6 +2860,41 @@ PY
     "$([[ -f "$REPO_DIR/plugins/tools/BarWidget.qml" ]] \
       && grep -q 'io.github.randazraik.xray' "$REPO_DIR/plugins/tools/Panel.qml" \
       && ! grep -q 'omarchy-dictation' "$REPO_DIR/plugins/tools/Panel.qml" \
+      && echo 0 || echo 1)"
+
+  # The stock Bluetooth widget stays off: ssuppt.bluetooth-audio is the one
+  # hidden behind the Tools menu, and a stray omarchy.bluetooth entry kept
+  # reappearing in centerEnd.
+  check "the stock Bluetooth widget stays off the theme bar" \
+    "$(grep -q '_plugin_disable "omarchy.bluetooth"' "$REPO_DIR/lib/theme-set-hook.sh" \
+      && grep -q 'plugin disable "omarchy.bluetooth"' "$REPO_DIR/install.sh" \
+      && grep -q '"omarchy.bluetooth"' "$REPO_DIR/lib/theme-set-hook.sh" \
+      && echo 0 || echo 1)"
+
+  # Post-4.5 audit guards: null-bar reads, binding-loop-free service fetch,
+  # and the feedback-free active-window measurement.
+  check "the theme widgets guard a null bar" \
+    "$(python3 - "$REPO_DIR" <<'PY'
+import re, sys
+from pathlib import Path
+root = Path(sys.argv[1])
+pat = re.compile(r'(?<!root\.)(?<!bar \? )\bbar\.(foreground|fontFamily|urgent)\b')
+bad = []
+for qml in sorted((root / "plugins").rglob("*.qml")):
+    for i, line in enumerate(qml.read_text().splitlines(), 1):
+        if pat.search(line):
+            bad.append(f"{qml.relative_to(root)}:{i}")
+print("\n".join(bad))
+sys.exit(1 if bad else 0)
+PY
+)"
+  check "the indicator services are fetched outside bindings" \
+    "$(for f in StayAwake NightLight Dnd RemoteSession; do \
+         grep -q 'onBarChanged: refreshService()' "$REPO_DIR/plugins/indicators/indicators/$f.qml" || exit 1; \
+       done; echo 0)"
+  check "the active-window label is measured without feedback" \
+    "$(grep -q 'TextMetrics' "$REPO_DIR/plugins/active-window/ActiveWindow.qml" \
+      && grep -q 'labelMetrics.advanceWidth' "$REPO_DIR/plugins/active-window/ActiveWindow.qml" \
       && echo 0 || echo 1)"
 
   # The package bar facade gates the first-party service proxies on the

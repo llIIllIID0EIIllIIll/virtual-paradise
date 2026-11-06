@@ -4,7 +4,13 @@ import ".."
 BarIndicator {
   id: root
 
-  readonly property var idleService: root.firstPartyService("omarchy.idle")
+  property var idleService: null
+
+  function refreshService() {
+    idleService = root.firstPartyService("omarchy.idle")
+  }
+  onBarChanged: refreshService()
+  Component.onCompleted: refreshService()
 
   active: idleService ? idleService.stayAwake : false
   activeText: "󰅶"
