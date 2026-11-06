@@ -119,6 +119,41 @@ PY
   return 1
 }
 
+# True when the live layout carries the signature of the plugin registry
+# auto-adding widgets, not a user edit. Enabling a bar widget inserts it into
+# its manifest's default section (often centerBegin/centerEnd/tray); the theme
+# layout only uses left/center/right, so entries in those sections mean the
+# registry scrambled the bar and the theme layout should be re-applied.
+vp_layout_autoadd_scrambled() {
+  local live="$1"
+  [[ -f $live ]] || return 1
+  if command -v jq >/dev/null 2>&1; then
+    local count
+    count="$(jq -r '[(.bar.layout.centerBegin // []), (.bar.layout.centerEnd // []), (.bar.layout.tray // [])] | add | length' "$live" 2>/dev/null)" || count=""
+    if [[ -n $count && $count != null ]]; then
+      (( count > 0 ))
+      return $?
+    fi
+  fi
+  if command -v python3 >/dev/null 2>&1; then
+    python3 - "$live" <<'PY' 2>/dev/null
+import json, sys
+try:
+    layout = (json.load(open(sys.argv[1])).get("bar") or {}).get("layout") or {}
+except Exception:
+    sys.exit(1)
+extra = 0
+for section in ("centerBegin", "centerEnd", "tray"):
+    entries = layout.get(section)
+    if isinstance(entries, list):
+        extra += len(entries)
+sys.exit(0 if extra > 0 else 1)
+PY
+    return $?
+  fi
+  return 1
+}
+
 # Write `template` to `out`, keeping the runtime plugin lists and any unknown
 # top-level keys from `live`. Replacing the whole file would undo a user's
 # plugin enable/disable choices every time the theme layout was re-applied.
@@ -239,6 +274,10 @@ vp_layout_install_from() {
     # Omarchy swapped the bar id to its stock fallback because the first-party
     # bar was temporarily unavailable. That is not a user edit; the installer
     # is about to restore the bar and the theme layout.
+    decision="applied"
+  elif vp_layout_autoadd_scrambled "$live"; then
+    # The plugin registry auto-added widgets into the stock sections while
+    # plugins were being enabled. That is a broken bar, not a user edit.
     decision="applied"
   fi
 
