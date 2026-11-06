@@ -2321,6 +2321,13 @@ if want tc21; then
   check "the hover halo stays inside the island" \
     "$(grep -q 'Keep the halo inside the island' "$bar" \
       && grep -q 'radius: Math.min(width, height) / 2' "$bar" && echo 0 || echo 1)"
+  # The tray drawer grows the right island's row; anchored to the outer edge
+  # the row grows into the gap and the other icons stay put, instead of the
+  # whole row sliding while the host width animation catches up.
+  check "the right island row is anchored to the outer edge" \
+    "$(grep -A10 'id: rightModules$' "$bar" | grep -q 'anchors.right: parent.right' \
+      && ! grep -A10 'id: rightModules$' "$bar" | grep -q 'x: root.islandPad' \
+      && echo 0 || echo 1)"
 fi
 
 # ─────────────────────────────────────────────────────────────────────────────
