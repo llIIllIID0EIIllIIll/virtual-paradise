@@ -220,7 +220,7 @@ BarWidget {
           anchors.verticalCenter: parent.verticalCenter
           text: "󰥔"
           color: "#00ffdd" // Miku Cyan
-          font.family: root.bar.fontFamily
+          font.family: (root.bar ? root.bar.fontFamily : Style.font.family)
           font.pixelSize: Style.font.body
         }
 
@@ -233,7 +233,7 @@ BarWidget {
             anchors.verticalCenter: parent.verticalCenter
             text: Qt.formatDateTime(root.displayDate, "HH:mm")
             color: "#ffffff" // Pure White
-            font.family: root.bar.fontFamily
+            font.family: (root.bar ? root.bar.fontFamily : Style.font.family)
             font.pixelSize: Style.font.body + 1
             font.bold: true
           }
@@ -242,7 +242,7 @@ BarWidget {
             anchors.verticalCenter: parent.verticalCenter
             text: ":" + Qt.formatDateTime(root.displayDate, "ss")
             color: "#00ffdd" // Miku Cyan
-            font.family: root.bar.fontFamily
+            font.family: (root.bar ? root.bar.fontFamily : Style.font.family)
             font.pixelSize: Style.font.body
             font.bold: true
 
@@ -276,7 +276,7 @@ BarWidget {
           anchors.verticalCenter: parent.verticalCenter
           text: Qt.formatDateTime(root.displayDate, "ddd")
           color: "#ffe066" // Cyber Yellow
-          font.family: root.bar.fontFamily
+          font.family: (root.bar ? root.bar.fontFamily : Style.font.family)
           font.pixelSize: Style.font.body
           font.weight: Font.Medium
         }
@@ -286,7 +286,7 @@ BarWidget {
           anchors.verticalCenter: parent.verticalCenter
           text: Qt.formatDateTime(root.displayDate, "d MMM yyyy")
           color: "#ffb7d5" // Sakura Pastel Pink
-          font.family: root.bar.fontFamily
+          font.family: (root.bar ? root.bar.fontFamily : Style.font.family)
           font.pixelSize: Style.font.body
           font.weight: Font.Medium
         }

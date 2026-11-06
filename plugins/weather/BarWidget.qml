@@ -180,7 +180,7 @@ BarWidget {
             if (t >= 16) return "#00ff88"
             return "#00ffdd"
           }
-          font.family: root.bar.fontFamily
+          font.family: (root.bar ? root.bar.fontFamily : Style.font.family)
           font.pixelSize: Style.font.body + 1
 
           // A slow breath so the weather mark feels alive without moving the
@@ -205,7 +205,7 @@ BarWidget {
           anchors.verticalCenter: parent.verticalCenter
           text: root.weatherTemp
           color: "#ffffff" // Pure White
-          font.family: root.bar.fontFamily
+          font.family: (root.bar ? root.bar.fontFamily : Style.font.family)
           font.pixelSize: Style.font.body
           font.bold: true
         }

@@ -104,10 +104,10 @@ Panel {
   readonly property string toggleHint: root.adapter && root.adapter.enabled ? "Turn Bluetooth off" : "Turn Bluetooth on"
 
   readonly property color hoverFill: bar
-    ? Style.hoverFillFor(bar.foreground, Color.accent)
+    ? Style.hoverFillFor((bar ? bar.foreground : Color.foreground), Color.accent)
     : "transparent"
   readonly property color selectedFill: bar
-    ? Style.selectedFillFor(bar.foreground, Color.accent)
+    ? Style.selectedFillFor((bar ? bar.foreground : Color.foreground), Color.accent)
     : "transparent"
 
   function sectionCount(section) {
@@ -719,8 +719,8 @@ Panel {
             anchors.left: parent.left
             anchors.verticalCenter: parent.verticalCenter
             text: root.icon
-            color: root.bar.foreground
-            font.family: root.bar.fontFamily
+            color: (root.bar ? root.bar.foreground : Color.foreground)
+            font.family: (root.bar ? root.bar.fontFamily : Style.font.family)
             font.pixelSize: Style.font.display
             opacity: root.adapter && root.adapter.enabled ? 1.0 : 0.5
           }
@@ -732,7 +732,7 @@ Panel {
             visible: !!root.adapter
             checked: !!root.adapter && root.adapter.enabled
             hasCursor: root.headerHasCursor
-            foreground: root.bar.foreground
+            foreground: (root.bar ? root.bar.foreground : Color.foreground)
             anchors.right: parent.right
             anchors.verticalCenter: parent.verticalCenter
             onHovered: function(on) { if (on) root.setHeaderCursor() }
@@ -741,7 +741,7 @@ Panel {
             PanelToolTip {
               visible: powerSwitch.containsMouse
               text: root.toggleHint
-              fontFamily: root.bar.fontFamily
+              fontFamily: (root.bar ? root.bar.fontFamily : Style.font.family)
             }
           }
 
@@ -756,8 +756,8 @@ Panel {
 
             Text {
               text: "Bluetooth"
-              color: root.bar.foreground
-              font.family: root.bar.fontFamily
+              color: (root.bar ? root.bar.foreground : Color.foreground)
+              font.family: (root.bar ? root.bar.fontFamily : Style.font.family)
               font.pixelSize: Style.font.title
               font.bold: true
               elide: Text.ElideRight
@@ -767,8 +767,8 @@ Panel {
             Text {
               id: heroStatus
               text: root.heroStatusText.toUpperCase()
-              color: Qt.darker(root.bar.foreground, 1.4)
-              font.family: root.bar.fontFamily
+              color: Qt.darker((root.bar ? root.bar.foreground : Color.foreground), 1.4)
+              font.family: (root.bar ? root.bar.fontFamily : Style.font.family)
               font.pixelSize: Style.font.caption
               font.bold: true
               font.letterSpacing: 1.2
@@ -781,7 +781,7 @@ Panel {
         // Scrollable device list — capped so a noisy neighborhood doesn't
         // grow the popup past the screen.
         PanelSeparator {
-          foreground: root.bar.foreground
+          foreground: (root.bar ? root.bar.foreground : Color.foreground)
         }
 
         Column {
@@ -792,8 +792,8 @@ Panel {
 
           PanelSectionHeader {
             text: "CONNECTED"
-            foreground: root.bar.foreground
-            fontFamily: root.bar.fontFamily
+            foreground: (root.bar ? root.bar.foreground : Color.foreground)
+            fontFamily: (root.bar ? root.bar.fontFamily : Style.font.family)
           }
 
           Repeater {
@@ -812,7 +812,7 @@ Panel {
 
         PanelSeparator {
           visible: root.connectedDevices.length > 0 && root.scrollRows.length > 0
-          foreground: root.bar.foreground
+          foreground: (root.bar ? root.bar.foreground : Color.foreground)
         }
 
         // ListView, not a Flickable: it owns the scroll position, so it keeps
@@ -857,14 +857,14 @@ Panel {
 
               PanelSeparator {
                 visible: index > 0 && sectionTitle !== ""
-                                foreground: root.bar.foreground
+                                foreground: (root.bar ? root.bar.foreground : Color.foreground)
               }
 
               PanelSectionHeader {
                 visible: sectionTitle !== ""
                                 text: sectionTitle
-                foreground: root.bar.foreground
-                fontFamily: root.bar.fontFamily
+                foreground: (root.bar ? root.bar.foreground : Color.foreground)
+                fontFamily: (root.bar ? root.bar.fontFamily : Style.font.family)
               }
 
               DeviceRow {
@@ -883,8 +883,8 @@ Panel {
           text: !root.adapter ? "No Bluetooth adapter"
               : !root.adapter.enabled ? "Turn Bluetooth on to scan"
               : "Scanning for devices…"
-          color: Qt.darker(root.bar.foreground, 1.5)
-          font.family: root.bar.fontFamily
+          color: Qt.darker((root.bar ? root.bar.foreground : Color.foreground), 1.5)
+          font.family: (root.bar ? root.bar.fontFamily : Style.font.family)
           font.pixelSize: Style.font.bodySmall
           wrapMode: Text.WordWrap
           width: parent.width
@@ -918,7 +918,7 @@ Panel {
 
     hasCursor: rowSelected && !root.actionFocused
     current: isConnected
-    foreground: root.bar.foreground
+    foreground: (root.bar ? root.bar.foreground : Color.foreground)
     fill: root.hoverFill
     currentFill: root.selectedFill
 
@@ -936,9 +936,9 @@ Panel {
     }
 
     readonly property color statusColor: {
-      if (isConnected) return root.bar.foreground
-      if (action !== "" || devState === 3 || dev.pairing === true) return root.bar.foreground
-      return Qt.darker(root.bar.foreground, 1.5)
+      if (isConnected) return (root.bar ? root.bar.foreground : Color.foreground)
+      if (action !== "" || devState === 3 || dev.pairing === true) return (root.bar ? root.bar.foreground : Color.foreground)
+      return Qt.darker((root.bar ? root.bar.foreground : Color.foreground), 1.5)
     }
 
     implicitHeight: rowContent.implicitHeight + Style.spacing.rowPaddingX
@@ -973,7 +973,7 @@ Panel {
     PanelToolTip {
       visible: row.actionTooltip !== "" && rowMouse.containsMouse && !root.actionFocused
       text: row.actionTooltip
-      fontFamily: root.bar.fontFamily
+      fontFamily: (root.bar ? root.bar.fontFamily : Style.font.family)
     }
 
     Item {
@@ -989,7 +989,7 @@ Panel {
         id: deviceIcon
         text: row.isConnected ? "󰂱" : "󰂯"
         color: row.statusColor
-        font.family: root.bar.fontFamily
+        font.family: (root.bar ? root.bar.fontFamily : Style.font.family)
         font.pixelSize: Style.font.heading
         anchors.left: parent.left
         anchors.verticalCenter: parent.verticalCenter
@@ -1006,8 +1006,8 @@ Panel {
 
         Text {
           text: root.deviceLabel(row.dev) || "Device"
-          color: root.bar.foreground
-          font.family: root.bar.fontFamily
+          color: (root.bar ? root.bar.foreground : Color.foreground)
+          font.family: (root.bar ? root.bar.fontFamily : Style.font.family)
           font.pixelSize: Style.font.body
           elide: Text.ElideRight
           width: parent.width
@@ -1016,7 +1016,7 @@ Panel {
           visible: row.statusText !== ""
           text: row.statusText
           color: row.statusColor
-          font.family: root.bar.fontFamily
+          font.family: (root.bar ? root.bar.fontFamily : Style.font.family)
           font.pixelSize: Style.font.caption
           elide: Text.ElideRight
           width: parent.width
@@ -1030,9 +1030,9 @@ Panel {
         visible: row.showForgetButton
         iconText: "󰅙"
         tooltipText: "Forget"
-        foreground: root.bar.foreground
-        hoverColor: root.bar.foreground
-        fontFamily: root.bar.fontFamily
+        foreground: (root.bar ? root.bar.foreground : Color.foreground)
+        hoverColor: (root.bar ? root.bar.foreground : Color.foreground)
+        fontFamily: (root.bar ? root.bar.fontFamily : Style.font.family)
         hasCursor: row.rowSelected && root.actionFocused
         onHovered: function(isHovered) {
           if (!isHovered) {

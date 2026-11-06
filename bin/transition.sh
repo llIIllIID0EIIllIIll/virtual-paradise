@@ -19,17 +19,17 @@ READY="${XDG_RUNTIME_DIR:-/tmp}/virtual_paradise_wallpaper_ready"
 HOLD="${VP_TRANSITION_HOLD:-1.2}"
 
 case "$ACTION" in
-  logout)   COMMAND="omarchy-system-logout" ;;
-  reboot)   COMMAND="omarchy-system-reboot" ;;
-  shutdown) COMMAND="omarchy-system-shutdown" ;;
+  logout|reboot|shutdown) ;;
   *)
     printf 'Usage: %s <logout|reboot|shutdown>\n' "$0" >&2
     exit 2
     ;;
 esac
 
-command -v "$COMMAND" &>/dev/null || {
-  printf 'transition: %s is not available\n' "$COMMAND" >&2
+# Omarchy 4.5 folded the old omarchy-system-* binaries into
+# `omarchy system <logout|reboot|shutdown>`.
+command -v omarchy &>/dev/null || {
+  printf 'transition: omarchy is not available\n' >&2
   exit 1
 }
 
@@ -47,4 +47,4 @@ else
   printf 'transition: the curtain is not available, continuing without it\n' >&2
 fi
 
-exec "$COMMAND"
+exec omarchy system "$ACTION"

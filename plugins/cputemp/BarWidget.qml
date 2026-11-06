@@ -170,7 +170,7 @@ BarWidget {
             anchors.centerIn: parent
             text: root.isOverheating ? "󰈸" : (root.coolerActive ? "󰈐" : "")
             color: root.isOverheating ? "#ff0055" : (root.isWarm ? "#ffe066" : (root.coolerActive ? "#00ff88" : "#ffb7d5"))
-            font.family: root.bar.fontFamily
+            font.family: (root.bar ? root.bar.fontFamily : Style.font.family)
             font.pixelSize: Style.font.body + 1
             rotation: (!root.isOverheating && root.coolerActive) ? fanRotation : 0
 
@@ -193,7 +193,7 @@ BarWidget {
           anchors.verticalCenter: parent.verticalCenter
           text: root.cpuTemp
           color: root.isOverheating ? "#ff0055" : (root.isWarm ? "#ffe066" : (root.coolerActive ? "#00ff88" : "#ffffff"))
-          font.family: root.bar.fontFamily
+          font.family: (root.bar ? root.bar.fontFamily : Style.font.family)
           font.pixelSize: Style.font.body
           font.bold: true
 

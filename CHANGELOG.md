@@ -9,6 +9,25 @@ Conventional Commits.
 ## [Unreleased]
 
 ### Fixed
+- **The panels no longer flood the journal with null-bar errors.** Theme
+  panels and widgets that load before the bar injects itself read
+  `bar.foreground` / `bar.fontFamily` / `bar.urgent` directly; the type
+  errors fired thousands of times across a session. Every read now falls
+  back to the palette (`Color.foreground`, `Style.font.family`,
+  `Color.urgent`).
+- **The indicator service bindings stopped looping.** Creating the service
+  proxy while the `idleService` / `notificationService` binding evaluated made
+  QML re-enter the binding; the indicators now fetch the proxy imperatively
+  when the bar is injected. The active-window label is measured with
+  `TextMetrics` instead of reading the elided label's own width.
+- **The system transitions use the 4.5 command.** Omarchy 4.5 folded
+  `omarchy-system-logout/reboot/shutdown` into
+  `omarchy system <logout|reboot|shutdown>`; `transition.sh` was calling the
+  removed binaries.
+- **The stock Bluetooth widget stays off the theme bar.** Enabling
+  `ssupt.bluetooth-audio` left `omarchy.bluetooth` enabled, and its entry kept
+  reappearing in `centerEnd`; the hook disables it and the layout cleanup
+  drops stale entries.
 - **The indicator toggles reach their services again.** The package bar
   facade gates the first-party service proxies (idle, nightlight,
   notifications, media, remote session) on the widget manifest carrying the

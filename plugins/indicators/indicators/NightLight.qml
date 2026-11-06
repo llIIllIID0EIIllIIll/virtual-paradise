@@ -4,7 +4,13 @@ import ".."
 BarIndicator {
   id: root
 
-  readonly property var nightlightService: root.firstPartyService("omarchy.nightlight")
+  property var nightlightService: null
+
+  function refreshService() {
+    nightlightService = root.firstPartyService("omarchy.nightlight")
+  }
+  onBarChanged: refreshService()
+  Component.onCompleted: refreshService()
 
   active: nightlightService ? nightlightService.enabled : false
   activeText: "󰛨"

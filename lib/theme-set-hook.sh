@@ -217,6 +217,10 @@ if [[ "$THEME_NAME" == "virtual-paradise" ]]; then
 
     _plugin_enable "ssupt.bluetooth-audio"
     _plugin_installed "ssupt.bluetooth-audio" && _plugin_disable "${u}.bluetooth"
+    # The stock Bluetooth widget stays off: ssuppt.bluetooth-audio lives
+    # hidden behind the Tools menu, and a stray omarchy.bluetooth entry kept
+    # reappearing in centerEnd.
+    _plugin_disable "omarchy.bluetooth"
 
     _plugin_replace "io.github.tyrichards.workspaces-jap" "omarchy.workspaces"
     _plugin_installed "io.github.tyrichards.workspaces-jap" && _plugin_disable "${u}.workspaces"
@@ -287,11 +291,12 @@ except Exception:
 ids = ["io.github.randazraik.xray", "io.github.grichard99.omaproton-vpn",
        "io.github.kristoferlund.webcam", "crmne.hyprmoncfg",
        "io.github.jeffcortez23.omarchy-projector-cast", "ssupt.bluetooth-audio"]
+stale = set(ids) | {"omarchy.bluetooth"}
 layout = d.setdefault("bar", {}).setdefault("layout", {})
 for section in ("left", "center", "right"):
     entries = layout.get(section) or []
     layout[section] = [e for e in entries
-                       if not (isinstance(e, dict) and str(e.get("id", "")) in ids)]
+                       if not (isinstance(e, dict) and str(e.get("id", "")) in stale)]
 right = layout.setdefault("right", [])
 for widget_id in ids:
     right.append({"id": widget_id, "hidden": True})

@@ -14,8 +14,16 @@ BarWidget {
   readonly property bool tooltipHovered: visible && mouseArea.containsMouse
 
   visible: title !== "" && !vertical
-  implicitWidth: visible ? Math.min(maxLabelWidth, labelText.implicitWidth) + 16 : 0
+  // Measured from the text itself: reading labelText.implicitWidth here made
+  // the elided label report its own width, which fed back into this binding.
+  implicitWidth: visible ? Math.min(maxLabelWidth, labelMetrics.advanceWidth) + 16 : 0
   implicitHeight: barSize
+
+  TextMetrics {
+    id: labelMetrics
+    text: root.title
+    font: labelText.font
+  }
 
   Behavior on implicitWidth {
     NumberAnimation { duration: 180; easing.type: Easing.OutCubic }

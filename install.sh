@@ -818,6 +818,9 @@ INSTALL_AND_ENABLE_PLUGINS() {
         RUN_AS_INSTALL_USER omarchy plugin enable "$_tool" 2>/dev/null || true
       done
       unset _tool
+      # The stock Bluetooth widget stays off; ssuppt.bluetooth-audio is the
+      # one hidden behind the Tools menu.
+      RUN_AS_INSTALL_USER omarchy plugin disable "omarchy.bluetooth" 2>/dev/null || true
       if [[ -f "$CONFIG_DIR/omarchy/shell.json" ]]; then
         python3 - "$CONFIG_DIR/omarchy/shell.json" <<'PY'
 import json, sys
@@ -830,11 +833,12 @@ except Exception:
 ids = ["io.github.randazraik.xray", "io.github.grichard99.omaproton-vpn",
        "io.github.kristoferlund.webcam", "crmne.hyprmoncfg",
        "io.github.jeffcortez23.omarchy-projector-cast", "ssupt.bluetooth-audio"]
+stale = set(ids) | {"omarchy.bluetooth"}
 layout = d.setdefault("bar", {}).setdefault("layout", {})
 for section in ("left", "center", "right"):
     entries = layout.get(section) or []
     layout[section] = [e for e in entries
-                       if not (isinstance(e, dict) and str(e.get("id", "")) in ids)]
+                       if not (isinstance(e, dict) and str(e.get("id", "")) in stale)]
 right = layout.setdefault("right", [])
 for widget_id in ids:
     right.append({"id": widget_id, "hidden": True})

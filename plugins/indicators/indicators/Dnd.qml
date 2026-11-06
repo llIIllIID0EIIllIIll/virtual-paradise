@@ -5,7 +5,13 @@ import ".."
 BarIndicator {
   id: root
 
-  readonly property var notificationService: root.firstPartyService("omarchy.notifications")
+  property var notificationService: null
+
+  function refreshService() {
+    notificationService = root.firstPartyService("omarchy.notifications")
+  }
+  onBarChanged: refreshService()
+  Component.onCompleted: refreshService()
   readonly property bool dnd: notificationService ? notificationService.doNotDisturb : false
 
   active: dnd
