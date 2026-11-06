@@ -8,6 +8,8 @@ Conventional Commits.
 
 ## [Unreleased]
 
+## [1.3.1] - 2026-11-06
+
 ### Fixed
 - **The panels no longer flood the journal with null-bar errors.** Theme
   panels and widgets that load before the bar injects itself read
@@ -28,6 +30,11 @@ Conventional Commits.
   `ssupt.bluetooth-audio` left `omarchy.bluetooth` enabled, and its entry kept
   reappearing in `centerEnd`; the hook disables it and the layout cleanup
   drops stale entries.
+- **audio-control 0.9.1 loads again.** The update assigns `defaultSetBusy`
+  on its row delegates without declaring the property, so the whole widget
+  failed with "Cannot assign to non-existent property". The override layer
+  declares it on both rows; the backend reader's destroyed-root guard and
+  the bluetooth refresh guard are tracked overrides too.
 - **The indicator toggles reach their services again.** The package bar
   facade gates the first-party service proxies (idle, nightlight,
   notifications, media, remote session) on the widget manifest carrying the
@@ -38,6 +45,12 @@ Conventional Commits.
   `voxtype status` when Omarchy's status wrapper is not installed.
 
 ### Changed
+- **Third-party plugins updated to their latest revisions.** hyprmoncfg,
+  voxtype-aura, omaproton, webcam, xray, audio-control, bluetooth-audio and
+  harshith.system-monitor fast-forwarded with the override layer re-applied,
+  and the lockfile pins the new revisions. Voxtype Aura stays off until the
+  `omarchy-voxtype` package provides `omarchy-voxtype-status`; the theme hook
+  turns it back on automatically once the helper exists.
 - **The world clock moved into the clock's calendar dropdown.** Elsewhen's
   standalone panel - a sideways panel hanging off the right island - is
   retired. The clock dropdown now carries a world clock row under the
