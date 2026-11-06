@@ -324,7 +324,45 @@ po_apply_theme_colors() {
         "Virtual Paradise destroyed-root guard"
     fi
     unset audio_service_file
+
+    # The panel reads root.bar before the bar injects itself; fall back to
+    # the palette like the theme's own widgets do.
+    local audio_panel_file="$p/ssupt.audio-control/$audio_rel"
+    if [[ -f $audio_panel_file ]]; then
+      po_patch_marker ssupt.audio-control "$audio_panel_file" \
+        "{
+          1a\\
+  //Virtual Paradise null-bar guard
+          s/root\.bar\.foreground/(root.bar ? root.bar.foreground : Color.foreground)/g
+          s/root\.bar\.fontFamily/(root.bar ? root.bar.fontFamily : Style.font.family)/g
+          s/root\.bar\.urgent/(root.bar ? root.bar.urgent : Color.urgent)/g
+        }" \
+        "Virtual Paradise null-bar guard"
+    fi
+    unset audio_panel_file
   fi
+
+  # bluetooth-audio reads root.bar and its components read controller.bar
+  # before either is injected; guard both spellings.
+  local bt_file
+  for bt_file in "$p/ssupt.bluetooth-audio/Panel.qml" \
+                 "$p/ssupt.bluetooth-audio/BluetoothDeviceDetails.qml" \
+                 "$p/ssupt.bluetooth-audio/BluetoothDeviceRow.qml"; do
+    [[ -f $bt_file ]] || continue
+    po_patch_marker ssupt.bluetooth-audio "$bt_file" \
+      "{
+        1a\\
+  //Virtual Paradise null-bar guard
+        s/root\.bar\.foreground/(root.bar ? root.bar.foreground : Color.foreground)/g
+        s/root\.bar\.fontFamily/(root.bar ? root.bar.fontFamily : Style.font.family)/g
+        s/root\.bar\.urgent/(root.bar ? root.bar.urgent : Color.urgent)/g
+        s/controller\.bar\.foreground/(controller \&\& controller.bar ? controller.bar.foreground : Color.foreground)/g
+        s/controller\.bar\.fontFamily/(controller \&\& controller.bar ? controller.bar.fontFamily : Style.font.family)/g
+        s/controller\.bar\.urgent/(controller \&\& controller.bar ? controller.bar.urgent : Color.urgent)/g
+      }" \
+      "Virtual Paradise null-bar guard"
+  done
+  unset bt_file
 }
 # ---------------------------------------------------------------------------
 # Revert

@@ -8,6 +8,15 @@ Conventional Commits.
 
 ## [Unreleased]
 
+## [1.3.3] - 2026-11-06
+
+### Fixed
+- **The third-party panels stop logging null-bar errors.** The bluetooth
+  panel and its device rows read `bar`/`controller` colours before those
+  objects are injected; the override layer now falls back to the palette,
+  so a session no longer collects hundreds of type errors while the panels
+  load. The lockfile revisions are unchanged.
+
 ## [1.3.2] - 2026-11-06
 
 ### Fixed
