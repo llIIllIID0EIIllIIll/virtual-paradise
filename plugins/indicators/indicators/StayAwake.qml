@@ -4,7 +4,7 @@ import ".."
 BarIndicator {
   id: root
 
-  readonly property var idleService: bar?.shell?.firstPartyServiceFor("omarchy.idle")
+  readonly property var idleService: root.firstPartyService("omarchy.idle")
 
   active: idleService ? idleService.stayAwake : false
   activeText: "󰅶"

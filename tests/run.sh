@@ -2861,6 +2861,22 @@ PY
       && grep -q 'io.github.randazraik.xray' "$REPO_DIR/plugins/tools/Panel.qml" \
       && ! grep -q 'omarchy-dictation' "$REPO_DIR/plugins/tools/Panel.qml" \
       && echo 0 || echo 1)"
+
+  # The package bar facade gates the first-party service proxies on the
+  # widget manifest carrying the "bar" kind, which no widget does, so the
+  # toggle indicators would go dead. The bar resolves them itself.
+  check "the bar hands widgets their first-party service proxies" \
+    "$([[ -f "$REPO_DIR/bars/island-bar/VpPluginBarApi.qml" ]] \
+      && grep -q 'function firstPartyService' "$REPO_DIR/bars/island-bar/VpPluginBarApi.qml" \
+      && grep -q 'VpPluginBarApi { }' "$REPO_DIR/bars/island-bar/Bar.qml" \
+      && grep -q 'pluginFirstPartyServiceFor' "$REPO_DIR/bars/island-bar/Bar.qml" \
+      && echo 0 || echo 1)"
+  check "the toggle indicators use the bar accessor" \
+    "$(for f in StayAwake NightLight Dnd RemoteSession; do \
+         grep -q 'root.firstPartyService(' "$REPO_DIR/plugins/indicators/indicators/$f.qml" || exit 1; \
+       done; echo 0)"
+  check "the dictation indicator falls back to the voxtype CLI" \
+    "$(grep -q 'voxtype status' "$REPO_DIR/plugins/indicators/indicators/Dictation.qml" && echo 0 || echo 1)"
 fi
 
 summary

@@ -211,7 +211,7 @@ Item {
 
   Component {
     id: pluginBarApiComponent
-    PluginBarApi { }
+    VpPluginBarApi { }
   }
 
   function publicLayoutConfig() {
@@ -363,6 +363,14 @@ Item {
       _run: function(command) { root.run(command) },
       _setCenterHoverRevealSuppressed: function(value) {
         root.centerHoverRevealSuppressed = !!value
+      },
+      // The package facade gates first-party services on the widget manifest
+      // carrying the "bar" kind, which no widget does. The trusted bar
+      // resolves the narrow proxies here so indicators (idle, nightlight,
+      // notifications, remote session) can read state and toggle.
+      _firstPartyService: function(id) {
+        if (!root.shell || typeof root.shell.pluginFirstPartyServiceFor !== "function") return null
+        return root.shell.pluginFirstPartyServiceFor("vp-bar:" + key, key, String(id || ""))
       }
     })
     if (!api) return null

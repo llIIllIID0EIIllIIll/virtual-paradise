@@ -7,7 +7,7 @@ import ".."
 BarIndicator {
   id: root
 
-  readonly property var remoteSessionService: bar?.shell?.firstPartyServiceFor("omarchy.remote-session")
+  readonly property var remoteSessionService: root.firstPartyService("omarchy.remote-session")
   readonly property var peers: remoteSessionService && Array.isArray(remoteSessionService.peers) ? remoteSessionService.peers : []
 
   active: remoteSessionService ? remoteSessionService.active : false

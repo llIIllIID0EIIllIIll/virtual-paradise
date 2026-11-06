@@ -8,6 +8,16 @@ Conventional Commits.
 
 ## [Unreleased]
 
+### Fixed
+- **The indicator toggles reach their services again.** The package bar
+  facade gates the first-party service proxies (idle, nightlight,
+  notifications, media, remote session) on the widget manifest carrying the
+  "bar" kind, which no widget does, so Stay Awake, Night Light and Do Not
+  Disturb did nothing when clicked. The theme bar resolves the narrow proxies
+  itself (`VpPluginBarApi.firstPartyService`) and the indicators read state
+  and toggle through it. The dictation indicator falls back to
+  `voxtype status` when Omarchy's status wrapper is not installed.
+
 ### Changed
 - **The world clock moved into the clock's calendar dropdown.** Elsewhen's
   standalone panel - a sideways panel hanging off the right island - is

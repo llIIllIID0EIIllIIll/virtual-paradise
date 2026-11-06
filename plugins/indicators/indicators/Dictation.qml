@@ -24,7 +24,9 @@ BarIndicator {
   }
 
   Process {
-    command: ["bash", "-c", "omarchy-voxtype-status"]
+    // Prefer Omarchy's status wrapper; without the omarchy-voxtype package it
+    // is missing, so fall back to the voxtype CLI's own status.
+    command: ["bash", "-c", "if command -v omarchy-voxtype-status >/dev/null 2>&1; then omarchy-voxtype-status; else s=$(voxtype status 2>/dev/null || true); case \"$s\" in *recording*) printf '{\"alt\":\"recording\"}\\n' ;; *transcribing*) printf '{\"alt\":\"transcribing\"}\\n' ;; *) printf '{\"alt\":\"idle\"}\\n' ;; esac; fi"]
     running: true
     stdout: SplitParser {
       onRead: function(data) { root.update(data) }
