@@ -225,7 +225,14 @@ if [[ "$THEME_NAME" == "virtual-paradise" ]]; then
     _plugin_replace "io.github.tyrichards.workspaces-jap" "omarchy.workspaces"
     _plugin_installed "io.github.tyrichards.workspaces-jap" && _plugin_disable "${u}.workspaces"
 
-    _plugin_replace "io.github.adamcbrewer.voxtype-aura" ""
+    # Voxtype Aura is only useful with the omarchy-voxtype package: without
+    # its status helper the service retries and the overlay cannot report
+    # state. Leave it off until the helper exists.
+    if command -v omarchy-voxtype-status >/dev/null 2>&1; then
+      _plugin_enable "io.github.adamcbrewer.voxtype-aura"
+    else
+      _plugin_disable "io.github.adamcbrewer.voxtype-aura"
+    fi
 
     # The bar itself. If the first-party copy is missing, keep omarchy.bar
     # enabled; shell.json may still name the island bar and Omarchy's
@@ -306,11 +313,15 @@ with open(p, "w") as fh:
 PY
   fi
 
-  # Re-enable voxtype after a shell layout reload, which can rebuild the
-  # plugin registry from shell.json. Guard on installation: enabling a plugin
-  # that is not present is a no-op at best and a stale error at worst.
+  # Re-assert voxtype after a shell layout reload, which can rebuild the
+  # plugin registry from shell.json. Only on with the omarchy-voxtype
+  # package: without its status helper the overlay cannot report state.
   if command -v omarchy >/dev/null 2>&1 && _plugin_installed "io.github.adamcbrewer.voxtype-aura"; then
-    _plugin_enable "io.github.adamcbrewer.voxtype-aura"
+    if command -v omarchy-voxtype-status >/dev/null 2>&1; then
+      _plugin_enable "io.github.adamcbrewer.voxtype-aura"
+    else
+      _plugin_disable "io.github.adamcbrewer.voxtype-aura"
+    fi
   fi
 
   # 2e. GTK styling.

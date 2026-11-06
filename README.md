@@ -12,7 +12,7 @@
 ### 🌸 A neon cyberpunk rice for Omarchy
 
 [![Arch Linux](https://img.shields.io/badge/Arch_Linux-1793D1?style=flat-square&logo=arch-linux&logoColor=white)](https://archlinux.org)
-[![Omarchy 4.0+](https://img.shields.io/badge/Omarchy-4.0+-8A2BE2?style=flat-square)](https://omarchy.org)
+[![Omarchy 4.5+](https://img.shields.io/badge/Omarchy-4.5+-8A2BE2?style=flat-square)](https://omarchy.org)
 [![Hyprland](https://img.shields.io/badge/Hyprland-Wayland-00ffdd?style=flat-square)](https://hyprland.org)
 [![Tests](https://img.shields.io/badge/tests-396%20passed-00ff88?style=flat-square)](tests/)
 [![License](https://img.shields.io/badge/license-MIT-ffe066?style=flat-square)](LICENSE)
@@ -148,7 +148,7 @@ without manual intervention.
 
 ### Requirements
 
-- **Arch Linux** (Omarchy 4.0+)
+- **Arch Linux** (Omarchy 4.5+)
 - **Hyprland** (Wayland compositor)
 - **Quickshell** (status bar framework)
 

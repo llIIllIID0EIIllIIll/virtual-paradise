@@ -180,17 +180,21 @@ po_install_override() {
 # layer and still has to be reverted later.
 PO_ACCENT_MARKER="Virtual Paradise theme accent override"
 
-po_patch_accent() {
-  local plugin_id="$1" file="$2" script="$3"
+po_patch_marker() {
+  local plugin_id="$1" file="$2" script="$3" marker="$4"
   [[ -f $file ]] || return 0
   po_touch_existing "$plugin_id" "$file"
-  grep -q "$PO_ACCENT_MARKER" "$file" && return 0
+  grep -q "$marker" "$file" && return 0
   sed -i "$script" "$file"
   # A sed range that no longer matches upstream fails silently: the widget just
   # stays on the default colour with nothing in the log to explain it. Say so,
   # because the next upstream edit to this file is exactly how it happens.
-  grep -q "$PO_ACCENT_MARKER" "$file" \
-    || po_log "plugin-overrides: accent patch did not match $file (upstream changed?)"
+  grep -q "$marker" "$file" \
+    || po_log "plugin-overrides: patch did not match $file (upstream changed?)"
+}
+
+po_patch_accent() {
+  po_patch_marker "$1" "$2" "$3" "$PO_ACCENT_MARKER"
 }
 
 po_apply_theme_colors() {
@@ -234,6 +238,17 @@ po_apply_theme_colors() {
     foreground: Color.accent
     }"
 
+  # The bluetooth panel queues refreshAudioControlInstalled on plugin-registry
+  # changes; the delayed call can land after the widget was destroyed, and
+  # then throws on the null root. Guard it.
+  po_patch_marker ssupt.bluetooth-audio "$p/ssupt.bluetooth-audio/Panel.qml" \
+    "/onAudioPluginRegistryChanged:/ {
+      s/{ root.refreshAudioControlInstalled() }/{ if (root) root.refreshAudioControlInstalled() }/
+      a\\
+  //Virtual Paradise bluetooth refresh guard
+    }" \
+    "Virtual Paradise bluetooth refresh guard"
+
   # projector-cast ships a Style.radius() helper that no longer exists, and its
   # icon colour is a nested conditional on presentation state. Both are patched
   # in place and tracked, so a plugin update is re-patched by the same layer
@@ -254,6 +269,8 @@ po_apply_theme_colors() {
     "$p/io.github.grichard99.omaproton-vpn/Panel.qml" \
     "/readonly property color barIconColor/ {
       s/.*/  readonly property color barIconColor: Color.accent/
+      a\\
+  //$PO_ACCENT_MARKER
     }"
 
   # audio-control replaces an existing property rather than adding one.
@@ -272,6 +289,42 @@ po_apply_theme_colors() {
           //$PO_ACCENT_MARKER
       s/foreground: root.barForeground/foreground: Color.accent/
     }"
+
+  # audio-control 0.9.1 assigns `defaultSetBusy` on its sink/source row
+  # delegates without declaring it, so the whole widget fails to load with
+  # "Cannot assign to non-existent property". Declare it on both rows; the
+  # property is currently unused, so this only keeps the component valid.
+  if [[ -n $audio_rel ]]; then
+    local audio_components comp_file
+    audio_components="$(dirname "$p/ssupt.audio-control/$audio_rel")/../components"
+    for comp_file in "$audio_components/AudioSinkRow.qml" "$audio_components/AudioSourceRow.qml"; do
+      [[ -f $comp_file ]] || continue
+      grep -q 'property bool defaultSetBusy' "$comp_file" && continue
+      po_patch_accent ssupt.audio-control "$comp_file" \
+        "/signal activated(var node)/ {
+          a\\
+  property bool defaultSetBusy: false\\
+  //$PO_ACCENT_MARKER
+        }"
+    done
+    unset audio_components comp_file
+
+
+    # The backend reader can fire after the service object was destroyed;
+    # root is null by then and the guarded client read still throws.
+    local audio_service_file
+    audio_service_file="$(dirname "$p/ssupt.audio-control/$audio_rel")/../core/Service.qml"
+    if [[ -f $audio_service_file ]]; then
+      po_patch_marker ssupt.audio-control "$audio_service_file" \
+        "{
+          1a\\
+  //Virtual Paradise destroyed-root guard
+          s/if (root\.client) root\.client\.feed(chunk)/if (root \&\& root.client) root.client.feed(chunk)/
+        }" \
+        "Virtual Paradise destroyed-root guard"
+    fi
+    unset audio_service_file
+  fi
 }
 # ---------------------------------------------------------------------------
 # Revert

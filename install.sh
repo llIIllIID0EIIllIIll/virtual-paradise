@@ -920,12 +920,17 @@ EXTRA_PLUGINS
       RUN_AS_INSTALL_USER omarchy plugin remove "${CURRENT_USER}.media" --yes 2>/dev/null || true
       po_apply_all
 
-      # Voxtype Aura provides the themed dictation overlay.
+      # Voxtype Aura provides the themed dictation overlay, but only with the
+      # omarchy-voxtype package: without its status helper the overlay cannot
+      # report state. Install it, then leave it off until the helper exists.
       if ! RUN_AS_INSTALL_USER omarchy plugin list --json 2>/dev/null | jq -e 'any(.[]; .id == "io.github.adamcbrewer.voxtype-aura")' >/dev/null; then
         log_sub "Adding Voxtype Aura dictation overlay plugin from git..."
-        RUN_AS_INSTALL_USER omarchy plugin add https://github.com/adamcbrewer/voxtype-aura.git --enable --yes 2>/dev/null || true
-      else
+        RUN_AS_INSTALL_USER omarchy plugin add https://github.com/adamcbrewer/voxtype-aura.git --yes 2>/dev/null || true
+      fi
+      if command -v omarchy-voxtype-status >/dev/null 2>&1; then
         RUN_AS_INSTALL_USER omarchy plugin enable "io.github.adamcbrewer.voxtype-aura" 2>/dev/null || true
+      else
+        RUN_AS_INSTALL_USER omarchy plugin disable "io.github.adamcbrewer.voxtype-aura" 2>/dev/null || true
       fi
       po_apply_all
 
