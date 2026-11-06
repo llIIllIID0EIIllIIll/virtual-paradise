@@ -1998,6 +1998,32 @@ EOF
   check "the forced layout still preserves the plugin list" \
     "$(grep -q 'user.keep' "$cfg/shell.json" && echo 0 || echo 1)"
 
+  # Auto-added widgets land in centerBegin/centerEnd/tray; that scrambled
+  # layout is the plugin registry talking, not a user edit, so the theme
+  # layout is re-applied instead of being preserved.
+  cat >"$root/scrambled.json" <<'EOF'
+{
+  "bar": {
+    "id": "tester.island-bar",
+    "position": "top",
+    "layout": {
+      "left": [],
+      "center": [{ "id": "theme.widget" }],
+      "centerEnd": [{ "id": "auto.added" }],
+      "right": []
+    }
+  },
+  "plugins": [{ "id": "user.keep" }]
+}
+EOF
+  cp "$root/scrambled.json" "$cfg/shell.json"
+  check "an auto-add scrambled layout is re-applied" \
+    "$([[ $(layout_install "$root/theme.json") == applied ]] && echo 0 || echo 1)"
+  check "the auto-added section is gone" \
+    "$(! grep -q 'auto.added' "$cfg/shell.json" && echo 0 || echo 1)"
+  check "the repaired layout is the theme layout" \
+    "$(grep -q 'theme.widget' "$cfg/shell.json" && echo 0 || echo 1)"
+
   # Leaving restores the stock file only while the live file is still ours.
   check "leaving restores the stock layout" \
     "$([[ $(layout_leave) == restored ]] && echo 0 || echo 1)"

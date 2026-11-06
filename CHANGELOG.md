@@ -8,6 +8,17 @@ Conventional Commits.
 
 ## [Unreleased]
 
+## [1.3.2] - 2026-11-06
+
+### Fixed
+- **A plugin-enable pass can no longer shatter the bar layout.** Enabling a
+  bar widget inserts it into its manifest's default section
+  (`centerBegin`/`centerEnd`/`tray`); the theme layout only uses
+  `left`/`center`/`right`, so after an install the sections were mixed and
+  the bar rendered broken. The layout apply now recognises that signature as
+  a scrambled bar rather than a user edit and re-applies the theme layout;
+  TC-17 covers the repair.
+
 ## [1.3.1] - 2026-11-06
 
 ### Fixed
