@@ -1606,6 +1606,16 @@ if want tc16; then
     "$(grep -q 'session_splash.sh' "$REPO_DIR/hypr/autostart.lua" && echo 0 || echo 1)"
   check "the installer hooks the session splash" \
     "$(grep -q 'session_splash.sh' "$REPO_DIR/install.sh" && echo 0 || echo 1)"
+  check "the session splash selects its own glitch style" \
+    "$(grep -q 'VP_TRANSITION_STYLE="session"' "$REPO_DIR/bin/session_splash.sh" && echo 0 || echo 1)"
+  check "the session glitch stacks three solid signal blocks" \
+    "$(grep -q 'id: trioA' "$REPO_DIR/bin/glitch_transition.qml" \
+      && grep -q 'id: trioACyan' "$REPO_DIR/bin/glitch_transition.qml" \
+      && grep -q 'id: trioAPurple' "$REPO_DIR/bin/glitch_transition.qml" \
+      && grep -q 'id: trioB' "$REPO_DIR/bin/glitch_transition.qml" && echo 0 || echo 1)"
+  check "the session glitch tears the picture horizontally" \
+    "$(grep -q 'id: tearGap1' "$REPO_DIR/bin/glitch_transition.qml" \
+      && grep -q 'property bool sessionStyle' "$REPO_DIR/bin/glitch_transition.qml" && echo 0 || echo 1)"
   # Hyprland 0.56.x spells the spring key `dampening`; the wiki's "Latest git"
   # pages spell it `damping`, and the config loader rejects that spelling,
   # silently dropping every curve and animation leaf that uses it.

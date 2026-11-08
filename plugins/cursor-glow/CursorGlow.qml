@@ -179,6 +179,10 @@ Item {
         WlrLayershell.keyboardFocus: WlrKeyboardFocus.None
         exclusionMode: ExclusionMode.Ignore
         mask: Region {}
+        // The surface only exists while there is a terminal to light up; the
+        // pointer/window feeds live on the root, so remapping is instant and
+        // the glow still lands at the cursor.
+        visible: root.overTerminal
 
         Item {
           id: glow

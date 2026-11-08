@@ -21,6 +21,7 @@ command -v quickshell &>/dev/null || exit 0
 
 export VP_TRANSITION_IMAGE="session_base.png"
 export VP_TRANSITION_WAIT_SHELL="1"
+export VP_TRANSITION_STYLE="session"
 export VP_TRANSITION_TIMEOUT="20000"
 # The full "TV with a bad antenna" look: the picture crawls, the lines roll
 # and the whole frame jumps around.

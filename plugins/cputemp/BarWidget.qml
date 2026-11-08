@@ -15,34 +15,73 @@ BarWidget {
   // Middle tier: warm enough to warn, not yet throttling.
   readonly property bool isWarm: tempValue >= 70 && tempValue < 85
 
-  function refresh() {
-    if (!tempProc.running) tempProc.running = true
-  }
+  // The thermal zone is resolved once, then read with one cheap cat each
+  // tick. The cooler state is asked from the hardware every 30s, not every
+  // 1.5s, and a click still reconciles it instantly through refresh(). The old
+  // command re-scanned every thermal zone and ran the full cooler-boost
+  // detector on every tick - the heaviest poll on the bar.
+  property string thermalPath: ""
 
-  Component.onCompleted: refresh()
-
-  Timer {
-    interval: 1500
-    running: true
-    repeat: true
-    onTriggered: root.refresh()
-  }
+  Component.onCompleted: zoneProbe.running = true
 
   Process {
-    id: tempProc
-    command: ["bash", "-c", "for z in /sys/class/thermal/thermal_zone*; do type=$(cat $z/type 2>/dev/null); case $type in *x86_pkg_temp*|*coretemp*|*k10temp*|*cpu*|*CPU*) t=$(cat $z/temp 2>/dev/null); if [ -n \"$t\" ] && [ \"$t\" -gt 0 ]; then echo $((t/1000)); break; fi ;; esac; done; if [ -z \"$t\" ]; then t=$(cat /sys/class/thermal/thermal_zone0/temp 2>/dev/null || echo 0); echo $((t/1000)); fi; ~/.local/bin/toggle_cooler_boost.sh state 2>/dev/null || echo off"]
+    id: zoneProbe
+    command: ["bash", "-c", "for z in /sys/class/thermal/thermal_zone*; do case $(cat $z/type 2>/dev/null) in *x86_pkg_temp*|*coretemp*|*k10temp*|*cpu*|*CPU*) [ -f $z/temp ] && { echo $z/temp; exit 0; } ;; esac; done; echo /sys/class/thermal/thermal_zone0/temp"]
     stdout: StdioCollector {
       waitForEnd: true
       onStreamFinished: {
-        var lines = text.trim().split("\n")
-        if (lines.length > 0 && lines[0] !== "" && lines[0] !== "0") {
-          root.cpuTemp = lines[0] + "°C"
-        }
-        if (lines.length > 1) {
-          root.coolerActive = lines[1].trim() === "on"
+        var p = text.trim()
+        if (p !== "") {
+          root.thermalPath = p
+          if (!tempProc.running) tempProc.running = true
         }
       }
     }
+  }
+
+  // One cheap read of the resolved zone. Nothing to loop, nothing else to
+  // spawn.
+  Process {
+    id: tempProc
+    command: ["cat", root.thermalPath]
+    stdout: StdioCollector {
+      waitForEnd: true
+      onStreamFinished: {
+        var t = text.trim()
+        if (t !== "" && t !== "0") root.cpuTemp = (Math.round(parseInt(t, 10) / 1000)) + "°C"
+      }
+    }
+  }
+
+  Timer {
+    interval: 1500
+    running: root.thermalPath !== ""
+    repeat: true
+    onTriggered: if (!tempProc.running) tempProc.running = true
+  }
+
+  // The fan is only asked from the hardware every 30s instead of every 1.5s;
+  // a click re-runs the detector immediately, so the answer stays current.
+  Process {
+    id: coolerProc
+    command: ["bash", "-c", "~/.local/bin/toggle_cooler_boost.sh state 2>/dev/null || echo off"]
+    stdout: StdioCollector {
+      waitForEnd: true
+      onStreamFinished: root.coolerActive = text.trim() === "on"
+    }
+  }
+
+  Timer {
+    interval: 30000
+    running: true
+    repeat: true
+    triggeredOnStart: true
+    onTriggered: if (!coolerProc.running) coolerProc.running = true
+  }
+
+  function refresh() {
+    if (root.thermalPath !== "" && !tempProc.running) tempProc.running = true
+    if (!coolerProc.running) coolerProc.running = true
   }
 
   visible: true

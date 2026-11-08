@@ -63,6 +63,9 @@ Item {
         WlrLayershell.keyboardFocus: WlrKeyboardFocus.None
         exclusionMode: ExclusionMode.Ignore
         mask: Region {}
+        // The surface only exists for the flash; between flashes it is fully
+        // transparent, so unmapping it shows the exact same nothing.
+        visible: edge.opacity > 0 || flash.running
 
         Item {
           id: edge

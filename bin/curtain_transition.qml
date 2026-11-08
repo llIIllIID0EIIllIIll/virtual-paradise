@@ -20,9 +20,10 @@ ShellRoot {
     }
   }
 
-  // Poll ready file every 30ms while waiting
+  // Poll ready file every 120ms while waiting; the curtain holds for its
+  // minimumVisible floor regardless, so this is invisible.
   Timer {
-    interval: 30
+    interval: 120
     repeat: true
     running: !root.isReady && !root.exiting
     onTriggered: {

@@ -8,6 +8,44 @@ Conventional Commits.
 
 ## [Unreleased]
 
+## [1.3.4] - 2026-11-08
+
+### Added
+- **The session splash now keeps its picture centred.** The framed Miku still
+  was positioned off to the bottom-right inside `session_base.png`; the asset
+  is recomposed so the frame sits dead centre with the cyber backdrop around
+  it, and the curtain tears it horizontally across the screen instead of
+  sliding it into a corner.
+- **The session glitch is built from nested signal blocks.** Three flat
+  squares - black, cyan and violet - nest inside each other, and every hop
+  re-rolls which corner the child sits in, how much it covers, whether it is
+  tilted and the neon edge colour. Three clusters roam the screen for the
+  whole splash, joined by thin neon scanlines and scattered data fragments,
+  for a modern cyber look. The wallpaper-switch curtain keeps its old style;
+  the session style is selected with `VP_TRANSITION_STYLE=session`.
+
+### Changed
+- **Plymouth fades in over ~0.2s instead of ~0.75s**, so the splash appears
+  almost at once after the bootloader instead of leaving a dark screen.
+- **Boot follow-ups keep the Limine menu selectable for 3 seconds** (the
+  pre-4.5 value) while the theme's boot artwork matches the Plymouth backdrop.
+
+### Performance
+- **The CPU-temperature widget stopped polling the whole sensor tree and the
+  fan detector every 1.5s.** The thermal zone is resolved once and read with a
+  single cheap file read; the fan state is asked from the hardware every 30s
+  and reconciled immediately on click. This was the heaviest recurring poll
+  on the bar.
+- **The pointer glow and edge flash unmap their fullscreen surfaces while
+  invisible**, instead of holding one transparent layer surface per monitor
+  for the whole session.
+- **The shared cursor server idles down when the pointer is still**: it polls
+  at cursor rate while moving and drops to a slow cadence after ~2s, snapping
+  back the instant it moves. The broadcast is unchanged.
+- **The transition curtains poll at 120ms instead of 30ms**, which removes
+  hundreds of short-lived process spawns at login and on every wallpaper
+  switch. The minimum-visible floor makes the cadence invisible.
+
 ## [1.3.3] - 2026-11-06
 
 ### Fixed
@@ -924,7 +962,11 @@ full installer/uninstaller.
 
 ## Links
 
-- [Unreleased]: https://github.com/vuhuudo/virtual-paradise/compare/v1.3.0...HEAD
+- [Unreleased]: https://github.com/vuhuudo/virtual-paradise/compare/v1.3.4...HEAD
+- [1.3.4]: https://github.com/vuhuudo/virtual-paradise/compare/v1.3.3...v1.3.4
+- [1.3.3]: https://github.com/vuhuudo/virtual-paradise/compare/v1.3.2...v1.3.3
+- [1.3.2]: https://github.com/vuhuudo/virtual-paradise/compare/v1.3.1...v1.3.2
+- [1.3.1]: https://github.com/vuhuudo/virtual-paradise/compare/v1.3.0...v1.3.1
 - [1.3.0]: https://github.com/vuhuudo/virtual-paradise/compare/v1.2.2...v1.3.0
 - [1.2.2]: https://github.com/vuhuudo/virtual-paradise/compare/v1.2.1...v1.2.2
 - [1.2.1]: https://github.com/vuhuudo/virtual-paradise/compare/v1.2.0...v1.2.1

@@ -64,9 +64,10 @@ global.password_shown = 0;
 global.max_progress = 0.0;
 global.progress_frame = 0;
 
-# Fade in over the first second.
+# Fade in quickly: about 0.2s at 60 Hz. The splash is visible almost at once,
+# so the handover from the bootloader is not a dark screen.
 global.fade_frame = 0;
-global.fade_total = 45;
+global.fade_total = 12;
 
 fun refresh_callback() {
   global.animation_frame++;

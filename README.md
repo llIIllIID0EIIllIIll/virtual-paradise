@@ -14,9 +14,9 @@
 [![Arch Linux](https://img.shields.io/badge/Arch_Linux-1793D1?style=flat-square&logo=arch-linux&logoColor=white)](https://archlinux.org)
 [![Omarchy 4.5+](https://img.shields.io/badge/Omarchy-4.5+-8A2BE2?style=flat-square)](https://omarchy.org)
 [![Hyprland](https://img.shields.io/badge/Hyprland-Wayland-00ffdd?style=flat-square)](https://hyprland.org)
-[![Tests](https://img.shields.io/badge/tests-396%20passed-00ff88?style=flat-square)](tests/)
+[![Tests](https://img.shields.io/badge/tests-467%20passed-00ff88?style=flat-square)](tests/)
 [![License](https://img.shields.io/badge/license-MIT-ffe066?style=flat-square)](LICENSE)
-[![Version](https://img.shields.io/badge/version-1.3.0-ff00ff?style=flat-square)](VERSION)
+[![Version](https://img.shields.io/badge/version-1.3.4-ff00ff?style=flat-square)](VERSION)
 
 *A complete desktop experience: floating island bar, animated wallpapers, Plymouth boot splash, and every widget restyled in Miku cyan.*
 
@@ -246,9 +246,12 @@ The same artwork is used for the **session splash**: between the greeter
 handing the screen to the session and the desktop having something to show
 (about three seconds), the glitch curtain - the same one the live wallpaper
 switch plays - runs over the theme's picture and fades out as soon as the
-shell is up, instead of a black screen. The curtain breaks up like a bad TV:
-crawling static, rolling scanlines, wandering colour separation and slices
-that jump to a new random offset every tick.
+shell is up, instead of a black screen. The frame stays centred while the
+curtain tears it horizontally across the screen, and three nested signal
+blocks (black, cyan, violet) roam the screen with thin neon scanlines and
+scattered data fragments. Every hop re-rolls the nesting, tilt and edge
+colour, so the blocks read as fresh signal damage instead of one repeating
+cascade.
 
 The password prompt in Plymouth sits *below* the picture, in the bar under the
 neon frame, so it never covers the animation.
@@ -400,7 +403,19 @@ path instead:
   are one server each per session (the second plugin to start one finds its
   socket taken and exits) and both overlays read the broadcasts, so the
   pointer glow and the hex spotlight cost two Python processes instead of
-  four.
+  four. The cursor feed also idles down to a slow poll after ~2s of stillness
+  and snaps back the instant the pointer moves.
+- The pointer glow and the edge flash only map their fullscreen layer
+  surfaces while they are actually visible; between flashes they hold no
+  buffer at all.
+- The CPU-temperature widget resolves its thermal zone once and reads one
+  file per tick, and asks the fan detector every 30s instead of every 1.5s,
+  so the bar no longer spawns a sensor sweep and a vendor probe four times a
+  second.
+- The transition curtains poll at 120ms instead of 30ms. The curtain holds
+  for its minimum-visible floor regardless, so this is invisible; it removes
+  hundreds of short-lived process spawns at login and on each wallpaper
+  switch.
 - The clock's calendar popup is built the first time it is asked for; a
   session that never opens it never pays for the month grid.
 - The wallpaper rides Omarchy's own background engine (it renders video
@@ -566,7 +581,7 @@ virtual-paradise/
 │   └── convert-gifs-to-mp4.sh   # Wallpaper compression
 ├── install.sh            # Installer
 ├── uninstall.sh          # Uninstaller
-├── VERSION               # Semantic version (1.3.0)
+├── VERSION               # Semantic version (1.3.4)
 └── README.md             # This file
 ```
 

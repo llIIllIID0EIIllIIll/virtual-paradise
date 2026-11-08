@@ -68,6 +68,11 @@ def main():
 
     clients = []
     last = ""
+    # Idle counter: the pointer is polled at cursor rate only while it is
+    # actually moving. After ~2s of stillness the cadence drops to a slow idle,
+    # and snaps back to cursor rate the instant it moves again. The broadcast
+    # only fires on change either way, so the overlays see the same stream.
+    idle = 0
     try:
         while True:
             try:
@@ -89,6 +94,7 @@ def main():
                 pos = ""
             if "," in pos and pos != last:
                 last = pos
+                idle = 0
                 line = (pos + "\n").encode()
                 for conn in list(clients):
                     try:
@@ -99,7 +105,9 @@ def main():
                             conn.close()
                         except OSError:
                             pass
-            time.sleep(0.033)
+            else:
+                idle += 1
+            time.sleep(0.033 if idle < 60 else 0.15)
     finally:
         server.close()
         try:
