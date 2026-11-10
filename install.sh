@@ -16,8 +16,6 @@ REPO_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 # That matters because `omarchy plugin update` fast-forwards with --ff-only and
 # refuses to touch a checkout that this layer has left dirty.
 export PARADISE_REPO_DIR="$REPO_DIR"
-# shellcheck source=lib/plugin-overrides.sh
-. "$REPO_DIR/lib/plugin-overrides.sh"
 # shellcheck source=lib/shell-layout.sh
 . "$REPO_DIR/lib/shell-layout.sh"
 # shellcheck source=lib/install-helpers.sh
@@ -179,13 +177,18 @@ LOCAL_BIN="$HOME/.local/bin"
 CACHE_DIR="${XDG_CACHE_HOME:-$HOME/.cache}"
 BACKUP_TIMESTAMP="$(date +%Y%m%d_%H%M%S)"
 
-
-# `omarchy restart shell` returns as soon as the old shell is signalled, and the
-# replacement answers "omarchy-shell is not responding" for the first few
-# seconds, so a plugin enable issued straight afterwards fails even though the
-# plugin exists. Retry for up to ~15s, and keep the last error message so a real
-# failure is reported with its cause instead of a bare warning.
-LAST_PLUGIN_ERROR=""
+# Theme-owned paths, resolved once after the target user/home is known. The
+# override layer caches these at source time, so it must be sourced *after*
+# them: under `sudo ./install.sh`, HOME is still /root when this file starts,
+# and sourcing earlier made every patch land in /root/.config instead of the
+# user's plugins.
+VP_CONFIG_DIR="$CONFIG_DIR"
+VP_STATE_DIR="${XDG_STATE_HOME:-$HOME/.local/state}/virtual-paradise"
+VP_DATA_DIR="${XDG_DATA_HOME:-$HOME/.local/share}/virtual-paradise"
+export PARADISE_CONFIG_DIR="$VP_CONFIG_DIR"
+export PARADISE_STATE_DIR="$VP_STATE_DIR"
+# shellcheck source=lib/plugin-overrides.sh
+. "$REPO_DIR/lib/plugin-overrides.sh"
 
 
 
@@ -787,7 +790,30 @@ if [[ -d "$REPO_DIR/bin" ]]; then
       cp -f "$REPO_DIR/plymouth/$splash_asset" "$LOCAL_BIN/$splash_asset" 2>/dev/null || true
   done
 
-  cp "$REPO_DIR/uninstall.sh" "$LOCAL_BIN/uninstall-virtual-paradise"
+  # Self-contained uninstaller: the file in ~/.local/bin is only a wrapper.
+  # The real script runs from the theme's data directory, where the libs and
+  # payload it needs (sddm, plymouth, hypr, fastfetch, micro, plugins, bin) are
+  # mirrored next to it, so it can remove the boot/login themes and restore
+  # configs even when the repository is gone. Copying only uninstall.sh used to
+  # leave it without lib/sddm.sh and lib/plymouth.sh (themes stayed installed)
+  # and without shell-layout.sh (it overwrote a custom shell.json).
+  sync_tree "$REPO_DIR/lib" "$VP_DATA_DIR/lib" mirror
+  sync_tree "$REPO_DIR/hypr" "$VP_DATA_DIR/hypr" mirror
+  sync_tree "$REPO_DIR/fastfetch" "$VP_DATA_DIR/fastfetch" mirror
+  sync_tree "$REPO_DIR/micro" "$VP_DATA_DIR/micro" mirror
+  sync_tree "$REPO_DIR/plugins" "$VP_DATA_DIR/plugins" mirror
+  sync_tree "$REPO_DIR/bin" "$VP_DATA_DIR/bin" mirror
+  sync_tree "$REPO_DIR/overrides" "$VP_DATA_DIR/overrides" mirror
+  mkdir -p "$VP_DATA_DIR/plymouth"
+  [[ -f "$REPO_DIR/plymouth/override.conf" ]] \
+    && cp -f "$REPO_DIR/plymouth/override.conf" "$VP_DATA_DIR/plymouth/override.conf"
+  cp "$REPO_DIR/uninstall.sh" "$VP_DATA_DIR/uninstall.sh"
+  chmod +x "$VP_DATA_DIR/uninstall.sh"
+  cat > "$LOCAL_BIN/uninstall-virtual-paradise" <<EOF
+#!/usr/bin/env bash
+# Wrapper: the self-contained uninstaller lives in the theme data directory.
+exec "$VP_DATA_DIR/uninstall.sh" "\$@"
+EOF
   chmod +x "$LOCAL_BIN/uninstall-virtual-paradise"
   log_sub "Installed helper tools (rice_layout, momoisay, toggle_live_wallpaper, logout_splash, paradise-banner, etc.)"
 fi
@@ -798,21 +824,21 @@ fi
 # bin/update-plugins.sh locates the override layer relative to its own path, so
 # the shared lib has to sit next to it rather than only in the repo.
 if [[ -f "$REPO_DIR/bin/update-plugins.sh" && -f "$REPO_DIR/lib/plugin-overrides.sh" ]]; then
-  mkdir -p "$HOME/.local/share/virtual-paradise"
-  cp "$REPO_DIR/lib/plugin-overrides.sh" "$HOME/.local/share/virtual-paradise/plugin-overrides.sh"
+  mkdir -p "$VP_DATA_DIR"
+  cp "$REPO_DIR/lib/plugin-overrides.sh" "$VP_DATA_DIR/plugin-overrides.sh"
   # The theme-set hook and the post-update hook both need the same three-way
   # shell.json rules the installer just used.
   [[ -f "$REPO_DIR/lib/shell-layout.sh" ]] &&
-    cp "$REPO_DIR/lib/shell-layout.sh" "$HOME/.local/share/virtual-paradise/shell-layout.sh"
+    cp "$REPO_DIR/lib/shell-layout.sh" "$VP_DATA_DIR/shell-layout.sh"
   # The updater runs from a systemd timer whose environment has no
   # OMARCHY_PATH, so it needs the same helper the installer uses.
   [[ -f "$REPO_DIR/lib/omarchy-env.sh" ]] &&
-    cp "$REPO_DIR/lib/omarchy-env.sh" "$HOME/.local/share/virtual-paradise/omarchy-env.sh"
+    cp "$REPO_DIR/lib/omarchy-env.sh" "$VP_DATA_DIR/omarchy-env.sh"
   # The installed updater has no repo in sight, so mirror overrides/ next to the
   # lib; it re-applies this rice after every update.
-  rm -rf "$HOME/.local/share/virtual-paradise/overrides"
+  rm -rf "$VP_DATA_DIR/overrides"
   [[ -d "$REPO_DIR/overrides" ]] &&
-    cp -r "$REPO_DIR/overrides" "$HOME/.local/share/virtual-paradise/overrides"
+    cp -r "$REPO_DIR/overrides" "$VP_DATA_DIR/overrides"
   chmod +x "$LOCAL_BIN/update-plugins.sh" "$LOCAL_BIN/notify-plugin-updates.sh" 2>/dev/null || true
   ln -nsf "$LOCAL_BIN/update-plugins.sh" "$LOCAL_BIN/paradise-plugin-update"
   chmod +x "$LOCAL_BIN/audio-backend-watchdog.sh" 2>/dev/null || true

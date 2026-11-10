@@ -160,7 +160,8 @@ if [[ -f "$REPO_DIR/lib/shell-layout.sh" ]]; then
   esac
   unset layout_result
 else
-  restore_or_remove "$CONFIG_DIR/omarchy/shell.json" "$CONFIG_DIR/omarchy/shell-default.json"
+  printf 'Preserving %s because the layout helper is unavailable.\n' \
+    "$CONFIG_DIR/omarchy/shell.json"
 fi
 rm -f "$CONFIG_DIR/omarchy/shell-paradise.json" "$CONFIG_DIR/omarchy/extensions/paradise.json"
 rm -f "$HOME/.local/state/virtual-paradise/shell-layout.applied.json"
@@ -193,11 +194,15 @@ systemctl --user daemon-reload >/dev/null 2>&1 || true
 
 # The override layer is recorded in a state file; drop it and restore any plugin
 # files it still has patched.
-if [[ -f "$HOME/.local/share/virtual-paradise/plugin-overrides.sh" ]]; then
-  bash -c '. "$HOME/.local/share/virtual-paradise/plugin-overrides.sh"; po_revert_all' \
+VP_DATA_DIR="${XDG_DATA_HOME:-$HOME/.local/share}/virtual-paradise"
+if [[ -f "$VP_DATA_DIR/plugin-overrides.sh" ]]; then
+  bash -c '. "$1/plugin-overrides.sh"; po_revert_all' _ "$VP_DATA_DIR" \
     >/dev/null 2>&1 || true
 fi
-rm -rf "$HOME/.local/share/virtual-paradise"
+# The data directory also carries the self-contained uninstaller payload, so it
+# is removed at the very end of the run - after lib/sddm.sh and lib/plymouth.sh
+# have been sourced. Deleting it here used to pull the libs out from under the
+# still-running script.
 rm -f "$HOME/.local/state/virtual-paradise/overrides.state" \
       "$HOME/.local/state/virtual-paradise/plugin-versions.lock" \
       "$HOME/.local/state/virtual-paradise/current_variant" \
@@ -622,10 +627,13 @@ fi
 # also hand over unrelated files, including anything an Omarchy update or
 # another tool installed as root.
 if (( EUID == 0 )) && [[ -n "${SUDO_USER:-}" && "$SUDO_USER" != "root" ]]; then
-  for owned_dir in "$BACKUP_DIR" "$CONFIG_DIR/omarchy" "$LOCAL_BIN" "$HOME/.local/state/virtual-paradise" "$HOME/.local/share/virtual-paradise"; do
+  for owned_dir in "$BACKUP_DIR" "$CONFIG_DIR/omarchy" "$LOCAL_BIN" "$HOME/.local/state/virtual-paradise" "$VP_DATA_DIR"; do
     [[ -e "$owned_dir" ]] || continue
     chown -R "$CURRENT_USER:$CURRENT_USER" "$owned_dir" 2>/dev/null || true
   done
 fi
+
+# Remove the self-contained uninstaller payload now that the run is done.
+rm -rf "$VP_DATA_DIR"
 
 printf 'Uninstalled Virtual☆Paradise. Backup snapshot: %s\n' "$BACKUP_DIR"

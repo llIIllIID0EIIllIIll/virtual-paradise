@@ -8,6 +8,8 @@ Conventional Commits.
 
 ## [Unreleased]
 
+## [1.3.5] - 2026-11-10
+
 ### Changed
 - **The installer monolith is split into modules.** `install.sh` is now a thin
   orchestrator: logging, privilege and backup helpers live in
@@ -17,6 +19,37 @@ Conventional Commits.
   `install.sh` dropped from 2172 to 1324 lines with no behaviour change; the
   test suite follows the moved code and shellcheck still passes across the
   whole installer.
+
+### Fixed
+- **`sudo ./install.sh` now patches the user's plugins, not `/root`'s.** The
+  override layer caches its config/state paths when it is sourced; it was
+  sourced before the target user's home was resolved, so a plain sudo run sent
+  every colour/null-bar/audio patch to `/root/.config` and left the real
+  plugins untouched. The layer is now initialised after the user and
+  `VP_CONFIG_DIR`/`VP_STATE_DIR` are known.
+- **The installed uninstaller is self-contained.** `~/.local/bin/uninstall-virtual-paradise`
+  was a lone copy of `uninstall.sh` that could not find `lib/sddm.sh` or
+  `lib/plymouth.sh` (so the boot/login themes stayed installed) and, without
+  `lib/shell-layout.sh`, overwrote a custom `shell.json` with a guessed
+  default. The installer now mirrors the libs and the payload it needs into
+  `$XDG_DATA_HOME/virtual-paradise`, installs a small wrapper, keeps a custom
+  layout instead of guessing, and removes its payload only after the run has
+  finished using it.
+- **One bad package name can no longer drop the whole package transaction.**
+  `visual-studio-code-bin` is AUR-only and sat in the official list, so a
+  single `pacman -S` could fail and leave `rsync`, `ffmpeg`, `jq`, `fcitx5`
+  and every other dependency uninstalled. Packages are now validated against
+  the official repos, AUR-only names are moved to the AUR list, and a failed
+  batch is retried one package at a time.
+- **State/data paths honour `XDG_STATE_HOME` and `XDG_DATA_HOME`.** The override
+  state and the uninstaller payload now follow the same XDG roots as the theme
+  hook and updater; the sandbox tests set all three XDG variables so a run can
+  no longer write into the real home.
+
+### Tests
+- Added regression checks for the override init order, the self-contained
+  uninstaller payload/wrapper, custom-layout preservation, and XDG state
+  handling (475 assertions).
 
 ## [1.3.4] - 2026-11-08
 
@@ -972,7 +1005,8 @@ full installer/uninstaller.
 
 ## Links
 
-- [Unreleased]: https://github.com/vuhuudo/virtual-paradise/compare/v1.3.4...HEAD
+- [Unreleased]: https://github.com/vuhuudo/virtual-paradise/compare/v1.3.5...HEAD
+- [1.3.5]: https://github.com/vuhuudo/virtual-paradise/compare/v1.3.4...v1.3.5
 - [1.3.4]: https://github.com/vuhuudo/virtual-paradise/compare/v1.3.3...v1.3.4
 - [1.3.3]: https://github.com/vuhuudo/virtual-paradise/compare/v1.3.2...v1.3.3
 - [1.3.2]: https://github.com/vuhuudo/virtual-paradise/compare/v1.3.1...v1.3.2

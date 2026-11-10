@@ -165,7 +165,6 @@ CHECK_AND_INSTALL_PACKAGES() {
     "ghostty"
     "nautilus"
     "github-copilot-cli"
-    "visual-studio-code-bin"
     "wtype"
   )
   local AUR_PKGS=(
@@ -173,6 +172,7 @@ CHECK_AND_INSTALL_PACKAGES() {
     "gnome-network-displays"
     "hyprmoncfg"
     "voxtype-bin"
+    "visual-studio-code-bin"
   )
 
   local HW_VENDOR HW_PRODUCT HW_CHASSIS
@@ -263,13 +263,33 @@ CHECK_AND_INSTALL_PACKAGES() {
 
   if [[ ${#OFFICIAL_TO_INSTALL[@]} -gt 0 ]]; then
     if [[ $HAVE_SUDO -eq 1 ]]; then
-      log_sub "Installing official packages: ${OFFICIAL_TO_INSTALL[*]}"
       if command -v pacman &>/dev/null; then
-        # Do not swallow this: a bad package name or a declined key import used
-        # to fail silently and still print the success banner at the end.
-        if ! run_privileged pacman -S --needed --noconfirm "${OFFICIAL_TO_INSTALL[@]}"; then
-          log_warn "pacman failed. Install manually: ${OFFICIAL_TO_INSTALL[*]}"
+        # One unknown name aborts the whole pacman transaction, which used to
+        # leave every missing package (rsync, ffmpeg, jq, fcitx5...) uninstalled
+        # behind a single warning. Validate first, then install in one batch and
+        # fall back to one-by-one so a single bad name cannot drop the rest.
+        local -a official_known=() official_unknown=()
+        local pkg
+        for pkg in "${OFFICIAL_TO_INSTALL[@]}"; do
+          if pacman -Si "$pkg" >/dev/null 2>&1; then
+            official_known+=("$pkg")
+          else
+            official_unknown+=("$pkg")
+          fi
+        done
+        [[ ${#official_unknown[@]} -eq 0 ]] \
+          || log_warn "Not in the official repos, skipped: ${official_unknown[*]}"
+        if [[ ${#official_known[@]} -gt 0 ]]; then
+          log_sub "Installing official packages: ${official_known[*]}"
+          if ! run_privileged pacman -S --needed --noconfirm "${official_known[@]}"; then
+            log_warn "Batch install failed; retrying one package at a time."
+            for pkg in "${official_known[@]}"; do
+              run_privileged pacman -S --needed --noconfirm "$pkg" \
+                || log_warn "Could not install $pkg; install it manually."
+            done
+          fi
         fi
+        unset official_known official_unknown pkg
       fi
     else
       log_warn "Sudo privileges unavailable. Missing official packages must be installed manually: ${OFFICIAL_TO_INSTALL[*]}"
@@ -277,14 +297,22 @@ CHECK_AND_INSTALL_PACKAGES() {
   fi
 
   if [[ ${#AUR_TO_INSTALL[@]} -gt 0 ]]; then
-    log_sub "Installing AUR packages: ${AUR_TO_INSTALL[*]}"
+    local aur_helper=""
     if command -v yay &>/dev/null; then
-      if ! RUN_AS_INSTALL_USER yay -S --needed --noconfirm "${AUR_TO_INSTALL[@]}"; then
-        log_warn "yay failed. Install manually: ${AUR_TO_INSTALL[*]}"
-      fi
+      aur_helper="yay"
     elif command -v paru &>/dev/null; then
-      if ! RUN_AS_INSTALL_USER paru -S --needed --noconfirm "${AUR_TO_INSTALL[@]}"; then
-        log_warn "paru failed. Install manually: ${AUR_TO_INSTALL[*]}"
+      aur_helper="paru"
+    fi
+    if [[ -n $aur_helper ]]; then
+      log_sub "Installing AUR packages: ${AUR_TO_INSTALL[*]}"
+      if ! RUN_AS_INSTALL_USER "$aur_helper" -S --needed --noconfirm "${AUR_TO_INSTALL[@]}"; then
+        log_warn "Batch AUR install failed; retrying one package at a time."
+        local pkg
+        for pkg in "${AUR_TO_INSTALL[@]}"; do
+          RUN_AS_INSTALL_USER "$aur_helper" -S --needed --noconfirm "$pkg" \
+            || log_warn "Could not install $pkg; install it manually."
+        done
+        unset pkg
       fi
     else
       log_warn "AUR helper (yay/paru) not found. Please install manually: ${AUR_TO_INSTALL[*]}"

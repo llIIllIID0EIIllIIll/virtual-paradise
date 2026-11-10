@@ -283,7 +283,7 @@ if want tc2; then
                 "service":"runtime/$HASH/qml/core/Service.qml"}}
 EOF
 
-  out=$( PATH="$root/bin:$PATH" HOME="$root/home" XDG_CONFIG_HOME="$root/home/.config" \
+  out=$( PATH="$root/bin:$PATH" HOME="$root/home" XDG_CONFIG_HOME="$root/home/.config" XDG_STATE_HOME="$root/home/.local/state" XDG_DATA_HOME="$root/home/.local/share" \
          PARADISE_REPO_DIR="$REPO_DIR" PARADISE_CONFIG_DIR="$root/home/.config" \
          bash -c ". '$REPO_DIR/lib/plugin-overrides.sh'; po_apply_all" 2>&1 )
   check "po_apply_all exits cleanly" "$?" "$out"
@@ -306,7 +306,7 @@ EOF
 
   # A plugin that is not installed yet must degrade, not abort. Under `set -e`
   # the old code killed the whole installer here.
-  absent=$( PATH="$root/bin:$PATH" HOME="$root/home" XDG_CONFIG_HOME="$root/home/.config" \
+  absent=$( PATH="$root/bin:$PATH" HOME="$root/home" XDG_CONFIG_HOME="$root/home/.config" XDG_STATE_HOME="$root/home/.local/state" XDG_DATA_HOME="$root/home/.local/share" \
             PARADISE_REPO_DIR="$REPO_DIR" PARADISE_CONFIG_DIR="$root/home/.config" \
             bash -c "set -euo pipefail; . '$REPO_DIR/lib/plugin-overrides.sh'; po_resolve_entrypoint '$root/home/.config/omarchy/plugins/nope' barWidget || true" 2>&1 )
   check "po_resolve_entrypoint on a missing plugin is survivable" 0 "$absent"
@@ -317,7 +317,7 @@ EOF
   mkdir -p "$G"
   ( cd "$G" && git init -q && git config user.email t@t && git config user.name t \
     && echo a >a.qml && git add -A && git commit -qm one )
-  pinout=$( PATH="$root/bin:$PATH" HOME="$root/home" XDG_CONFIG_HOME="$root/home/.config" \
+  pinout=$( PATH="$root/bin:$PATH" HOME="$root/home" XDG_CONFIG_HOME="$root/home/.config" XDG_STATE_HOME="$root/home/.local/state" XDG_DATA_HOME="$root/home/.local/share" \
             PARADISE_REPO_DIR="$REPO_DIR" PARADISE_CONFIG_DIR="$root/home/.config" \
             PARADISE_STATE_DIR="$root/home/.local/state/virtual-paradise" \
             bash "$REPO_DIR/bin/update-plugins.sh" --pin 2>&1 )
@@ -344,7 +344,7 @@ EOF
   # The update path reverts the layer, updates plugins, then re-applies it.
   # If re-applying after a revert does not land the override again, every
   # plugin update would quietly strip the theming.
-  po_cycle=$( PATH="$root/bin:$PATH" HOME="$root/home" XDG_CONFIG_HOME="$root/home/.config" \
+  po_cycle=$( PATH="$root/bin:$PATH" HOME="$root/home" XDG_CONFIG_HOME="$root/home/.config" XDG_STATE_HOME="$root/home/.local/state" XDG_DATA_HOME="$root/home/.local/share" \
     PARADISE_REPO_DIR="$REPO_DIR" PARADISE_CONFIG_DIR="$root/home/.config" \
     bash -c ". '$REPO_DIR/lib/plugin-overrides.sh'; po_revert_all; po_apply_all; \
       diff -q '$REPO_DIR/overrides/ssupt.audio-control/Panel.qml' \
@@ -354,7 +354,7 @@ EOF
   # Revert must put the non-git runtime file back to its pristine content, not
   # delete it: the plugin has no git checkout to restore from, so the backup
   # taken by the override layer is the only copy of upstream's file.
-  PATH="$root/bin:$PATH" HOME="$root/home" XDG_CONFIG_HOME="$root/home/.config" \
+  PATH="$root/bin:$PATH" HOME="$root/home" XDG_CONFIG_HOME="$root/home/.config" XDG_STATE_HOME="$root/home/.local/state" XDG_DATA_HOME="$root/home/.local/share" \
     PARADISE_REPO_DIR="$REPO_DIR" PARADISE_CONFIG_DIR="$root/home/.config" \
     bash -c ". '$REPO_DIR/lib/plugin-overrides.sh'; po_revert_all" >/dev/null 2>&1
   if [[ -f "$A/runtime/$HASH/qml/panels/Panel.qml" ]]; then
@@ -560,6 +560,34 @@ if want tc4; then
 
   run_uninstaller "$root" --not-a-flag
   check "an unknown flag is rejected" "$([[ $? -ne 0 ]] && echo 0 || echo 1)"
+
+  # The installed uninstaller must be self-contained. It runs from the theme's
+  # data directory with the libs and payload it needs next to it, so it can
+  # remove the boot/login themes and respect a custom shell.json even when the
+  # repository is gone. It used to be a lone copy in ~/.local/bin.
+  root2="$(new_sandbox tc4-installed)"
+  build_shims "$root2/bin"
+  run_installer "$root2" >/dev/null 2>&1
+  payload="$root2/home/.local/share/virtual-paradise"
+  check "installed uninstaller payload carries the boot-theme libs" \
+    "$([[ -f "$payload/lib/sddm.sh" && -f "$payload/lib/plymouth.sh" \
+      && -f "$payload/lib/shell-layout.sh" ]] && echo 0 || echo 1)"
+  check "installed uninstaller wrapper execs the payload" \
+    "$(grep -q 'exec .*uninstall.sh' "$root2/home/.local/bin/uninstall-virtual-paradise" && echo 0 || echo 1)"
+
+  C2="$root2/home/.config/omarchy"
+  printf '{"bar":{"layout":{"left":[{"id":"my.custom"}]}}}\n' >"$C2/shell.json"
+  ( PATH="$root2/bin:$PATH" HOME="$root2/home" XDG_CONFIG_HOME="$root2/home/.config" \
+    XDG_STATE_HOME="$root2/home/.local/state" XDG_DATA_HOME="$root2/home/.local/share" \
+    SHIM_LOG="$root2/shim.log" timeout 900 \
+    bash "$root2/home/.local/bin/uninstall-virtual-paradise" \
+    >"$root2/uninstall-installed.log" 2>&1 )
+  check "installed uninstaller exits 0" "$?" \
+    "$(strip_ansi "$root2/uninstall-installed.log" | tail -3)"
+  check "installed uninstaller preserves a custom shell.json" \
+    "$(grep -q 'my.custom' "$C2/shell.json" && echo 0 || echo 1)"
+  check "installed uninstaller removes its payload" \
+    "$([[ ! -d "$payload" ]] && echo 0 || echo 1)"
 fi
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -613,6 +641,18 @@ if want tc5; then
     "$(find "$root/xdg/systemd/user" -name 'paradise-*' 2>/dev/null | grep -q . && echo 1 || echo 0)"
   check "uninstall removes the theme under XDG" \
     "$([[ -d "$root/xdg/omarchy/themes/virtual-paradise" ]] && echo 1 || echo 0)"
+
+  # Regression: the override layer caches its paths at source time, so it must
+  # be initialised after the target user's home is known. Sourcing it at the top
+  # of install.sh made a plain `sudo ./install.sh` patch /root/.config and leave
+  # the user's plugins untouched.
+  cfg_line="$(grep -n 'export PARADISE_CONFIG_DIR=' "$REPO_DIR/install.sh" | head -1 | cut -d: -f1)"
+  src_line="$(grep -nF '. "$REPO_DIR/lib/plugin-overrides.sh"' "$REPO_DIR/install.sh" | head -1 | cut -d: -f1)"
+  check "the override layer initialises after the user home is known" \
+    "$([[ -n $cfg_line && -n $src_line && $cfg_line -lt $src_line ]] && echo 0 || echo 1)" \
+    "config=$cfg_line source=$src_line"
+  check "the override state honours XDG_STATE_HOME" \
+    "$(grep -q 'XDG_STATE_HOME' "$REPO_DIR/lib/plugin-overrides.sh" && echo 0 || echo 1)"
 fi
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -832,7 +872,7 @@ if want tc8; then
   # Run the hook as Omarchy would, with the shimmed omarchy recording argv.
   run_hook() {
     : >"$root/shim.log"
-    ( PATH="$root/bin:$PATH" HOME="$root/home" XDG_CONFIG_HOME="$root/home/.config" \
+    ( PATH="$root/bin:$PATH" HOME="$root/home" XDG_CONFIG_HOME="$root/home/.config" XDG_STATE_HOME="$root/home/.local/state" XDG_DATA_HOME="$root/home/.local/share" \
         SHIM_LOG="$root/shim.log" timeout 120 bash "$hook" "$1" >/dev/null 2>&1 )
   }
 
@@ -881,7 +921,7 @@ if want tc9; then
     : >"$bg/$f"
   done
 
-  out=$( HOME="$root/home" XDG_CONFIG_HOME="$root/home/.config" \
+  out=$( HOME="$root/home" XDG_CONFIG_HOME="$root/home/.config" XDG_STATE_HOME="$root/home/.local/state" XDG_DATA_HOME="$root/home/.local/share" \
     bash "$REPO_DIR/bin/toggle_live_wallpaper.sh" list 2>&1 )
   count=$(printf '%s\n' "$out" | grep -c '•')
   check "the playlist reports all 7 files, not just the last (got $count)" \

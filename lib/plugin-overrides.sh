@@ -17,7 +17,7 @@
 _PARADISE_OVERRIDES_LOADED=1
 
 PARADISE_CONFIG_DIR="${PARADISE_CONFIG_DIR:-${XDG_CONFIG_HOME:-$HOME/.config}}"
-PARADISE_STATE_DIR="${PARADISE_STATE_DIR:-$HOME/.local/state/virtual-paradise}"
+PARADISE_STATE_DIR="${PARADISE_STATE_DIR:-${XDG_STATE_HOME:-$HOME/.local/state}/virtual-paradise}"
 PARADISE_OVERRIDE_STATE="$PARADISE_STATE_DIR/overrides.state"
 
 # Locate overrides/ relative to this file, so the layer works whether it was

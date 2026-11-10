@@ -87,6 +87,8 @@ run_installer() {
     && PATH="$root/bin:$PATH" \
        HOME="$root/home" \
        XDG_CONFIG_HOME="$root/home/.config" \
+       XDG_STATE_HOME="$root/home/.local/state" \
+       XDG_DATA_HOME="$root/home/.local/share" \
        SHIM_LOG="$root/shim.log" \
        timeout 900 bash ./install.sh --user-only --no-boot "$@" \
        >"$root/install.log" 2>&1 )
@@ -98,6 +100,8 @@ run_uninstaller() {
     && PATH="$root/bin:$PATH" \
        HOME="$root/home" \
        XDG_CONFIG_HOME="$root/home/.config" \
+       XDG_STATE_HOME="$root/home/.local/state" \
+       XDG_DATA_HOME="$root/home/.local/share" \
        SHIM_LOG="$root/shim.log" \
        timeout 900 bash ./uninstall.sh "$@" \
        >"$root/uninstall.log" 2>&1 )
