@@ -147,8 +147,7 @@ $(basename "$f"): $out"
   diag_rc=$?
   check "vp-diagnose runs read-only" "$diag_rc" "$(printf '%s' "$diagout" | tail -3)"
   check "vp-diagnose reports the repository and install state" \
-    "$(printf '%s' "$diagout" | grep -q 'Theme repository' \
-      && printf '%s' "$diagout" | grep -q 'Installed state' && echo 0 || echo 1)"
+    "$([[ $diagout == *"Theme repository"* && $diagout == *"Installed state"* ]] && echo 0 || echo 1)"
   check "install.sh --help documents diagnose" \
     "$(bash "$REPO_DIR/install.sh" --help 2>&1 | grep -q 'diagnose' && echo 0 || echo 1)"
   rm -rf "$diag_root"
@@ -618,7 +617,7 @@ if want tc4; then
     "$([[ ! -d "$C/themes/virtual-paradise" ]] && echo 0 || echo 1)"
 
   check "paradise systemd units removed" \
-    "$(find "$root/home/.config/systemd/user" -name 'paradise-*' 2>/dev/null | grep -q . && echo 1 || echo 0)"
+    "$([[ -z "$(find "$root/home/.config/systemd/user" -name 'paradise-*' -print -quit 2>/dev/null)" ]] && echo 0 || echo 1)"
 
   # The uninstaller advertises this directory as a recovery point, so it must
   # actually contain the files it removed.
@@ -740,7 +739,7 @@ if want tc5; then
       timeout 900 bash ./uninstall.sh >"$root/uninstall.log" 2>&1 )
   check "uninstall honours XDG_CONFIG_HOME" $?
   check "uninstall removes the units it installed under XDG" \
-    "$(find "$root/xdg/systemd/user" -name 'paradise-*' 2>/dev/null | grep -q . && echo 1 || echo 0)"
+    "$([[ -z "$(find "$root/xdg/systemd/user" -name 'paradise-*' -print -quit 2>/dev/null)" ]] && echo 0 || echo 1)"
   check "uninstall removes the theme under XDG" \
     "$([[ -d "$root/xdg/omarchy/themes/virtual-paradise" ]] && echo 1 || echo 0)"
 
@@ -914,7 +913,7 @@ if want tc7; then
 
   # Backups are ours to clean up once consumed.
   check "consumed .paradise.bak files are removed" \
-    "$(find "$C" -name '*.paradise.bak' 2>/dev/null | grep -q . && echo 1 || echo 0)"
+    "$([[ -z "$(find "$C" -name '*.paradise.bak' -print -quit 2>/dev/null)" ]] && echo 0 || echo 1)"
   check "the zshrc.zwc cache is removed" \
     "$([[ -f "$H/.zshrc.zwc" ]] && echo 1 || echo 0)"
 
