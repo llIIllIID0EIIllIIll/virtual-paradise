@@ -8,6 +8,11 @@ Conventional Commits.
 
 ## [Unreleased]
 
+### Changed
+- **Repository moved to `github.com/vuhuudo/virtual-paradise`.** Clone URLs,
+  issue/discussion links, the license notice and the security-advisory link
+  now use the new account name.
+
 ## [1.4.0] - 2026-11-10
 
 ### Added
