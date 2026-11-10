@@ -219,6 +219,14 @@ po_apply_theme_colors() {
     foreground: Color.accent
     }"
 
+  # The power-manager prints an IDLE DEBUG line every five seconds, which
+  # floods the user journal; keep the status poll and drop the log.
+  if [[ -f $p/onlyvishesh.power-manager/Panel.qml ]]; then
+    po_touch_existing onlyvishesh.power-manager "$p/onlyvishesh.power-manager/Panel.qml"
+    sed -i 's/console\.log("IDLE DEBUG - State:", root\.currentStateKey, "Mins:", root\.idleSleepMins, "Countdown:", root\.idleCountdown); //' \
+      "$p/onlyvishesh.power-manager/Panel.qml"
+  fi
+
   # webcam also needs the qs.Commons import for Color.accent to resolve.
   if [[ -f $p/io.github.kristoferlund.webcam/BarWidget.qml ]]; then
     po_touch_existing io.github.kristoferlund.webcam "$p/io.github.kristoferlund.webcam/BarWidget.qml"

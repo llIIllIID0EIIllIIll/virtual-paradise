@@ -8,6 +8,16 @@ Conventional Commits.
 
 ## [Unreleased]
 
+### Fixed
+- **The power-manager no longer floods the journal.** Its idle poll logs an
+  `IDLE DEBUG` line every five seconds; the tracked override layer now removes
+  the log while keeping the status poll, and restores the line on theme leave.
+- **CI is stable again.** The Arch layout assertion derives the user prefix
+  from the installed `shell.json` instead of an empty `USER`, the lint job
+  skips `qmllint` when the Omarchy modules are absent (it looped on
+  `network/Panel.qml`), and the shell-default assertion no longer races
+  `pipefail` against `grep -q`.
+
 ### Changed
 - **Repository moved to `github.com/vuhuudo/virtual-paradise`.** Clone URLs,
   issue/discussion links, the license notice and the security-advisory link

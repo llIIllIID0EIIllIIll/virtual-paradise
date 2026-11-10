@@ -307,6 +307,18 @@ if want tc2; then
                 "service":"runtime/$HASH/qml/core/Service.qml"}}
 EOF
 
+  # The power-manager polls idle state every five seconds and prints a DEBUG
+  # line on each poll. The override layer keeps the poll and drops the log.
+  P="$root/home/.config/omarchy/plugins/onlyvishesh.power-manager"
+  mkdir -p "$P"
+  cat >"$P/Panel.qml" <<'EOF'
+Item {
+  Timer {
+    onTriggered: { console.log("IDLE DEBUG - State:", root.currentStateKey, "Mins:", root.idleSleepMins, "Countdown:", root.idleCountdown); idleStatusProc.running = true }
+  }
+}
+EOF
+
   out=$( PATH="$root/bin:$PATH" HOME="$root/home" XDG_CONFIG_HOME="$root/home/.config" XDG_STATE_HOME="$root/home/.local/state" XDG_DATA_HOME="$root/home/.local/share" \
          PARADISE_REPO_DIR="$REPO_DIR" PARADISE_CONFIG_DIR="$root/home/.config" \
          bash -c ". '$REPO_DIR/lib/plugin-overrides.sh'; po_apply_all" 2>&1 )
@@ -327,6 +339,11 @@ EOF
   else
     fail "audio Model.js override matches the repo copy" "not found under runtime/$HASH/qml/core"
   fi
+
+  ! grep -q 'IDLE DEBUG' "$P/Panel.qml"
+  check "the power-manager debug log is removed" $?
+  grep -q 'idleStatusProc.running = true' "$P/Panel.qml"
+  check "the power-manager status poll is kept" $?
 
   # A plugin that is not installed yet must degrade, not abort. Under `set -e`
   # the old code killed the whole installer here.
@@ -416,6 +433,8 @@ EOF
   fi
   grep -qx '// pristine panel' "$A/runtime/$HASH/qml/panels/Panel.qml" 2>/dev/null
   check "revert restores a non-git plugin from its backup" $?
+  grep -q 'IDLE DEBUG' "$P/Panel.qml" 2>/dev/null
+  check "revert restores the power-manager debug line" $?
 fi
 
 # ─────────────────────────────────────────────────────────────────────────────
