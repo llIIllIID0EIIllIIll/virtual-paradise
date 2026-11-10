@@ -246,7 +246,8 @@ for file in \
   hypr_window_error_shake.sh hypr_window_error_restore.sh logout_splash.qml curtain_transition.qml glitch_transition.qml \
   session_splash.sh session_splash.qml transition.sh session_base.png noise.jpg scanlines.png backdrop.png frame.png still.png \
   window_death.sh window_death.qml vp_death_daemon.sh vp_death_daemon.qml \
-  Glitch.jpg Miku_missing.gif Miku_missing.mp4 uninstall-virtual-paradise widgets.sh; do
+  Glitch.jpg Miku_missing.gif Miku_missing.mp4 uninstall-virtual-paradise widgets.sh \
+  paradise-diagnose vp-diagnose.sh; do
   rm -f "$LOCAL_BIN/$file"
 done
 

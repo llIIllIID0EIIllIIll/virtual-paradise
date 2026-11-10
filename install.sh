@@ -10,6 +10,12 @@ set -eo pipefail
 
 REPO_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
+# Diagnostics are read-only and must work without sudo or an installed theme.
+if [[ ${1:-} == diagnose ]]; then
+  shift
+  exec "$REPO_DIR/bin/vp-diagnose.sh" "$@"
+fi
+
 # Shared plugin override layer: theme colours, QML rice and API compatibility
 # fixes applied to installed Omarchy plugins. Kept in lib/ so the updater
 # (bin/update-plugins.sh) can revert and re-apply exactly the same layer.
@@ -43,6 +49,9 @@ for arg in "$@"; do
       printf '  --force-shell-layout  replace a customised shell.json with the theme layout\n'
       printf '  --hook           re-apply the overrides and the bar layout only (for scripts)\n'
       printf '  --dry-run        refused on purpose: there is no preview mode\n'
+      printf '\nDiagnostics:\n'
+      printf '  %s diagnose [--output FILE|--upload]\n' "$0"
+      printf '                   print a read-only support report (no sudo, no changes)\n'
       exit 0
       ;;
     --hook)
@@ -299,6 +308,16 @@ log_step "1" "$TOTAL_STEPS" "Detecting hardware & installing required system pac
 # is gone: narrowing the clip region moved the pinned items under the drawer
 # icons, and any in-place edit of a package-owned QML file would be lost on the
 # next Omarchy update anyway. The island bar uses the upstream tray unchanged.
+
+# --hook is the lightweight path the theme hook and scripts call: only the
+# tracked override layer and the bar layout. Packages, configs, boot themes,
+# helper scripts and the shell-rc edits are all skipped, so a hook run cannot
+# touch the network or rewrite a user's setup.
+if [[ $IS_HOOK -eq 1 ]]; then
+  po_apply_all
+  vp_layout_enter >/dev/null 2>&1 || true
+  exit 0
+fi
 
 if [[ $IS_HOOK -eq 0 ]]; then
   CHECK_AND_INSTALL_PACKAGES
@@ -782,6 +801,7 @@ if [[ -d "$REPO_DIR/bin" ]]; then
   ln -nsf "$LOCAL_BIN/paradise_banner.sh" "$LOCAL_BIN/paradise-banner" 2>/dev/null || true
   ln -nsf "$LOCAL_BIN/virtual_matrix.py" "$LOCAL_BIN/virtual_matrix" 2>/dev/null || true
   ln -nsf "$LOCAL_BIN/cast_screen.sh" "$LOCAL_BIN/cast-screen" 2>/dev/null || true
+  ln -nsf "$LOCAL_BIN/vp-diagnose.sh" "$LOCAL_BIN/paradise-diagnose" 2>/dev/null || true
   ln -nsf "$LOCAL_BIN/format-docx-vn.py" "$LOCAL_BIN/format-docx" 2>/dev/null || true
   ln -nsf "$LOCAL_BIN/format-docx-vn.py" "$LOCAL_BIN/vn-docx" 2>/dev/null || true
   chmod +x "$LOCAL_BIN/sync_cava_theme.py" "$LOCAL_BIN/virtual_matrix.py" "$LOCAL_BIN/cast_screen.sh" "$LOCAL_BIN/format-docx-vn.py" "$LOCAL_BIN/paradise_banner.py" "$LOCAL_BIN/paradise_banner.sh" "$LOCAL_BIN/session_splash.sh" "$LOCAL_BIN/window_death.sh" "$LOCAL_BIN/vp_death_daemon.sh" 2>/dev/null || true

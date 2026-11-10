@@ -121,13 +121,26 @@ PY
         | grep -E 'incompatible-type|Cannot assign|unavailable' || true)
       [[ -n $out ]] && qmlbad="$qmlbad
 $(basename "$f"): $out"
-    done < <(find "$REPO_DIR/bars/island-bar" -name '*.qml' 2>/dev/null)
+    done < <(find "$REPO_DIR/bars" "$REPO_DIR/plugins" "$REPO_DIR/bin" "$REPO_DIR/sddm" -name '*.qml' 2>/dev/null)
     rm -rf "$qmli"
-    check "qmllint reports no island-bar type errors" \
+    check "qmllint reports no QML type errors" \
       "$([[ -z $qmlbad ]] && echo 0 || echo 1)" "$qmlbad"
   else
     printf '  %sSKIP%s qmllint not installed\n' "$DIM" "$OFF"
   fi
+
+  # The read-only diagnose report is the support tool; it must run without
+  # sudo and print the sections a bug report needs.
+  diag_root="$(mktemp -d)"
+  diagout=$( HOME="$diag_root" bash "$REPO_DIR/bin/vp-diagnose.sh" 2>&1 )
+  diag_rc=$?
+  check "vp-diagnose runs read-only" "$diag_rc" "$(printf '%s' "$diagout" | tail -3)"
+  check "vp-diagnose reports the repository and install state" \
+    "$(printf '%s' "$diagout" | grep -q 'Theme repository' \
+      && printf '%s' "$diagout" | grep -q 'Installed state' && echo 0 || echo 1)"
+  check "install.sh --help documents diagnose" \
+    "$(bash "$REPO_DIR/install.sh" --help 2>&1 | grep -q 'diagnose' && echo 0 || echo 1)"
+  rm -rf "$diag_root"
 
   # Terminal emulator configs, validated by the emulator that reads them. These
   # are hand-written and the failure mode is a GUI dialog ("Configuration
@@ -330,6 +343,23 @@ EOF
     fail "--pin records the installed revision" "lockfile: $(cat "$lock" 2>/dev/null)"
   fi
 
+  # --verify compares each checkout with the lockfile, so CI or a timer can
+  # catch a plugin that moved without a recorded review.
+  verify_ok=$( PATH="$root/bin:$PATH" HOME="$root/home" XDG_CONFIG_HOME="$root/home/.config" XDG_STATE_HOME="$root/home/.local/state" XDG_DATA_HOME="$root/home/.local/share" \
+    PARADISE_REPO_DIR="$REPO_DIR" PARADISE_CONFIG_DIR="$root/home/.config" \
+    PARADISE_STATE_DIR="$root/home/.local/state/virtual-paradise" \
+    bash "$REPO_DIR/bin/update-plugins.sh" --verify 2>&1; echo "rc=$?" )
+  check "verify accepts the pinned revision" \
+    "$(printf '%s' "$verify_ok" | grep -q 'rc=0' && echo 0 || echo 1)" "$verify_ok"
+
+  ( cd "$G" && echo b >b.qml && git add -A && git commit -qm two )
+  verify_bad=$( PATH="$root/bin:$PATH" HOME="$root/home" XDG_CONFIG_HOME="$root/home/.config" XDG_STATE_HOME="$root/home/.local/state" XDG_DATA_HOME="$root/home/.local/share" \
+    PARADISE_REPO_DIR="$REPO_DIR" PARADISE_CONFIG_DIR="$root/home/.config" \
+    PARADISE_STATE_DIR="$root/home/.local/state/virtual-paradise" \
+    bash "$REPO_DIR/bin/update-plugins.sh" --verify 2>&1; echo "rc=$?" )
+  check "verify reports drift after HEAD moves" \
+    "$(printf '%s' "$verify_bad" | grep -q 'rc=1' && echo 0 || echo 1)" "$verify_bad"
+
   # State file must list exactly what was patched, so revert can restore it.
   state="$root/home/.local/state/virtual-paradise/overrides.state"
   if [[ -s $state ]]; then
@@ -417,6 +447,18 @@ if want tc3; then
     "$([[ -f "$bg/my-user.mp4" ]] && echo 0 || echo 1)"
   check "a reinstall prunes a theme wallpaper that is gone" \
     "$([[ ! -f "$bg/old-theme.mp4" ]] && echo 0 || echo 1)"
+
+  # --hook is the light path: overrides + layout only, never a full install.
+  rm -rf "$root/home/.config/omarchy/themes/virtual-paradise"
+  hook_rc=$( ( cd "$REPO_DIR" \
+    && PATH="$root/bin:$PATH" HOME="$root/home" \
+       XDG_CONFIG_HOME="$root/home/.config" XDG_STATE_HOME="$root/home/.local/state" XDG_DATA_HOME="$root/home/.local/share" \
+       SHIM_LOG="$root/shim.log" timeout 120 bash ./install.sh --hook ) >/dev/null 2>&1; echo $? )
+  check "--hook exits 0" "$([[ "$hook_rc" == "0" ]] && echo 0 || echo 1)" "rc=$hook_rc"
+  check "--hook does not run the full install" \
+    "$([[ ! -d "$root/home/.config/omarchy/themes/virtual-paradise" ]] && echo 0 || echo 1)"
+  check "the diagnose report is installed as paradise-diagnose" \
+    "$([[ -L "$root/home/.local/bin/paradise-diagnose" ]] && echo 0 || echo 1)"
 
   # The Island Bar must be offered as a first-party plugin and never silently
   # left half-installed in the user-writable dir.
@@ -1042,6 +1084,26 @@ if want tc10; then
     "$(grep -q 'disable_autologin' "$REPO_DIR/install.sh" && echo 0 || echo 1)"
   check "the uninstaller restores the autologin" \
     "$(grep -q 'autologin.conf.paradise.bak' "$REPO_DIR/uninstall.sh" && echo 0 || echo 1)"
+
+  # --boot-only must report failure when neither theme can be installed,
+  # instead of printing success. Stub both installers and the privileged
+  # helpers, then call the real function.
+  boot_rc=$( BOOT_ONLY=1 ENABLE_BOOT=1 NO_AUTOLOGIN=0 TOTAL_STEPS=10 \
+    bash -c '
+      REPO_DIR="$1"
+      . "$1/lib/step-boot.sh"
+      INSTALL_SDDM_THEME() { return 1; }
+      INSTALL_PLYMOUTH_THEME() { return 1; }
+      run_privileged() { return 0; }
+      limine-mkinitcpio() { return 0; }
+      mkinitcpio() { return 0; }
+      boot_image_age() { printf "/boot/EFI/Linux/x.efi 1\n"; }
+      log_step() { :; }; log_sub() { :; }; log_warn() { :; }; log_info() { :; }
+      INSTALL_BOOT_ANIMATIONS >/dev/null 2>&1
+      echo $?
+    ' _ "$REPO_DIR" 2>&1 )
+  check "--boot-only reports failure when neither theme installs" \
+    "$([[ "$boot_rc" == "1" ]] && echo 0 || echo 1)" "rc=$boot_rc"
 
   # The Plymouth prompt must not cover the neon frame.
   check "the Plymouth password row sits below the picture" \

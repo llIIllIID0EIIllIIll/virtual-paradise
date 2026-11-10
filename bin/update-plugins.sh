@@ -14,6 +14,7 @@
 #   --status             show installed vs locked revisions
 #   --revert-only        drop the override layer (for bisecting a broken plugin)
 #   --pin                record installed revisions without updating anything
+#   --verify             compare installed plugin HEADs to the lockfile
 
 set -uo pipefail
 
@@ -81,6 +82,7 @@ while (($#)); do
     --status) MODE="status" ;;
     --revert-only) MODE="revert" ;;
     --pin) MODE="pin" ;;
+    --verify) MODE="verify" ;;
     --yes | -y) ASSUME_YES=1 ;;
     -h | --help)
       # Print the header comment block, stopping at the first code line.
@@ -331,11 +333,45 @@ mode_rollback() {
 }
 
 mkdir -p "$PARADISE_STATE_DIR"
+
+# --- mode: verify ----------------------------------------------------------
+# Compare every pinned plugin checkout with the lockfile. A non-zero exit is
+# useful from a timer or CI: it means HEAD moved without a recorded review.
+mode_verify() {
+  if [[ ! -s $LOCKFILE ]]; then
+    echo "No lockfile at $LOCKFILE; nothing pinned to verify." >&2
+    return 1
+  fi
+  local id want have drift=0
+  while read -r id want; do
+    [[ -n $id && -n $want ]] || continue
+    if [[ ! -d "$PLUGINS_DIR/$id/.git" ]]; then
+      printf 'MISSING  %-44s (not a git checkout)\n' "$id"
+      drift=$((drift + 1))
+      continue
+    fi
+    have="$(git -C "$PLUGINS_DIR/$id" rev-parse HEAD 2>/dev/null || echo unknown)"
+    if [[ $have == "$want" ]]; then
+      printf 'ok       %-44s %s\n' "$id" "${have:0:12}"
+    else
+      printf 'DRIFT    %-44s installed=%s pinned=%s\n' "$id" "${have:0:12}" "${want:0:12}"
+      drift=$((drift + 1))
+    fi
+  done <"$LOCKFILE"
+  if (( drift > 0 )); then
+    printf 'Drift: %s plugin(s) differ from %s\n' "$drift" "$LOCKFILE" >&2
+    return 1
+  fi
+  printf 'All pinned plugins match %s\n' "$LOCKFILE"
+  return 0
+}
+
 case "$MODE" in
   check) mode_check ;;
   status) mode_status ;;
   apply) mode_apply ;;
   revert) mode_revert ;;
   pin) mode_pin ;;
+  verify) mode_verify ;;
   rollback) mode_rollback ;;
 esac

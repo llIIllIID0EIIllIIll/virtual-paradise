@@ -52,6 +52,7 @@ disable_autologin() {
 
 INSTALL_BOOT_ANIMATIONS() {
   log_step "9" "$TOTAL_STEPS" "Configuring Plymouth Boot Animation, SDDM Display Manager & UKI Kernel..."
+  local sddm_ok=0 plymouth_ok=0
 
   if [[ $ENABLE_BOOT -eq 1 ]] && run_privileged true; then
     # 1. SDDM Setup
@@ -62,6 +63,7 @@ INSTALL_BOOT_ANIMATIONS() {
     # restore. sddm_theme_install also repairs machines that ran the old
     # in-place patch.
     if INSTALL_SDDM_THEME; then
+      sddm_ok=1
       log_sub "Installed SDDM theme 'virtual-paradise' (Omarchy's theme left untouched)"
     else
       log_warn "SDDM theme was not installed; the login screen is unchanged."
@@ -80,6 +82,7 @@ INSTALL_BOOT_ANIMATIONS() {
     # plymouth_theme_install also repairs machines that ran the old in-place
     # patch.
     if INSTALL_PLYMOUTH_THEME; then
+      plymouth_ok=1
       log_sub "Installed Plymouth theme 'virtual-paradise' (Omarchy's theme left untouched)"
     else
       log_warn "Plymouth theme was not installed; the boot splash is unchanged."
@@ -127,15 +130,24 @@ INSTALL_BOOT_ANIMATIONS() {
       image_info="$(boot_image_age || true)"
       image="${image_info%% *}"
       age="${image_info##* }"
-      if [[ $image =~ ^/ && $age =~ ^[0-9]+$ && $age -gt 600 ]]; then
+      if [[ -n $image && $image =~ ^/ && $age =~ ^[0-9]+$ && $age -gt 600 ]]; then
         log_warn "The boot image $image was not updated (older than 10 minutes)."
         log_warn "The new splash only shows up after the boot image is rebuilt."
+      elif [[ -n $image ]]; then
+        log_sub "Boot image rebuilt: $image"
       else
-        log_sub "Boot image rebuilt: ${image:-the boot image}"
+        log_warn "The boot image could not be located after the rebuild."
       fi
     else
       log_warn "The boot image was NOT rebuilt - the old splash stays until it is."
       log_warn "Run 'sudo mkinitcpio -P' (or 'sudo limine-mkinitcpio') by hand, then reboot."
+    fi
+
+    # --boot-only promises the boot/login themes; report failure instead of
+    # printing success when neither could be installed.
+    if [[ $sddm_ok -eq 0 && $plymouth_ok -eq 0 && $BOOT_ONLY -eq 1 ]]; then
+      log_warn "Neither the SDDM nor the Plymouth theme could be installed."
+      return 1
     fi
   else
     log_warn "Sudo privileges not available. Skipping system-wide Plymouth/SDDM setup."

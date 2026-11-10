@@ -8,6 +8,33 @@ Conventional Commits.
 
 ## [Unreleased]
 
+## [1.3.7] - 2026-11-10
+
+### Added
+- **`./install.sh diagnose`.** A read-only support report (system, git
+  revision, XDG paths, theme/plugin state, plugin pin drift, boot time, recent
+  shell errors) that needs no sudo and writes nothing. `--output FILE` saves it;
+  `--upload` asks first, then sends it to `0x0.st`.
+- **`paradise-plugin-update --verify`.** Compares each plugin checkout against
+  the pinned lockfile and exits non-zero on drift, so a timer or CI job can
+  catch an unreviewed plugin move.
+- `qmllint` now covers every QML file in `bars/`, `plugins/`, `bin/` and
+  `sddm/`, both locally and in CI, instead of the island bar only.
+
+### Fixed
+- **`./install.sh --hook` no longer performs a full install.** It used to skip
+  only some steps: it still created directories, copied helper scripts, edited
+  shell rc files and could prompt. It now applies the override layer and the
+  bar layout, then exits.
+- **`--boot-only` reports failure.** When neither the SDDM nor the Plymouth
+  theme could be installed the script printed success and exited 0; it now
+  warns and returns 1. A boot image that cannot be located after the rebuild is
+  no longer reported as rebuilt.
+
+### Changed
+- Tests: 490 assertions, including the light `--hook` path, `--verify` drift,
+  `--boot-only` failure and the diagnose report.
+
 ## [1.3.6] - 2026-11-10
 
 ### Fixed
@@ -1036,7 +1063,8 @@ full installer/uninstaller.
 
 ## Links
 
-- [Unreleased]: https://github.com/vuhuudo/virtual-paradise/compare/v1.3.6...HEAD
+- [Unreleased]: https://github.com/vuhuudo/virtual-paradise/compare/v1.3.7...HEAD
+- [1.3.7]: https://github.com/vuhuudo/virtual-paradise/compare/v1.3.6...v1.3.7
 - [1.3.6]: https://github.com/vuhuudo/virtual-paradise/compare/v1.3.5...v1.3.6
 - [1.3.5]: https://github.com/vuhuudo/virtual-paradise/compare/v1.3.4...v1.3.5
 - [1.3.4]: https://github.com/vuhuudo/virtual-paradise/compare/v1.3.3...v1.3.4

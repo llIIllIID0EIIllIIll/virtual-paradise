@@ -300,6 +300,9 @@ Panel {
       Process {
         id: probe
         command: ["date", "+%H:%M %s"]
+        // qmllint sees the JS object literal as QVariantMap; Quickshell
+        // converts it to the QVariantHash the property wants at runtime.
+        // qmllint disable incompatible-type
         environment: ({ TZ: modelData })
         stdout: SplitParser { onRead: function(line) { root.recordWorldTime(modelData, line) } }
       }

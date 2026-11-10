@@ -14,9 +14,9 @@
 [![Arch Linux](https://img.shields.io/badge/Arch_Linux-1793D1?style=flat-square&logo=arch-linux&logoColor=white)](https://archlinux.org)
 [![Omarchy 4.5+](https://img.shields.io/badge/Omarchy-4.5+-8A2BE2?style=flat-square)](https://omarchy.org)
 [![Hyprland](https://img.shields.io/badge/Hyprland-Wayland-00ffdd?style=flat-square)](https://hyprland.org)
-[![Tests](https://img.shields.io/badge/tests-481%20passed-00ff88?style=flat-square)](tests/)
+[![Tests](https://img.shields.io/badge/tests-490%20passed-00ff88?style=flat-square)](tests/)
 [![License](https://img.shields.io/badge/license-MIT-ffe066?style=flat-square)](LICENSE)
-[![Version](https://img.shields.io/badge/version-1.3.6-ff00ff?style=flat-square)](VERSION)
+[![Version](https://img.shields.io/badge/version-1.3.7-ff00ff?style=flat-square)](VERSION)
 
 *A complete desktop experience: floating island bar, animated wallpapers, Plymouth boot splash, and every widget restyled in Miku cyan.*
 
@@ -346,6 +346,22 @@ The `paradise-plugin-update` wrapper:
 
 This ensures your theme survives upstream changes.
 
+`paradise-plugin-update --verify` compares every plugin checkout with the
+recorded revision and exits non-zero on drift, so a timer or CI job can catch a
+plugin that moved without a recorded review.
+
+### Diagnostics
+
+When something is wrong, the built-in report collects the system, repository,
+XDG paths, theme and plugin state, boot time and recent shell errors. It is
+read-only, needs no sudo, and never changes your configuration:
+
+```bash
+./install.sh diagnose             # print the report
+./install.sh diagnose --output ~/vp-report.txt
+./install.sh diagnose --upload    # review, then upload to 0x0.st
+```
+
 ### Bar Effects
 
 The gap stream, the rim scanner and the hover chrome are opt-out. Add the keys
@@ -503,9 +519,9 @@ default.
 
 ### Running Tests
 
-The test suite has twenty-four test cases and 396 assertions; optional tools
+The test suite has twenty-eight test cases and 490 assertions; optional tools
 (`shellcheck`, `qmllint`, `hyprctl`) enable extra checks when present, so the
-exact count varies between machines (396 with `shellcheck`, 395 without). It
+exact count varies between machines (490 with `shellcheck` and `qmllint`). It
 runs in a sandbox and never touches your real system.
 
 ```bash
@@ -592,7 +608,7 @@ virtual-paradise/
 │   └── convert-gifs-to-mp4.sh   # Wallpaper compression
 ├── install.sh            # Installer
 ├── uninstall.sh          # Uninstaller
-├── VERSION               # Semantic version (1.3.6)
+├── VERSION               # Semantic version (1.3.7)
 └── README.md             # This file
 ```
 
