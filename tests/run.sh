@@ -955,11 +955,11 @@ if want tc10; then
   # A rebuild of the boot image that fails silently leaves the old splash on
   # screen, and the installer used to report success anyway.
   check "the installer tries both boot image rebuilds" \
-    "$(grep -q 'limine-mkinitcpio' "$REPO_DIR/install.sh" && grep -q 'mkinitcpio -P' "$REPO_DIR/install.sh" && echo 0 || echo 1)"
+    "$(grep -q 'limine-mkinitcpio' "$REPO_DIR/lib/step-boot.sh" && grep -q 'mkinitcpio -P' "$REPO_DIR/lib/step-boot.sh" && echo 0 || echo 1)"
   check "the installer checks the boot image was really rebuilt" \
-    "$(grep -q 'boot_image_age' "$REPO_DIR/install.sh" && echo 0 || echo 1)"
+    "$(grep -q 'boot_image_age' "$REPO_DIR/lib/step-boot.sh" && echo 0 || echo 1)"
   check "the installer shows the rebuild output" \
-    "$(grep -qE 'run_privileged (limine-mkinitcpio|mkinitcpio -P)[;"]' "$REPO_DIR/install.sh" && echo 0 || echo 1)"
+    "$(grep -qE 'run_privileged (limine-mkinitcpio|mkinitcpio -P)[;"]' "$REPO_DIR/lib/step-boot.sh" && echo 0 || echo 1)"
 
   # The greeter is on screen for less than a second while Omarchy logs in
   # automatically, so the login screen needs a way to be shown.
@@ -1040,7 +1040,7 @@ if want tc10; then
     "$(grep -qx '// not ours' "$sys3/usr/share/sddm/themes/virtual-paradise/Main.qml" && echo 0 || echo 1)"
 
   check "install.sh installs SDDM through lib/sddm.sh" \
-    "$(grep -q 'lib/sddm.sh' "$REPO_DIR/install.sh" && echo 0 || echo 1)"
+    "$(grep -q 'lib/sddm.sh' "$REPO_DIR/lib/step-boot.sh" && echo 0 || echo 1)"
   check "install.sh no longer patches the omarchy theme" \
     "$(grep -vE '^[[:space:]]*#' "$REPO_DIR/install.sh" | grep -q 'sddm/themes/omarchy' && echo 1 || echo 0)"
   check "uninstall.sh removes the SDDM theme" \
@@ -1173,7 +1173,7 @@ if want tc11; then
     "$([[ $rc -ne 0 ]] && echo 0 || echo 1)" "$(tail -2 "$root/plymouth-foreign.log")"
 
   check "install.sh installs Plymouth through lib/plymouth.sh" \
-    "$(grep -q 'lib/plymouth.sh' "$REPO_DIR/install.sh" && echo 0 || echo 1)"
+    "$(grep -q 'lib/plymouth.sh' "$REPO_DIR/lib/step-boot.sh" && echo 0 || echo 1)"
   check "install.sh no longer patches the omarchy Plymouth theme" \
     "$(grep -vE '^[[:space:]]*#' "$REPO_DIR/install.sh" | grep -q 'plymouth/themes/omarchy' && echo 1 || echo 0)"
   check "uninstall.sh removes the Plymouth theme" \
@@ -1413,7 +1413,7 @@ if want tc14; then
   check "the uninstaller exports OMARCHY_PATH" \
     "$(grep -q 'omarchy_export_env' "$REPO_DIR/uninstall.sh" && echo 0 || echo 1)"
   check "the installer hands OMARCHY_PATH to the user commands" \
-    "$(grep -q 'OMARCHY_PATH="\$OMARCHY_PATH"' "$REPO_DIR/install.sh" && echo 0 || echo 1)"
+    "$(grep -q 'OMARCHY_PATH="\$OMARCHY_PATH"' "$REPO_DIR/lib/install-helpers.sh" && echo 0 || echo 1)"
   check "the plugin updater resolves OMARCHY_PATH for the timer" \
     "$(grep -q 'omarchy-env.sh' "$REPO_DIR/bin/update-plugins.sh" && echo 0 || echo 1)"
 
@@ -1514,7 +1514,7 @@ if want tc15; then
   # The installer has to go through the helper: a plain `mv` of a mktemp file
   # is what made the config unreadable in the first place.
   check "the installer replaces the config through the helper" \
-    "$(grep -q 'replace_file_preserving' "$REPO_DIR/install.sh" && echo 0 || echo 1)"
+    "$(grep -q 'replace_file_preserving' "$REPO_DIR/lib/step-shell.sh" && echo 0 || echo 1)"
 fi
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -1758,7 +1758,7 @@ if want tc16; then
       && grep -q 'keepLoaded' "$REPO_DIR/plugins/window-death/manifest.json" && echo 0 || echo 1)"
   check "the installer retires the old death daemon" \
     "$(! grep -q 'vp_death_daemon.sh' "$REPO_DIR/hypr/autostart.lua" \
-      && grep -q 'vp_death_daemon.qml' "$REPO_DIR/install.sh" && echo 0 || echo 1)"
+      && grep -q 'vp_death_daemon.qml' "$REPO_DIR/lib/step-plugins.sh" && echo 0 || echo 1)"
   # The first beat's payload names a file that is never written; binding the
   # slices to it logged a failed load per slice on every close.
   check "the corpse ignores the pending placeholder path" \
@@ -2870,8 +2870,8 @@ PY
   # The notification bell is retired: installer removes a stale copy, the
   # hook does the same on a theme switch, and nothing re-adds it from git.
   check "the installer retires the third-party notification bell" \
-    "$(grep -q 'plugin remove "jankeesvw.notification-center"' "$REPO_DIR/install.sh" \
-      && ! grep -q 'omarchy-notification-center.git' "$REPO_DIR/install.sh" && echo 0 || echo 1)"
+    "$(grep -q 'plugin remove "jankeesvw.notification-center"' "$REPO_DIR/lib/step-plugins.sh" \
+      && ! grep -q 'omarchy-notification-center.git' "$REPO_DIR/lib/step-plugins.sh" && echo 0 || echo 1)"
   check "the theme hook retires the notification bell too" \
     "$(grep -q 'plugin remove "jankeesvw.notification-center"' "$REPO_DIR/lib/theme-set-hook.sh" && echo 0 || echo 1)"
   check "the uninstaller removes the notification bell" \
@@ -2890,15 +2890,15 @@ PY
   # enabling a bar-widget auto-adds it to shell.json, so the theme disables
   # them and drops any stale entry.
   check "the theme mounts the specialized widgets hidden for the Tools menu" \
-    "$(grep -Fq 'omarchy plugin enable "$_tool"' "$REPO_DIR/install.sh" \
-      && grep -q 'io.github.randazraik.xray' "$REPO_DIR/install.sh" \
+    "$(grep -Fq 'omarchy plugin enable "$_tool"' "$REPO_DIR/lib/step-plugins.sh" \
+      && grep -q 'io.github.randazraik.xray' "$REPO_DIR/lib/step-plugins.sh" \
       && grep -q '_plugin_enable "crmne.hyprmoncfg"' "$REPO_DIR/lib/theme-set-hook.sh" \
       && grep -q '_plugin_enable "io.github.kristoferlund.webcam"' "$REPO_DIR/lib/theme-set-hook.sh" \
       && echo 0 || echo 1)"
   check "stale specialized bar entries are rewritten hidden" \
-    "$(grep -q 'for widget_id in ids' "$REPO_DIR/install.sh" \
+    "$(grep -q 'for widget_id in ids' "$REPO_DIR/lib/step-plugins.sh" \
       && grep -q 'for widget_id in ids' "$REPO_DIR/lib/theme-set-hook.sh" \
-      && grep -Fq '"hidden": True' "$REPO_DIR/install.sh" && echo 0 || echo 1)"
+      && grep -Fq '"hidden": True' "$REPO_DIR/lib/step-plugins.sh" && echo 0 || echo 1)"
   check "the Tools menu ships the plugin rows" \
     "$([[ -f "$REPO_DIR/plugins/tools/BarWidget.qml" ]] \
       && grep -q 'io.github.randazraik.xray' "$REPO_DIR/plugins/tools/Panel.qml" \
@@ -2910,7 +2910,7 @@ PY
   # reappearing in centerEnd.
   check "the stock Bluetooth widget stays off the theme bar" \
     "$(grep -q '_plugin_disable "omarchy.bluetooth"' "$REPO_DIR/lib/theme-set-hook.sh" \
-      && grep -q 'plugin disable "omarchy.bluetooth"' "$REPO_DIR/install.sh" \
+      && grep -q 'plugin disable "omarchy.bluetooth"' "$REPO_DIR/lib/step-plugins.sh" \
       && grep -q '"omarchy.bluetooth"' "$REPO_DIR/lib/theme-set-hook.sh" \
       && echo 0 || echo 1)"
 

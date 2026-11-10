@@ -20,6 +20,8 @@ export PARADISE_REPO_DIR="$REPO_DIR"
 . "$REPO_DIR/lib/plugin-overrides.sh"
 # shellcheck source=lib/shell-layout.sh
 . "$REPO_DIR/lib/shell-layout.sh"
+# shellcheck source=lib/install-helpers.sh
+. "$REPO_DIR/lib/install-helpers.sh"
 THEME_NAME="virtual-paradise"
 IS_HOOK=0
 ENABLE_BOOT=1
@@ -170,16 +172,6 @@ omarchy_resolve_session_env "$CURRENT_USER" || true
 # shellcheck source=lib/file-ops.sh
 . "$REPO_DIR/lib/file-ops.sh"
 
-cleanup_install() {
-  local ec=$?
-  if [[ -n "${SUDO_KEEP_ALIVE_PID:-}" ]]; then
-    kill "$SUDO_KEEP_ALIVE_PID" 2>/dev/null || true
-  fi
-  if (( EUID == 0 )) && [[ -n "${SUDO_USER:-}" && "$SUDO_USER" != "root" ]]; then
-    chown -R "$CURRENT_USER:$CURRENT_USER" "$CONFIG_DIR" "$LOCAL_BIN" "$CACHE_DIR" "$HOME/.local" "$HOME/.zshrc"* "$HOME/.oh-my-zsh" 2>/dev/null || true
-  fi
-  exit $ec
-}
 trap cleanup_install EXIT INT TERM
 
 CONFIG_DIR="${XDG_CONFIG_HOME:-$HOME/.config}"
@@ -187,21 +179,6 @@ LOCAL_BIN="$HOME/.local/bin"
 CACHE_DIR="${XDG_CACHE_HOME:-$HOME/.cache}"
 BACKUP_TIMESTAMP="$(date +%Y%m%d_%H%M%S)"
 
-RUN_AS_INSTALL_USER() {
-  if (( EUID == 0 )) && [[ -n "${SUDO_USER:-}" && "$SUDO_USER" != "root" ]]; then
-    sudo -u "$CURRENT_USER" \
-      HOME="$HOME" \
-      XDG_CONFIG_HOME="$CONFIG_DIR" \
-      XDG_RUNTIME_DIR="${XDG_RUNTIME_DIR:-/run/user/$(id -u "$CURRENT_USER")}" \
-      WAYLAND_DISPLAY="${WAYLAND_DISPLAY:-}" \
-      HYPRLAND_INSTANCE_SIGNATURE="${HYPRLAND_INSTANCE_SIGNATURE:-}" \
-      DBUS_SESSION_BUS_ADDRESS="${DBUS_SESSION_BUS_ADDRESS:-}" \
-      OMARCHY_PATH="$OMARCHY_PATH" \
-      "$@"
-  else
-    "$@"
-  fi
-}
 
 # `omarchy restart shell` returns as soon as the old shell is signalled, and the
 # replacement answers "omarchy-shell is not responding" for the first few
@@ -209,58 +186,12 @@ RUN_AS_INSTALL_USER() {
 # plugin exists. Retry for up to ~15s, and keep the last error message so a real
 # failure is reported with its cause instead of a bare warning.
 LAST_PLUGIN_ERROR=""
-enable_plugin_retry() {
-  local plugin_id="$1" out
-  local attempt=0
-  LAST_PLUGIN_ERROR=""
-  while (( attempt < 15 )); do
-    attempt=$((attempt + 1))
-    if out=$(RUN_AS_INSTALL_USER omarchy plugin enable "$plugin_id" 2>&1); then
-      return 0
-    fi
-    LAST_PLUGIN_ERROR="$out"
-    sleep 1
-  done
-  return 1
-}
 
 
-# Color helpers
-C_CYAN="\033[38;2;0;245;212m"
-C_GREEN="\033[38;2;0;255;136m"
-C_PINK="\033[38;2;255;183;213m"
-C_RESET="\033[0m"
-C_BOLD="\033[1m"
-C_DIM="\033[2m"
 
-TOTAL_STEPS="10"
 
-log_step() {
-  local num="$1"
-  local total="$2"
-  local msg="$3"
-  if [[ $IS_HOOK -eq 0 ]]; then
-    echo -e "${C_CYAN}[${num}/${total}]${C_RESET} ${C_BOLD}${msg}${C_RESET}"
-  fi
-}
 
-log_sub() {
-  if [[ $IS_HOOK -eq 0 ]]; then
-    echo -e "  ${C_GREEN}➔${C_RESET} ${C_DIM}$*${C_RESET}"
-  fi
-}
 
-log_warn() {
-  if [[ $IS_HOOK -eq 0 ]]; then
-    echo -e "  ${C_PINK}⚠${C_RESET} $*"
-  fi
-}
-
-log_info() {
-  if [[ $IS_HOOK -eq 0 ]]; then
-    echo -e "$*"
-  fi
-}
 
 # ------------------------------------------------------------------------------
 # Banner
@@ -282,84 +213,29 @@ fi
 # $SUDO_CMD is empty when the installer could not obtain sudo (non-interactive
 # hook, --user-only), so bare "$SUDO_CMD cmd" would silently run unprivileged
 # and fail halfway through the boot setup instead of being skipped cleanly.
-run_privileged() {
-  # USER_ONLY is checked before EUID: root does not override an explicit
-  # request to leave the system alone. Not going through sudo here is what
-  # keeps `install.sh --user-only` safe to run inside a container or as root.
-  if (( USER_ONLY == 1 )); then
-    log_warn "Skipping privileged step: --user-only was requested."
-    return 1
-  fi
-  local can_sudo=0
-  if (( EUID == 0 )); then
-    can_sudo=1
-  elif [[ -n "${SUDO_CMD:-}" ]] && sudo -n true 2>/dev/null; then
-    can_sudo=1
-  elif command -v sudo &>/dev/null && [[ -t 0 ]]; then
-    log_info "  ${C_PINK}🔑 Requesting sudo permission for system-wide setup...${C_RESET}"
-    if sudo -v; then
-      SUDO_CMD="sudo"
-      can_sudo=1
-    fi
-  fi
-
-  if [[ $can_sudo -eq 0 ]]; then
-    log_warn "Skipping privileged step: no sudo available."
-    return 1
-  fi
-  if (( EUID == 0 )); then
-    "$@"
-  else
-    # sudo resets the environment, so OMARCHY_PATH has to be handed over
-    # explicitly: the commands that run as root (the boot setup, the theme
-    # libraries) call omarchy themselves.
-    $SUDO_CMD env OMARCHY_PATH="$OMARCHY_PATH" "$@"
-  fi
-}
 
 # Mirror or merge a directory tree. rsync is in the package list and step 1
 # installs it, but --user-only runs, containers and non-Omarchy distros may not
 # have it; a missing tool must not turn into a silent half-install.
-sync_tree() {
-  local src="$1" dst="$2" mode="${3:-merge}"
-  mkdir -p "$dst"
-  if command -v rsync >/dev/null 2>&1; then
-    if [[ $mode == mirror ]]; then
-      rsync -a --delete "$src"/ "$dst"/
-    else
-      rsync -a "$src"/ "$dst"/
-    fi
-    return 0
-  fi
-  if [[ $mode == mirror ]]; then
-    rm -rf "${dst:?}"
-    mkdir -p "$dst"
-  fi
-  cp -a "$src"/. "$dst"/
-}
 
 # Hardware detection, package installation and per-vendor setup. Sourced here so
 # those functions exist before step 1 calls them, and after the helpers above,
 # which they use.
 # shellcheck source=lib/system.sh
 . "$REPO_DIR/lib/system.sh"
+# shellcheck source=lib/step-shell.sh
+. "$REPO_DIR/lib/step-shell.sh"
+# shellcheck source=lib/step-plugins.sh
+. "$REPO_DIR/lib/step-plugins.sh"
+# shellcheck source=lib/step-boot.sh
+. "$REPO_DIR/lib/step-boot.sh"
 
 # Install (or reinstall) only the SDDM login theme. Shared by the full install,
 # --boot-only and --sddm-only so all three use exactly the same code path.
-INSTALL_SDDM_THEME() {
-  [[ -f "$REPO_DIR/lib/sddm.sh" ]] || return 1
-  run_privileged bash -c \
-    '. "$1/lib/sddm.sh" && sddm_theme_install "/" "$1"' _ "$REPO_DIR"
-}
 
 # Install (or reinstall) only the Plymouth boot theme. Same contract as
 # INSTALL_SDDM_THEME: the theme goes into its own directory and is selected
 # by name, so the package-owned omarchy theme is never written to.
-INSTALL_PLYMOUTH_THEME() {
-  [[ -f "$REPO_DIR/lib/plymouth.sh" ]] || return 1
-  run_privileged bash -c \
-    '. "$1/lib/plymouth.sh" && plymouth_theme_install "/" "$1"' _ "$REPO_DIR"
-}
 
 # The boot image this machine boots from, and how old it is.
 #
@@ -367,134 +243,13 @@ INSTALL_PLYMOUTH_THEME() {
 # Both are checked so the installer can tell whether the splash really made
 # it into the image that is booted. The check runs as root: /boot is not
 # readable by the user.
-boot_image_age() {
-  run_privileged bash -c '
-    for f in /boot/EFI/BOOT/BOOTX64.EFI /boot/EFI/Linux/arch-linux.efi \
-             /boot/initramfs-linux.img /boot/initrd.img; do
-      [ -e "$f" ] || continue
-      echo "$f $(( $(date +%s) - $(stat -c %Y "$f") ))"
-      exit 0
-    done
-    exit 1
-  ' 2>/dev/null
-}
 
 # Turn the SDDM autologin off so the greeter is actually shown.
 #
 # Omarchy logs in automatically, so the login screen is on screen for less than
 # a second: the theme's password panel would never be seen. The original file
 # is kept next to it so uninstall.sh can put it back.
-disable_autologin() {
-  local conf="/etc/sddm.conf.d/autologin.conf"
-  [[ -f $conf ]] || return 0
-  grep -qE '^[[:space:]]*User=' "$conf" || return 0
 
-  run_privileged cp -a "$conf" "$conf.paradise.bak" 2>/dev/null || true
-  if run_privileged sed -i \
-      -e 's/^\([[:space:]]*User=\)/\;#\1/' \
-      -e 's/^\([[:space:]]*Session=\)/\;#\1/' \
-      "$conf"; then
-    printf 'Disabled the SDDM autologin; the login screen is shown now.\n'
-    return 0
-  fi
-  printf 'Could not disable the SDDM autologin.\n' >&2
-  return 1
-}
-
-INSTALL_BOOT_ANIMATIONS() {
-  log_step "9" "$TOTAL_STEPS" "Configuring Plymouth Boot Animation, SDDM Display Manager & UKI Kernel..."
-
-  if [[ $ENABLE_BOOT -eq 1 ]] && run_privileged true; then
-    # 1. SDDM Setup
-    #
-    # The theme goes into its own directory and is selected with a drop-in;
-    # patching /usr/share/sddm/themes/omarchy (owned by omarchy-settings) meant
-    # a package update reverted half of it and uninstall.sh had nothing to
-    # restore. sddm_theme_install also repairs machines that ran the old
-    # in-place patch.
-    if INSTALL_SDDM_THEME; then
-      log_sub "Installed SDDM theme 'virtual-paradise' (Omarchy's theme left untouched)"
-    else
-      log_warn "SDDM theme was not installed; the login screen is unchanged."
-    fi
-
-    if [[ $NO_AUTOLOGIN -eq 1 ]]; then
-      disable_autologin || true
-    fi
-
-    # 2. Plymouth Theme Setup
-    #
-    # The theme goes into its own directory and is selected by name. The old
-    # installer overwrote /usr/share/plymouth/themes/omarchy/omarchy.script and
-    # dropped ~330 generated PNGs into that package-owned directory: a package
-    # update reverted the animation and uninstall.sh had nothing to restore.
-    # plymouth_theme_install also repairs machines that ran the old in-place
-    # patch.
-    if INSTALL_PLYMOUTH_THEME; then
-      log_sub "Installed Plymouth theme 'virtual-paradise' (Omarchy's theme left untouched)"
-    else
-      log_warn "Plymouth theme was not installed; the boot splash is unchanged."
-    fi
-
-    # Systemd overrides for instant Plymouth handover (no SDDM delay). These
-    # are our own drop-ins; uninstall.sh removes them again.
-    run_privileged mkdir -p /etc/systemd/system/plymouth-poweroff.service.d /etc/systemd/system/plymouth-reboot.service.d
-    if [[ -f "$REPO_DIR/plymouth/override.conf" ]]; then
-      run_privileged cp "$REPO_DIR/plymouth/override.conf" "/etc/systemd/system/plymouth-poweroff.service.d/override.conf"
-      run_privileged cp "$REPO_DIR/plymouth/override.conf" "/etc/systemd/system/plymouth-reboot.service.d/override.conf"
-      run_privileged systemctl daemon-reload
-    fi
-
-    # Rebuild UKI / initramfs
-    #
-    # Both paths are tried and the output is shown. The old code picked one
-    # with an if/elif and threw the output away, so a failing rebuild left
-    # the boot image with the previous splash and the installer said nothing:
-    # the theme was installed, the machine rebooted, and the splash was
-    # exactly the same. The mtime of the boot image is checked afterwards so
-    # a silently skipped rebuild cannot pass as a success.
-    local rebuild_ok=0
-    local image_info image age
-
-    if command -v limine-mkinitcpio &>/dev/null; then
-      log_sub "Rebuilding UKI image with limine-mkinitcpio..."
-      if run_privileged limine-mkinitcpio; then
-        rebuild_ok=1
-      else
-        log_warn "limine-mkinitcpio failed; falling back to mkinitcpio -P."
-      fi
-    fi
-
-    if [[ $rebuild_ok -eq 0 ]] && command -v mkinitcpio &>/dev/null; then
-      log_sub "Rebuilding initramfs with mkinitcpio -P..."
-      if run_privileged mkinitcpio -P; then
-        rebuild_ok=1
-      else
-        log_warn "mkinitcpio -P failed."
-      fi
-    fi
-
-    if [[ $rebuild_ok -eq 1 ]]; then
-      image_info="$(boot_image_age || true)"
-      image="${image_info%% *}"
-      age="${image_info##* }"
-      if [[ $image =~ ^/ && $age =~ ^[0-9]+$ && $age -gt 600 ]]; then
-        log_warn "The boot image $image was not updated (older than 10 minutes)."
-        log_warn "The new splash only shows up after the boot image is rebuilt."
-      else
-        log_sub "Boot image rebuilt: ${image:-the boot image}"
-      fi
-    else
-      log_warn "The boot image was NOT rebuilt - the old splash stays until it is."
-      log_warn "Run 'sudo mkinitcpio -P' (or 'sudo limine-mkinitcpio') by hand, then reboot."
-    fi
-  else
-    log_warn "Sudo privileges not available. Skipping system-wide Plymouth/SDDM setup."
-    log_warn "Run 'sudo ./install.sh --boot-only' to enable boot & shutdown animations."
-    return 1
-  fi
-  return 0
-}
 
 if [[ $BOOT_ONLY -eq 1 ]]; then
   if INSTALL_BOOT_ANIMATIONS; then
@@ -536,101 +291,6 @@ log_step "1" "$TOTAL_STEPS" "Detecting hardware & installing required system pac
 # Idempotent: re-running replaces the tracked files and leaves anything else
 # in the directory alone. Falls back to a warning instead of aborting the
 # install when the bundle is not writable.
-po_install_island_bar() {
-  local src_dir="$REPO_DIR/bars/island-bar"
-  local dest_root="/usr/share/omarchy/shell/plugins"
-  local dest_dir="$dest_root/${CURRENT_USER}.island-bar"
-  local data_dir="$HOME/.local/share/virtual-paradise"
-  local repair_dir="$data_dir/island-bar"
-
-  if [[ ! -d "$src_dir" ]]; then
-    log_warn "Island Bar sources missing at $src_dir"
-    return 1
-  fi
-
-  # Render the bundle once into a user-owned repair copy. The post-update hook
-  # uses this when the first-party copy is missing; keeping it even when the
-  # system copy cannot be written (--user-only, no sudo) means a later repair
-  # does not need the repository to still exist.
-  mkdir -p "$data_dir" 2>/dev/null || {
-    log_warn "Could not create $data_dir — skipping Paradise Island Bar."
-    return 1
-  }
-  local stage
-  stage="$(mktemp -d "$data_dir/.island-bar-stage.XXXXXX")" || {
-    log_warn "Could not create staging dir — skipping Paradise Island Bar."
-    return 1
-  }
-  : >"$stage/.paradise-files"
-
-  # Every file the bundle ships, rather than a hand-maintained subset: a QML
-  # component added to bars/island-bar/ has to reach the deployed copy, or the
-  # bar ends up importing a component that is not installed alongside it.
-  local src f
-  for src in "$src_dir"/*.qml "$src_dir"/*.js "$src_dir"/*.json; do
-    [[ -f $src ]] || continue
-    f="$(basename "$src")"
-    if ! sed "s/__USER__/${CURRENT_USER}/g" "$src" >"$stage/$f" 2>/dev/null; then
-      rm -rf "$stage"
-      log_warn "Could not render $src"
-      return 1
-    fi
-    printf '%s\n' "$f" >>"$stage/.paradise-files"
-  done
-
-  rm -rf "$repair_dir" 2>/dev/null || true
-  if ! mv "$stage" "$repair_dir" 2>/dev/null; then
-    rm -rf "$stage"
-    log_warn "Could not publish the island bar repair copy at $repair_dir."
-    return 1
-  fi
-
-  if [[ ! -w "$dest_root" && ! -d "$dest_dir" ]] && ! run_privileged true; then
-    log_warn "Cannot write $dest_root and no sudo available — Paradise Island Bar skipped."
-    log_info "  sudo mkdir -p '$dest_dir' && sudo cp -r '$src_dir'/* '$dest_dir'/"
-    log_info "  A repair copy is available at $repair_dir for the post-update hook."
-    return 1
-  fi
-
-  run_privileged mkdir -p "$dest_dir" 2>/dev/null || {
-    log_warn "Could not create $dest_dir — skipping Paradise Island Bar."
-    return 1
-  }
-
-  # The previous manifest lists the files this theme installed. Files removed
-  # upstream are pruned so a stale component cannot keep loading; anything the
-  # user added to the directory is not in the list and is left alone.
-  local old_files=""
-  if [[ -f "$dest_dir/.paradise-files" ]]; then
-    old_files="$(cat "$dest_dir/.paradise-files" 2>/dev/null || true)"
-  fi
-
-  for src in "$repair_dir"/* "$repair_dir"/.paradise-files; do
-    [[ -f $src ]] || continue
-    f="$(basename "$src")"
-    if ! run_privileged cp "$src" "$dest_dir/$f" 2>/dev/null; then
-      # A pre-existing root-owned copy from an older run can block the write
-      # even with sudo in play; surface it instead of failing silently.
-      if ! run_privileged cp -f "$src" "$dest_dir/$f" 2>/dev/null; then
-        log_warn "Could not write $dest_dir/$f"
-        return 1
-      fi
-    fi
-  done
-
-  if [[ -n $old_files && -f "$repair_dir/.paradise-files" ]]; then
-    while IFS= read -r f; do
-      [[ -n $f ]] || continue
-      grep -qxF "$f" "$repair_dir/.paradise-files" 2>/dev/null || \
-        run_privileged rm -f "$dest_dir/$f" 2>/dev/null || true
-    done <<<"$old_files"
-  fi
-
-  # The registry only rescans on demand, so ask for one now rather than
-  # leaving the shell on the previous bar until the next restart.
-  RUN_AS_INSTALL_USER omarchy-shell shell rescanPlugins >/dev/null 2>&1 || true
-  log_sub "Installed Paradise Island Bar to $dest_dir (repair copy: $repair_dir)"
-}
 
 # The stock system tray is deliberately left alone. The old drawer-reveal patch
 # is gone: narrowing the clip region moved the pinned items under the drawer
@@ -686,297 +346,6 @@ log_sub "Directories verified under $CONFIG_DIR and $LOCAL_BIN"
 # succeed. Step 4 uses it to decide whether to keep the stock bar enabled.
 BAR_INSTALL_OK=0
 
-INSTALL_AND_ENABLE_PLUGINS() {
-  log_step "3" "$TOTAL_STEPS" "Installing and enabling custom Quickshell plugins for user '$CURRENT_USER'..."
-  # These repo-owned clones were replaced by maintained external plugins.
-  # Remove their installed copies so an install cannot briefly re-enable or
-  # leave stale rice widgets in the plugin registry.
-  local replaced_plugin
-  for replaced_plugin in audio bluetooth monitor power workspaces media memory; do
-    RUN_AS_INSTALL_USER omarchy plugin remove "${CURRENT_USER}.${replaced_plugin}" --yes 2>/dev/null || true
-    rm -rf "$CONFIG_DIR/omarchy/plugins/${CURRENT_USER}.${replaced_plugin}"
-  done
-
-  # The background service clone is retired too: Omarchy 4.5 renders video
-  # wallpapers itself, so the stock plugin takes the layer back. Leaving the
-  # old copy behind kept a second IPC handler on the "background" target.
-  RUN_AS_INSTALL_USER omarchy plugin remove "${CURRENT_USER}.background" --yes 2>/dev/null || true
-  rm -rf "$CONFIG_DIR/omarchy/plugins/${CURRENT_USER}.background"
-  RUN_AS_INSTALL_USER omarchy plugin enable "omarchy.background" 2>/dev/null || true
-  if [[ -d "$REPO_DIR/plugins" ]]; then
-    local count=0
-    for pdir in "$REPO_DIR"/plugins/*; do
-      if [[ -d "$pdir" && -n "$(find "$pdir" -mindepth 1 -maxdepth 1 -print -quit 2>/dev/null)" ]]; then
-        local plugin_name
-        plugin_name=$(basename "$pdir")
-        local target_plugin_id="${CURRENT_USER}.${plugin_name}"
-        local target_dir="$CONFIG_DIR/omarchy/plugins/$target_plugin_id"
-
-        mkdir -p "$target_dir"
-        # --delete, not cp: a file we rename or drop upstream would otherwise
-        # linger here forever and keep loading, reintroducing removed widgets or
-        # double-registering an IPC handler against the current one.
-        sync_tree "$pdir" "$target_dir" mirror
-
-        # Dynamically update __USER__. to active username (${CURRENT_USER}.)
-        find "$target_dir" -type f \( -name "*.json" -o -name "*.qml" -o -name "*.js" \) -exec sed -i \
-          -e "s/__USER__\./${CURRENT_USER}./g" \
-          -e "s/\"id\": \"[^\"]*\.${plugin_name}\"/\"id\": \"${target_plugin_id}\"/g" \
-          -e "s/moduleName: \"[^\"]*\.${plugin_name}\"/moduleName: \"${target_plugin_id}\"/g" {} +
-        count=$((count + 1))
-      fi
-    done
-    log_sub "Synchronized and calibrated ${count} plugins for '${CURRENT_USER}'"
-
-    # Trigger Quickshell plugin rescan
-    if command -v omarchy-shell &>/dev/null; then
-      RUN_AS_INSTALL_USER omarchy-shell shell rescanPlugins 2>/dev/null || true
-    fi
-
-    # Explicitly activate and register each plugin in Omarchy
-    if command -v omarchy &>/dev/null; then
-      local enabled_count=0
-      for pdir in "$REPO_DIR"/plugins/*; do
-        if [[ -d "$pdir" && -n "$(find "$pdir" -mindepth 1 -maxdepth 1 -print -quit 2>/dev/null)" ]]; then
-          local pname
-          pname=$(basename "$pdir")
-          local pid="${CURRENT_USER}.${pname}"
-          RUN_AS_INSTALL_USER omarchy plugin enable "$pid" 2>/dev/null || true
-          enabled_count=$((enabled_count + 1))
-        fi
-      done
-      po_apply_all
-      log_sub "Enabled all ${enabled_count} Virtual Paradise plugins in Omarchy shell"
-
-      # The window-death burst moved from a second resident Quickshell into an
-      # overlay plugin in this shell. Stop the old daemon if this install is
-      # replacing it live; the autostart line is removed further down.
-      pkill -f 'vp_death_daemon.qml' 2>/dev/null || true
-
-      # Install the external webcam plugin but leave it off the minimal bar.
-      # Enabling a bar-widget auto-adds it to shell.json; the user can bring
-      # it back with `omarchy plugin enable io.github.kristoferlund.webcam`.
-      if [[ ! -d "$CONFIG_DIR/omarchy/plugins/io.github.kristoferlund.webcam" ]] && ! RUN_AS_INSTALL_USER omarchy plugin list --json 2>/dev/null | jq -e 'any(.[]; .id == "io.github.kristoferlund.webcam")' >/dev/null; then
-        log_sub "Adding external Omarchy webcam plugin from git (kept off the bar)..."
-        RUN_AS_INSTALL_USER omarchy plugin add https://github.com/kristoferlund/omarchy-webcam.git --yes 2>/dev/null || true
-      fi
-
-      # The notification bell was retired: Omarchy 4.5 ships its own
-      # notification service (grouped stacks, inline actions, DND, history and
-      # keybinds), and the third-party watcher leaked one inotifywait process
-      # per shell reload - 121 of them, ~285 MB of RSS. Remove the stale
-      # plugin and any orphaned watchers on every install.
-      if [[ -d "$CONFIG_DIR/omarchy/plugins/jankeesvw.notification-center" ]] \
-        || RUN_AS_INSTALL_USER omarchy plugin list --json 2>/dev/null | jq -e 'any(.[]; .id == "jankeesvw.notification-center")' >/dev/null; then
-        log_sub "Retiring the third-party notification center (stock service owns it now)..."
-        RUN_AS_INSTALL_USER omarchy plugin remove "jankeesvw.notification-center" --yes 2>/dev/null || true
-      fi
-      rm -rf "$CONFIG_DIR/omarchy/plugins/jankeesvw.notification-center"
-      pkill -f 'inotifywait.*omarchy/notifications' 2>/dev/null || true
-
-      # hyprmoncfg is installed but kept off the minimal bar. The old
-      # Display & Scaling widgets stay disabled to avoid duplicate controls.
-      if ! RUN_AS_INSTALL_USER omarchy plugin list --json 2>/dev/null | jq -e 'any(.[]; .id == "crmne.hyprmoncfg")' >/dev/null; then
-        log_sub "Adding external Omarchy monitor manager plugin from git (kept off the bar)..."
-        RUN_AS_INSTALL_USER omarchy plugin add https://github.com/crmne/omarchy-hyprmoncfg.git --yes 2>/dev/null || true
-      fi
-      RUN_AS_INSTALL_USER omarchy plugin disable "${CURRENT_USER}.monitor" 2>/dev/null || true
-      RUN_AS_INSTALL_USER omarchy plugin disable "omarchy.monitor" 2>/dev/null || true
-
-      # Vitals replaces the memory-only widget in this theme's center bar slot.
-      # It supersedes harshith.system-monitor, which could not show a GPU on
-      # this machine: that plugin reads GPU telemetry from sysfs only, and the
-      # proprietary NVIDIA driver exposes nothing there, so every GPU tile stayed
-      # hidden. Vitals queries nvidia-smi and covers the same CPU/RAM/disk/net
-      # data plus GPU, sensors and processes.
-      if ! RUN_AS_INSTALL_USER omarchy plugin list --json 2>/dev/null | jq -e 'any(.[]; .id == "io.github.woogy7.vitals")' >/dev/null; then
-        log_sub "Adding external Vitals system monitor from git..."
-        RUN_AS_INSTALL_USER omarchy plugin add https://github.com/Woogy7/omarchy-vitals.git --enable --yes 2>/dev/null || true
-      else
-        RUN_AS_INSTALL_USER omarchy plugin enable "io.github.woogy7.vitals" 2>/dev/null || true
-      fi
-      # Retire the plugin Vitals supersedes, otherwise its RAM readout stays on
-      # the bar next to Vitals' own chip.
-      RUN_AS_INSTALL_USER omarchy plugin disable "harshith.system-monitor" 2>/dev/null || true
-      po_apply_all
-      RUN_AS_INSTALL_USER omarchy plugin disable "${CURRENT_USER}.memory" 2>/dev/null || true
-      RUN_AS_INSTALL_USER omarchy plugin disable "omarchy.memory" 2>/dev/null || true
-
-      # Projector & Cast is installed but kept off the minimal bar too.
-      if ! RUN_AS_INSTALL_USER omarchy plugin list --json 2>/dev/null | jq -e 'any(.[]; .id == "io.github.jeffcortez23.omarchy-projector-cast")' >/dev/null; then
-        log_sub "Adding external Projector & Cast plugin from git (kept off the bar)..."
-        RUN_AS_INSTALL_USER omarchy plugin add https://github.com/JeffCortez23/omarchy-projector-cast.git --yes 2>/dev/null || true
-      fi
-
-      # The specialized widgets stay enabled (their services power the Tools
-      # dropdown) but hidden: an enabled bar-widget is auto-added to
-      # shell.json, so the layout below rewrites every one of them with
-      # `"hidden": true`. The Tools button is their visible entry point.
-      for _tool in io.github.randazraik.xray io.github.grichard99.omaproton-vpn \
-                   io.github.kristoferlund.webcam crmne.hyprmoncfg \
-                   io.github.jeffcortez23.omarchy-projector-cast ssuppt.bluetooth-audio; do
-        RUN_AS_INSTALL_USER omarchy plugin enable "$_tool" 2>/dev/null || true
-      done
-      unset _tool
-      # The stock Bluetooth widget stays off; ssuppt.bluetooth-audio is the
-      # one hidden behind the Tools menu.
-      RUN_AS_INSTALL_USER omarchy plugin disable "omarchy.bluetooth" 2>/dev/null || true
-      if [[ -f "$CONFIG_DIR/omarchy/shell.json" ]]; then
-        python3 - "$CONFIG_DIR/omarchy/shell.json" <<'PY'
-import json, sys
-p = sys.argv[1]
-try:
-    with open(p) as fh:
-        d = json.load(fh)
-except Exception:
-    sys.exit(0)
-ids = ["io.github.randazraik.xray", "io.github.grichard99.omaproton-vpn",
-       "io.github.kristoferlund.webcam", "crmne.hyprmoncfg",
-       "io.github.jeffcortez23.omarchy-projector-cast", "ssupt.bluetooth-audio"]
-stale = set(ids) | {"omarchy.bluetooth"}
-layout = d.setdefault("bar", {}).setdefault("layout", {})
-for section in ("left", "center", "right"):
-    entries = layout.get(section) or []
-    layout[section] = [e for e in entries
-                       if not (isinstance(e, dict) and str(e.get("id", "")) in stale)]
-right = layout.setdefault("right", [])
-for widget_id in ids:
-    right.append({"id": widget_id, "hidden": True})
-with open(p, "w") as fh:
-    json.dump(d, fh, indent=2, ensure_ascii=False)
-    fh.write("\n")
-PY
-      fi
-      po_apply_all
-
-      # The external power manager replaces the cloned Power & Battery widget.
-      if ! RUN_AS_INSTALL_USER omarchy plugin list --json 2>/dev/null | jq -e 'any(.[]; .id == "onlyvishesh.power-manager")' >/dev/null; then
-        log_sub "Adding external Omarchy power manager plugin from git..."
-        RUN_AS_INSTALL_USER omarchy plugin add https://github.com/onlyVishesh/omarchy-power-manager.git --enable --yes 2>/dev/null || true
-      else
-        RUN_AS_INSTALL_USER omarchy plugin enable "onlyvishesh.power-manager" 2>/dev/null || true
-      fi
-      RUN_AS_INSTALL_USER omarchy plugin disable "${CURRENT_USER}.power" 2>/dev/null || true
-      RUN_AS_INSTALL_USER omarchy plugin disable "omarchy.power" 2>/dev/null || true
-
-      # Extra bar widgets for the rice. Each is a self-contained Quickshell
-      # plugin; the VPN widget needs a Proton account before it does anything,
-      # and the radar downloads its engine from upstream Releases on first use.
-      while IFS='|' read -r extra_id extra_url; do
-        [[ -n $extra_id ]] || continue
-        if ! RUN_AS_INSTALL_USER omarchy plugin list --json 2>/dev/null |
-             jq -e --arg i "$extra_id" 'any(.[]; .id == $i)' >/dev/null; then
-          log_sub "Adding external plugin ${extra_id} from git..."
-          RUN_AS_INSTALL_USER omarchy plugin add "$extra_url" --enable --yes 2>/dev/null || true
-        else
-          RUN_AS_INSTALL_USER omarchy plugin enable "$extra_id" 2>/dev/null || true
-        fi
-      done <<'EXTRA_PLUGINS'
-io.github.randazraik.xray|https://github.com/RandaZraik/omarchy-xray
-io.github.grichard99.omaproton-vpn|https://github.com/grichard99/omaproton-vpn
-EXTRA_PLUGINS
-      po_apply_all
-
-      # Advanced Audio Control replaces the cloned Omarchy audio widget.
-      if ! RUN_AS_INSTALL_USER omarchy plugin list --json 2>/dev/null | jq -e 'any(.[]; .id == "ssupt.audio-control")' >/dev/null; then
-        log_sub "Adding external Omarchy audio control plugin from git..."
-        RUN_AS_INSTALL_USER omarchy plugin add https://github.com/ssupt/omarchy-audio-control.git --enable --yes 2>/dev/null || true
-      else
-        RUN_AS_INSTALL_USER omarchy plugin enable "ssupt.audio-control" 2>/dev/null || true
-      fi
-      RUN_AS_INSTALL_USER omarchy plugin disable "${CURRENT_USER}.audio" 2>/dev/null || true
-      RUN_AS_INSTALL_USER omarchy plugin disable "omarchy.audio" 2>/dev/null || true
-      po_apply_all
-
-      # Advanced Bluetooth Audio replaces the cloned Bluetooth widget while
-      # retaining its bar position and native device-management behavior.
-      if ! RUN_AS_INSTALL_USER omarchy plugin list --json 2>/dev/null | jq -e 'any(.[]; .id == "ssupt.bluetooth-audio")' >/dev/null; then
-        log_sub "Adding external Omarchy Bluetooth audio plugin from git..."
-        RUN_AS_INSTALL_USER omarchy plugin add https://github.com/ssupt/omarchy-bluetooth-audio.git --enable --yes 2>/dev/null || true
-      else
-        RUN_AS_INSTALL_USER omarchy plugin enable "ssupt.bluetooth-audio" 2>/dev/null || true
-      fi
-      RUN_AS_INSTALL_USER omarchy plugin disable "${CURRENT_USER}.bluetooth" 2>/dev/null || true
-
-      # Wavebar replaces the media/Cava widget in the center of the
-      # Virtual Paradise bar.
-      if ! RUN_AS_INSTALL_USER omarchy plugin list --json 2>/dev/null | jq -e 'any(.[]; .id == "io.github.erikburdett.wavebar")' >/dev/null; then
-        log_sub "Adding Omarchy Wavebar media widget from git..."
-        RUN_AS_INSTALL_USER omarchy plugin add https://github.com/ErikBurdett/omarchy-wavebar.git --enable --yes 2>/dev/null || true
-      else
-        RUN_AS_INSTALL_USER omarchy plugin enable "io.github.erikburdett.wavebar" 2>/dev/null || true
-      fi
-      po_apply_all
-
-      # Workspaces (JAP) replaces the cloned Omarchy workspace widget.
-      if ! RUN_AS_INSTALL_USER omarchy plugin list --json 2>/dev/null | jq -e 'any(.[]; .id == "io.github.tyrichards.workspaces-jap")' >/dev/null; then
-        log_sub "Adding external Japanese workspace plugin from git..."
-        RUN_AS_INSTALL_USER omarchy plugin add https://github.com/TyRichards/omarchy-workspaces-jap.git --enable --yes 2>/dev/null || true
-      else
-        RUN_AS_INSTALL_USER omarchy plugin enable "io.github.tyrichards.workspaces-jap" 2>/dev/null || true
-      fi
-      RUN_AS_INSTALL_USER omarchy plugin disable "${CURRENT_USER}.workspaces" 2>/dev/null || true
-      RUN_AS_INSTALL_USER omarchy plugin disable "omarchy.workspaces" 2>/dev/null || true
-      RUN_AS_INSTALL_USER omarchy plugin remove "${CURRENT_USER}.media" --yes 2>/dev/null || true
-      po_apply_all
-
-      # Voxtype Aura provides the themed dictation overlay, but only with the
-      # omarchy-voxtype package: without its status helper the overlay cannot
-      # report state. Install it, then leave it off until the helper exists.
-      if ! RUN_AS_INSTALL_USER omarchy plugin list --json 2>/dev/null | jq -e 'any(.[]; .id == "io.github.adamcbrewer.voxtype-aura")' >/dev/null; then
-        log_sub "Adding Voxtype Aura dictation overlay plugin from git..."
-        RUN_AS_INSTALL_USER omarchy plugin add https://github.com/adamcbrewer/voxtype-aura.git --yes 2>/dev/null || true
-      fi
-      if command -v omarchy-voxtype-status >/dev/null 2>&1; then
-        RUN_AS_INSTALL_USER omarchy plugin enable "io.github.adamcbrewer.voxtype-aura" 2>/dev/null || true
-      else
-        RUN_AS_INSTALL_USER omarchy plugin disable "io.github.adamcbrewer.voxtype-aura" 2>/dev/null || true
-      fi
-      po_apply_all
-
-      # Paradise Island Bar is installed as a first-party plugin so it inherits
-      # the host ShellRoot. A third-party bar only ever receives a scoped
-      # plugin shell whose serviceFor() is gated to the bar's own id, which is
-      # why service-backed widgets (ssupt.audio-control) resolved null and
-      # reported "Audio service is unavailable" over a healthy backend.
-# A missing bar bundle is a warning, not a fatal error: every other
-      # plugin is still usable, so don't let `set -e` abort the whole install.
-      if po_install_island_bar; then
-        if enable_plugin_retry "${CURRENT_USER}.island-bar"; then
-          BAR_INSTALL_OK=1
-        else
-          log_warn "Paradise Island Bar could not be enabled: ${LAST_PLUGIN_ERROR:-unknown error}"
-        fi
-      else
-        log_warn "Paradise Island Bar is unavailable; Omarchy will use its bundled bar."
-      fi
-      if (( BAR_INSTALL_OK == 1 )); then
-        RUN_AS_INSTALL_USER omarchy plugin disable "omarchy.bar" 2>/dev/null || true
-        RUN_AS_INSTALL_USER omarchy plugin disable "mscurtescu.island-bar" 2>/dev/null || true
-      else
-        # Keep the stock bar enabled so the shell has a working bar even if the
-        # first-party copy could not be installed. shell.json still names the
-        # island bar; Omarchy's activeBarId falls back on its own, and the
-        # post-update hook repairs the copy when it can.
-        RUN_AS_INSTALL_USER omarchy plugin enable "omarchy.bar" 2>/dev/null || true
-      fi
-      po_apply_all
-
-
-      # The notification center owns the DND control. Disable a separately
-      # installed DND plugin when present, but keep Omarchy's notification
-      # service enabled because the new plugin uses it as its backend.
-      local dnd_plugin_id
-      for dnd_plugin_id in omarchy.dnd omarchy.do-not-disturb "${CURRENT_USER}.dnd"; do
-        if RUN_AS_INSTALL_USER omarchy plugin list --json 2>/dev/null | jq -e --arg id "$dnd_plugin_id" \
-          'any(.[]; .id == $id)' >/dev/null; then
-          RUN_AS_INSTALL_USER omarchy plugin disable "$dnd_plugin_id" 2>/dev/null || \
-            log_warn "Could not disable legacy DND plugin '$dnd_plugin_id'."
-        fi
-      done
-    fi
-  fi
-}
 INSTALL_AND_ENABLE_PLUGINS
 
 # ------------------------------------------------------------------------------
@@ -1156,15 +525,6 @@ if [[ ! -f "$hypr_state_file" ]]; then
   printf '%s\n' "$HYPR_BAK_DIR" >"$hypr_state_file" 2>/dev/null || true
 fi
 
-hypr_backup() {
-  local src="$1"
-  [[ -f "$src" ]] || return 0
-  if [[ -z "$HYPR_BAK_DIR" ]]; then
-    HYPR_BAK_DIR="$CONFIG_DIR/hypr/backup_$BACKUP_TIMESTAMP"
-    mkdir -p "$HYPR_BAK_DIR"
-  fi
-  cp "$src" "$HYPR_BAK_DIR/" 2>/dev/null || true
-}
 
 # 5.1 Look'n'feel (Golden ratio gaps, squircle rounding, acrylic blur, cyberSpring animations)
 if [[ -f "$REPO_DIR/hypr/looknfeel.lua" ]]; then
@@ -1305,21 +665,6 @@ VP_RULES_BLOCK=""
 
 # Take the theme's window-rule block out of a Hyprland config and keep it in
 # $VP_RULES_BLOCK.
-extract_rules_block() {
-  local file="$1" start end
-  VP_RULES_BLOCK=""
-  start="$(grep -n "Virtual Paradise Add-on Window Rules" "$file" 2>/dev/null | head -n 1 | cut -d: -f1)"
-  [[ -n $start ]] || return 1
-
-  end="$start"
-  while sed -n "$((end + 1))p" "$file" 2>/dev/null | grep -q '^o\.window('; do
-    end=$((end + 1))
-  done
-
-  VP_RULES_BLOCK="$(sed -n "${start},${end}p" "$file")"
-  sed -i "${start},${end}d" "$file" 2>/dev/null || true
-  return 0
-}
 
 # Replace a file without changing who owns it or how it may be read.
 #
@@ -1331,38 +676,6 @@ extract_rules_block() {
 # (lib/file-ops.sh, so the test suite can exercise it directly.)
 
 # Put the block back, in front of hyprmoncfg's "load last" line.
-insert_rules_block() {
-  local file="$1" block merged
-  [[ -n $VP_RULES_BLOCK ]] || return 1
-
-  block="$(mktemp)"
-  merged="$(mktemp)"
-  printf '\n%s\n' "$VP_RULES_BLOCK" >"$block"
-
-  if grep -q "hyprmoncfg-monitors.lua" "$file"; then
-    awk -v blockfile="$block" '
-      /hyprmoncfg-monitors\.lua/ && !inserted {
-        while ((getline line < blockfile) > 0) print line
-        close(blockfile)
-        inserted = 1
-      }
-      { print }
-    ' "$file" >"$merged"
-    if [[ -s $merged ]]; then
-      replace_file_preserving "$file" "$merged" || {
-        rm -f "$merged"
-        cat "$block" >>"$file"
-      }
-    else
-      rm -f "$merged"
-      cat "$block" >>"$file"
-    fi
-  else
-    cat "$block" >>"$file"
-  fi
-  rm -f "$block" "$merged"
-  return 0
-}
 
 if [[ -f "$CONFIG_DIR/hypr/hyprland.lua" ]]; then
   # Guard on our own marker, not on "GNOME Network Displays": a user comment
@@ -1431,60 +744,6 @@ if [[ -f $legacy_hypr_conf ]] && grep -qF 'Virtual☆Paradise Hyprland Config' "
 fi
 
 # 5.5 Fcitx5 Vietnamese Input Method (Unikey) Configuration
-CONFIGURE_FCITX_UNIKEY() {
-  command -v fcitx5 &>/dev/null || return 0
-
-  local fcitx_dir="$CONFIG_DIR/fcitx5"
-  local fcitx_profile="$fcitx_dir/profile"
-  mkdir -p "$fcitx_dir"
-
-  # Keep the user's own profile so uninstall.sh can put it back. Only taken when
-  # the profile lacks our unikey entry, i.e. when it is genuinely the user's: a
-  # later run must not back up the file we ourselves wrote, or uninstall would
-  # "restore" our profile and leave fcitx5 configured for the rice.
-  if [[ -f "$fcitx_profile" ]] \
-    && ! grep -q "Name=unikey" "$fcitx_profile" \
-    && [[ ! -f "$fcitx_profile.paradise.bak" ]]; then
-    cp "$fcitx_profile" "$fcitx_profile.paradise.bak" 2>/dev/null || true
-  fi
-
-  if [[ ! -f "$fcitx_profile" ]]; then
-    cat << 'EOF' > "$fcitx_profile"
-[Groups/0]
-Name=Default
-Default Layout=us
-DefaultIM=keyboard-us
-
-[Groups/0/Items/0]
-Name=keyboard-us
-Layout=
-
-[Groups/0/Items/1]
-Name=unikey
-Layout=
-
-[GroupOrder]
-0=Default
-EOF
-    log_sub "Initialized Fcitx5 profile with US Keyboard and Unikey"
-  elif ! grep -q "Name=unikey" "$fcitx_profile"; then
-    local next_idx=0
-    while grep -q "^\[Groups/0/Items/${next_idx}\]" "$fcitx_profile"; do
-      next_idx=$((next_idx + 1))
-    done
-    cat << EOF >> "$fcitx_profile"
-
-[Groups/0/Items/${next_idx}]
-Name=unikey
-Layout=
-EOF
-    log_sub "Added Unikey input method to existing Fcitx5 profile (slot ${next_idx})"
-  fi
-
-  if pgrep -x fcitx5 &>/dev/null; then
-    fcitx5-remote -r 2>/dev/null || systemctl --user restart omarchy-fcitx5.service 2>/dev/null || true
-  fi
-}
 CONFIGURE_FCITX_UNIKEY
 
 # ------------------------------------------------------------------------------
@@ -2008,113 +1267,6 @@ if [[ $IS_HOOK -eq 0 ]] && command -v zsh &>/dev/null; then
   fi
 fi
 
-configure_shell_file() {
-  local file="$1"
-  [[ -f "$file" ]] || return 0
-
-  # Ensure $LOCAL_BIN is in PATH
-  if ! grep -q 'export PATH="$HOME/.local/bin:$PATH"' "$file" && ! grep -q 'PATH=.*/\.local/bin' "$file"; then
-    echo 'export PATH="$HOME/.local/bin:$PATH"' >> "$file"
-  fi
-
-  # Purge any legacy agy or paradise-agent aliases
-  sed -i '/alias agy=/d; /alias pa=/d; /alias offline-agent=/d' "$file" 2>/dev/null || true
-
-  # The banner is printed by a cached shell wrapper now. Rendering it with
-  # Python cost the interpreter startup - about 30 ms - on every interactive
-  # shell, which is the difference between a terminal that feels instant and
-  # one that does not.
-  sed -i 's|\$HOME/\.local/bin/paradise_banner\.py|$HOME/.local/bin/paradise_banner.sh|g' \
-    "$file" 2>/dev/null || true
-
-  # Add Virtual Paradise aliases
-  if ! grep -q "paradise_banner" "$file" && ! grep -q "paradise-banner" "$file"; then
-    cat << 'EOF' >> "$file"
-
-# ==============================================================================
-#  Virtual☆Paradise Add-on Aliases & Integration
-# ==============================================================================
-alias banner="$HOME/.local/bin/paradise_banner.sh"
-alias rice="$HOME/.local/bin/rice_layout.sh"
-alias matrix="$HOME/.local/bin/virtual_matrix.py"
-alias boost="$HOME/.local/bin/toggle_cooler_boost.sh"
-alias cast="$HOME/.local/bin/cast_screen.sh"
-
-# Run Virtual Paradise Cyberpunk Banner on terminal startup (only in interactive shells)
-# The banner is cached and printed from the shell: rendering it with Python
-# cost ~30 ms of every shell start.
-if [[ -o interactive ]] 2>/dev/null || [[ "$-" == *i* ]]; then
-  if [[ -z "$VIRTUAL_PARADISE_NO_BANNER" && -x "$HOME/.local/bin/paradise_banner.sh" ]]; then
-    "$HOME/.local/bin/paradise_banner.sh"
-  fi
-fi
-EOF
-  fi
-
-  # Add fastfetch aliases
-  if ! grep -q "alias ff=" "$file"; then
-    echo "alias ff='fastfetch'" >> "$file"
-  fi
-  if ! grep -q "alias ffa=" "$file"; then
-    echo "alias ffa='fastfetch --logo ~/.config/fastfetch/logo_anime.txt'" >> "$file"
-  fi
-
-  # Add cyberpunk error border hook
-  if ! grep -q "__omarchy_error_border_hook" "$file" && ! grep -q "_omarchy_error_border_hook" "$file"; then
-    if [[ "$file" == *".bashrc"* ]]; then
-      cat << 'EOF' >> "$file"
-
-# ==============================================================================
-#  CYBERPUNK WINDOW ERROR SHAKE & BLAZING NEON RED GLOW HOOK (BASH)
-# ==============================================================================
-__omarchy_last_err_state=0
-
-__omarchy_error_border_hook() {
-  local exit_code=$?
-  if [[ -n "$HYPRLAND_INSTANCE_SIGNATURE" ]]; then
-    if [[ $exit_code -ne 0 && $__omarchy_last_err_state -eq 0 ]]; then
-      __omarchy_last_err_state=1
-      (~/.local/bin/hypr_window_error_shake.sh &>/dev/null &)
-    elif [[ $exit_code -eq 0 && $__omarchy_last_err_state -ne 0 ]]; then
-      __omarchy_last_err_state=0
-      (~/.local/bin/hypr_window_error_restore.sh &>/dev/null &)
-    fi
-  fi
-  return $exit_code
-}
-
-if [[ "$PROMPT_COMMAND" != *"__omarchy_error_border_hook"* ]]; then
-  PROMPT_COMMAND="__omarchy_error_border_hook${PROMPT_COMMAND:+; $PROMPT_COMMAND}"
-fi
-EOF
-    elif [[ "$file" == *".zshrc"* ]]; then
-      cat << 'EOF' >> "$file"
-
-# ==============================================================================
-#  CYBERPUNK WINDOW ERROR SHAKE & BLAZING NEON RED GLOW HOOK (ZSH)
-# ==============================================================================
-typeset -g __omarchy_last_err_state=0
-
-__omarchy_error_border_hook() {
-  local exit_code=$?
-  if [[ -n "$HYPRLAND_INSTANCE_SIGNATURE" ]]; then
-    if [[ $exit_code -ne 0 && $__omarchy_last_err_state -eq 0 ]]; then
-      __omarchy_last_err_state=1
-      (~/.local/bin/hypr_window_error_shake.sh &>/dev/null &!)
-    elif [[ $exit_code -eq 0 && $__omarchy_last_err_state -ne 0 ]]; then
-      __omarchy_last_err_state=0
-      (~/.local/bin/hypr_window_error_restore.sh &>/dev/null &!)
-    fi
-  fi
-  return $exit_code
-}
-
-autoload -Uz add-zsh-hook 2>/dev/null || true
-add-zsh-hook precmd __omarchy_error_border_hook 2>/dev/null || precmd_functions+=(__omarchy_error_border_hook)
-EOF
-    fi
-  fi
-}
 
 configure_shell_file "$HOME/.bashrc"
 configure_shell_file "$HOME/.zshrc"

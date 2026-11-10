@@ -556,12 +556,16 @@ virtual-paradise/
 ├── hypr/                 # Hyprland config (animations, keybindings, rules)
 ├── lib/
 │   ├── file-ops.sh            # Backup/restore helpers
+│   ├── install-helpers.sh     # Logging, privilege, sync and backup helpers
 │   ├── omarchy-env.sh         # Omarchy environment resolution
 │   ├── plugin-overrides.sh    # Override layer implementation
 │   ├── shell-layout.sh        # Three-way shell.json ownership rules
 │   ├── post-update-hook.sh    # Bar repair and override re-apply after updates
 │   ├── plymouth.sh             # Plymouth theme install/remove/legacy repair
 │   ├── sddm.sh                # SDDM theme install/remove/legacy repair
+│   ├── step-boot.sh           # SDDM/Plymouth/UKI install step
+│   ├── step-plugins.sh        # Plugin sync/enable/override step
+│   ├── step-shell.sh          # Shell rc, window rules and fcitx step
 │   ├── system.sh              # Hardware detection
 │   └── theme-set-hook.sh      # Theme-set hook (extracted from install.sh)
 ├── micro/                # Micro editor theme

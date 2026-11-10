@@ -8,6 +8,16 @@ Conventional Commits.
 
 ## [Unreleased]
 
+### Changed
+- **The installer monolith is split into modules.** `install.sh` is now a thin
+  orchestrator: logging, privilege and backup helpers live in
+  `lib/install-helpers.sh`; the SDDM/Plymouth/UKI step in
+  `lib/step-boot.sh`; the plugin sync/enable step in `lib/step-plugins.sh`;
+  and the shell-rc/window-rule/fcitx helpers in `lib/step-shell.sh`.
+  `install.sh` dropped from 2172 to 1324 lines with no behaviour change; the
+  test suite follows the moved code and shellcheck still passes across the
+  whole installer.
+
 ## [1.3.4] - 2026-11-08
 
 ### Added
