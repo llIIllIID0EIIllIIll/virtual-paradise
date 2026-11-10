@@ -108,16 +108,27 @@ PY
   # required took the whole bar down to the stock one and only surfaced in the
   # running shell's log.
   qmllint_bin="$(command -v qmllint || echo /usr/lib/qt6/bin/qmllint)"
-  if [[ -x $qmllint_bin ]]; then
+  if [[ ! -d /usr/share/omarchy/shell/Commons || ! -d /usr/share/omarchy/shell/Ui ]]; then
+    # Without the Omarchy modules qmllint can loop on an unresolved
+    # component (network/Panel.qml did) and its type errors are noise. The
+    # check only means something next to a real Omarchy install.
+    printf '  %sSKIP%s qmllint (Omarchy QML modules not installed)\n' "$DIM" "$OFF"
+  elif [[ -x $qmllint_bin ]]; then
     qmli="$(mktemp -d)"
     mkdir -p "$qmli/qs"
     for m in Commons Ui; do
-      [[ -d "/usr/share/omarchy/shell/$m" ]] \
-        && ln -s "/usr/share/omarchy/shell/$m" "$qmli/qs/$m"
+      ln -s "/usr/share/omarchy/shell/$m" "$qmli/qs/$m"
     done
     qmlbad=""
     while IFS= read -r f; do
-      out=$("$qmllint_bin" -I "$qmli" "$f" 2>&1 \
+      rc=0
+      out=$(timeout 15 "$qmllint_bin" -I "$qmli" "$f" 2>&1) || rc=$?
+      if [[ $rc -eq 124 ]]; then
+        qmlbad="$qmlbad
+$(basename "$f"): qmllint timed out"
+        continue
+      fi
+      out=$(printf '%s\n' "$out" \
         | grep -E 'incompatible-type|Cannot assign|unavailable' || true)
       [[ -n $out ]] && qmlbad="$qmlbad
 $(basename "$f"): $out"
@@ -417,9 +428,12 @@ if want tc3; then
   build_shims "$root/bin"
 
   run_installer "$root"; rc1=$?
-  check "first install exits 0" "$rc1" "$(strip_ansi "$root/install.log" | tail -3)"
+  install_plain="$(strip_ansi "$root/install.log")"
+  check "first install exits 0" "$rc1" "$(printf '%s\n' "$install_plain" | tail -3)"
+  # grep -q closes the pipe early; with pipefail an upstream SIGPIPE would
+  # turn a match into a failure. Read the stripped log from a here-string.
   check "install reached step 10" \
-    "$(strip_ansi "$root/install.log" | grep -q '\[10/10\]' && echo 0 || echo 1)"
+    "$(grep -q '\[10/10\]' <<<"$install_plain" && echo 0 || echo 1)"
 
   # Snapshot, run twice more, and diff. Nothing may drift.
   cp -a "$root/home" "$root/snapshot"
@@ -522,10 +536,14 @@ PY
   # indicators only take space while one is active, and the active-window
   # label is capped.
   python3 - "$root/home/.config/omarchy/shell.json" <<'PY'
-import json, os, sys
+import json, sys
 d = json.load(open(sys.argv[1]))
-user = os.environ.get("USER") or ""
 right = d["bar"]["layout"]["right"]
+# The installer renders __USER__, but the CI container has no USER in the
+# environment. Derive the prefix from the installed layout instead of the
+# test process so the assertion is about the theme, not the runner.
+net = next(e for e in right if str(e.get("id", "")).endswith(".network"))
+user = str(net.get("id", ""))[:-len(".network")]
 visible = [e.get("id") for e in right if not e.get("hidden")]
 hidden = [e.get("id") for e in right if e.get("hidden")]
 want = ["omarchy.tray", user + ".network", "ssupt.audio-control",
@@ -756,7 +774,8 @@ if want tc6; then
     fi
   else
     ok "shell-default.json not created rather than faked"
-    strip_ansi "$root/install.log" | grep -q 'No pristine Omarchy shell.json found'
+    install_plain="$(strip_ansi "$root/install.log")"
+    grep -q 'No pristine Omarchy shell.json found' <<<"$install_plain"
     check "installer explains why there is no shell-default.json" $?
   fi
 
@@ -765,7 +784,8 @@ if want tc6; then
       XDG_CONFIG_HOME="$root/home/.config" XDG_STATE_HOME="$root/home/.local/state" XDG_DATA_HOME="$root/home/.local/share" SHIM_LOG="$root/shim.log" \
       timeout 900 bash ./uninstall.sh >"$root/uninstall.log" 2>&1 )
   check "uninstall succeeds" $?
-  strip_ansi "$root/uninstall.log" | grep -q 'Preserving'
+  uninstall_plain="$(strip_ansi "$root/uninstall.log")"
+  grep -q 'Preserving' <<<"$uninstall_plain"
   check "uninstall says it preserved shell.json" $?
   diff -q "$root/before-uninstall" "$C/shell.json" >/dev/null
   check "preserved shell.json is untouched" $?
