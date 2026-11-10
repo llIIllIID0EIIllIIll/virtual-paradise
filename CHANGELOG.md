@@ -8,6 +8,37 @@ Conventional Commits.
 
 ## [Unreleased]
 
+## [1.3.6] - 2026-11-10
+
+### Fixed
+- **Switching away from the theme gives the user their Fastfetch and GTK
+  files back.** The theme-set hook overwrote `fastfetch/config.jsonc` and both
+  `gtk.css` files without a backup and then deleted them on leave. It now backs
+  up a non-theme copy before writing and restores it on leave; it only removes
+  a file that still carries the theme's own styling.
+- **A reinstall no longer deletes files the user added to the theme and
+  wallpaper directories.** `rsync --delete` (and `rm -f *.gif`) treated the
+  whole directory as theme-owned. A manifest (`.vp-files`) now records the
+  files the theme shipped, so a user's wallpaper or theme file survives while
+  a theme file removed upstream is still pruned. Only the theme's own GIFs are
+  removed from the wallpaper directory.
+- **The legacy monitor cleanup no longer matches a plain user rule.** It now
+  requires the theme's full legacy signature (eDP-1 with `scale 1.0`,
+  `transform 0`, `position 0x0`; an external output with `scale 1.0` and
+  `auto-right`).
+- **Uninstall restores `~/.bashrc`.** `configure_shell_file` edits it but only
+  `~/.zshrc` had a backup path; the pre-theme `.bashrc` is now saved and put
+  back.
+
+### Changed
+- **`shell.json` is written atomically.** The layout writers now emit to a
+  same-directory temp file and rename it into place, so a crash or a full disk
+  cannot leave a truncated shell layout.
+- **One lock across install, theme switch and the plugin updater.** The
+  override layer and the shell-layout writer share a reentrant `flock`, so a
+  theme switch cannot revert the layer while an install applies it.
+- Tests: 481 assertions.
+
 ## [1.3.5] - 2026-11-10
 
 ### Changed
@@ -1005,7 +1036,8 @@ full installer/uninstaller.
 
 ## Links
 
-- [Unreleased]: https://github.com/vuhuudo/virtual-paradise/compare/v1.3.5...HEAD
+- [Unreleased]: https://github.com/vuhuudo/virtual-paradise/compare/v1.3.6...HEAD
+- [1.3.6]: https://github.com/vuhuudo/virtual-paradise/compare/v1.3.5...v1.3.6
 - [1.3.5]: https://github.com/vuhuudo/virtual-paradise/compare/v1.3.4...v1.3.5
 - [1.3.4]: https://github.com/vuhuudo/virtual-paradise/compare/v1.3.3...v1.3.4
 - [1.3.3]: https://github.com/vuhuudo/virtual-paradise/compare/v1.3.2...v1.3.3

@@ -14,9 +14,9 @@
 [![Arch Linux](https://img.shields.io/badge/Arch_Linux-1793D1?style=flat-square&logo=arch-linux&logoColor=white)](https://archlinux.org)
 [![Omarchy 4.5+](https://img.shields.io/badge/Omarchy-4.5+-8A2BE2?style=flat-square)](https://omarchy.org)
 [![Hyprland](https://img.shields.io/badge/Hyprland-Wayland-00ffdd?style=flat-square)](https://hyprland.org)
-[![Tests](https://img.shields.io/badge/tests-475%20passed-00ff88?style=flat-square)](tests/)
+[![Tests](https://img.shields.io/badge/tests-481%20passed-00ff88?style=flat-square)](tests/)
 [![License](https://img.shields.io/badge/license-MIT-ffe066?style=flat-square)](LICENSE)
-[![Version](https://img.shields.io/badge/version-1.3.5-ff00ff?style=flat-square)](VERSION)
+[![Version](https://img.shields.io/badge/version-1.3.6-ff00ff?style=flat-square)](VERSION)
 
 *A complete desktop experience: floating island bar, animated wallpapers, Plymouth boot splash, and every widget restyled in Miku cyan.*
 
@@ -592,7 +592,7 @@ virtual-paradise/
 │   └── convert-gifs-to-mp4.sh   # Wallpaper compression
 ├── install.sh            # Installer
 ├── uninstall.sh          # Uninstaller
-├── VERSION               # Semantic version (1.3.5)
+├── VERSION               # Semantic version (1.3.6)
 └── README.md             # This file
 ```
 

@@ -269,8 +269,14 @@ if [[ "$THEME_NAME" == "virtual-paradise" ]]; then
   # records every touched file and reverts it on the leaving branch.
   _po po_apply_all
 
-  # 2c. Fastfetch config.
+  # 2c. Fastfetch config. Keep the user's copy so leaving the theme can put it
+  # back instead of deleting whatever was there.
   if [[ -f "$CFG/fastfetch/virtual-paradise.jsonc" ]]; then
+    if [[ -f "$CFG/fastfetch/config.jsonc" ]] \
+      && ! cmp -s "$CFG/fastfetch/virtual-paradise.jsonc" "$CFG/fastfetch/config.jsonc" \
+      && [[ ! -f "$CFG/fastfetch/config.jsonc.paradise.bak" ]]; then
+      cp "$CFG/fastfetch/config.jsonc" "$CFG/fastfetch/config.jsonc.paradise.bak" 2>/dev/null || true
+    fi
     cp "$CFG/fastfetch/virtual-paradise.jsonc" "$CFG/fastfetch/config.jsonc" 2>/dev/null || true
   fi
 
@@ -288,7 +294,7 @@ if [[ "$THEME_NAME" == "virtual-paradise" ]]; then
   # right widgets, so drop the specialized entries here as well.
   if [[ -f "$CFG/omarchy/shell.json" ]]; then
     python3 - "$CFG/omarchy/shell.json" <<'PY'
-import json, sys
+import json, os, sys
 p = sys.argv[1]
 try:
     with open(p) as fh:
@@ -307,9 +313,12 @@ for section in ("left", "center", "right"):
 right = layout.setdefault("right", [])
 for widget_id in ids:
     right.append({"id": widget_id, "hidden": True})
-with open(p, "w") as fh:
+with open(tmp := p + ".tmp", "w") as fh:
     json.dump(d, fh, indent=2, ensure_ascii=False)
     fh.write("\n")
+    fh.flush()
+    os.fsync(fh.fileno())
+os.replace(tmp, p)
 PY
   fi
 
@@ -324,11 +333,19 @@ PY
     fi
   fi
 
-  # 2e. GTK styling.
+  # 2e. GTK styling. Keep the pre-theme CSS so leaving the theme can restore
+  # it; a machine where .bak_default was lost must not overwrite the user's
+  # file without a backup.
   if [[ -f "$CFG/omarchy/themes/virtual-paradise/config/gtk.css" ]]; then
-    mkdir -p "$CFG/gtk-4.0" "$CFG/gtk-3.0"
-    cp "$CFG/omarchy/themes/virtual-paradise/config/gtk.css" "$CFG/gtk-4.0/gtk.css" 2>/dev/null || true
-    cp "$CFG/omarchy/themes/virtual-paradise/config/gtk.css" "$CFG/gtk-3.0/gtk.css" 2>/dev/null || true
+    for _gtk in gtk-4.0 gtk-3.0; do
+      mkdir -p "$CFG/$_gtk"
+      if [[ -f "$CFG/$_gtk/gtk.css" && ! -f "$CFG/$_gtk/gtk.css.bak_default" ]] \
+        && ! grep -q "Virtual" "$CFG/$_gtk/gtk.css"; then
+        cp "$CFG/$_gtk/gtk.css" "$CFG/$_gtk/gtk.css.bak_default" 2>/dev/null || true
+      fi
+      cp "$CFG/omarchy/themes/virtual-paradise/config/gtk.css" "$CFG/$_gtk/gtk.css" 2>/dev/null || true
+    done
+    unset _gtk
   fi
 
   # 2e2. Tool themes that Omarchy does not manage itself: Yazi, Bat and tmux.
@@ -426,15 +443,23 @@ else
   # 2c. Stop live wallpaper so new theme background displays properly.
   pkill -f mpvpaper 2>/dev/null || true
 
-  # 2d. Restore default Fastfetch.
-  rm -f "$CFG/fastfetch/config.jsonc" 2>/dev/null || true
+  # 2d. Restore the user's Fastfetch config, or remove the theme copy only when
+  # it is still byte-identical to what the theme shipped.
+  if [[ -f "$CFG/fastfetch/config.jsonc.paradise.bak" ]]; then
+    cp "$CFG/fastfetch/config.jsonc.paradise.bak" "$CFG/fastfetch/config.jsonc" 2>/dev/null || true
+    rm -f "$CFG/fastfetch/config.jsonc.paradise.bak" 2>/dev/null || true
+  elif [[ -f "$CFG/fastfetch/config.jsonc" && -f "$CFG/fastfetch/virtual-paradise.jsonc" ]] \
+    && cmp -s "$CFG/fastfetch/config.jsonc" "$CFG/fastfetch/virtual-paradise.jsonc"; then
+    rm -f "$CFG/fastfetch/config.jsonc" 2>/dev/null || true
+  fi
 
-  # 2e. Restore default GTK CSS so other themes keep their native look.
+  # 2e. Restore the pre-theme GTK CSS. Only remove a file still carrying the
+  # theme's own styling; a user-edited gtk.css is left in place.
   for _gtk in gtk-4.0 gtk-3.0; do
     if [[ -f "$CFG/$_gtk/gtk.css.bak_default" ]] && ! grep -q "Virtual" "$CFG/$_gtk/gtk.css.bak_default"; then
       cp "$CFG/$_gtk/gtk.css.bak_default" "$CFG/$_gtk/gtk.css" 2>/dev/null || true
-    else
-      rm -f "$CFG/$_gtk/gtk.css" "$CFG/$_gtk/gtk.css.bak_default" 2>/dev/null || true
+    elif [[ -f "$CFG/$_gtk/gtk.css" ]] && grep -q "Virtual" "$CFG/$_gtk/gtk.css"; then
+      rm -f "$CFG/$_gtk/gtk.css" 2>/dev/null || true
     fi
   done
   unset _gtk

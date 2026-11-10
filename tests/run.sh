@@ -341,6 +341,17 @@ EOF
     fail "override state records the audio plugin" "state file empty or missing"
   fi
 
+  # The shared lock is reentrant: an install can call the override layer from
+  # inside another locked step, and a plain non-reentrant flock would deadlock
+  # the same process.
+  lockout=$( HOME="$root/home" XDG_STATE_HOME="$root/home/.local/state" \
+    VP_STATE_DIR="$root/home/.local/state/virtual-paradise" \
+    bash -c '. "$1/lib/lock.sh"; vp_lock && vp_lock && vp_unlock && vp_unlock && echo ok' _ "$REPO_DIR" 2>&1 )
+  check "the shared lock is reentrant" \
+    "$([[ "$lockout" == ok ]] && echo 0 || echo 1)" "$lockout"
+  check "the shared lock file exists" \
+    "$([[ -f "$root/home/.local/state/virtual-paradise/virtual-paradise.lock" ]] && echo 0 || echo 1)"
+
   # The update path reverts the layer, updates plugins, then re-applies it.
   # If re-applying after a revert does not land the override again, every
   # plugin update would quietly strip the theming.
@@ -394,6 +405,18 @@ if want tc3; then
   nbak=$(find "$root/home" -maxdepth 1 -name '.zshrc.bak.*' | wc -l)
   check "zshrc backups are capped (got $nbak, cap is 6)" \
     "$([[ $nbak -le 6 ]] && echo 0 || echo 1)"
+
+  # A reinstall must keep files the user added to the managed directories and
+  # still prune theme files that are no longer shipped.
+  bg="$root/home/.config/omarchy/backgrounds/virtual-paradise"
+  : >"$bg/my-user.mp4"
+  : >"$bg/old-theme.mp4"
+  printf 'old-theme.mp4\n' >>"$bg/.vp-files"
+  run_installer "$root" >/dev/null 2>&1
+  check "a reinstall keeps a user's own wallpaper" \
+    "$([[ -f "$bg/my-user.mp4" ]] && echo 0 || echo 1)"
+  check "a reinstall prunes a theme wallpaper that is gone" \
+    "$([[ ! -f "$bg/old-theme.mp4" ]] && echo 0 || echo 1)"
 
   # The Island Bar must be offered as a first-party plugin and never silently
   # left half-installed in the user-writable dir.
@@ -897,6 +920,18 @@ if want tc8; then
   run_hook "Tokyo Night"
   grep -q 'plugin enable omarchy.audio' "$root/shim.log"
   check "the restore path also runs for other themes" $?
+
+  # Data-loss regression: the user's fastfetch and GTK files must come back
+  # after leaving the theme, instead of being deleted or left overwritten.
+  mkdir -p "$root/home/.config/fastfetch" "$root/home/.config/gtk-4.0"
+  printf '{"custom":true}\n' >"$root/home/.config/fastfetch/config.jsonc"
+  printf '/* user gtk */\n' >"$root/home/.config/gtk-4.0/gtk.css"
+  run_hook "virtual-paradise"
+  run_hook "Catppuccin"
+  grep -q '"custom":true' "$root/home/.config/fastfetch/config.jsonc"
+  check "leaving the theme restores the user's fastfetch config" $?
+  grep -q 'user gtk' "$root/home/.config/gtk-4.0/gtk.css"
+  check "leaving the theme restores the user's GTK css" $?
 fi
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -1586,7 +1621,8 @@ if want tc16; then
   # sharp 1920x1080 JPG with the same name, and the conversion replaced it
   # with a blurry 480x270 frame.
   check "the animated GIFs are removed from the wallpapers" \
-    "$(grep -q 'rm -f "\$WALLPAPER_DEST"/\*.gif' "$REPO_DIR/install.sh" && echo 0 || echo 1)"
+    "$(grep -q 'for gif in "\$REPO_DIR"/backgrounds/\*.gif' "$REPO_DIR/install.sh" \
+      && ! grep -q 'rm -f "\$WALLPAPER_DEST"/\*.gif' "$REPO_DIR/install.sh" && echo 0 || echo 1)"
   check "the GIFs are not converted over the sharp wallpapers" \
     "$(grep -q 'wallpaper_gif' "$REPO_DIR/install.sh" && echo 1 || echo 0)"
 

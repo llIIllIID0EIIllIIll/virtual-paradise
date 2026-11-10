@@ -167,3 +167,36 @@ hypr_backup() {
   fi
   cp "$src" "$HYPR_BAK_DIR/" 2>/dev/null || true
 }
+
+# Copy a tree without deleting files the user added, while still pruning files
+# the theme shipped in an earlier run and no longer ships. The manifest in
+# $dst/.vp-files lists source-relative paths, so a user file can never become
+# "theme-owned" and a stale theme file is removed on the next install.
+sync_manifest() {
+  local src="$1" dst="$2"; shift 2
+  local list="$dst/.vp-files" old rel rc=0
+  mkdir -p "$dst"
+  old="$(mktemp)"
+  [[ -f $list ]] && cp "$list" "$old"
+  if command -v rsync >/dev/null 2>&1; then
+    rsync -a "$@" "$src"/ "$dst"/ || rc=$?
+  else
+    cp -a "$src"/. "$dst"/ 2>/dev/null || rc=$?
+  fi
+  : >"$list"
+  (
+    cd "$dst" || exit 1
+    find . -type f -printf '%P\n'
+  ) | while IFS= read -r rel; do
+    [[ -n $rel && $rel != ".vp-files" ]] || continue
+    [[ -f "$src/$rel" ]] && printf '%s\n' "$rel"
+  done | sort >"$list"
+  if [[ -s $old ]]; then
+    while IFS= read -r rel; do
+      [[ -n $rel ]] || continue
+      grep -qxF "$rel" "$list" || rm -f "$dst/$rel"
+    done <"$old"
+  fi
+  rm -f "$old"
+  return $rc
+}

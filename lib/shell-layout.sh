@@ -25,6 +25,12 @@
 #   VP_STATE_DIR / XDG_STATE_HOME
 #   VP_SHELL_FORCE=1
 
+# One session-wide lock shared with the theme hook and the updater.
+_vp_lock_src="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/lock.sh"
+# shellcheck disable=SC1090,SC1091
+[[ -f $_vp_lock_src ]] && . "$_vp_lock_src" 2>/dev/null || true
+unset _vp_lock_src
+
 vp_layout_config_dir() {
   printf '%s\n' "${VP_CONFIG_DIR:-${CONFIG_DIR:-${XDG_CONFIG_HOME:-$HOME/.config}}}"
 }
@@ -288,7 +294,7 @@ vp_layout_install_from() {
 
   if [[ $decision == applied ]]; then
     local merged
-    merged="$(mktemp)" || {
+    merged="$(mktemp "$(dirname "$live")/.shell.json.XXXXXX")" || {
       rm -f "$old_theme"
       return 1
     }
@@ -296,11 +302,11 @@ vp_layout_install_from() {
       rm -f "$old_theme" "$merged"
       return 1
     fi
-    if ! cp "$merged" "$live"; then
+    if ! mv -f "$merged" "$live"; then
       rm -f "$old_theme" "$merged"
       return 1
     fi
-    cp "$merged" "$applied" 2>/dev/null || true
+    cp "$live" "$applied" 2>/dev/null || true
     rm -f "$merged"
   fi
 
@@ -311,7 +317,7 @@ vp_layout_install_from() {
 # Called when the theme becomes active. Prints "applied", "already" or
 # "preserved". "already" means the live file is already the theme layout; the
 # applied marker is still refreshed.
-vp_layout_enter() {
+_vp_layout_enter_unlocked() {
   local live theme default applied merged
   live="$(vp_layout_live)"
   theme="$(vp_layout_theme)"
@@ -343,17 +349,17 @@ vp_layout_enter() {
     return 0
   fi
 
-  merged="$(mktemp)" || return 1
+  merged="$(mktemp "$(dirname "$live")/.shell.json.XXXXXX")" || return 1
   if ! vp_layout_merge "$theme" "$live" "$merged"; then
     rm -f "$merged"
     return 1
   fi
-  if ! cp "$merged" "$live"; then
+  if ! mv -f "$merged" "$live"; then
     rm -f "$merged"
     return 1
   fi
   mkdir -p "$(dirname "$applied")" 2>/dev/null || true
-  cp "$merged" "$applied" 2>/dev/null || true
+  cp "$live" "$applied" 2>/dev/null || true
   rm -f "$merged"
   printf 'applied\n'
 }
@@ -365,7 +371,7 @@ vp_layout_enter() {
 # $1 = 1 to restore the stock file even when the bar already matches. The
 # uninstaller uses this so the theme's plugin lists cannot survive a removal.
 # Theme switches use the default and let the plugin hook set the final state.
-vp_layout_leave() {
+_vp_layout_leave_unlocked() {
   local force_restore="${1:-0}"
   local live theme default applied
   live="$(vp_layout_live)"
@@ -399,4 +405,22 @@ vp_layout_leave() {
   cp "$default" "$live" || return 1
   rm -f "$applied" 2>/dev/null || true
   printf 'restored\n'
+}
+
+# Serialise layout writes with the override layer and the updater: a theme
+# switch and an install must not replace shell.json at the same moment.
+vp_layout_enter() {
+  if declare -F vp_lock >/dev/null 2>&1; then vp_lock || true; fi
+  _vp_layout_enter_unlocked "$@"
+  local rc=$?
+  if declare -F vp_unlock >/dev/null 2>&1; then vp_unlock || true; fi
+  return $rc
+}
+
+vp_layout_leave() {
+  if declare -F vp_lock >/dev/null 2>&1; then vp_lock || true; fi
+  _vp_layout_leave_unlocked "$@"
+  local rc=$?
+  if declare -F vp_unlock >/dev/null 2>&1; then vp_unlock || true; fi
+  return $rc
 }

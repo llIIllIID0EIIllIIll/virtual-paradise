@@ -567,9 +567,11 @@ if [[ -f $monitors_file ]]; then
   legacy_presets="$(awk '
     function flush() {
       if (buf != "") {
-        is_preset = (named_edp && scaled) || (named_ext && scaled) || autright
+        is_preset = (named_edp && scaled && transform0 && pos0) \
+          || (named_ext && scaled && autright)
         if (!is_preset) printf "%s", buf
-        buf = ""; named_edp = 0; named_ext = 0; scaled = 0; autright = 0
+        buf = ""; named_edp = 0; named_ext = 0; scaled = 0
+        autright = 0; transform0 = 0; pos0 = 0
       }
     }
     function inspect(line) {
@@ -577,6 +579,8 @@ if [[ -f $monitors_file ]]; then
       if (line ~ /output[[:space:]]*=[[:space:]]*"(HDMI-A-1|DP-1|DP-2)"/) named_ext = 1
       if (line ~ /scale[[:space:]]*=[[:space:]]*1\.0/) scaled = 1
       if (line ~ /position[[:space:]]*=[[:space:]]*"auto-right"/) autright = 1
+      if (line ~ /transform[[:space:]]*=[[:space:]]*0/) transform0 = 1
+      if (line ~ /position[[:space:]]*=[[:space:]]*"0x0"/) pos0 = 1
     }
     /hl\.monitor\(\{/ {
       buf = $0 "\n"
@@ -826,6 +830,7 @@ fi
 if [[ -f "$REPO_DIR/bin/update-plugins.sh" && -f "$REPO_DIR/lib/plugin-overrides.sh" ]]; then
   mkdir -p "$VP_DATA_DIR"
   cp "$REPO_DIR/lib/plugin-overrides.sh" "$VP_DATA_DIR/plugin-overrides.sh"
+  cp "$REPO_DIR/lib/lock.sh" "$VP_DATA_DIR/lock.sh" 2>/dev/null || true
   # The theme-set hook and the post-update hook both need the same three-way
   # shell.json rules the installer just used.
   [[ -f "$REPO_DIR/lib/shell-layout.sh" ]] &&
@@ -1014,17 +1019,11 @@ if [[ "$REPO_DIR" != "$CONFIG_DIR/omarchy/themes/$THEME_NAME" ]]; then
   strip_args=()
   for item in "${THEME_STRIP[@]}"; do strip_args+=(--exclude="$item"); done
 
-  if command -v rsync &>/dev/null; then
-    if ! rsync -a --delete "${strip_args[@]}" "$REPO_DIR"/ "$THEME_DEST/"; then
-      log_warn "Theme rsync failed. The theme may be incomplete — re-run the installer."
-    fi
-  else
-    # No rsync: copy everything, then let the cleanup loop below strip the repo
-    # boilerplate. The theme is what the whole install delivers, so a missing
-    # tool must not leave it half-populated.
-    rm -rf "${THEME_DEST:?}"
-    mkdir -p "$THEME_DEST"
-    cp -a "$REPO_DIR"/. "$THEME_DEST"/
+  # Copy without --delete: a file the user drops into the theme directory must
+  # survive a reinstall. Theme files removed upstream are pruned from the
+  # manifest, so stale payload does not accumulate either.
+  if ! sync_manifest "$REPO_DIR" "$THEME_DEST" "${strip_args[@]}"; then
+    log_warn "Theme copy failed. The theme may be incomplete — re-run the installer."
   fi
 
   for item in "${THEME_STRIP[@]}"; do
@@ -1050,12 +1049,10 @@ fi
 WALLPAPER_DEST="$CONFIG_DIR/omarchy/backgrounds/$THEME_NAME"
 if [[ -d "$REPO_DIR/backgrounds" ]]; then
   mkdir -p "$WALLPAPER_DEST"
-  if command -v rsync &>/dev/null; then
-    rsync -a --delete "$REPO_DIR/backgrounds"/ "$WALLPAPER_DEST"/ 2>/dev/null || true
-  else
-    rm -rf "${WALLPAPER_DEST:?}"/* 2>/dev/null || true
-    cp -a "$REPO_DIR/backgrounds"/. "$WALLPAPER_DEST"/ 2>/dev/null || true
-  fi
+  # Copy without --delete: a user's own wallpaper in this directory must not be
+  # destroyed by a reinstall. Theme files removed upstream are pruned via the
+  # manifest.
+  sync_manifest "$REPO_DIR/backgrounds" "$WALLPAPER_DEST" || true
   # The animated GIFs are not wallpapers here: they are the SDDM login
   # animation, and the login theme reads them straight from the repository.
   # As wallpapers they were pure cost - Omarchy picks the bar's text color
@@ -1065,7 +1062,12 @@ if [[ -d "$REPO_DIR/backgrounds" ]]; then
   # They are removed rather than converted: the repository ships a sharp
   # 1920x1080 JPG with the same name, and converting the GIF over it
   # replaced that picture with a blurry 480x270 frame.
-  rm -f "$WALLPAPER_DEST"/*.gif 2>/dev/null || true
+  # Remove only the theme's own animated GIFs; a user's GIF in the wallpaper
+  # directory is not ours to delete.
+  for gif in "$REPO_DIR"/backgrounds/*.gif; do
+    [[ -f $gif ]] && rm -f "$WALLPAPER_DEST/$(basename "$gif")" 2>/dev/null || true
+  done
+  unset gif
 
   log_sub "Installed wallpapers to $WALLPAPER_DEST"
 fi

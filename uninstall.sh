@@ -286,6 +286,14 @@ elif [[ -f "$HOME/.zshrc" ]]; then
 fi
 rm -f "$HOME/.zshrc.zwc"
 
+# configure_shell_file appends aliases and the error hook to ~/.bashrc; put the
+# user's pre-theme copy back.
+if [[ -f "$HOME/.bashrc.paradise.bak" ]]; then
+  cp "$HOME/.bashrc.paradise.bak" "$HOME/.bashrc"
+  printf 'Restored ~/.bashrc\n'
+  rm -f "$HOME/.bashrc.paradise.bak"
+fi
+
 # Put the recorded login shell back. install.sh only writes this file after a
 # successful chsh, and only with a path that /etc/shells accepts verbatim.
 prev_login_shell_file="$HOME/.local/state/virtual-paradise/login-shell.previous"

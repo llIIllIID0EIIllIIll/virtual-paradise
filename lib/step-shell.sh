@@ -117,6 +117,12 @@ configure_shell_file() {
   local file="$1"
   [[ -f "$file" ]] || return 0
 
+  # Keep the pre-theme ~/.bashrc so uninstall can restore it. ~/.zshrc already
+  # has the installer's .zshrc.bak.* snapshot path; .bashrc had none.
+  if [[ "$file" == *".bashrc"* && ! -f "$file.paradise.bak" ]]; then
+    cp "$file" "$file.paradise.bak" 2>/dev/null || true
+  fi
+
   # Ensure $LOCAL_BIN is in PATH
   if ! grep -q 'export PATH="$HOME/.local/bin:$PATH"' "$file" && ! grep -q 'PATH=.*/\.local/bin' "$file"; then
     echo 'export PATH="$HOME/.local/bin:$PATH"' >> "$file"

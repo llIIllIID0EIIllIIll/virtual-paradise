@@ -34,6 +34,12 @@ if [[ -z ${PARADISE_REPO_DIR:-} ]]; then
   unset _po_self_dir _po_candidate
 fi
 PARADISE_REPO_DIR="${PARADISE_REPO_DIR:-}"
+# One session-wide lock shared with the theme hook and the updater.
+_vp_lock_src="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/lock.sh"
+# shellcheck disable=SC1090,SC1091
+[[ -f $_vp_lock_src ]] && . "$_vp_lock_src" 2>/dev/null || true
+unset _vp_lock_src
+
 
 po_plugins_dir() { printf '%s/omarchy/plugins\n' "$PARADISE_CONFIG_DIR"; }
 po_state_file() { printf '%s/overrides.state\n' "$PARADISE_STATE_DIR"; }
@@ -375,7 +381,7 @@ po_apply_theme_colors() {
 # otherwise the pristine copy taken by po_touch_existing is restored. A file
 # with neither is reported and its state row is kept, so a later run can still
 # recover it instead of silently losing the record.
-po_revert_all() {
+_po_revert_all_unlocked() {
   local state
   state="$(po_state_file)"
   if [[ ! -s $state ]]; then
@@ -548,7 +554,7 @@ po_apply_repo_overrides() {
 # Applied after every plugin add so that a freshly cloned plugin directory gets
 # the overrides rather than shipping upstream. Idempotent, but called ~10x per
 # install, so the summary is only printed when PO_VERBOSE is set.
-po_apply_all() {
+_po_apply_all_unlocked() {
   mkdir -p "$PARADISE_STATE_DIR"
   [[ -f $PARADISE_OVERRIDE_STATE ]] || po_state_reset
   po_prune_plugin_backups
@@ -559,4 +565,21 @@ po_apply_all() {
     n=$(grep -c . "$PARADISE_OVERRIDE_STATE" 2>/dev/null || echo 0)
     po_log "Override layer applied ($n file(s) tracked in $(po_state_file))."
   fi
+}
+
+# Serialise the override layer across install, the theme hook and the updater.
+po_revert_all() {
+  if declare -F vp_lock >/dev/null 2>&1; then vp_lock || true; fi
+  _po_revert_all_unlocked "$@"
+  local rc=$?
+  if declare -F vp_unlock >/dev/null 2>&1; then vp_unlock || true; fi
+  return $rc
+}
+
+po_apply_all() {
+  if declare -F vp_lock >/dev/null 2>&1; then vp_lock || true; fi
+  _po_apply_all_unlocked "$@"
+  local rc=$?
+  if declare -F vp_unlock >/dev/null 2>&1; then vp_unlock || true; fi
+  return $rc
 }

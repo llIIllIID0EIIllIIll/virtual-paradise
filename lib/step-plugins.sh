@@ -242,7 +242,7 @@ INSTALL_AND_ENABLE_PLUGINS() {
       RUN_AS_INSTALL_USER omarchy plugin disable "omarchy.bluetooth" 2>/dev/null || true
       if [[ -f "$CONFIG_DIR/omarchy/shell.json" ]]; then
         python3 - "$CONFIG_DIR/omarchy/shell.json" <<'PY'
-import json, sys
+import json, os, sys
 p = sys.argv[1]
 try:
     with open(p) as fh:
@@ -261,9 +261,12 @@ for section in ("left", "center", "right"):
 right = layout.setdefault("right", [])
 for widget_id in ids:
     right.append({"id": widget_id, "hidden": True})
-with open(p, "w") as fh:
+with open(tmp := p + ".tmp", "w") as fh:
     json.dump(d, fh, indent=2, ensure_ascii=False)
     fh.write("\n")
+    fh.flush()
+    os.fsync(fh.fileno())
+os.replace(tmp, p)
 PY
       fi
       po_apply_all
