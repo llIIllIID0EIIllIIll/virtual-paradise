@@ -601,7 +601,7 @@ if want tc5; then
   build_shims "$root/bin"
 
   ( cd "$REPO_DIR" && PATH="$root/bin:$PATH" HOME="$root/home" \
-      XDG_CONFIG_HOME="$root/xdg" SHIM_LOG="$root/shim.log" \
+      XDG_CONFIG_HOME="$root/xdg" XDG_STATE_HOME="$root/xdg-state" XDG_DATA_HOME="$root/xdg-data" SHIM_LOG="$root/shim.log" \
       timeout 900 bash ./install.sh --user-only --no-boot >"$root/install.log" 2>&1 )
   check "install honours XDG_CONFIG_HOME" $? "$(strip_ansi "$root/install.log" | tail -3)"
 
@@ -634,7 +634,7 @@ if want tc5; then
   fi
 
   ( cd "$REPO_DIR" && PATH="$root/bin:$PATH" HOME="$root/home" \
-      XDG_CONFIG_HOME="$root/xdg" SHIM_LOG="$root/shim.log" \
+      XDG_CONFIG_HOME="$root/xdg" XDG_STATE_HOME="$root/xdg-state" XDG_DATA_HOME="$root/xdg-data" SHIM_LOG="$root/shim.log" \
       timeout 900 bash ./uninstall.sh >"$root/uninstall.log" 2>&1 )
   check "uninstall honours XDG_CONFIG_HOME" $?
   check "uninstall removes the units it installed under XDG" \
@@ -672,7 +672,7 @@ if want tc6; then
   C="$root/home/.config/omarchy"
 
   ( cd "$REPO_DIR" && PATH="$root/bin:$PATH" HOME="$root/home" \
-      XDG_CONFIG_HOME="$root/home/.config" SHIM_LOG="$root/shim.log" \
+      XDG_CONFIG_HOME="$root/home/.config" XDG_STATE_HOME="$root/home/.local/state" XDG_DATA_HOME="$root/home/.local/share" SHIM_LOG="$root/shim.log" \
       OMARCHY_SHELL_DEFAULT_SRC="$root/nonexistent/omarchy/shell.json" \
       timeout 900 bash ./install.sh --user-only --no-boot >"$root/install.log" 2>&1 )
   check "install succeeds with no Omarchy layout to snapshot" $? \
@@ -697,7 +697,7 @@ if want tc6; then
 
   cp "$C/shell.json" "$root/before-uninstall"
   ( cd "$REPO_DIR" && PATH="$root/bin:$PATH" HOME="$root/home" \
-      XDG_CONFIG_HOME="$root/home/.config" SHIM_LOG="$root/shim.log" \
+      XDG_CONFIG_HOME="$root/home/.config" XDG_STATE_HOME="$root/home/.local/state" XDG_DATA_HOME="$root/home/.local/share" SHIM_LOG="$root/shim.log" \
       timeout 900 bash ./uninstall.sh >"$root/uninstall.log" 2>&1 )
   check "uninstall succeeds" $?
   strip_ansi "$root/uninstall.log" | grep -q 'Preserving'
@@ -1095,7 +1095,7 @@ if want tc10; then
     build_shims "$root/bin"
     ( cd "$REPO_DIR" \
       && PATH="$root/bin:$PATH" HOME="$root/home-sddm" \
-         XDG_CONFIG_HOME="$root/home-sddm/.config" SHIM_LOG="$root/shim-sddm.log" \
+         XDG_CONFIG_HOME="$root/home-sddm/.config" XDG_STATE_HOME="$root/home-sddm/.local/state" XDG_DATA_HOME="$root/home-sddm/.local/share" SHIM_LOG="$root/shim-sddm.log" \
          timeout 300 bash ./install.sh --sddm-only >"$root/sddm-only.log" 2>&1 )
     check "install.sh --sddm-only exits 0" $? "$(tail -3 "$root/sddm-only.log")"
     check "--sddm-only does not invoke Plymouth or mkinitcpio" \
@@ -1491,7 +1491,7 @@ STUB
 
   ( cd "$REPO_DIR" \
     && env -i PATH="$root/bin:/usr/bin:/bin" HOME="$root/home" \
-       XDG_CONFIG_HOME="$root/home/.config" SHIM_LOG="$root/shim.log" \
+       XDG_CONFIG_HOME="$root/home/.config" XDG_STATE_HOME="$root/home/.local/state" XDG_DATA_HOME="$root/home/.local/share" SHIM_LOG="$root/shim.log" \
        timeout 600 bash ./install.sh --user-only --no-boot \
        >"$root/install.log" 2>&1 )
   check "the installer runs with a stripped environment" $? "$(strip_ansi "$root/install.log" | tail -2)"
