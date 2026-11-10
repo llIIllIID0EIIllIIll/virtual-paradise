@@ -127,6 +127,24 @@ Item {
   // slower so it shimmers instead of competing with the windows.
   property real rimAngle: 0
 
+  // Cosmetic motion can be switched off from shell.json (`"bar":
+  // {"reducedMotion": true}`) or the environment. Effects stay visible and the
+  // layout does not change; only the per-frame travel stops, which is what a
+  // user who is sensitive to motion wants and what a battery saver wants too.
+  property bool reducedMotion: Quickshell.env("VP_REDUCED_MOTION") === "1"
+
+  // One clock for every 16 ms bar effect. RimLight and GapGlow used to own a
+  // timer each, so the event loop woke twice per frame for the same picture.
+  property int frameTick: 0
+
+  Timer {
+    id: frameClock
+    interval: 16
+    repeat: true
+    running: root.islandsEnabled && root.gapEffects && !root.reducedMotion
+    onTriggered: root.frameTick = root.frameTick >= 1000000 ? 1 : root.frameTick + 1
+  }
+
   function islandRadius(height) {
     // Full pill on the short axis; the clamp keeps a very tall bar from
     // growing absurdly round corners.
@@ -173,7 +191,7 @@ Item {
   // Linear and seamless: the rim gradient wraps on 360, so the loop point is
   // invisible. The menu border samples this same angle on its own timer.
   NumberAnimation on rimAngle {
-    running: root.islandsEnabled
+    running: root.islandsEnabled && !root.reducedMotion
     loops: Animation.Infinite
     from: 0
     to: 360
@@ -693,6 +711,8 @@ Item {
     // explicit false lets a user turn off ambient motion without editing QML.
     gapEffects = config.gapEffects !== false
     hoverGlow = config.hoverGlow !== false
+    if (config.reducedMotion !== undefined)
+      reducedMotion = config.reducedMotion === true
 
     // layoutEntries feeds plain JS arrays to the module Repeaters, and QML
     // cannot diff those: reassigning layoutConfig rebuilds every widget on
@@ -1734,6 +1754,7 @@ Item {
           // Above the islands: their shadow bleeds into the gaps and would
           // otherwise clip the glow into a rectangular smear at each edge.
           z: 11
+          clockTick: root.frameTick
           // Span the islands, not the whole window: the window now carries a
           // shadow strip, and centring on that would drop the glow below the
           // bar's midline.
@@ -1770,6 +1791,7 @@ Item {
           id: rimLight
 
           z: 12
+          clockTick: root.frameTick
           anchors.left: parent.left
           anchors.right: parent.right
           height: root.barSize
@@ -2510,6 +2532,7 @@ Item {
         : Math.max(1, root.barSize - root.islandInset * 2)
       active: root.hoverEffectsEnabled && slot.hovered && !slot.dragSource
       barAngle: root.rimAngle
+      reducedMotion: root.reducedMotion
       radius: Math.min(width, height) / 2
       // Declared before the widget loaders, so it paints behind the widget's
       // own content without a negative z: a negative z drops the halo behind

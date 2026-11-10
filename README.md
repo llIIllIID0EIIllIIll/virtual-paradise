@@ -14,9 +14,9 @@
 [![Arch Linux](https://img.shields.io/badge/Arch_Linux-1793D1?style=flat-square&logo=arch-linux&logoColor=white)](https://archlinux.org)
 [![Omarchy 4.5+](https://img.shields.io/badge/Omarchy-4.5+-8A2BE2?style=flat-square)](https://omarchy.org)
 [![Hyprland](https://img.shields.io/badge/Hyprland-Wayland-00ffdd?style=flat-square)](https://hyprland.org)
-[![Tests](https://img.shields.io/badge/tests-490%20passed-00ff88?style=flat-square)](tests/)
+[![Tests](https://img.shields.io/badge/tests-508%20passed-00ff88?style=flat-square)](tests/)
 [![License](https://img.shields.io/badge/license-MIT-ffe066?style=flat-square)](LICENSE)
-[![Version](https://img.shields.io/badge/version-1.3.7-ff00ff?style=flat-square)](VERSION)
+[![Version](https://img.shields.io/badge/version-1.4.0-ff00ff?style=flat-square)](VERSION)
 
 *A complete desktop experience: floating island bar, animated wallpapers, Plymouth boot splash, and every widget restyled in Miku cyan.*
 
@@ -274,7 +274,10 @@ Two things are worth knowing:
 - **Omarchy logs in automatically**, so the greeter is on screen for less than
   a second. `./install.sh --sddm-only --no-autologin` (or
   `sudo ./install.sh --no-autologin`) turns that off so the login screen is
-  really shown; `uninstall.sh` puts the automatic login back.
+  really shown; `uninstall.sh` puts the automatic login back. With more than
+  one account the greeter adds a chip per user above the password panel and
+  preselects the last login; picking another account clears the typed
+  password before it can be sent.
 - **The splash only changes after the boot image is rebuilt.** The installer
   rebuilds it (both `limine-mkinitcpio` and `mkinitcpio -P` are tried, the
   output is shown and the result is checked), but a machine that boots a
@@ -372,7 +375,8 @@ preserve a file you have edited.
 {
   "bar": {
     "gapEffects": false,
-    "hoverGlow": false
+    "hoverGlow": false,
+    "reducedMotion": true
   }
 }
 ```
@@ -383,6 +387,13 @@ underlay's drift and stops the scanner spark that laps the bar's outer rim.
 shimmer, the ramp-sampled bloom and the scale pop. Setting `gapEffects` to
 `false` also turns off the hover chrome, so the bar can be made completely
 still with one key.
+
+`reducedMotion` keeps the same colours and chrome but stops cosmetic travel:
+the rim gradient and the two gap canvases become still, and the hover pulse
+and pop are skipped. The two gap effects also share one 16 ms frame clock
+instead of running a timer each, so an idle bar wakes the shell once per frame
+rather than twice. `VP_REDUCED_MOTION=1` in the shell's environment does the
+same when a key cannot be added.
 
 The shipped layout keeps the islands balanced: indicators only take space
 while one is active, the active-window label is capped at 180px, and the right
@@ -401,6 +412,28 @@ their services keep running and their panels open from the bar when selected;
 the hidden entries take no space in the row. Move one back into the visible
 row by removing `"hidden": true` from its entry in `shell.json` (or via
 `omarchy bar put`).
+
+### Weather Location
+
+The weather panel never guesses your location on its own. With no city set, it
+shows a one-time choice instead of a forecast:
+
+- **Use my location** lets wttr.in approximate the location from the request
+  IP and remembers the choice as `"autoLocation": true` on the weather entry.
+- **Set city** opens the search field and stores the name plus coordinates;
+  that request carries coordinates, not a guess, so it works without the
+  consent.
+
+Both paths stay in the same panel and the bar shows `—` until one is chosen.
+A city you set always wins over auto-detection.
+
+### Accessibility
+
+The six theme bar widgets expose a screen-reader name, role and description
+(clock, weather, CPU temperature, microphone, menu, tools), and the panels
+name their fields and buttons. `reducedMotion` above removes cosmetic travel
+without removing the effects, and the SDDM greeter labels the password field
+for the selected account.
 
 ### Memory
 
@@ -519,9 +552,9 @@ default.
 
 ### Running Tests
 
-The test suite has twenty-eight test cases and 490 assertions; optional tools
+The test suite has twenty-nine test cases and 508 assertions; optional tools
 (`shellcheck`, `qmllint`, `hyprctl`) enable extra checks when present, so the
-exact count varies between machines (490 with `shellcheck` and `qmllint`). It
+exact count varies between machines (508 with `shellcheck` and `qmllint`). It
 runs in a sandbox and never touches your real system.
 
 ```bash
@@ -558,6 +591,7 @@ Test cases:
 - **TC-26**: Cooler Boost state (hardware read, file fallback, stale-state toggle)
 - **TC-27**: Shared cursor server (one process for both overlays, socket handoff)
 - **TC-28**: Fork drift, 4.5 parity (indicators, WallClock, titlebar colour, retired bell) and the documented tree
+- **TC-29**: Motion, privacy, accessibility and multi-user login (shared frame clock, reduced motion, weather consent, screen-reader labels, SDDM account chips)
 
 ### Project Structure
 
@@ -608,7 +642,7 @@ virtual-paradise/
 │   └── convert-gifs-to-mp4.sh   # Wallpaper compression
 ├── install.sh            # Installer
 ├── uninstall.sh          # Uninstaller
-├── VERSION               # Semantic version (1.3.7)
+├── VERSION               # Semantic version (1.4.0)
 └── README.md             # This file
 ```
 

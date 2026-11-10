@@ -145,6 +145,9 @@ BarWidget {
     fixedHeight: root.vertical ? root.verticalLines.length * Style.bar.iconSlot : -1
     horizontalMargin: 2
     verticalPadding: 2
+    Accessible.name: "Clock"
+    Accessible.role: Accessible.Button
+    Accessible.description: "Open the calendar"
     tooltipText: Qt.formatDateTime(root.displayDate, "dddd, d MMMM yyyy • HH:mm:ss") + "\nLeft: Open Calendar | Right: Cycle Format | Middle: Timezone"
 
     onPressed: function(b) {

@@ -3095,4 +3095,113 @@ PY
     "$(grep -q 'voxtype status' "$REPO_DIR/plugins/indicators/indicators/Dictation.qml" && echo 0 || echo 1)"
 fi
 
+# ─────────────────────────────────────────────────────────────────────────────
+# TC-29  Shared frame clock, reduced motion, weather consent, accessibility
+#        and the multi-user greeter.
+# ─────────────────────────────────────────────────────────────────────────────
+if want tc29; then
+  section "TC-29  Motion, privacy, accessibility and multi-user login"
+
+  bar="$REPO_DIR/bars/island-bar/Bar.qml"
+
+  # One 16 ms clock drives both gap canvases. Each used to own a timer, so the
+  # event loop woke twice per frame for the same picture.
+  check "the bar owns one shared frame clock" \
+    "$(grep -q 'property int frameTick' "$bar" \
+      && grep -q 'id: frameClock' "$bar" && echo 0 || echo 1)"
+  check "the rim scanner runs on the bar clock" \
+    "$(grep -q 'property int clockTick: -1' "$REPO_DIR/bars/island-bar/RimLight.qml" \
+      && grep -q 'running: root.active && !root.externallyDriven' "$REPO_DIR/bars/island-bar/RimLight.qml" \
+      && grep -q 'clockTick: root.frameTick' "$bar" && echo 0 || echo 1)"
+  check "the gap stream runs on the bar clock" \
+    "$(grep -q 'property int clockTick: -1' "$REPO_DIR/bars/island-bar/GapGlow.qml" \
+      && grep -q 'running: root.active && !root.externallyDriven' "$REPO_DIR/bars/island-bar/GapGlow.qml" \
+      && grep -q 'clockTick: root.frameTick' "$bar" && echo 0 || echo 1)"
+
+  # Reduced motion is opt-in: it stops the travel but keeps every effect and
+  # every colour, and it can come from shell.json or the environment.
+  check "reduced motion is read from shell.json or the environment" \
+    "$(grep -q 'VP_REDUCED_MOTION' "$bar" \
+      && grep -q 'config.reducedMotion === true' "$bar" && echo 0 || echo 1)"
+  check "reduced motion freezes the frame clock and the rim spin" \
+    "$(grep -q 'running: root.islandsEnabled && root.gapEffects && !root.reducedMotion' "$bar" \
+      && grep -q 'running: root.islandsEnabled && !root.reducedMotion' "$bar" \
+      && grep -q 'reducedMotion: root.reducedMotion' "$bar" && echo 0 || echo 1)"
+  check "reduced motion skips the hover pulse" \
+    "$(grep -q 'running: root.active && !root.reducedMotion' "$REPO_DIR/bars/island-bar/HoverGlow.qml" \
+      && grep -q 'enabled: !root.reducedMotion' "$REPO_DIR/bars/island-bar/HoverGlow.qml" \
+      && echo 0 || echo 1)"
+
+  weather="$REPO_DIR/plugins/weather/Panel.qml"
+
+  # Auto-detection sends a request wttr.in turns into an approximate location.
+  # It has to be opted into; a configured city or coordinates does not.
+  check "weather auto-location is opt-in" \
+    "$(grep -Fq 'setting("autoLocation", false)' "$weather" \
+      && grep -q 'needsLocationConsent: root.locationQuery === ""' "$weather" && echo 0 || echo 1)"
+  check "a refresh without consent never starts a weather request" \
+    "$(python3 - "$weather" <<'PY'
+import sys
+from pathlib import Path
+text = Path(sys.argv[1]).read_text()
+start = text.index("function refresh()")
+guard = text.index("if (root.needsLocationConsent)", start)
+fetch = text.index("forecastProc.running = true", start)
+loc = text.index("locationProc.running = true", start)
+sys.exit(0 if start < guard < fetch and start < guard < loc else 1)
+PY
+)"
+  check "the weather panel offers both consent paths" \
+    "$(grep -q 'USE MY LOCATION' "$weather" \
+      && grep -q 'SET CITY' "$weather" \
+      && grep -q 'persistSettings({ autoLocation: true })' "$weather" \
+      && echo 0 || echo 1)"
+  check "the weather bar shows no invented temperature" \
+    "$(! grep -q '27°C' "$REPO_DIR/plugins/weather/BarWidget.qml" \
+      && ! grep -q 'Local Weather' "$REPO_DIR/plugins/weather/BarWidget.qml" \
+      && echo 0 || echo 1)"
+  check "the weather bar widget exposes a screen-reader name" \
+    "$(grep -q 'Accessible.name: "Weather"' "$REPO_DIR/plugins/weather/BarWidget.qml" && echo 0 || echo 1)"
+
+  # Accessibility: the theme's own bar widgets and the fields a keyboard user
+  # lands in carry a name and a role.
+  missingAcc=""
+  for _w in clock weather cputemp microphone menu tools; do
+    grep -q 'Accessible.name' "$REPO_DIR/plugins/$_w/BarWidget.qml" \
+      && grep -q 'Accessible.role' "$REPO_DIR/plugins/$_w/BarWidget.qml" \
+      || missingAcc="$missingAcc $_w"
+  done
+  check "every theme bar widget exposes a name and role" \
+    "$([[ -z $missingAcc ]] && echo 0 || echo 1)" "missing:$missingAcc"
+  check "the clock panel labels its fields" \
+    "$(grep -q 'Accessible.name: "Birth year"' "$REPO_DIR/plugins/clock/Panel.qml" \
+      && grep -q 'Accessible.name: "Life expectancy"' "$REPO_DIR/plugins/clock/Panel.qml" \
+      && echo 0 || echo 1)"
+  check "the weather panel labels its location field" \
+    "$(grep -q 'Accessible.name: "Weather location search"' "$weather" && echo 0 || echo 1)"
+
+  # Multi-user greeter: the account chips come from SDDM's user model and a
+  # switch clears the half-typed password before it can reach another account.
+  sddm="$REPO_DIR/sddm/Main.qml"
+  check "the greeter lists every account" \
+    "$(grep -q 'Repeater {' "$sddm" \
+      && grep -q 'model: userModel' "$sddm" \
+      && grep -q 'userModel.rowCount() > 1' "$sddm" && echo 0 || echo 1)"
+  check "switching greeter account clears the password" \
+    "$(python3 - "$sddm" <<'PY'
+import sys
+from pathlib import Path
+text = Path(sys.argv[1]).read_text()
+start = text.index("function pickUser")
+end = text.index("\n  }", start)
+body = text[start:end]
+sys.exit(0 if "password.text = \"\"" in body and "root.currentUser = name" in body else 1)
+PY
+)"
+  check "the greeter labels the password for the selected account" \
+    "$(grep -q 'Accessible.name: "Password for " + root.currentUser' "$sddm" && echo 0 || echo 1)"
+  check "the greeter still logs in the selected account" \
+    "$(grep -q 'sddm.login(root.currentUser, password.text, root.sessionIndex)' "$sddm" && echo 0 || echo 1)"
+fi
+
 summary

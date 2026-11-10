@@ -44,6 +44,9 @@ BarWidget {
     hasVisualContent: true
     horizontalMargin: 2
     verticalPadding: 2
+    Accessible.name: "Microphone"
+    Accessible.role: Accessible.Button
+    Accessible.description: root.muted ? "Muted; activates to unmute" : "Live; activates to mute"
     tooltipText: root.muted
       ? "Microphone: Muted (Left: Unmute | Right: Config)"
       : ("Microphone: Live (" + Math.round(root.volume * 100) + "%)\nLeft: Toggle Mute | Right: Dictation Config | Scroll: Volume")

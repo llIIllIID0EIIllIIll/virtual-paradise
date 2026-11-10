@@ -28,9 +28,25 @@ Item {
   // Pixels travelled along the loop.
   property real sparkOffset: 0
 
+  // One bar-wide frame clock can drive every 16 ms effect. A negative tick
+  // means "run standalone", which keeps this component usable outside the
+  // island bar; the bar passes its own monotonically increasing counter so
+  // two canvases do not each wake the event loop every frame.
+  property int clockTick: -1
+  readonly property bool externallyDriven: clockTick >= 0
+
   readonly property bool active: lightEnabled && runs.length > 0 && width > 0 && height > 0
 
   visible: active
+
+  function step() {
+    root.sparkOffset = root.totalPerimeter > 0
+      ? (root.sparkOffset + root.sparkSpeed * 0.016) % root.totalPerimeter
+      : 0
+    root.requestPaint()
+  }
+
+  onClockTickChanged: if (externallyDriven && active) step()
 
   // The perimeter of the loop, so the timer can wrap the offset without
   // waiting for the next paint.
@@ -64,13 +80,8 @@ Item {
   Timer {
     interval: 16
     repeat: true
-    running: root.active
-    onTriggered: {
-      root.sparkOffset = root.totalPerimeter > 0
-        ? (root.sparkOffset + root.sparkSpeed * 0.016) % root.totalPerimeter
-        : 0
-      root.requestPaint()
-    }
+    running: root.active && !root.externallyDriven
+    onTriggered: root.step()
   }
 
   // Walks the rounded-rect perimeter clockwise from the top-left corner arc.

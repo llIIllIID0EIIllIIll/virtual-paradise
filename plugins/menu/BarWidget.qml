@@ -18,6 +18,9 @@ BarWidget {
     hasVisualContent: true
     horizontalMargin: 2
     verticalPadding: 2
+    Accessible.name: "Menu"
+    Accessible.role: Accessible.Button
+    Accessible.description: "Open the application menu"
     tooltipText: "Omarchy Menu (Super)\nLeft: Application Menu | Right: Terminal"
 
     onPressed: function(b) {

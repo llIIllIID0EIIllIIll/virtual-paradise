@@ -92,6 +92,9 @@ BarWidget {
     hasVisualContent: true
     horizontalMargin: 2
     verticalPadding: 2
+    Accessible.name: "Tools"
+    Accessible.role: Accessible.Button
+    Accessible.description: "Open specialized plugins and voice dictation"
     tooltipText: "Tools\nSpecialized plugins and voice dictation"
     onPressed: function(b) { if (root.bar) root.togglePanel() }
 

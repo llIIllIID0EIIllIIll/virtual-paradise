@@ -23,6 +23,8 @@ Item {
   // The bar's rim angle, so the hover rim is part of the same slow spin as
   // the islands and the windows.
   property real barAngle: 0
+  // Cosmetic pulse and scale are skipped when the bar asks for reduced motion.
+  property bool reducedMotion: false
   property real radius: 0
   // 0..1 lets a caller dim the halo for a dense layout without changing the
   // shared toggle.
@@ -37,10 +39,12 @@ Item {
   scale: active ? 1.0 : 0.96
 
   Behavior on opacity {
+    enabled: !root.reducedMotion
     NumberAnimation { duration: 170; easing.type: Easing.OutCubic }
   }
 
   Behavior on scale {
+    enabled: !root.reducedMotion
     NumberAnimation { duration: 220; easing.type: Easing.OutBack }
   }
 
@@ -63,8 +67,15 @@ Item {
 
       property real pulse: 1.0
 
+      Connections {
+        target: root
+        function onReducedMotionChanged() {
+          if (root.reducedMotion) chromeRoot.pulse = 1.0
+        }
+      }
+
       SequentialAnimation on pulse {
-        running: root.active
+        running: root.active && !root.reducedMotion
         loops: Animation.Infinite
         NumberAnimation {
           from: 1.0; to: 0.78

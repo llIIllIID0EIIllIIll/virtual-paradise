@@ -73,6 +73,19 @@ Rectangle {
 
   property string currentUser: userModel.lastUser
   property bool loginFailed: false
+
+  // The greeter is multi-user: every account in the user model gets a chip
+  // above the password panel, and the last user is preselected. Picking a
+  // different chip clears any half-typed password so it cannot be sent to the
+  // wrong account.
+  function pickUser(name) {
+    if (!name || name === root.currentUser) return
+    root.currentUser = name
+    root.loginFailed = false
+    password.text = ""
+    password.forceActiveFocus()
+  }
+
   property int sessionIndex: {
     for (var i = 0; i < sessionModel.rowCount(); i++) {
       var name = (sessionModel.data(sessionModel.index(i, 0), Qt.DisplayRole) || "").toString()
@@ -119,6 +132,48 @@ Rectangle {
     anchors.bottomMargin: Math.max(60, parent.height * 0.07)
     spacing: 18
 
+    // One chip per account, newest login first. Hidden on a single-user
+    // machine so the greeter keeps its bare password panel.
+    Row {
+      id: userRow
+      anchors.horizontalCenter: parent.horizontalCenter
+      spacing: 10
+      visible: userModel.rowCount() > 1
+
+      Repeater {
+        model: userModel
+
+        Rectangle {
+          required property var model
+          readonly property string userName: String(model.name || "")
+          width: userNameLabel.implicitWidth + 26
+          height: 34
+          radius: 17
+          color: root.currentUser === userName ? Qt.rgba(0.0, 1.0, 0.867, 0.22) : "transparent"
+          border.width: 1
+          border.color: root.currentUser === userName ? "#00ffdd" : Qt.rgba(0.0, 1.0, 0.867, 0.35)
+          Accessible.name: "Log in as " + userName
+          Accessible.role: Accessible.Button
+
+          Text {
+            id: userNameLabel
+            anchors.centerIn: parent
+            text: userName
+            color: root.currentUser === userName ? "#00ffdd" : "#eafbfa"
+            font.family: "JetBrainsMono Nerd Font"
+            font.pixelSize: 15
+            font.letterSpacing: 2
+          }
+
+          MouseArea {
+            anchors.fill: parent
+            cursorShape: Qt.PointingHandCursor
+            onClicked: root.pickUser(userName)
+          }
+        }
+      }
+    }
+
     Text {
       anchors.horizontalCenter: parent.horizontalCenter
       text: root.currentUser
@@ -127,6 +182,7 @@ Rectangle {
       font.pixelSize: Math.max(22, Math.round(root.width * 0.026))
       font.bold: true
       font.letterSpacing: 3
+      Accessible.name: "User " + root.currentUser
     }
 
     Text {
@@ -247,6 +303,8 @@ Rectangle {
         selectedTextColor: "transparent"
         cursorDelegate: Item {}
         focus: true
+        Accessible.name: "Password for " + root.currentUser
+        Accessible.role: Accessible.EditableText
 
         onTextChanged: root.loginFailed = false
 
@@ -261,6 +319,12 @@ Rectangle {
   }
 
   Component.onCompleted: {
+    // lastUser is empty on a fresh machine. Pick the first account so the
+    // password panel is never labelled with a blank name.
+    if (!root.currentUser && userModel.rowCount() > 0) {
+      var first = userModel.data(userModel.index(0, 0), Qt.DisplayRole)
+      if (first) root.currentUser = String(first)
+    }
     password.forceActiveFocus()
     // Fade the picture in: the greeter is the boot splash continued, and the
     // transition into the session has to look the same way.

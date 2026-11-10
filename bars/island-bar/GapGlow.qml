@@ -38,12 +38,24 @@ Item {
   // stream down instead of teleporting it forward.
   property real cometOffset: 0
 
+  // See RimLight: the bar's single frame clock drives this when supplied, so
+  // the two canvases share one 16 ms wake-up.
+  property int clockTick: -1
+  readonly property bool externallyDriven: clockTick >= 0
+
   readonly property bool active: glowEnabled && runs.length > 1 && width > 0 && height > 0
 
   visible: active
   opacity: fade
 
   Behavior on opacity { NumberAnimation { duration: 260; easing.type: Easing.InOutQuad } }
+
+  function step() {
+    root.cometOffset = (root.cometOffset + root.cometSpeed * 0.016) % root.cometSpacing
+    root.requestFrame()
+  }
+
+  onClockTickChanged: if (externallyDriven && active) step()
 
   function requestFrame() {
     if (active) canvas.requestPaint()
@@ -63,11 +75,8 @@ Item {
   Timer {
     interval: 16
     repeat: true
-    running: root.active
-    onTriggered: {
-      root.cometOffset = (root.cometOffset + root.cometSpeed * 0.016) % root.cometSpacing
-      root.requestFrame()
-    }
+    running: root.active && !root.externallyDriven
+    onTriggered: root.step()
   }
 
   Canvas {

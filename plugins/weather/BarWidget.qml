@@ -48,8 +48,8 @@ BarWidget {
   }
 
   readonly property string weatherIcon: (panelLoader.item && panelLoader.item.label !== "") ? panelLoader.item.label : "󰖙"
-  readonly property string weatherTemp: (panelLoader.item && panelLoader.item.reportTempNum !== "") ? (panelLoader.item.reportTempNum + panelLoader.item.tempUnit) : "27°C"
-  readonly property string weatherLoc: (panelLoader.item && panelLoader.item.reportLocation !== "") ? panelLoader.item.reportLocation : "Local Weather"
+  readonly property string weatherTemp: (panelLoader.item && panelLoader.item.reportTempNum !== "") ? (panelLoader.item.reportTempNum + panelLoader.item.tempUnit) : "—"
+  readonly property string weatherLoc: (panelLoader.item && panelLoader.item.reportLocation !== "") ? panelLoader.item.reportLocation : "Set location"
 
   visible: true
   implicitWidth: root.vertical ? button.implicitWidth
@@ -96,6 +96,9 @@ BarWidget {
     hasVisualContent: true
     horizontalMargin: 2
     verticalPadding: 2
+    Accessible.name: "Weather"
+    Accessible.role: Accessible.Button
+    Accessible.description: "Open the weather panel; middle click refreshes"
     tooltipText: "Weather: " + root.weatherLoc + " (" + root.weatherTemp + ")\nLeft: Weather Details | Right: Notification | Middle: Refresh"
 
     onPressed: function(b) {

@@ -456,6 +456,7 @@ Panel {
                   width: Style.space(70)
                   anchors.verticalCenter: parent.verticalCenter
                   placeholderText: "year"
+                  Accessible.name: "Birth year"
                   foreground: root.contentForeground
                   font.family: root.contentFontFamily
                   inputMethodHints: Qt.ImhDigitsOnly
@@ -479,6 +480,7 @@ Panel {
                   width: Style.space(60)
                   anchors.verticalCenter: parent.verticalCenter
                   placeholderText: "90"
+                  Accessible.name: "Life expectancy"
                   foreground: root.contentForeground
                   font.family: root.contentFontFamily
                   inputMethodHints: Qt.ImhDigitsOnly

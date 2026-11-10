@@ -73,8 +73,8 @@ Panel {
 
   // Configured location, read from the weather.json state file (owned by
   // omarchy-weather-location). The query is the wttr.in path segment
-  // (coordinates when stored, else the encoded name); empty means IP
-  // auto-detect. The watch makes hand edits take effect live.
+  // (coordinates when stored, else the encoded name); empty means no
+  // configured location, and auto-detection then stays off until allowed.
   property var configuredLocationState: ({ name: "", latitude: null, longitude: null })
   readonly property string configuredLocation: configuredLocationState.name
   readonly property string locationQuery: Model.wttrLocationQuery(configuredLocationState.name, configuredLocationState.latitude, configuredLocationState.longitude)
@@ -135,9 +135,20 @@ Panel {
   readonly property string reportCountry: areaInfo && areaInfo.country && areaInfo.country[0] ? areaInfo.country[0].value : ""
 
   readonly property bool useImperial: Model.shouldUseImperial(setting("unit", ""), Qt.locale().name, reportCountry)
+  readonly property color panelForeground: root.bar ? root.bar.foreground : Color.foreground
 
   // Auto-refresh interval in minutes; clamped to a sane minimum.
   readonly property int refreshMinutes: Math.max(1, parseInt(setting("refreshMinutes", 15), 10) || 15)
+
+  // An empty location query makes wttr.in guess from the request IP, which
+  // tells a third party roughly where the machine is. That request is opt-in:
+  // a configured city or coordinates always fetch, but auto-detection stays
+  // off until the user allows it here or in shell.json.
+  readonly property bool autoLocationAllowed: {
+    var v = root.setting("autoLocation", false)
+    return v === true || String(v) === "true" || String(v) === "1"
+  }
+  readonly property bool needsLocationConsent: root.locationQuery === "" && !root.autoLocationAllowed
 
   readonly property string reportLocation:  configuredLocation || wttrLocation || (areaInfo && areaInfo.areaName && areaInfo.areaName[0] ? areaInfo.areaName[0].value : "")
   readonly property string reportTempNum:   current ? String(useImperial ? current.temp_F : current.temp_C) : ""
@@ -152,6 +163,14 @@ Panel {
     // starve retries for the rest of the session.
     forecastRetries = 0
     dailyForecastRetries = 0
+    if (root.needsLocationConsent) {
+      // No city and no permission for IP detection: leave every fetch cold
+      // rather than send the request the user has not agreed to.
+      forecastProc.running = false
+      dailyForecastProc.running = false
+      locationProc.running = false
+      return
+    }
     if (!forecastProc.running) forecastProc.running = true
     if (root.locationQuery === "" && !locationProc.running) locationProc.running = true
     // With stored coordinates this fetches open-meteo right away — no need
@@ -245,6 +264,28 @@ Panel {
 
   function finishSavingLocation() {
     if (savingLocation && savingLocationQueryStarted) cancelEditingLocation()
+  }
+
+  // Persist an inline setting on this bar entry the same way the clock does:
+  // update the live widget and the shell's copy, then let the host write
+  // shell.json. Falls back to a session-only preference when the widget is not
+  // in a writable layout.
+  function persistSettings(values) {
+    var entry = { id: root.moduleName }
+    for (var existing in root.settings) if (existing !== "id") entry[existing] = root.settings[existing]
+    for (var key in values) entry[key] = values[key]
+
+    root.settings = entry
+    if (root.hostWidget && "settings" in root.hostWidget) root.hostWidget.settings = entry
+    if (root.bar && root.bar.shell && typeof root.bar.shell.updateEntryInline === "function")
+      root.bar.shell.updateEntryInline(root.moduleName, entry)
+  }
+
+  // Explicit consent for the IP-based wttr.in lookup. Remembered across
+  // sessions and shared by every monitor's panel through shell.json.
+  function allowAutoLocation() {
+    persistSettings({ autoLocation: true })
+    root.refresh()
   }
 
   function persistLocation(name, latitude, longitude) {
@@ -508,10 +549,11 @@ Panel {
       // ---- Hero row: big icon + temp on the left; location and stats stacked on the right.
       Item {
         width: parent.width
-        height: Math.max(heroLeft.height, heroRight.height)
+        height: Math.max(heroLeft.visible ? heroLeft.height : 0, heroRight.height)
 
         Row {
           id: heroLeft
+          visible: !root.needsLocationConsent
           anchors.left: parent.left
           anchors.leftMargin: Style.space(16)
           anchors.verticalCenter: parent.verticalCenter
@@ -565,6 +607,8 @@ Panel {
           Row {
             visible: !root.editingLocation && root.reportLocation !== ""
             spacing: Style.space(6)
+            Accessible.name: "Weather location: " + root.reportLocation
+            Accessible.role: Accessible.Button
 
             TapHandler {
               onTapped: root.startEditingLocation()
@@ -599,6 +643,7 @@ Panel {
               width: Style.space(190)
               enabled: !root.savingLocation
               placeholderText: "Search city"
+              Accessible.name: "Weather location search"
               foreground: (root.bar ? root.bar.foreground : Color.foreground)
               font.family: (root.bar ? root.bar.fontFamily : Style.font.family)
 
@@ -621,8 +666,10 @@ Panel {
               }
             }
 
-            // Clear back to IP auto-detect. While a committed location is
-            // loading, this same compact affordance becomes a spinner.
+            // Clear the stored location. With auto-detection off this returns
+            // to the consent row instead of making a request. While a
+            // committed location is loading, this same compact affordance
+            // becomes a spinner.
             Rectangle {
               width: Style.space(18)
               height: Style.space(18)
@@ -715,6 +762,99 @@ Panel {
         }
       }
 
+      // ---- First-run location consent. Without a configured city the only
+      // way to get weather is wttr.in's IP guess, so ask instead of sending
+      // that request silently. Both choices stay in this panel and need no
+      // extra dialog.
+      Column {
+        id: locationConsent
+        x: Style.space(16)
+        width: parent.width - Style.space(32)
+        visible: root.needsLocationConsent && !root.editingLocation
+        spacing: Style.space(8)
+
+        Text {
+          text: "Weather needs a location"
+          color: root.panelForeground
+          font.family: (root.bar ? root.bar.fontFamily : Style.font.family)
+          font.pixelSize: Style.font.title
+          font.bold: true
+        }
+
+        Text {
+          width: parent.width
+          text: "Automatic detection uses your IP address. Allow it once, or set a city."
+          wrapMode: Text.WordWrap
+          color: Qt.darker(root.panelForeground, 1.4)
+          font.family: (root.bar ? root.bar.fontFamily : Style.font.family)
+          font.pixelSize: Style.font.bodySmall
+        }
+
+        Row {
+          spacing: Style.space(10)
+
+          Rectangle {
+            width: allowLabel.implicitWidth + Style.space(18)
+            height: Style.space(24)
+            radius: Math.min(6, Style.cornerRadius)
+            color: allowArea.containsMouse
+              ? Style.hoverFillFor(root.panelForeground, Color.accent) : "transparent"
+            border.width: 1
+            border.color: Qt.rgba(Color.accent.r, Color.accent.g, Color.accent.b, 0.55)
+            Accessible.name: "Allow automatic weather location"
+            Accessible.role: Accessible.Button
+
+            Text {
+              id: allowLabel
+              anchors.centerIn: parent
+              text: "USE MY LOCATION"
+              color: root.panelForeground
+              font.family: (root.bar ? root.bar.fontFamily : Style.font.family)
+              font.pixelSize: Style.font.bodySmall
+              font.letterSpacing: 1
+            }
+
+            MouseArea {
+              id: allowArea
+              anchors.fill: parent
+              hoverEnabled: true
+              cursorShape: Qt.PointingHandCursor
+              onClicked: root.allowAutoLocation()
+            }
+          }
+
+          Rectangle {
+            width: cityLabel.implicitWidth + Style.space(18)
+            height: Style.space(24)
+            radius: Math.min(6, Style.cornerRadius)
+            color: cityArea.containsMouse
+              ? Style.hoverFillFor(root.panelForeground, Color.accent) : "transparent"
+            border.width: 1
+            border.color: Qt.rgba(Color.accent.r, Color.accent.g, Color.accent.b, 0.55)
+            Accessible.name: "Set a weather city"
+            Accessible.role: Accessible.Button
+
+            Text {
+              id: cityLabel
+              anchors.centerIn: parent
+              text: "SET CITY"
+              color: root.panelForeground
+              font.family: (root.bar ? root.bar.fontFamily : Style.font.family)
+              font.pixelSize: Style.font.bodySmall
+              font.letterSpacing: 1
+            }
+
+            MouseArea {
+              id: cityArea
+              anchors.fill: parent
+              hoverEnabled: true
+              cursorShape: Qt.PointingHandCursor
+              onClicked: root.startEditingLocation()
+            }
+          }
+        }
+      }
+
       // ---- Geocoding suggestions while the location is being edited.
       Column {
         visible: root.editingLocation && !root.savingLocation && root.locationSuggestions.length > 0
@@ -767,7 +907,7 @@ Panel {
       }
 
       Text {
-        visible: !root.current
+        visible: !root.current && !root.needsLocationConsent
         text: "Fetching forecast…"
         color: Qt.darker((root.bar ? root.bar.foreground : Color.foreground), 1.5)
         font.family: (root.bar ? root.bar.fontFamily : Style.font.family)

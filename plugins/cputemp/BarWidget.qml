@@ -98,6 +98,9 @@ BarWidget {
     hasVisualContent: true
     horizontalMargin: 2
     verticalPadding: 2
+    Accessible.name: "CPU temperature"
+    Accessible.role: Accessible.Button
+    Accessible.description: "Toggle Cooler Boost"
     tooltipText: root.isOverheating
       ? " CPU OVERHEATING: " + root.cpuTemp + " (Cooler Boost: " + (root.coolerActive ? "ON" : "OFF") + ")\nLeft: Toggle Cooler Boost | Right: Sensor Details"
       : (" CPU Temp: " + root.cpuTemp + (root.coolerActive ? " (Cooler Boost: ON)" : " (Cooler Boost: OFF)") + "\nLeft: Toggle Cooler Boost | Right: Sensor Details")

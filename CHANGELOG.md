@@ -8,6 +8,33 @@ Conventional Commits.
 
 ## [Unreleased]
 
+## [1.4.0] - 2026-11-10
+
+### Added
+- **Reduced motion.** `"bar": {"reducedMotion": true}` in `shell.json` (or
+  `VP_REDUCED_MOTION=1`) keeps every effect and colour but stops the rim spin,
+  both gap canvases and the hover pulse. An explicit `false` keeps the current
+  motion, so the key is opt-in.
+- **One shared bar frame clock.** The rim scanner and the gap stream used to
+  own a 16 ms timer each, waking the event loop twice per frame for the same
+  picture. Both now take the bar's single `frameTick`, and a component used
+  outside the bar still runs standalone.
+- **Weather location consent.** Auto-detection sends a request wttr.in turns
+  into an approximate location, so it is now opt-in: with no city set the panel
+  asks once ("Use my location" or "Set city") and the answer is stored as
+  `"autoLocation": true` on the weather entry. The bar shows `—` until a
+  location is chosen instead of the old placeholder `27°C`.
+- **Screen-reader labels.** The six theme bar widgets expose a name, role and
+  description; the clock and weather fields, the consent buttons and the SDDM
+  password field are labelled too.
+- **Multi-user login.** The SDDM greeter lists every account as a chip above
+  the password panel, preselects the last login and clears a typed password
+  when the account changes.
+
+### Changed
+- Tests: 508 assertions, including a new TC-29 for motion, privacy,
+  accessibility and the multi-user greeter.
+
 ## [1.3.7] - 2026-11-10
 
 ### Added
@@ -1063,7 +1090,8 @@ full installer/uninstaller.
 
 ## Links
 
-- [Unreleased]: https://github.com/vuhuudo/virtual-paradise/compare/v1.3.7...HEAD
+- [Unreleased]: https://github.com/vuhuudo/virtual-paradise/compare/v1.4.0...HEAD
+- [1.4.0]: https://github.com/vuhuudo/virtual-paradise/compare/v1.3.7...v1.4.0
 - [1.3.7]: https://github.com/vuhuudo/virtual-paradise/compare/v1.3.6...v1.3.7
 - [1.3.6]: https://github.com/vuhuudo/virtual-paradise/compare/v1.3.5...v1.3.6
 - [1.3.5]: https://github.com/vuhuudo/virtual-paradise/compare/v1.3.4...v1.3.5
