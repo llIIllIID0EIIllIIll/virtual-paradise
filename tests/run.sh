@@ -318,6 +318,17 @@ Item {
 }
 EOF
 
+  # The Bluetooth panel declares a Connections target that can be undefined
+  # while the bar is rebuilt; the override keeps it null.
+  B="$root/home/.config/omarchy/plugins/ssupt.bluetooth-audio"
+  mkdir -p "$B"
+  cat >"$B/Panel.qml" <<'EOF'
+Connections {
+  target: root.audioPluginRegistry
+  function onPluginsChanged() {}
+}
+EOF
+
   out=$( PATH="$root/bin:$PATH" HOME="$root/home" XDG_CONFIG_HOME="$root/home/.config" XDG_STATE_HOME="$root/home/.local/state" XDG_DATA_HOME="$root/home/.local/share" \
          PARADISE_REPO_DIR="$REPO_DIR" PARADISE_CONFIG_DIR="$root/home/.config" \
          bash -c ". '$REPO_DIR/lib/plugin-overrides.sh'; po_apply_all" 2>&1 )
@@ -343,6 +354,8 @@ EOF
   check "the power-manager debug log is removed" $?
   grep -q 'idleStatusProc.running = true' "$P/Panel.qml"
   check "the power-manager status poll is kept" $?
+  grep -q 'target: root.audioPluginRegistry ? root.audioPluginRegistry : null' "$B/Panel.qml"
+  check "the Bluetooth Connections target is guarded" $?
 
   # A plugin that is not installed yet must degrade, not abort. Under `set -e`
   # the old code killed the whole installer here.
@@ -3099,10 +3112,11 @@ from pathlib import Path
 root = Path(sys.argv[1])
 pat = re.compile(r'(?<!root\.)(?<!bar \? )\bbar\.(foreground|fontFamily|urgent)\b')
 bad = []
-for qml in sorted((root / "plugins").rglob("*.qml")):
-    for i, line in enumerate(qml.read_text().splitlines(), 1):
-        if pat.search(line):
-            bad.append(f"{qml.relative_to(root)}:{i}")
+for area in ("plugins", "overrides"):
+    for qml in sorted((root / area).rglob("*.qml")):
+        for i, line in enumerate(qml.read_text().splitlines(), 1):
+            if pat.search(line):
+                bad.append(f"{qml.relative_to(root)}:{i}")
 print("\n".join(bad))
 sys.exit(1 if bad else 0)
 PY
@@ -3254,12 +3268,12 @@ if want tc30; then
   check "the tools panel carries a settings view" \
     "$(grep -q 'property bool showSettings' "$panel" \
       && grep -q 'SETTINGS' "$panel" && echo 0 || echo 1)"
-  check "settings write bar options through the host" \
+  check "settings write bar options through vp-setting" \
     "$(grep -q 'function setBarOption' "$panel" \
-      && grep -q 'mutateShellConfig' "$panel" && echo 0 || echo 1)"
+      && grep -q 'vp-setting.sh set bar' "$panel" && echo 0 || echo 1)"
   check "settings own weather auto-location" \
     "$(grep -q 'function setWeatherAuto' "$panel" \
-      && grep -q 'updateEntryInline' "$panel" && echo 0 || echo 1)"
+      && grep -q 'weather.autoLocation' "$panel" && echo 0 || echo 1)"
   check "settings offer diagnose, verify, repair and logs" \
     "$(for action in diagnose verifyPins repairBar openLogs; do \
          grep -q "function $action" "$panel" || exit 1; \
@@ -3275,6 +3289,43 @@ if want tc30; then
   HOME="$root/home" bash "$REPO_DIR/bin/vp-sound.sh" toggle
   check "vp-sound toggle unmutes the UI" \
     "$([[ ! -f "$state/sound-off" ]] && echo 0 || echo 1)"
+
+  # vp-setting is the write path behind the toggles. It has to preserve the
+  # layout, update only the requested key, and never leave a temp file.
+  setting_root="$root/settings"
+  mkdir -p "$setting_root/.config/omarchy" "$setting_root/.local/state"
+  cat >"$setting_root/.config/omarchy/shell.json" <<'EOF'
+{
+  "bar": {
+    "layout": {
+      "left": [],
+      "center": [{"id": "doe.weather", "unit": "metric"}],
+      "right": []
+    }
+  }
+}
+EOF
+  set_env=(HOME="$setting_root" XDG_CONFIG_HOME="$setting_root/.config"
+    XDG_STATE_HOME="$setting_root/.local/state")
+  out=$(env "${set_env[@]}" bash "$REPO_DIR/bin/vp-setting.sh" set bar.gapEffects false 2>&1)
+  check "vp-setting sets a bar boolean" "$?" "$out"
+  got=$(env "${set_env[@]}" bash "$REPO_DIR/bin/vp-setting.sh" get bar.gapEffects 2>&1)
+  check "vp-setting reads the value back" \
+    "$([[ "$got" == false ]] && echo 0 || echo 1)" "$got"
+  out=$(env "${set_env[@]}" bash "$REPO_DIR/bin/vp-setting.sh" set weather.autoLocation true 2>&1)
+  check "vp-setting updates the weather entry" "$?" "$out"
+  python3 - "$setting_root/.config/omarchy/shell.json" <<'PY'
+import json, sys
+d = json.load(open(sys.argv[1]))
+w = next(e for e in d["bar"]["layout"]["center"] if e["id"].endswith(".weather"))
+raise SystemExit(0 if d["bar"].get("gapEffects") is False and w.get("autoLocation") is True else 1)
+PY
+  check "vp-setting keeps the layout and both values" $?
+  env "${set_env[@]}" bash "$REPO_DIR/bin/vp-setting.sh" set bar.nope true >/dev/null 2>&1
+  check "vp-setting rejects an unknown key" \
+    "$([[ $? -ne 0 ]] && echo 0 || echo 1)"
+  check "vp-setting leaves no temp files" \
+    "$([[ -z "$(find "$setting_root/.config/omarchy" -name '.shell.json.*' -print -quit)" ]] && echo 0 || echo 1)"
 fi
 
 summary

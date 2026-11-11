@@ -59,7 +59,7 @@ Xem đầy đủ trong [KEYBINDINGS.md](KEYBINDINGS.md).
 Mở **Tools** trên thanh bar → biểu tượng **bánh răng**. Từ đây có thể:
 
 - Bật/tắt **Gap effects**, **Hover glow**, **Reduced motion**.
-- Đổi variant **Cyberpunk / Sakura / Cozy**.
+- Đổi **accent variant** Cyberpunk / Sakura / Cozy (chỉ đổi chrome và terminal; widget/artwork vẫn cyberpunk).
 - Bật/tắt **wallpaper động**, **âm thanh UI**.
 - Bật **Automatic location** cho weather (mặc định tắt vì lý do riêng tư).
 - Chạy **Diagnose**, **Verify pins**, **Repair bar**, xem **Logs**.

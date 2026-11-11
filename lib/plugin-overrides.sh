@@ -219,6 +219,14 @@ po_apply_theme_colors() {
     foreground: Color.accent
     }"
 
+  # The Bluetooth panel's Connections target can be undefined while the bar
+  # is rebuilt; null keeps the binding valid and silences the QML warning.
+  if [[ -f $p/ssupt.bluetooth-audio/Panel.qml ]]; then
+    po_touch_existing ssupt.bluetooth-audio "$p/ssupt.bluetooth-audio/Panel.qml"
+    sed -i 's|target: root.audioPluginRegistry|target: root.audioPluginRegistry ? root.audioPluginRegistry : null|' \
+      "$p/ssupt.bluetooth-audio/Panel.qml"
+  fi
+
   # The power-manager prints an IDLE DEBUG line every five seconds, which
   # floods the user journal; keep the status poll and drop the log.
   if [[ -f $p/onlyvishesh.power-manager/Panel.qml ]]; then

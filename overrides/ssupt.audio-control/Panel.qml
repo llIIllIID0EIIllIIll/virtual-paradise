@@ -214,6 +214,10 @@ Panel {
     return isFinite(value) ? Math.max(0, Math.min(1, value)) : 0
   }
   readonly property color urgent: bar ? bar.urgent : Color.urgent
+  // The panel outlives the bar across a theme refresh; a null bar must
+  // fall back to the palette instead of throwing on every text binding.
+  readonly property color panelForeground: bar ? bar.foreground : Color.foreground
+  readonly property string panelFontFamily: bar ? bar.fontFamily : Style.font.family
   readonly property string recordingTooltip: {
     var microphoneAction = hasInput
       ? "Middle-click to " + (inputMuted ? "unmute" : "mute") + " microphone"
@@ -424,10 +428,10 @@ Panel {
   readonly property string toggleHint: anyAudible ? "Mute" : "Unmute"
 
   readonly property color hoverFill: bar
-    ? Style.hoverFillFor(bar.foreground, Color.accent)
+    ? Style.hoverFillFor(root.panelForeground, Color.accent)
     : "transparent"
   readonly property color selectedFill: bar
-    ? Style.selectedFillFor(bar.foreground, Color.accent)
+    ? Style.selectedFillFor(root.panelForeground, Color.accent)
     : "transparent"
 
   function sectionCount(section) {
@@ -1128,7 +1132,7 @@ Panel {
           // Virtual Paradise theme accent override
           foreground: Color.accent
           urgent: root.urgent
-          fontFamily: root.bar ? root.bar.fontFamily : Style.font.family
+          fontFamily: root.bar ? root.panelFontFamily : Style.font.family
         }
       }
     }
@@ -1208,7 +1212,7 @@ Panel {
           contentItem: Rectangle {
             implicitWidth: Style.space(3)
             radius: width / 2
-            color: root.bar.foreground
+            color: root.panelForeground
             opacity: panelScrollBar.active ? 0.55 : 0.25
           }
         }
@@ -1234,8 +1238,8 @@ Panel {
               textFormat: Text.PlainText
               id: heroIcon
               text: root.outputIcon()
-              color: root.bar.foreground
-              font.family: root.bar.fontFamily
+              color: root.panelForeground
+              font.family: root.panelFontFamily
               font.pixelSize: Style.font.display
               opacity: root.outputMuted ? 0.5 : 1.0
               anchors.left: parent.left
@@ -1252,8 +1256,8 @@ Panel {
                 id: settingsAction
                 iconText: "󰒓"
                 tooltipText: "Advanced audio"
-                foreground: root.bar.foreground
-                fontFamily: root.bar.fontFamily
+                foreground: root.panelForeground
+                fontFamily: root.panelFontFamily
                 iconSize: Style.font.subtitle * 1.5
                 horizontalPadding: Style.space(5)
                 verticalPadding: Style.space(2)
@@ -1270,7 +1274,7 @@ Panel {
                 id: powerSwitch
                 checked: root.anyAudible
                 hasCursor: root.powerHeaderHasCursor
-                foreground: root.bar.foreground
+                foreground: root.panelForeground
                 anchors.verticalCenter: parent.verticalCenter
                 onHovered: function(on) { if (on) root.setHeaderCursor(1) }
                 onToggled: root.toggleAllMuted()
@@ -1278,7 +1282,7 @@ Panel {
                 PanelToolTip {
                   visible: powerSwitch.containsMouse
                   text: root.toggleHint
-                  fontFamily: root.bar.fontFamily
+                  fontFamily: root.panelFontFamily
                 }
               }
             }
@@ -1295,8 +1299,8 @@ Panel {
               Text {
                 textFormat: Text.PlainText
                 text: "Audio"
-                color: root.bar.foreground
-                font.family: root.bar.fontFamily
+                color: root.panelForeground
+                font.family: root.panelFontFamily
                 font.pixelSize: Style.font.title
                 font.bold: true
                 elide: Text.ElideRight
@@ -1310,8 +1314,8 @@ Panel {
                   outputSlider.dragging ? outputSlider.liveValue : root.outputVolume,
                   root.outputMuted
                 ).toUpperCase()
-                color: Qt.darker(root.bar.foreground, 1.4)
-                font.family: root.bar.fontFamily
+                color: Qt.darker(root.panelForeground, 1.4)
+                font.family: root.panelFontFamily
                 font.pixelSize: Style.font.caption
                 font.bold: true
                 font.letterSpacing: 1.2
@@ -1329,8 +1333,8 @@ Panel {
 
             PanelSectionHeader {
               text: "SCENES"
-              foreground: root.bar.foreground
-              fontFamily: root.bar.fontFamily
+              foreground: root.panelForeground
+              fontFamily: root.panelFontFamily
             }
 
             Flow {
@@ -1351,7 +1355,7 @@ Panel {
                   hasCursor: root.cursorActive && root.focusSection === "scenes"
                     && root.selectedIndex === sceneChip.index
                   onHasCursorChanged: if (hasCursor) root.ensureCursorVisible(sceneChip)
-                  foreground: root.bar.foreground
+                  foreground: root.panelForeground
                   fill: root.hoverFill
                   currentFill: root.selectedFill
                   bordered: true
@@ -1362,7 +1366,7 @@ Panel {
                     anchors.centerIn: parent
                     text: sceneChip.sceneName
                     color: sceneChip.foreground
-                    font.family: root.bar.fontFamily
+                    font.family: root.panelFontFamily
                     font.pixelSize: Style.font.caption
                     font.bold: true
                     elide: Text.ElideRight
@@ -1391,8 +1395,8 @@ Panel {
               width: parent.width
               text: root.sceneFeedback
               color: root.sceneFeedbackIsError
-                ? root.urgent : Qt.darker(root.bar.foreground, 1.35)
-              font.family: root.bar.fontFamily
+                ? root.urgent : Qt.darker(root.panelForeground, 1.35)
+              font.family: root.panelFontFamily
               font.pixelSize: Style.font.caption
               wrapMode: Text.WordWrap
             }
@@ -1400,7 +1404,7 @@ Panel {
 
           // ---- Output devices ----
           PanelSeparator {
-            foreground: root.bar.foreground
+            foreground: root.panelForeground
           }
 
           Column {
@@ -1414,8 +1418,8 @@ Panel {
               PanelSectionHeader {
                 id: outputHeader
                 text: "OUTPUT"
-                foreground: root.bar.foreground
-                fontFamily: root.bar.fontFamily
+                foreground: root.panelForeground
+                fontFamily: root.panelFontFamily
                 anchors.left: parent.left
                 anchors.verticalCenter: parent.verticalCenter
               }
@@ -1424,8 +1428,8 @@ Panel {
                 textFormat: Text.PlainText
                 id: outputPercent
                 text: Math.round((outputSlider.dragging ? outputSlider.liveValue : root.outputVolume) * 100) + "%"
-                color: Qt.darker(root.bar.foreground, 1.4)
-                font.family: root.bar.fontFamily
+                color: Qt.darker(root.panelForeground, 1.4)
+                font.family: root.panelFontFamily
                 font.pixelSize: Style.font.caption
                 font.bold: true
                 anchors.right: parent.right
@@ -1441,7 +1445,7 @@ Panel {
               height: outputSlider.implicitHeight + Style.spacing.controlGap
               hasCursor: root.cursorActive && root.focusSection === "output" && root.selectedIndex === -1
               onHasCursorChanged: if (hasCursor) root.ensureCursorVisible(outputSliderRow)
-              foreground: root.bar.foreground
+              foreground: root.panelForeground
               outline: true
 
               AudioSlider {
@@ -1488,7 +1492,7 @@ Panel {
                 hasCursor: root.cursorActive && root.focusSection === "output"
                   && root.selectedIndex === sinkDelegate.rowIndex
                 onHasCursorChanged: if (hasCursor) root.ensureCursorVisible(sinkDelegate)
-                foreground: root.bar.foreground
+                foreground: root.panelForeground
                 fill: root.hoverFill
                 currentFill: root.selectedFill
                 onClaimed: function(section, index) {
@@ -1504,7 +1508,7 @@ Panel {
           // ---- Input ----
           PanelSeparator {
             visible: root.displayAudioSources.length > 0 || root.hasInput
-            foreground: root.bar.foreground
+            foreground: root.panelForeground
           }
 
           Column {
@@ -1519,8 +1523,8 @@ Panel {
               PanelSectionHeader {
                 id: microphoneHeader
                 text: "INPUT"
-                foreground: root.bar.foreground
-                fontFamily: root.bar.fontFamily
+                foreground: root.panelForeground
+                fontFamily: root.panelFontFamily
                 anchors.left: parent.left
                 anchors.verticalCenter: parent.verticalCenter
               }
@@ -1531,8 +1535,8 @@ Panel {
                 text: root.inputClipping
                   ? "CLIPPING"
                   : Math.round((inputSlider.dragging ? inputSlider.liveValue : root.inputVolume) * 100) + "%"
-                color: root.inputClipping ? root.urgent : Qt.darker(root.bar.foreground, 1.4)
-                font.family: root.bar.fontFamily
+                color: root.inputClipping ? root.urgent : Qt.darker(root.panelForeground, 1.4)
+                font.family: root.panelFontFamily
                 font.pixelSize: Style.font.caption
                 font.bold: true
                 anchors.right: parent.right
@@ -1549,7 +1553,7 @@ Panel {
               height: inputControls.implicitHeight + Style.spacing.controlGap
               hasCursor: root.cursorActive && root.focusSection === "input" && root.selectedIndex === -1
               onHasCursorChanged: if (hasCursor) root.ensureCursorVisible(inputSliderRow)
-              foreground: root.bar.foreground
+              foreground: root.panelForeground
               outline: true
 
               Column {
@@ -1577,13 +1581,13 @@ Panel {
                 Rectangle {
                   width: parent.width
                   height: Math.max(Style.space(5), Style.spacing.xs)
-                  color: Util.alpha(root.bar.foreground, 0.18)
+                  color: Util.alpha(root.panelForeground, 0.18)
                   opacity: root.inputMuted ? 0.35 : 1.0
 
                   Rectangle {
                     height: parent.height
                     width: parent.width * root.inputPeakLevel
-                    color: root.inputClipping ? root.urgent : root.bar.foreground
+                    color: root.inputClipping ? root.urgent : root.panelForeground
                     Behavior on width { NumberAnimation { duration: 70 } }
                   }
 
@@ -1594,7 +1598,7 @@ Panel {
                     x: Math.max(0, Math.min(parent.width - width,
                       parent.width * root.inputPeakHold - width / 2))
                     anchors.verticalCenter: parent.verticalCenter
-                    color: root.inputPeakHold >= 0.98 ? root.urgent : root.bar.foreground
+                    color: root.inputPeakHold >= 0.98 ? root.urgent : root.panelForeground
                   }
                 }
               }
@@ -1625,7 +1629,7 @@ Panel {
                 hasCursor: root.cursorActive && root.focusSection === "input"
                   && root.selectedIndex === sourceDelegate.rowIndex
                 onHasCursorChanged: if (hasCursor) root.ensureCursorVisible(sourceDelegate)
-                foreground: root.bar.foreground
+                foreground: root.panelForeground
                 fill: root.hoverFill
                 currentFill: root.selectedFill
                 onClaimed: function(section, index) {
@@ -1641,7 +1645,7 @@ Panel {
           // ---- Per-app playback and recording streams ----
           PanelSeparator {
             visible: root.displayAudioStreams.length > 0
-            foreground: root.bar.foreground
+            foreground: root.panelForeground
           }
 
           Column {
@@ -1651,8 +1655,8 @@ Panel {
 
             PanelSectionHeader {
               text: "PLAYBACK"
-              foreground: root.bar.foreground
-              fontFamily: root.bar.fontFamily
+              foreground: root.panelForeground
+              fontFamily: root.panelFontFamily
             }
 
             Repeater {
@@ -1690,7 +1694,7 @@ Panel {
                   && root.focusSection === (streamDelegate.recording ? "recording" : "streams")
                   && root.selectedIndex === streamDelegate.rowIndex
                 onHasCursorChanged: if (hasCursor) root.ensureCursorVisible(streamDelegate)
-                foreground: root.bar.foreground
+                foreground: root.panelForeground
                 fill: root.hoverFill
                 onClaimed: function(section, index) {
                   root.cursorActive = true
@@ -1715,7 +1719,7 @@ Panel {
 
           PanelSeparator {
             visible: root.displayRecordingStreams.length > 0
-            foreground: root.bar.foreground
+            foreground: root.panelForeground
           }
 
           Column {
@@ -1725,8 +1729,8 @@ Panel {
 
             PanelSectionHeader {
               text: "RECORDING"
-              foreground: root.bar.foreground
-              fontFamily: root.bar.fontFamily
+              foreground: root.panelForeground
+              fontFamily: root.panelFontFamily
             }
 
             Repeater {
@@ -1764,7 +1768,7 @@ Panel {
                   && root.focusSection === (recordingStreamDelegate.recording ? "recording" : "streams")
                   && root.selectedIndex === recordingStreamDelegate.rowIndex
                 onHasCursorChanged: if (hasCursor) root.ensureCursorVisible(recordingStreamDelegate)
-                foreground: root.bar.foreground
+                foreground: root.panelForeground
                 fill: root.hoverFill
                 onClaimed: function(section, index) {
                   root.cursorActive = true
@@ -1792,8 +1796,8 @@ Panel {
             visible: root.panelError !== ""
             width: parent.width
             text: root.panelError
-            color: root.bar.urgent
-            font.family: root.bar.fontFamily
+            color: root.urgent
+            font.family: root.panelFontFamily
             font.pixelSize: Style.font.bodySmall
             wrapMode: Text.WordWrap
           }

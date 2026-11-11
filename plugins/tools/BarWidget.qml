@@ -62,7 +62,24 @@ BarWidget {
     panelLoader.item.open()
   }
 
+  // Scriptable counterparts for the panel controls. `setBar` writes one
+  // bar-level boolean; `verify` opens settings and starts the pin check.
+  function setBar(key, value) {
+    if (root.bar) root.bar.run(Quickshell.env("HOME") + "/.local/bin/vp-setting.sh set bar." + key + " " + (value ? "true" : "false"))
+  }
+
+  function verify() {
+    root.showSettings()
+    if (panelLoader.item) panelLoader.item.verifyPins()
+  }
+
   readonly property bool opened: panelLoader.item ? panelLoader.item.opened === true : false
+
+  // A plain bar click always lands on Tools; only the gear or the IPC call
+  // asks for settings. Resetting on close keeps the next click predictable.
+  onOpenedChanged: {
+    if (!opened && panelLoader.item) panelLoader.item.showSettings = false
+  }
 
   implicitWidth: 30
   implicitHeight: button.implicitHeight
@@ -96,6 +113,8 @@ BarWidget {
     function toggle(): void { root.togglePanel() }
     function open(): void { root.open() }
     function settings(): void { root.showSettings() }
+    function setBar(key: string, value: bool): void { root.setBar(key, value) }
+    function verify(): void { root.verify() }
     function close(): void { root.close() }
   }
 

@@ -14,7 +14,7 @@
 [![Arch Linux](https://img.shields.io/badge/Arch_Linux-1793D1?style=flat-square&logo=arch-linux&logoColor=white)](https://archlinux.org)
 [![Omarchy 4.5+](https://img.shields.io/badge/Omarchy-4.5+-8A2BE2?style=flat-square)](https://omarchy.org)
 [![Hyprland](https://img.shields.io/badge/Hyprland-Wayland-00ffdd?style=flat-square)](https://hyprland.org)
-[![Tests](https://img.shields.io/badge/tests-518%20passed-00ff88?style=flat-square)](tests/)
+[![Tests](https://img.shields.io/badge/tests-525%20passed-00ff88?style=flat-square)](tests/)
 [![License](https://img.shields.io/badge/license-MIT-ffe066?style=flat-square)](LICENSE)
 [![Version](https://img.shields.io/badge/version-1.4.0-ff00ff?style=flat-square)](VERSION)
 
@@ -74,10 +74,13 @@ restart.
 
 The repository also ships `theme-switcher.sh` for changing the Virtual☆Paradise
 palette from a terminal (`theme-switcher.sh list` shows the variants,
-`theme-switcher.sh reset` restores the original palette). `theme-switcher.sh
-wallpaper` derives the accent and its two companions from the current
-background image instead of a fixed variant. It is a terminal tool, not bound
-to a key. Two opt-in timers are installed but left disabled:
+`theme-switcher.sh reset` restores the original palette). These are **accent
+variants**: they recolor the theme chrome, terminals and GTK, but the bar
+widget accents, wallpaper, Plymouth and SDDM art stay cyberpunk until a full
+variant pack lands. `theme-switcher.sh wallpaper` derives the accent and its
+two companions from the current background image instead of a fixed variant.
+It is a terminal tool, not bound to a key. Two opt-in timers are installed but
+left disabled:
 `paradise-variant-by-time.timer` switches cyberpunk in the morning and sakura
 in the evening, and `paradise-wallpaper-rotate.timer` rotates the live
 wallpaper hourly. Enable either with `systemctl --user enable --now <timer>`;
@@ -418,11 +421,14 @@ row by removing `"hidden": true` from its entry in `shell.json` (or via
 ### Settings Panel
 
 Open **Tools** on the bar and press the gear to switch the dropdown to settings.
-The panel writes every change to `~/.config/omarchy/shell.json` and applies it
+The panel writes every change through `vp-setting.sh` (flock + same-directory
+atomic replace) to `~/.config/omarchy/shell.json`, and the shell reloads it
 live:
 
-- **Appearance**: gap effects, hover glow, reduced motion, theme variant
-  (Cyberpunk / Sakura / Cozy), live wallpaper, UI sound.
+- **Appearance**: gap effects, hover glow, reduced motion, accent variant
+  (Cyberpunk / Sakura / Cozy), live wallpaper, UI sound. The variants recolor
+  the chrome and terminals; the bar widget accents and artwork stay cyberpunk
+  for now.
 - **Weather**: automatic location consent, with the same privacy default as the
   weather panel.
 - **System**: run `diagnose`, verify pinned plugins, repair the island bar from
@@ -433,6 +439,14 @@ The panel is also reachable from scripts:
 ```bash
 omarchy-shell doe.tools settings
 omarchy-shell doe.tools close
+
+# Scriptable toggles (open settings first for the verify action)
+omarchy-shell doe.tools setBar gapEffects false
+omarchy-shell doe.tools verify
+
+# The same write path, without the panel
+vp-setting.sh get bar.gapEffects
+vp-setting.sh set weather.autoLocation true
 ```
 
 ### Weather Location
@@ -574,9 +588,9 @@ default.
 
 ### Running Tests
 
-The test suite has thirty test cases and 518 assertions; optional tools
+The test suite has thirty test cases and 525 assertions; optional tools
 (`shellcheck`, `qmllint`, `hyprctl`) enable extra checks when present, so the
-exact count varies between machines (518 with `shellcheck` and `qmllint`). It
+exact count varies between machines (525 with `shellcheck` and `qmllint`). It
 runs in a sandbox and never touches your real system.
 
 ```bash

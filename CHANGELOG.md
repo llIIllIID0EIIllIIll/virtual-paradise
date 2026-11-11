@@ -10,10 +10,14 @@ Conventional Commits.
 
 ### Added
 - **A settings/health view inside the Tools dropdown.** The gear switches the
-  panel to appearance toggles (gap effects, hover glow, reduced motion), theme
+  panel to appearance toggles (gap effects, hover glow, reduced motion), accent
   variants, live wallpaper, UI sound, weather consent, and system actions
-  (diagnose, verify pins, repair bar, logs). Changes go through the host's
-  `mutateShellConfig`/`updateEntryInline` and apply live.
+  (diagnose, verify pins, repair bar, logs). It shows the current variant and
+  labels the variants honestly: they recolor the chrome/terminals, while the
+  bar widget accents and artwork remain cyberpunk for now.
+- **`vp-setting.sh`**, the atomic settings writer behind the panel. `get`/`set`
+  support the bar booleans and weather auto-location; writes use `flock` and a
+  same-directory replace so a shell reload cannot see a truncated `shell.json`.
 - **Vietnamese quick-start guide** (`README.vi.md`), linked from the English
   README.
 - **Release automation.** A `v*` tag now validates VERSION/CHANGELOG and
@@ -25,6 +29,14 @@ Conventional Commits.
 - **The power-manager no longer floods the journal.** Its idle poll logs an
   `IDLE DEBUG` line every five seconds; the tracked override layer now removes
   the log while keeping the status poll, and restores the line on theme leave.
+- **Settings switches actually write.** The replacement bar's host facade
+  refuses bar-level mutations, so the first panel implementation silently did
+  nothing. The panel now calls `vp-setting.sh`; `omarchy-shell doe.tools setBar`
+  works even with the panel closed.
+- **Theme refresh no longer throws null-bar errors.** The audio-control panel
+  binds every foreground/font read through a guarded fallback, and the
+  Bluetooth panel's Connections target is coerced to null while the bar is
+  rebuilt.
 - **CI is stable again.** The Arch layout assertion derives the user prefix
   from the installed `shell.json` instead of an empty `USER`, the lint job
   skips `qmllint` when the Omarchy modules are absent (it looped on
@@ -32,6 +44,8 @@ Conventional Commits.
   `pipefail` against `grep -q`.
 
 ### Changed
+- Tests: 525 assertions; TC-30 covers the settings panel, `vp-setting.sh` and
+  the UI sound toggle.
 - **Repository moved to `github.com/vuhuudo/virtual-paradise`.** Clone URLs,
   issue/discussion links, the license notice and the security-advisory link
   now use the new account name.

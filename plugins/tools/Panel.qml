@@ -20,6 +20,7 @@ Panel {
   property bool showSettings: false
   property bool verifyRunning: false
   property string verifyText: ""
+  property string currentVariant: "cyberpunk"
 
   readonly property string home: Quickshell.env("HOME")
   readonly property color fg: root.bar ? root.bar.barForeground : Color.foreground
@@ -55,24 +56,15 @@ Panel {
   }
   readonly property bool weatherAuto: root.weatherConfig ? root.weatherConfig.autoLocation === true : false
 
-  // Write one bar-level key through the host so shell.json stays valid and
-  // the host can reload its in-memory copy.
+  // Write one bar-level key through the atomic CLI. The bar plugin's host
+  // facade refuses bar-level mutations for replacement bars, so the helper is
+  // the reliable path; the shell sees the file change and reloads the bar.
   function setBarOption(key, value) {
-    if (!root.bar || !root.bar.shell || typeof root.bar.shell.mutateShellConfig !== "function") return
-    root.bar.shell.mutateShellConfig(function(config) {
-      if (!config.bar) config.bar = {}
-      config.bar[key] = value
-    })
+    root.run(root.home + "/.local/bin/vp-setting.sh set bar." + key + " " + (value ? "true" : "false"))
   }
 
   function setWeatherAuto(value) {
-    var entry = root.weatherConfig
-    if (!entry || !root.bar || !root.bar.shell || typeof root.bar.shell.updateEntryInline !== "function") return
-    var next = { id: entry.id, autoLocation: value }
-    for (var key in entry) {
-      if (key !== "id" && key !== "autoLocation") next[key] = entry[key]
-    }
-    root.bar.shell.updateEntryInline(entry.id, next)
+    root.run(root.home + "/.local/bin/vp-setting.sh set weather.autoLocation " + (value ? "true" : "false"))
   }
 
   function run(command) {
@@ -109,6 +101,11 @@ Panel {
     root.run("omarchy-launch-terminal --hold journalctl --user -b -f")
   }
 
+  Shortcut {
+    sequence: "Escape"
+    onActivated: root.close()
+  }
+
   Process {
     id: verifyProc
 
@@ -120,7 +117,13 @@ Panel {
       waitForEnd: true
       onStreamFinished: {
         var value = String(verifyOut.text || "").trim()
-        if (value !== "") root.verifyText = value.split("\n").slice(-6).join("\n")
+        if (value === "") return
+        if (value.indexOf("All pinned plugins match") !== -1)
+          root.verifyText = "All pinned plugins match."
+        else if (value.indexOf("DRIFT") !== -1)
+          root.verifyText = "Drift detected — open Diagnostics."
+        else
+          root.verifyText = value.split("\n").slice(-2).join(" · ")
       }
     }
 
@@ -138,6 +141,17 @@ Panel {
     }
   }
 
+  FileView {
+    id: variantFile
+
+    path: root.home + "/.local/state/virtual-paradise/current_variant"
+    watchChanges: true
+    printErrors: false
+    onFileChanged: reload()
+    onLoaded: root.currentVariant = String(text()).trim() || "cyberpunk"
+    onLoadFailed: root.currentVariant = "cyberpunk"
+  }
+
   KeyboardPanel {
     id: panel
 
@@ -147,7 +161,7 @@ Panel {
     open: root.opened
     centerOnBar: false
     contentWidth: panel.fittedContentWidth(Style.space(root.showSettings ? 400 : 330))
-    contentHeight: panel.fittedContentHeight(root.showSettings ? 560 : toolsColumn.implicitHeight)
+    contentHeight: panel.fittedContentHeight(root.showSettings ? 640 : toolsColumn.implicitHeight)
 
     // ---- Tools view -------------------------------------------------------
     Column {
@@ -156,6 +170,7 @@ Panel {
       visible: !root.showSettings
       width: parent.width
       spacing: Style.space(4)
+      Keys.onEscapePressed: root.close()
 
       Item {
         width: parent.width
@@ -261,6 +276,7 @@ Panel {
       clip: true
       boundsBehavior: Flickable.StopAtBounds
       interactive: contentHeight > height
+      Keys.onEscapePressed: root.close()
 
       Column {
         id: settingsColumn
@@ -372,7 +388,8 @@ Panel {
           onClicked: root.setBarOption("reducedMotion", !(root.bar && root.bar.reducedMotion === true))
         }
 
-        Row {
+        Flow {
+          width: parent.width
           spacing: Style.space(6)
 
           Button {
@@ -401,7 +418,24 @@ Panel {
           }
         }
 
-        Row {
+        Text {
+          text: "Current variant: " + root.currentVariant
+          color: Qt.darker(root.fg, 1.55)
+          font.family: root.ff
+          font.pixelSize: Style.font.caption
+        }
+
+        Text {
+          width: parent.width
+          text: "Accent variants recolor the chrome and terminals; the bar widget accents and artwork stay cyberpunk for now."
+          color: Qt.darker(root.fg, 1.7)
+          font.family: root.ff
+          font.pixelSize: Style.font.caption
+          wrapMode: Text.WordWrap
+        }
+
+        Flow {
+          width: parent.width
           spacing: Style.space(6)
 
           Button {
@@ -451,7 +485,18 @@ Panel {
           height: Style.space(16)
         }
 
-        Row {
+        Text {
+          visible: root.verifyText !== ""
+          width: parent.width
+          text: root.verifyText
+          color: Qt.darker(root.fg, 1.4)
+          font.family: root.ff
+          font.pixelSize: Style.font.caption
+          wrapMode: Text.WordWrap
+        }
+
+        Flow {
+          width: parent.width
           spacing: Style.space(6)
 
           Button {
@@ -487,16 +532,6 @@ Panel {
             fontFamily: root.ff
             onClicked: root.openLogs()
           }
-        }
-
-        Text {
-          visible: root.verifyText !== ""
-          width: parent.width
-          text: root.verifyText
-          color: Qt.darker(root.fg, 1.4)
-          font.family: root.ff
-          font.pixelSize: Style.font.caption
-          wrapMode: Text.WordWrap
         }
 
         Text {
