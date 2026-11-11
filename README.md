@@ -14,7 +14,7 @@
 [![Arch Linux](https://img.shields.io/badge/Arch_Linux-1793D1?style=flat-square&logo=arch-linux&logoColor=white)](https://archlinux.org)
 [![Omarchy 4.5+](https://img.shields.io/badge/Omarchy-4.5+-8A2BE2?style=flat-square)](https://omarchy.org)
 [![Hyprland](https://img.shields.io/badge/Hyprland-Wayland-00ffdd?style=flat-square)](https://hyprland.org)
-[![Tests](https://img.shields.io/badge/tests-525%20passed-00ff88?style=flat-square)](tests/)
+[![Tests](https://img.shields.io/badge/tests-526%20passed-00ff88?style=flat-square)](tests/)
 [![License](https://img.shields.io/badge/license-MIT-ffe066?style=flat-square)](LICENSE)
 [![Version](https://img.shields.io/badge/version-1.4.0-ff00ff?style=flat-square)](VERSION)
 
@@ -77,8 +77,10 @@ palette from a terminal (`theme-switcher.sh list` shows the variants,
 `theme-switcher.sh reset` restores the original palette). These are **accent
 variants**: they recolor the theme chrome, terminals and GTK, but the bar
 widget accents, wallpaper, Plymouth and SDDM art stay cyberpunk until a full
-variant pack lands. `theme-switcher.sh wallpaper` derives the accent and its
-two companions from the current background image instead of a fixed variant.
+variant pack lands. Switching from the settings panel also restarts the shell
+so the QML surfaces pick up the new accent immediately. `theme-switcher.sh
+wallpaper` derives the accent and its two companions from the current
+background image instead of a fixed variant.
 It is a terminal tool, not bound to a key. Two opt-in timers are installed but
 left disabled:
 `paradise-variant-by-time.timer` switches cyberpunk in the morning and sakura
@@ -588,9 +590,9 @@ default.
 
 ### Running Tests
 
-The test suite has thirty test cases and 525 assertions; optional tools
+The test suite has thirty test cases and 526 assertions; optional tools
 (`shellcheck`, `qmllint`, `hyprctl`) enable extra checks when present, so the
-exact count varies between machines (525 with `shellcheck` and `qmllint`). It
+exact count varies between machines (526 with `shellcheck` and `qmllint`). It
 runs in a sandbox and never touches your real system.
 
 ```bash

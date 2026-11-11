@@ -3280,6 +3280,8 @@ if want tc30; then
        done; echo 0)"
   check "the tools widget exposes the settings IPC" \
     "$(grep -q 'function settings(): void' "$tools_widget" && echo 0 || echo 1)"
+  check "variant switches restart the shell for QML accents" \
+    "$(grep -q 'omarchy restart shell' "$panel" && echo 0 || echo 1)"
 
   root="$(new_sandbox tc30)"
   state="$root/home/.local/state/virtual-paradise"

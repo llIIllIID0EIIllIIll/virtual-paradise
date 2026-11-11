@@ -72,7 +72,11 @@ Panel {
   }
 
   function setVariant(name) {
-    root.run(root.home + "/.local/bin/theme-switcher.sh " + name)
+    // Restart the shell after the accent rewrite: Color is read at shell
+    // startup, so without it the panel keeps the previous accent until the
+    // next login. The detached process survives the shell restart.
+    root.run("bash -lc '" + root.home + "/.local/bin/theme-switcher.sh " + name
+      + " && omarchy restart shell'")
   }
 
   function toggleWallpaper() {
