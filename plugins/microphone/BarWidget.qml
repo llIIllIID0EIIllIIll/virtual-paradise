@@ -7,6 +7,13 @@ import qs.Ui
 BarWidget {
   id: root
   moduleName: "__USER__.microphone"
+  // Palette loaded by the island bar from theme-switcher.sh; fallbacks keep
+  // the component usable when it is mounted outside the bar.
+  readonly property color accentColor: root.bar && root.bar.accentColor !== undefined ? root.bar.accentColor : Color.accent
+  readonly property color greenColor: root.bar && root.bar.greenColor !== undefined ? root.bar.greenColor : "#00ff88"
+  readonly property color warmColor: root.bar && root.bar.warmColor !== undefined ? root.bar.warmColor : "#ffe066"
+  readonly property color pinkColor: root.bar && root.bar.pinkColor !== undefined ? root.bar.pinkColor : "#ffb7d5"
+  readonly property color hotColor: root.bar && root.bar.hotColor !== undefined ? root.bar.hotColor : "#ff0055"
 
   readonly property var source: Pipewire.defaultAudioSource
   readonly property bool muted: source && source.audio ? source.audio.muted : true
@@ -70,14 +77,14 @@ BarWidget {
       height: 28
       radius: 14
       color: root.inUse
-        ? Qt.rgba(0.0, 1.0, 0.53, 0.28)
+        ? Qt.rgba(root.greenColor.r, root.greenColor.g, root.greenColor.b, 0.28)
         : (!root.muted
-          ? Qt.rgba(0.0, 1.0, 0.867, 0.20)
+          ? Qt.rgba(root.accentColor.r, root.accentColor.g, root.accentColor.b, 0.20)
           : (button.tooltipHovered ? Qt.rgba(1.0, 1.0, 1.0, 0.12) : "transparent"))
       border.color: root.inUse
-        ? "#00ff88"
+        ? root.greenColor
         : (!root.muted
-          ? (button.tooltipHovered ? "#00ff88" : "#00ffdd")
+          ? (button.tooltipHovered ? root.greenColor : root.accentColor)
           : (button.tooltipHovered ? "#ffffff" : Qt.rgba(1.0, 1.0, 1.0, 0.15)))
       border.width: (!root.muted || root.inUse) ? 2 : 1
       scale: button.tooltipHovered ? 1.04 : 1
@@ -93,7 +100,7 @@ BarWidget {
         anchors.margins: -3
         radius: micPill.radius + 3
         color: "transparent"
-        border.color: root.inUse ? "#00ff88" : "#00ffdd"
+        border.color: root.inUse ? root.greenColor : root.accentColor
         border.width: 1.8
         opacity: 0.85
         visible: !root.muted || root.inUse || button.tooltipHovered
@@ -111,7 +118,7 @@ BarWidget {
         anchors.margins: -6
         radius: micPill.radius + 6
         color: "transparent"
-        border.color: root.inUse ? "#00ff88" : "#00ffdd"
+        border.color: root.inUse ? root.greenColor : root.accentColor
         border.width: 1.5
         opacity: 0.60
         visible: !root.muted || root.inUse || button.tooltipHovered
@@ -129,7 +136,7 @@ BarWidget {
         text: root.muted ? "󰍭" : "󰍬"
         font.family: (root.bar ? root.bar.fontFamily : Style.font.family)
         font.pixelSize: Style.font.icon
-        color: root.inUse ? "#00ff88" : (!root.muted ? (button.tooltipHovered ? "#00ff88" : "#00ffdd") : (button.tooltipHovered ? "#ffffff" : "#9684c0"))
+        color: root.inUse ? root.greenColor : (!root.muted ? (button.tooltipHovered ? root.greenColor : root.accentColor) : (button.tooltipHovered ? "#ffffff" : "#9684c0"))
         scale: button.tooltipHovered ? 1.12 : 1.0
 
         Behavior on color { ColorAnimation { duration: 160 } }

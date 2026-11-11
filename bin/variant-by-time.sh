@@ -2,7 +2,7 @@
 # ==============================================================================
 #  Virtual☆Paradise — variant by time of day
 # ==============================================================================
-#  Day (07:00-19:00): cyberpunk. Evening and night: sakura.
+#  Day (07:00-19:00): cyberpunk. Evening and night: tokyo-night.
 #  Runs from paradise-variant-by-time.timer; safe to run by hand.
 #  Does nothing when another theme is active, so it never fights the user.
 # ==============================================================================
@@ -23,7 +23,7 @@ hour="${hour#0}"
 if (( hour >= 7 && hour < 19 )); then
   variant="cyberpunk"
 else
-  variant="sakura"
+  variant="tokyo-night"
 fi
 
 exec "$SWITCHER" "$variant"

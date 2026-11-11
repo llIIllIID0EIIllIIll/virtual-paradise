@@ -4,9 +4,8 @@
 # ==============================================================================
 #  Usage:
 #    theme-switcher.sh              # Interactive menu
-#    theme-switcher.sh cyberpunk    # Switch to cyberpunk variant
-#    theme-switcher.sh cozy         # Switch to cozy variant
-#    theme-switcher.sh monochrome   # Switch to monochrome variant
+#    theme-switcher.sh cyberpunk    # Restore the default neon palette
+#    theme-switcher.sh catppuccin   # Match Omarchy's Catppuccin palette
 #    theme-switcher.sh wallpaper    # Derive the palette from the wallpaper
 #    theme-switcher.sh list         # List available variants
 #    theme-switcher.sh reset        # Restore the original palette
@@ -21,22 +20,34 @@ ORIGINAL_DIR="$STATE_DIR/theme-variant-orig"
 
 mkdir -p "$STATE_DIR"
 
-# Define color variants
+# Accent palettes. Each entry is
+#   accent:secondary:tertiary:warm:pink:background:hot
+# and mirrors the matching Omarchy theme (or the well-known web palette for
+# Dracula/Rose Pine Moon). Cyberpunk is the theme's own identity.
 declare -A VARIANTS=(
-  ["cyberpunk"]="00ffdd:ff00ff:00ff88:0f081d"  # Miku cyan, neon magenta, hacker green
-  ["cozy"]="ffa69e:fff4e0:faf3dd:2d2d2d"       # Warm peach, cream, soft yellow
-  ["monochrome"]="ffffff:cccccc:888888:000000"  # Pure white, grays, black
-  ["neon"]="00ffff:ff00ff:ffff00:0a0a0a"       # Bright cyan, magenta, yellow
-  ["sakura"]="ffb7d5:ff69b4:ffc0cb:1a1a2e"     # Pink variants
+  ["cyberpunk"]="00ffdd:ff00ff:00ff88:ffe066:ffb7d5:0f081d:ff0055"
+  ["neon"]="00ffff:ff00ff:00ff00:ffff00:ff00ff:0a0a0a:ff0000"
+  ["monochrome"]="ffffff:cccccc:888888:eeeeee:dddddd:000000:ff5555"
+  ["catppuccin"]="89b4fa:f5c2e7:a6e3a1:f9e2af:f5c2e7:1e1e2e:f38ba8"
+  ["tokyo-night"]="7aa2f7:bb9af7:9ece6a:e0af68:bb9af7:1a1b26:f7768e"
+  ["gruvbox"]="7daea3:d3869b:a9b665:d8a657:d3869b:282828:ea6962"
+  ["nord"]="81a1c1:b48ead:a3be8c:ebcb8b:b48ead:2e3440:bf616a"
+  ["everforest"]="7fbbb3:d699b6:a7c080:dbbc7f:d699b6:2d353b:e67e80"
+  ["kanagawa"]="7e9cd8:957fb8:98bb6c:e6c384:957fb8:1f1f28:c34043"
+  ["rose-pine"]="c4a7e7:ea9a97:9ccfd8:f6c177:ea9a97:232136:eb6f92"
+  ["hackerman"]="82fb9c:7cf8f7:50f7d4:50f7d4:7cf8f7:0b0c16:ff5f7a"
+  ["dracula"]="bd93f9:ff79c6:8be9fd:f1fa8c:ff79c6:282a36:ff5555"
 )
 
-# Which colors.toml keys follow which variant color. The palette's other
-# entries (the sakura pink in color5, the bright shades) stay as they are:
-# they are part of the theme's identity and no variant defines them.
-ACCENT_KEYS="accent active_border_color active_tab_background cursor selection_background color4"
-SECONDARY_KEYS="color1"
-TERTIARY_KEYS="color2"
-BACKGROUND_KEYS="background color0 selection_foreground"
+# Which colors.toml keys follow which variant colour. The semantic roles at
+# the bottom of colors.toml are included, otherwise the ANSI colours change
+# but the GTK/terminal/shell roles keep the cyberpunk palette.
+ACCENT_KEYS="accent active_border_color active_tab_background cursor selection_background selection color4 color6 color12 color14 blue cyan bright_blue"
+SECONDARY_KEYS="color1 red"
+TERTIARY_KEYS="color2 color10 green bright_green"
+WARM_KEYS="color3 color11 yellow bright_yellow"
+PINK_KEYS="color5 color9 color13 magenta bright_red bright_magenta"
+BACKGROUND_KEYS="background color0 selection_foreground bg dark_bg darker_bg lighter_bg"
 
 # Only text files carry the palette. Everything else in the theme directory is
 # an image or a binary.
@@ -84,12 +95,12 @@ pristine_colors_file() {
 # alone would change almost nothing. Replacing the hex values in every file
 # keeps all of them in sync.
 build_color_map() {
-  local source="$1" accent="$2" secondary="$3" tertiary="$4" background="$5"
+  local source="$1" accent="$2" secondary="$3" tertiary="$4" warm="$5" pink="$6" background="$7"
   local key old
   local -A map=()
 
-  local -a groups=("$ACCENT_KEYS" "$SECONDARY_KEYS" "$TERTIARY_KEYS" "$BACKGROUND_KEYS")
-  local -a targets=("$accent" "$secondary" "$tertiary" "$background")
+  local -a groups=("$ACCENT_KEYS" "$SECONDARY_KEYS" "$TERTIARY_KEYS" "$WARM_KEYS" "$PINK_KEYS" "$BACKGROUND_KEYS")
+  local -a targets=("$accent" "$secondary" "$tertiary" "$warm" "$pink" "$background")
   local index key_list new_value
 
   for index in "${!groups[@]}"; do
@@ -217,15 +228,16 @@ apply_variant() {
   fi
 
   # Parse colors
-  local accent secondary tertiary background
-  IFS=':' read -r accent secondary tertiary background <<<"${VARIANTS[$variant]}"
+  local accent secondary tertiary warm pink background hot
+  IFS=':' read -r accent secondary tertiary warm pink background hot <<<"${VARIANTS[$variant]}"
 
   local map_file="$STATE_DIR/theme-variant-map"
-  build_color_map "$(pristine_colors_file)" "$accent" "$secondary" "$tertiary" "$background" >"$map_file"
+  build_color_map "$(pristine_colors_file)" "$accent" "$secondary" "$tertiary" "$warm" "$pink" "$background" >"$map_file"
   apply_to_theme_files "$map_file"
 
   # Save current variant only after the palette was actually written.
   echo "$variant" >"$CURRENT_VARIANT_FILE"
+  write_palette "$variant" "$accent" "$secondary" "$tertiary" "$warm" "$pink" "$background" "$hot"
 
   apply_theme || true
 
@@ -236,7 +248,23 @@ apply_variant() {
   echo "  Accent:     #$accent"
   echo "  Secondary:  #$secondary"
   echo "  Tertiary:   #$tertiary"
+  echo "  Warm:       #$warm"
+  echo "  Pink:       #$pink"
   echo "  Background: #$background"
+}
+
+# Write the semantic palette the QML bar reads. The theme text files get the
+# colors through build_color_map; this JSON is the same palette in a form the
+# widgets can bind to without duplicating the switcher.
+write_palette() {
+  local name="$1" accent="$2" secondary="$3" tertiary="$4" warm="$5" pink="$6" background="$7" hot="$8"
+  local foreground tmp
+  foreground="$(toml_value "$(pristine_colors_file)" foreground)"
+  [[ -n $foreground ]] || foreground="eafbfa"
+  tmp="$(mktemp "$STATE_DIR/.palette.XXXXXX")" || return 1
+  printf '{\n  "name": "%s",\n  "accent": "#%s",\n  "secondary": "#%s",\n  "tertiary": "#%s",\n  "warm": "#%s",\n  "pink": "#%s",\n  "background": "#%s",\n  "foreground": "#%s",\n  "hot": "#%s"\n}\n' \
+    "$name" "$accent" "$secondary" "$tertiary" "$warm" "$pink" "$background" "$foreground" "$hot" >"$tmp" \
+    && mv "$tmp" "$STATE_DIR/palette.json"
 }
 
 reset_variant() {
@@ -253,6 +281,9 @@ reset_variant() {
 
   rm -rf "$ORIGINAL_DIR"
   rm -f "$CURRENT_VARIANT_FILE" "$STATE_DIR/theme-variant-map"
+  local a b c d e f g
+  IFS=':' read -r a b c d e f g <<<"${VARIANTS[cyberpunk]}"
+  write_palette cyberpunk "$a" "$b" "$c" "$d" "$e" "$f" "$g"
   apply_theme || true
   echo "✓ Original palette restored."
 }
@@ -368,7 +399,7 @@ wallpaper_variant() {
     echo "Run the installer first (./install.sh)." >&2
     exit 1
   fi
-  local accent secondary tertiary background
+  local accent secondary tertiary warm pink background hot
   # Keep the untouched palette first: the background baseline and the
   # reset path both come from it.
   if [[ ! -f "$(pristine_colors_file)" ]]; then
@@ -382,19 +413,25 @@ wallpaper_variant() {
   fi
   secondary="$(hue_shift "$accent" 150)"
   tertiary="$(hue_shift "$accent" 125)"
+  warm="$(hue_shift "$accent" 45)"
+  pink="$(hue_shift "$accent" 330)"
+  hot="$(hue_shift "$accent" 180)"
   background="$(toml_value "$(pristine_colors_file)" background)"
   [[ -n $background ]] || background="0f081d"
 
   local map_file="$STATE_DIR/theme-variant-map"
-  build_color_map "$(pristine_colors_file)" "$accent" "$secondary" "$tertiary" "$background" >"$map_file"
+  build_color_map "$(pristine_colors_file)" "$accent" "$secondary" "$tertiary" "$warm" "$pink" "$background" >"$map_file"
   apply_to_theme_files "$map_file"
   echo "wallpaper" >"$CURRENT_VARIANT_FILE"
+  write_palette "wallpaper" "$accent" "$secondary" "$tertiary" "$warm" "$pink" "$background" "$hot"
   apply_theme || true
   echo ""
   echo "✓ Wallpaper accent applied from $(basename "$src")"
   echo "  Accent:    #$accent"
   echo "  Secondary: #$secondary"
   echo "  Tertiary:  #$tertiary"
+  echo "  Warm:      #$warm"
+  echo "  Pink:      #$pink"
 }
 
 # Main logic
@@ -408,16 +445,17 @@ case "${1:-}" in
   "reset")
     reset_variant
     ;;
-  "cyberpunk"|"cozy"|"monochrome"|"neon"|"sakura")
-    apply_variant "$1"
-    ;;
   "wallpaper")
     wallpaper_variant "${2:-}"
     ;;
   *)
+    if [[ -n ${VARIANTS[${1:-}]:-} ]]; then
+      apply_variant "$1"
+      exit 0
+    fi
     echo "Usage: $0 [variant|wallpaper [image]|list|reset]"
     echo ""
-    echo "Variants: cyberpunk, cozy, monochrome, neon, sakura"
+    echo "Variants: $(printf '%s\n' "${!VARIANTS[@]}" | LC_ALL=C sort | tr '\n' ' ')"
     echo "wallpaper derives the palette from the current background (or the"
     echo "image passed as the second argument)."
     echo ""

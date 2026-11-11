@@ -7,6 +7,12 @@ BarIconButton {
   id: root
 
   property string moduleName: ""
+  // Palette from the island bar; fallbacks keep the component usable alone.
+  readonly property color accentColor: root.bar && root.bar.accentColor !== undefined ? root.bar.accentColor : Color.accent
+  readonly property color greenColor: root.bar && root.bar.greenColor !== undefined ? root.bar.greenColor : "#00ff88"
+  readonly property color warmColor: root.bar && root.bar.warmColor !== undefined ? root.bar.warmColor : "#ffe066"
+  readonly property color pinkColor: root.bar && root.bar.pinkColor !== undefined ? root.bar.pinkColor : "#ffb7d5"
+  readonly property color hotColor: root.bar && root.bar.hotColor !== undefined ? root.bar.hotColor : "#ff0055"
   property var settings: ({})
   property string activeText: ""
   property string inactiveText: activeText
@@ -58,8 +64,8 @@ BarIconButton {
   concealed: false
   interactive: true
   useActiveColor: true
-  activeColor: "#00ffdd"
-  foreground: effectiveActive ? (tooltipHovered ? "#00ff88" : "#00ffdd") : (tooltipHovered ? "#ffffff" : "#9684c0")
+  activeColor: root.accentColor
+  foreground: effectiveActive ? (tooltipHovered ? root.greenColor : root.accentColor) : (tooltipHovered ? "#ffffff" : "#9684c0")
   maintainIndicatorReveal: indicatorBlock === "inactive"
   revealHost: indicatorHost
   fontSize: Style.font.caption + 1
@@ -78,7 +84,7 @@ BarIconButton {
     blur: 10
     spread: 0
     offset: Qt.vector2d(0, 0)
-    color: Qt.rgba(0.0, 1.0, 0.867, 0.35)
+    color: Qt.rgba(root.accentColor.r, root.accentColor.g, root.accentColor.b, 0.35)
     visible: root.effectiveActive
     z: -1
 

@@ -43,6 +43,18 @@ Item {
   property string home: Quickshell.env("HOME")
   property string stateHome: home + "/.local/state"
   property string omarchyConfigDir: home + "/.config/omarchy"
+
+  // Accent/companion palette written by theme-switcher.sh. The QML widgets
+  // read these instead of their old hardcoded cyan/green/yellow/pink so an
+  // accent variant recolors the whole bar, not only the theme files.
+  property var palette: ({})
+  readonly property color accentColor: palette && palette.accent ? palette.accent : Color.accent
+  readonly property color secondaryColor: palette && palette.secondary ? palette.secondary : Color.accent
+  readonly property color greenColor: palette && palette.tertiary ? palette.tertiary : "#00ff88"
+  readonly property color warmColor: palette && palette.warm ? palette.warm : "#ffe066"
+  readonly property color pinkColor: palette && palette.pink ? palette.pink : "#ffb7d5"
+  readonly property color hotColor: palette && palette.hot ? palette.hot : "#ff0055"
+  readonly property color paletteForeground: palette && palette.foreground ? palette.foreground : Color.foreground
   property var fallbackBarConfig: ({
     position: "top",
     transparent: false,
@@ -1234,6 +1246,21 @@ Item {
     watchChanges: true
     printErrors: false
     onFileChanged: root.scheduleTransparentForegroundRefresh()
+  }
+
+  FileView {
+    path: root.stateHome + "/virtual-paradise/palette.json"
+    watchChanges: true
+    printErrors: false
+    onFileChanged: reload()
+    onLoaded: {
+      try {
+        root.palette = JSON.parse(text())
+      } catch (e) {
+        root.palette = ({})
+      }
+    }
+    onLoadFailed: root.palette = ({})
   }
 
   function runProcess(process) {

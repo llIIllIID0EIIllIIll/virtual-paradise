@@ -7,6 +7,13 @@ import qs.Ui
 BarWidget {
   id: root
   moduleName: "__USER__.weather"
+  // Palette loaded by the island bar from theme-switcher.sh; fallbacks keep
+  // the component usable when it is mounted outside the bar.
+  readonly property color accentColor: root.bar && root.bar.accentColor !== undefined ? root.bar.accentColor : Color.accent
+  readonly property color greenColor: root.bar && root.bar.greenColor !== undefined ? root.bar.greenColor : "#00ff88"
+  readonly property color warmColor: root.bar && root.bar.warmColor !== undefined ? root.bar.warmColor : "#ffe066"
+  readonly property color pinkColor: root.bar && root.bar.pinkColor !== undefined ? root.bar.pinkColor : "#ffb7d5"
+  readonly property color hotColor: root.bar && root.bar.hotColor !== undefined ? root.bar.hotColor : "#ff0055"
 
   function injectPanel() {
     var target = panelLoader.item
@@ -117,9 +124,9 @@ BarWidget {
       height: 28
       radius: 14
       color: root.opened
-        ? Qt.rgba(1.0, 0.88, 0.40, 0.28)
-        : (button.tooltipHovered ? Qt.rgba(1.0, 0.88, 0.40, 0.16) : Qt.rgba(1.0, 0.88, 0.40, 0.09))
-      border.color: root.opened ? "#ffe066" : (button.tooltipHovered ? "#ffe066" : Qt.rgba(1.0, 0.88, 0.40, 0.38))
+        ? Qt.rgba(root.warmColor.r, root.warmColor.g, root.warmColor.b, 0.28)
+        : (button.tooltipHovered ? Qt.rgba(root.warmColor.r, root.warmColor.g, root.warmColor.b, 0.16) : Qt.rgba(root.warmColor.r, root.warmColor.g, root.warmColor.b, 0.09))
+      border.color: root.opened ? root.warmColor : (button.tooltipHovered ? root.warmColor : Qt.rgba(root.warmColor.r, root.warmColor.g, root.warmColor.b, 0.38))
       border.width: root.opened ? 2 : 1
       scale: button.tooltipHovered ? 1.04 : 1
 
@@ -134,7 +141,7 @@ BarWidget {
         anchors.margins: -3
         radius: weatherPill.radius + 3
         color: "transparent"
-        border.color: "#ffe066"
+        border.color: root.warmColor
         border.width: 1.8
         opacity: 0.85
         visible: root.opened || button.tooltipHovered
@@ -152,7 +159,7 @@ BarWidget {
         anchors.margins: -6
         radius: weatherPill.radius + 6
         color: "transparent"
-        border.color: "#ffe066"
+        border.color: root.warmColor
         border.width: 1.5
         opacity: 0.60
         visible: root.opened || button.tooltipHovered
@@ -177,11 +184,11 @@ BarWidget {
           // cyan, so a glance at the colour reads the temperature.
           color: {
             var t = parseFloat(root.weatherTemp)
-            if (!isFinite(t)) return "#ffe066"
-            if (t >= 32) return "#ff79a8"
-            if (t >= 24) return "#ffe066"
-            if (t >= 16) return "#00ff88"
-            return "#00ffdd"
+            if (!isFinite(t)) return root.warmColor
+            if (t >= 32) return root.pinkColor
+            if (t >= 24) return root.warmColor
+            if (t >= 16) return root.greenColor
+            return root.accentColor
           }
           font.family: (root.bar ? root.bar.fontFamily : Style.font.family)
           font.pixelSize: Style.font.body + 1

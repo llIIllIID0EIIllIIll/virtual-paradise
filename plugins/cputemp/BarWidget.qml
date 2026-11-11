@@ -7,6 +7,13 @@ import qs.Ui
 BarWidget {
   id: root
   moduleName: "__USER__.cputemp"
+  // Palette loaded by the island bar from theme-switcher.sh; fallbacks keep
+  // the component usable when it is mounted outside the bar.
+  readonly property color accentColor: root.bar && root.bar.accentColor !== undefined ? root.bar.accentColor : Color.accent
+  readonly property color greenColor: root.bar && root.bar.greenColor !== undefined ? root.bar.greenColor : "#00ff88"
+  readonly property color warmColor: root.bar && root.bar.warmColor !== undefined ? root.bar.warmColor : "#ffe066"
+  readonly property color pinkColor: root.bar && root.bar.pinkColor !== undefined ? root.bar.pinkColor : "#ffb7d5"
+  readonly property color hotColor: root.bar && root.bar.hotColor !== undefined ? root.bar.hotColor : "#ff0055"
 
   property string cpuTemp: "--°C"
   property bool coolerActive: false
@@ -132,18 +139,18 @@ BarWidget {
       color: root.isOverheating
         ? Qt.rgba(1.0, 0.0, 0.33, 0.32) // Neon Red Warning glow
         : (root.isWarm
-          ? Qt.rgba(1.0, 0.88, 0.40, 0.24) // Amber warning glow
+          ? Qt.rgba(root.warmColor.r, root.warmColor.g, root.warmColor.b, 0.24) // Amber warning glow
           : (root.coolerActive
-            ? Qt.rgba(0.0, 1.0, 0.53, 0.20) // Hacker Green active glow, kept dim so it
+            ? Qt.rgba(root.greenColor.r, root.greenColor.g, root.greenColor.b, 0.20) // Hacker Green active glow, kept dim so it
             //                    does not outshine the themed widgets beside it
-            : (button.tooltipHovered ? Qt.rgba(1.0, 0.72, 0.84, 0.16) : Qt.rgba(1.0, 0.72, 0.84, 0.09))))
+            : (button.tooltipHovered ? Qt.rgba(root.pinkColor.r, root.pinkColor.g, root.pinkColor.b, 0.16) : Qt.rgba(root.pinkColor.r, root.pinkColor.g, root.pinkColor.b, 0.09))))
       border.color: root.isOverheating
-        ? "#ff0055" // Neon Warning Red
+        ? root.hotColor // Neon Warning Red
         : (root.isWarm
-          ? "#ffe066" // Amber
+          ? root.warmColor // Amber
           : (root.coolerActive
-            ? "#00ff88"
-            : (button.tooltipHovered ? "#ffb7d5" : Qt.rgba(1.0, 0.72, 0.84, 0.38))))
+            ? root.greenColor
+            : (button.tooltipHovered ? root.pinkColor : Qt.rgba(root.pinkColor.r, root.pinkColor.g, root.pinkColor.b, 0.38))))
       border.width: (root.coolerActive || root.isOverheating || root.isWarm) ? 1.6 : 1
       scale: button.tooltipHovered ? 1.04 : 1
 
@@ -158,7 +165,7 @@ BarWidget {
         anchors.margins: -3
         radius: tempPill.radius + 3
         color: "transparent"
-        border.color: root.isOverheating ? "#ff0055" : "#00ff88"
+        border.color: root.isOverheating ? root.hotColor : root.greenColor
         border.width: 1.6
         opacity: 0.62
         visible: root.coolerActive || root.isOverheating || button.tooltipHovered
@@ -177,7 +184,7 @@ BarWidget {
         anchors.margins: -6
         radius: tempPill.radius + 6
         color: "transparent"
-        border.color: root.isOverheating ? "#ff0055" : "#00ff88"
+        border.color: root.isOverheating ? root.hotColor : root.greenColor
         border.width: 1.2
         opacity: 0.40
         visible: root.coolerActive || root.isOverheating || button.tooltipHovered
@@ -211,7 +218,7 @@ BarWidget {
             id: tempIcon
             anchors.centerIn: parent
             text: root.isOverheating ? "󰈸" : (root.coolerActive ? "󰈐" : "")
-            color: root.isOverheating ? "#ff0055" : (root.isWarm ? "#ffe066" : (root.coolerActive ? "#00ff88" : "#ffb7d5"))
+            color: root.isOverheating ? root.hotColor : (root.isWarm ? root.warmColor : (root.coolerActive ? root.greenColor : root.pinkColor))
             font.family: (root.bar ? root.bar.fontFamily : Style.font.family)
             font.pixelSize: Style.font.body + 1
             rotation: (!root.isOverheating && root.coolerActive) ? fanRotation : 0
@@ -234,7 +241,7 @@ BarWidget {
           id: tempLabel
           anchors.verticalCenter: parent.verticalCenter
           text: root.cpuTemp
-          color: root.isOverheating ? "#ff0055" : (root.isWarm ? "#ffe066" : (root.coolerActive ? "#00ff88" : "#ffffff"))
+          color: root.isOverheating ? root.hotColor : (root.isWarm ? root.warmColor : (root.coolerActive ? root.greenColor : "#ffffff"))
           font.family: (root.bar ? root.bar.fontFamily : Style.font.family)
           font.pixelSize: Style.font.body
           font.bold: true

@@ -10,6 +10,13 @@ import qs.Ui
 BarWidget {
   id: root
   moduleName: "__USER__.tools"
+  // Palette loaded by the island bar from theme-switcher.sh; fallbacks keep
+  // the component usable when it is mounted outside the bar.
+  readonly property color accentColor: root.bar && root.bar.accentColor !== undefined ? root.bar.accentColor : Color.accent
+  readonly property color greenColor: root.bar && root.bar.greenColor !== undefined ? root.bar.greenColor : "#00ff88"
+  readonly property color warmColor: root.bar && root.bar.warmColor !== undefined ? root.bar.warmColor : "#ffe066"
+  readonly property color pinkColor: root.bar && root.bar.pinkColor !== undefined ? root.bar.pinkColor : "#ffb7d5"
+  readonly property color hotColor: root.bar && root.bar.hotColor !== undefined ? root.bar.hotColor : "#ff0055"
 
   property bool panelWanted: false
   property bool openRequested: false
@@ -65,6 +72,12 @@ BarWidget {
   // Scriptable counterparts for the panel controls. `setBar` writes one
   // bar-level boolean; `verify` opens settings and starts the pin check.
   function setBar(key, value) {
+    // Prefer the panel path (the same one the visible toggles use) so the IPC
+    // exercises exactly what a click does; fall back when the panel is closed.
+    if (panelLoader.item) {
+      panelLoader.item.setBarOption(key, value)
+      return
+    }
     if (root.bar) root.bar.run(Quickshell.env("HOME") + "/.local/bin/vp-setting.sh set bar." + key + " " + (value ? "true" : "false"))
   }
 
@@ -136,7 +149,7 @@ BarWidget {
     Text {
       anchors.centerIn: parent
       text: "󰇙"
-      color: root.opened ? "#00ff88" : (button.tooltipHovered ? "#ffffff" : "#00ffdd")
+      color: root.opened ? root.greenColor : (button.tooltipHovered ? "#ffffff" : root.accentColor)
       font.family: root.bar ? root.bar.fontFamily : Style.font.family
       font.pixelSize: Style.font.iconLarge
       Behavior on color { ColorAnimation { duration: 120 } }

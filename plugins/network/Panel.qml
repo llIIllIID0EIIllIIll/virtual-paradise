@@ -11,6 +11,12 @@ import "Model.js" as Model
 Panel {
   id: root
   moduleName: "omarchy.network"
+  // Palette from the island bar; fallbacks keep the component usable alone.
+  readonly property color accentColor: root.bar && root.bar.accentColor !== undefined ? root.bar.accentColor : Color.accent
+  readonly property color greenColor: root.bar && root.bar.greenColor !== undefined ? root.bar.greenColor : "#00ff88"
+  readonly property color warmColor: root.bar && root.bar.warmColor !== undefined ? root.bar.warmColor : "#ffe066"
+  readonly property color pinkColor: root.bar && root.bar.pinkColor !== undefined ? root.bar.pinkColor : "#ffb7d5"
+  readonly property color hotColor: root.bar && root.bar.hotColor !== undefined ? root.bar.hotColor : "#ff0055"
   ipcTarget: "omarchy.network"
   // manageIpc: false so this panel can own the single IpcHandler the target
   // permits — needed for the toggleNetwork method below.
@@ -965,10 +971,10 @@ Panel {
       ? root.icon
       : (root.isNetworkAlert ? "󰤫" : "󰤮")
     foreground: root.opened
-      ? "#00ff88"
+      ? root.greenColor
       : (button.tooltipHovered
         ? "#ffffff"
-        : (root.isNetworkAlert ? "#ff0055" : (root.isConnected ? "#00ffdd" : "#556d7d")))
+        : (root.isNetworkAlert ? root.hotColor : (root.isConnected ? root.accentColor : "#556d7d")))
     scale: button.tooltipHovered ? 1.15 : 1.0
     tooltipText: root.isNetworkAlert
       ? "󰤫 Network: Disconnected (Wi-Fi ON, No Connection / Alert)\nClick to Connect Wi-Fi"
@@ -984,8 +990,8 @@ Panel {
       height: 26
       radius: 13
       z: -1
-      color: Qt.rgba(1.0, 0.0, 0.33, 0.18)
-      border.color: "#ff0055"
+      color: Qt.rgba(root.hotColor.r, root.hotColor.g, root.hotColor.b, 0.18)
+      border.color: root.hotColor
       border.width: 1
 
       SequentialAnimation on opacity {

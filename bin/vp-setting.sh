@@ -148,3 +148,9 @@ with open(lock_path, "a+", encoding="utf-8") as lock:
     write(data)
     print(f"{key}={'true' if wanted else 'false'}")
 PY
+
+# Atomic replace changes the inode, so the shell's FileView may not see it.
+# Ask the host to reload its config; harmless when the shell is not running.
+if command -v omarchy-shell >/dev/null 2>&1; then
+  omarchy-shell shell reloadConfig >/dev/null 2>&1 || true
+fi

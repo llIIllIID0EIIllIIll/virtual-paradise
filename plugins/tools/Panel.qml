@@ -21,10 +21,29 @@ Panel {
   property bool verifyRunning: false
   property string verifyText: ""
   property string currentVariant: "cyberpunk"
+  property var shellConfig: ({})
 
   readonly property string home: Quickshell.env("HOME")
+  readonly property string configPath: (Quickshell.env("XDG_CONFIG_HOME") || (root.home + "/.config")) + "/omarchy/shell.json"
   readonly property color fg: root.bar ? root.bar.barForeground : Color.foreground
   readonly property string ff: root.bar ? root.bar.fontFamily : Style.font.family
+
+  // Accent palettes mirrored from Omarchy's own themes plus Dracula and Rose
+  // Pine Moon. The switcher and this list must stay in sync.
+  readonly property var variants: [
+    { id: "cyberpunk", label: "Cyberpunk" },
+    { id: "neon", label: "Neon" },
+    { id: "monochrome", label: "Mono" },
+    { id: "catppuccin", label: "Catppuccin" },
+    { id: "tokyo-night", label: "Tokyo" },
+    { id: "gruvbox", label: "Gruvbox" },
+    { id: "nord", label: "Nord" },
+    { id: "everforest", label: "Everforest" },
+    { id: "kanagawa", label: "Kanagawa" },
+    { id: "rose-pine", label: "Rosé" },
+    { id: "hackerman", label: "Hackerman" },
+    { id: "dracula", label: "Dracula" }
+  ]
 
   readonly property var tools: [
     { id: "io.github.randazraik.xray", label: "X-Ray", icon: "󰗇", hint: "Screen lens" },
@@ -42,9 +61,16 @@ Panel {
 
   // The weather entry owns autoLocation. Find the live entry instead of
   // assuming it stays in the centre section.
+  // The panel reads shell.json itself: the injected bar object is null while
+  // the shell rebuilds, and the toggles used to show stale/default values.
+  readonly property var barSettings: (root.shellConfig && root.shellConfig.bar) ? root.shellConfig.bar : ({})
+  readonly property bool gapEffectsOn: root.barSettings.gapEffects !== false
+  readonly property bool hoverGlowOn: root.barSettings.hoverGlow !== false
+  readonly property bool reducedMotionOn: root.barSettings.reducedMotion === true
+
   readonly property var weatherConfig: {
-    if (!root.bar || !root.bar.layoutConfig) return null
-    var layout = root.bar.layoutConfig
+    var layout = root.barSettings.layout
+    if (!layout) return null
     var sections = [layout.left || [], layout.center || [], layout.right || []]
     for (var s = 0; s < sections.length; s++) {
       for (var i = 0; i < sections[s].length; i++) {
@@ -56,19 +82,47 @@ Panel {
   }
   readonly property bool weatherAuto: root.weatherConfig ? root.weatherConfig.autoLocation === true : false
 
-  // Write one bar-level key through the atomic CLI. The bar plugin's host
-  // facade refuses bar-level mutations for replacement bars, so the helper is
-  // the reliable path; the shell sees the file change and reloads the bar.
+  function refreshShellConfig(text) {
+    try {
+      var parsed = JSON.parse(String(text || "{}"))
+      root.shellConfig = (parsed && typeof parsed === "object") ? parsed : ({})
+    } catch (e) {
+      // Keep the last good copy; the writer validates JSON before replacing.
+    }
+  }
+
+  // Optimistic local update so a click is visible immediately; the FileView
+  // and the host reload reconcile it with the file a moment later.
   function setBarOption(key, value) {
     root.run(root.home + "/.local/bin/vp-setting.sh set bar." + key + " " + (value ? "true" : "false"))
+    var next = JSON.parse(JSON.stringify(root.shellConfig || ({})))
+    if (!next.bar || typeof next.bar !== "object") next.bar = {}
+    next.bar[key] = value
+    root.shellConfig = next
   }
 
   function setWeatherAuto(value) {
     root.run(root.home + "/.local/bin/vp-setting.sh set weather.autoLocation " + (value ? "true" : "false"))
+    var next = JSON.parse(JSON.stringify(root.shellConfig || ({})))
+    var layout = next.bar && next.bar.layout ? next.bar.layout : null
+    if (!layout) return
+    var sections = [layout.left || [], layout.center || [], layout.right || []]
+    for (var s = 0; s < sections.length; s++) {
+      for (var i = 0; i < sections[s].length; i++) {
+        var entry = sections[s][i]
+        if (entry && String(entry.id || "").endsWith(".weather")) {
+          entry.autoLocation = value
+          root.shellConfig = next
+          return
+        }
+      }
+    }
   }
 
   function run(command) {
-    if (root.bar) root.bar.run(command)
+    // Do not depend on the injected bar: the panel stays alive across a
+    // shell/theme reload and `bar` can be null while a toggle is clicked.
+    Util.execDetached(command)
   }
 
   function setVariant(name) {
@@ -143,6 +197,17 @@ Panel {
       if (exitCode !== 0 && root.verifyText === "Checking pinned plugins…")
         root.verifyText = "Verify failed; open Diagnostics for the full report."
     }
+  }
+
+  FileView {
+    id: shellConfigFile
+
+    path: root.configPath
+    watchChanges: true
+    printErrors: false
+    onFileChanged: reload()
+    onLoaded: root.refreshShellConfig(text())
+    onLoadFailed: root.refreshShellConfig("{}")
   }
 
   FileView {
@@ -363,62 +428,53 @@ Panel {
           width: parent.width
           label: "Gap effects"
           description: "Comet stream, rim scanner and hex drift"
-          checked: root.bar ? root.bar.gapEffects !== false : true
+          checked: root.gapEffectsOn
           foreground: root.fg
           accent: Color.accent
           fontFamily: root.ff
-          onClicked: root.setBarOption("gapEffects", !(root.bar && root.bar.gapEffects !== false))
+          onClicked: root.setBarOption("gapEffects", !root.gapEffectsOn)
         }
 
         Toggle {
           width: parent.width
           label: "Hover glow"
           description: "Lit chrome under the pointer"
-          checked: root.bar ? root.bar.hoverGlow !== false : true
+          checked: root.hoverGlowOn
           foreground: root.fg
           accent: Color.accent
           fontFamily: root.ff
-          onClicked: root.setBarOption("hoverGlow", !(root.bar && root.bar.hoverGlow !== false))
+          onClicked: root.setBarOption("hoverGlow", !root.hoverGlowOn)
         }
 
         Toggle {
           width: parent.width
           label: "Reduced motion"
           description: "Keep the effects but stop the travel"
-          checked: root.bar ? root.bar.reducedMotion === true : false
+          checked: root.reducedMotionOn
           foreground: root.fg
           accent: Color.accent
           fontFamily: root.ff
-          onClicked: root.setBarOption("reducedMotion", !(root.bar && root.bar.reducedMotion === true))
+          onClicked: root.setBarOption("reducedMotion", !root.reducedMotionOn)
         }
 
         Flow {
           width: parent.width
           spacing: Style.space(6)
 
-          Button {
-            text: "Cyberpunk"
-            focusable: true
-            foreground: root.fg
-            accent: Color.accent
-            fontFamily: root.ff
-            onClicked: root.setVariant("cyberpunk")
-          }
-          Button {
-            text: "Sakura"
-            focusable: true
-            foreground: root.fg
-            accent: Color.accent
-            fontFamily: root.ff
-            onClicked: root.setVariant("sakura")
-          }
-          Button {
-            text: "Cozy"
-            focusable: true
-            foreground: root.fg
-            accent: Color.accent
-            fontFamily: root.ff
-            onClicked: root.setVariant("cozy")
+          Repeater {
+            model: root.variants
+
+            Button {
+              required property var modelData
+              text: modelData.label
+              selected: root.currentVariant === modelData.id
+              focusable: true
+              foreground: root.fg
+              accent: Color.accent
+              fontFamily: root.ff
+              Accessible.name: "Accent variant " + modelData.label
+              onClicked: root.setVariant(modelData.id)
+            }
           }
         }
 

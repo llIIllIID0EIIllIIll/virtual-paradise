@@ -1418,16 +1418,40 @@ if want tc12; then
       bash "$REPO_DIR/bin/theme-switcher.sh" "$@" >"$root/switch.log" 2>&1
   }
 
-  run_switcher cozy
+  run_switcher catppuccin
   check "the theme switcher exits 0" $? "$(tail -3 "$root/switch.log")"
   check "colors.toml got the variant accent" \
-    "$(grep -q '^accent = "#ffa69e"' "$theme/colors.toml" && echo 0 || echo 1)"
+    "$(grep -q '^accent = "#89b4fa"' "$theme/colors.toml" && echo 0 || echo 1)"
   check "the terminal config got the same accent" \
-    "$(grep -q '^palette = 4=#ffa69e' "$theme/ghostty.conf" && echo 0 || echo 1)"
+    "$(grep -q '^palette = 4=#89b4fa' "$theme/ghostty.conf" && echo 0 || echo 1)"
   check "the GTK stylesheet got the same accent" \
-    "$(grep -q '@define-color blue #ffa69e' "$theme/config/gtk.css" && echo 0 || echo 1)"
+    "$(grep -q '@define-color blue #89b4fa' "$theme/config/gtk.css" && echo 0 || echo 1)"
   check "the cursor followed the accent" \
-    "$(grep -q '^cursor = "#ffa69e"' "$theme/colors.toml" && echo 0 || echo 1)"
+    "$(grep -q '^cursor = "#89b4fa"' "$theme/colors.toml" && echo 0 || echo 1)"
+  check "the semantic green role followed the variant" \
+    "$(grep -q '^green = "#a6e3a1"' "$theme/colors.toml" && echo 0 || echo 1)"
+  check "the semantic background role followed the variant" \
+    "$(grep -q '^bg = "#1e1e2e"' "$theme/colors.toml" && echo 0 || echo 1)"
+
+  listout=$(HOME="$home" XDG_CONFIG_HOME="$home/.config" bash "$REPO_DIR/bin/theme-switcher.sh" list 2>&1)
+  check "the switcher lists the Omarchy palettes" \
+    "$(grep -q 'catppuccin' <<<"$listout" && grep -q 'hackerman' <<<"$listout" \
+      && grep -q 'dracula' <<<"$listout" && ! grep -qE 'sakura|cozy' <<<"$listout" \
+      && echo 0 || echo 1)" "$listout"
+
+  python3 - "$home/.local/state/virtual-paradise/palette.json" <<'PY'
+import json, sys
+d = json.load(open(sys.argv[1]))
+raise SystemExit(0 if d.get("accent") == "#89b4fa" and d.get("tertiary") == "#a6e3a1"
+                 and d.get("hot") == "#f38ba8" else 1)
+PY
+  check "the QML palette follows the variant" $?
+  check "the bar exposes the palette to its widgets" \
+    "$(grep -q 'palette.json' "$REPO_DIR/bars/island-bar/Bar.qml" \
+      && grep -q 'readonly property color accentColor' "$REPO_DIR/bars/island-bar/Bar.qml" \
+      && for w in clock cputemp weather microphone; do \
+           grep -q 'root.bar.accentColor' "$REPO_DIR/plugins/$w/BarWidget.qml" || exit 1; \
+         done; echo 0)"
 
   # A second switch must start from the original palette, not from the one the
   # first switch wrote.
@@ -3295,6 +3319,7 @@ if want tc30; then
   # vp-setting is the write path behind the toggles. It has to preserve the
   # layout, update only the requested key, and never leave a temp file.
   setting_root="$root/settings"
+  build_shims "$root/bin"
   mkdir -p "$setting_root/.config/omarchy" "$setting_root/.local/state"
   cat >"$setting_root/.config/omarchy/shell.json" <<'EOF'
 {
@@ -3308,7 +3333,8 @@ if want tc30; then
 }
 EOF
   set_env=(HOME="$setting_root" XDG_CONFIG_HOME="$setting_root/.config"
-    XDG_STATE_HOME="$setting_root/.local/state")
+    XDG_STATE_HOME="$setting_root/.local/state" PATH="$root/bin:$PATH"
+    SHIM_LOG="$root/shim.log")
   out=$(env "${set_env[@]}" bash "$REPO_DIR/bin/vp-setting.sh" set bar.gapEffects false 2>&1)
   check "vp-setting sets a bar boolean" "$?" "$out"
   got=$(env "${set_env[@]}" bash "$REPO_DIR/bin/vp-setting.sh" get bar.gapEffects 2>&1)
@@ -3328,6 +3354,8 @@ PY
     "$([[ $? -ne 0 ]] && echo 0 || echo 1)"
   check "vp-setting leaves no temp files" \
     "$([[ -z "$(find "$setting_root/.config/omarchy" -name '.shell.json.*' -print -quit)" ]] && echo 0 || echo 1)"
+  check "vp-setting asks the shell to reload" \
+    "$(grep -q 'omarchy-shell shell reloadConfig' "$root/shim.log" && echo 0 || echo 1)"
 fi
 
 summary

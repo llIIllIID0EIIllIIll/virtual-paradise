@@ -14,7 +14,7 @@
 [![Arch Linux](https://img.shields.io/badge/Arch_Linux-1793D1?style=flat-square&logo=arch-linux&logoColor=white)](https://archlinux.org)
 [![Omarchy 4.5+](https://img.shields.io/badge/Omarchy-4.5+-8A2BE2?style=flat-square)](https://omarchy.org)
 [![Hyprland](https://img.shields.io/badge/Hyprland-Wayland-00ffdd?style=flat-square)](https://hyprland.org)
-[![Tests](https://img.shields.io/badge/tests-526%20passed-00ff88?style=flat-square)](tests/)
+[![Tests](https://img.shields.io/badge/tests-532%20passed-00ff88?style=flat-square)](tests/)
 [![License](https://img.shields.io/badge/license-MIT-ffe066?style=flat-square)](LICENSE)
 [![Version](https://img.shields.io/badge/version-1.4.0-ff00ff?style=flat-square)](VERSION)
 
@@ -83,9 +83,9 @@ wallpaper` derives the accent and its two companions from the current
 background image instead of a fixed variant.
 It is a terminal tool, not bound to a key. Two opt-in timers are installed but
 left disabled:
-`paradise-variant-by-time.timer` switches cyberpunk in the morning and sakura
-in the evening, and `paradise-wallpaper-rotate.timer` rotates the live
-wallpaper hourly. Enable either with `systemctl --user enable --now <timer>`;
+`paradise-variant-by-time.timer` switches cyberpunk in the morning and
+tokyo-night in the evening, and `paradise-wallpaper-rotate.timer` rotates the
+live wallpaper hourly. Enable either with `systemctl --user enable --now <timer>`;
 they do nothing until then.
 
 ### ✨ Visual Effects
@@ -428,9 +428,10 @@ atomic replace) to `~/.config/omarchy/shell.json`, and the shell reloads it
 live:
 
 - **Appearance**: gap effects, hover glow, reduced motion, accent variant
-  (Cyberpunk / Sakura / Cozy), live wallpaper, UI sound. The variants recolor
-  the chrome and terminals; the bar widget accents and artwork stay cyberpunk
-  for now.
+  (Cyberpunk, Catppuccin, Tokyo Night, Gruvbox, Nord, Everforest, Kanagawa,
+  Rosé Pine, Hackerman, Dracula, Mono, Neon), live wallpaper, UI sound. The
+  variants recolor the chrome, terminals and GTK; the bar widget accents and
+  artwork stay cyberpunk for now.
 - **Weather**: automatic location consent, with the same privacy default as the
   weather panel.
 - **System**: run `diagnose`, verify pinned plugins, repair the island bar from
@@ -590,9 +591,9 @@ default.
 
 ### Running Tests
 
-The test suite has thirty test cases and 526 assertions; optional tools
+The test suite has thirty test cases and 532 assertions; optional tools
 (`shellcheck`, `qmllint`, `hyprctl`) enable extra checks when present, so the
-exact count varies between machines (526 with `shellcheck` and `qmllint`). It
+exact count varies between machines (532 with `shellcheck` and `qmllint`). It
 runs in a sandbox and never touches your real system.
 
 ```bash

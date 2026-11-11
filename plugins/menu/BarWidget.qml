@@ -5,6 +5,13 @@ import qs.Ui
 BarWidget {
   id: root
   moduleName: "__USER__.menu"
+  // Palette loaded by the island bar from theme-switcher.sh; fallbacks keep
+  // the component usable when it is mounted outside the bar.
+  readonly property color accentColor: root.bar && root.bar.accentColor !== undefined ? root.bar.accentColor : Color.accent
+  readonly property color greenColor: root.bar && root.bar.greenColor !== undefined ? root.bar.greenColor : "#00ff88"
+  readonly property color warmColor: root.bar && root.bar.warmColor !== undefined ? root.bar.warmColor : "#ffe066"
+  readonly property color pinkColor: root.bar && root.bar.pinkColor !== undefined ? root.bar.pinkColor : "#ffb7d5"
+  readonly property color hotColor: root.bar && root.bar.hotColor !== undefined ? root.bar.hotColor : "#ff0055"
 
   implicitWidth: 32
   implicitHeight: button.implicitHeight
@@ -40,7 +47,7 @@ BarWidget {
         text: "\ue900"
         font.family: "omarchy"
         font.pixelSize: Style.font.iconLarge + (button.tooltipHovered ? 2 : 0)
-        color: button.tooltipHovered ? "#00ff88" : "#00ffdd"
+        color: button.tooltipHovered ? root.greenColor : root.accentColor
         scale: button.tooltipHovered ? 1.15 : 1.0
 
         Behavior on color { ColorAnimation { duration: 160 } }

@@ -9,6 +9,13 @@ import "Model.js" as Model
 BarWidget {
   id: root
   moduleName: "__USER__.clock"
+  // Palette loaded by the island bar from theme-switcher.sh; fallbacks keep
+  // the component usable when it is mounted outside the bar.
+  readonly property color accentColor: root.bar && root.bar.accentColor !== undefined ? root.bar.accentColor : Color.accent
+  readonly property color greenColor: root.bar && root.bar.greenColor !== undefined ? root.bar.greenColor : "#00ff88"
+  readonly property color warmColor: root.bar && root.bar.warmColor !== undefined ? root.bar.warmColor : "#ffe066"
+  readonly property color pinkColor: root.bar && root.bar.pinkColor !== undefined ? root.bar.pinkColor : "#ffb7d5"
+  readonly property color hotColor: root.bar && root.bar.hotColor !== undefined ? root.bar.hotColor : "#ff0055"
 
   property date displayDate: clock.date
 
@@ -165,9 +172,9 @@ BarWidget {
       height: 28
       radius: 14
       color: root.opened
-        ? Qt.rgba(0.0, 1.0, 0.53, 0.25)
-        : (button.tooltipHovered ? Qt.rgba(0.0, 1.0, 0.867, 0.16) : Qt.rgba(0.0, 1.0, 0.867, 0.09))
-      border.color: root.opened ? "#00ff88" : (button.tooltipHovered ? "#00ffdd" : Qt.rgba(0.0, 1.0, 0.867, 0.40))
+        ? Qt.rgba(root.greenColor.r, root.greenColor.g, root.greenColor.b, 0.25)
+        : (button.tooltipHovered ? Qt.rgba(root.accentColor.r, root.accentColor.g, root.accentColor.b, 0.16) : Qt.rgba(root.accentColor.r, root.accentColor.g, root.accentColor.b, 0.09))
+      border.color: root.opened ? root.greenColor : (button.tooltipHovered ? root.accentColor : Qt.rgba(root.accentColor.r, root.accentColor.g, root.accentColor.b, 0.40))
       border.width: root.opened ? 2 : 1
       scale: button.tooltipHovered ? 1.04 : 1
 
@@ -182,7 +189,7 @@ BarWidget {
         anchors.margins: -3
         radius: clockPill.radius + 3
         color: "transparent"
-        border.color: "#00ff88"
+        border.color: root.greenColor
         border.width: 1.8
         opacity: 0.85
         visible: root.opened || button.tooltipHovered
@@ -200,7 +207,7 @@ BarWidget {
         anchors.margins: -6
         radius: clockPill.radius + 6
         color: "transparent"
-        border.color: "#00ff88"
+        border.color: root.greenColor
         border.width: 1.5
         opacity: 0.60
         visible: root.opened || button.tooltipHovered
@@ -222,7 +229,7 @@ BarWidget {
         Text {
           anchors.verticalCenter: parent.verticalCenter
           text: "󰥔"
-          color: "#00ffdd" // Miku Cyan
+          color: root.accentColor // Miku Cyan
           font.family: (root.bar ? root.bar.fontFamily : Style.font.family)
           font.pixelSize: Style.font.body
         }
@@ -244,7 +251,7 @@ BarWidget {
           Text {
             anchors.verticalCenter: parent.verticalCenter
             text: ":" + Qt.formatDateTime(root.displayDate, "ss")
-            color: "#00ffdd" // Miku Cyan
+            color: root.accentColor // Miku Cyan
             font.family: (root.bar ? root.bar.fontFamily : Style.font.family)
             font.pixelSize: Style.font.body
             font.bold: true
@@ -270,7 +277,7 @@ BarWidget {
         Text {
           anchors.verticalCenter: parent.verticalCenter
           text: "•"
-          color: "#00ff88" // Hacker Green
+          color: root.greenColor // Hacker Green
           font.pixelSize: Style.font.body
         }
 
@@ -278,7 +285,7 @@ BarWidget {
         Text {
           anchors.verticalCenter: parent.verticalCenter
           text: Qt.formatDateTime(root.displayDate, "ddd")
-          color: "#ffe066" // Cyber Yellow
+          color: root.warmColor // Cyber Yellow
           font.family: (root.bar ? root.bar.fontFamily : Style.font.family)
           font.pixelSize: Style.font.body
           font.weight: Font.Medium
@@ -288,7 +295,7 @@ BarWidget {
         Text {
           anchors.verticalCenter: parent.verticalCenter
           text: Qt.formatDateTime(root.displayDate, "d MMM yyyy")
-          color: "#ffb7d5" // Sakura Pastel Pink
+          color: root.pinkColor // Sakura Pastel Pink
           font.family: (root.bar ? root.bar.fontFamily : Style.font.family)
           font.pixelSize: Style.font.body
           font.weight: Font.Medium

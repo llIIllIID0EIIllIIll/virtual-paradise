@@ -13,8 +13,8 @@ Conventional Commits.
   panel to appearance toggles (gap effects, hover glow, reduced motion), accent
   variants, live wallpaper, UI sound, weather consent, and system actions
   (diagnose, verify pins, repair bar, logs). It shows the current variant and
-  labels the variants honestly: they recolor the chrome/terminals, while the
-  bar widget accents and artwork remain cyberpunk for now.
+  labels the variants honestly: they recolor the chrome, terminals and bar
+  widgets; the wallpaper/Plymouth/SDDM artwork remains cyberpunk.
 - **`vp-setting.sh`**, the atomic settings writer behind the panel. `get`/`set`
   support the bar booleans and weather auto-location; writes use `flock` and a
   same-directory replace so a shell reload cannot see a truncated `shell.json`.
@@ -24,6 +24,11 @@ Conventional Commits.
   publishes a GitHub release; `workflow_dispatch` runs the validation only.
 - `vp-sound.sh toggle` mutes or unmutes every UI sound without touching the
   other sound events.
+
+### Removed
+- **Sakura and Cozy variants.** Their chrome clashed with the cyberpunk widget
+  accents and neither had matching artwork; the Omarchy-derived palettes above
+  replace them.
 
 ### Fixed
 - **The power-manager no longer floods the journal.** Its idle poll logs an
@@ -44,8 +49,14 @@ Conventional Commits.
   `pipefail` against `grep -q`.
 
 ### Changed
-- Tests: 525 assertions; TC-30 covers the settings panel, `vp-setting.sh` and
-  the UI sound toggle.
+- **Accent variants now mirror real palettes.** Catppuccin, Tokyo Night,
+  Gruvbox, Nord, Everforest, Kanagawa, Rosé Pine Moon, Hackerman and Dracula
+  replace the old Sakura/Cozy experiments. The semantic roles (`green`,
+  `magenta`, `yellow`, `bg`, `blue`…) and the QML bar widgets follow the
+  palette instead of keeping the cyberpunk accents.
+- **The night timer uses Tokyo Night**, replacing the removed Sakura variant.
+- Tests: 531 assertions; TC-12 covers the Omarchy palettes and `palette.json`,
+  TC-30 covers the settings panel, `vp-setting.sh` and the UI sound toggle.
 - **Repository moved to `github.com/vuhuudo/virtual-paradise`.** Clone URLs,
   issue/discussion links, the license notice and the security-advisory link
   now use the new account name.
