@@ -3242,4 +3242,39 @@ PY
     "$(grep -q 'sddm.login(root.currentUser, password.text, root.sessionIndex)' "$sddm" && echo 0 || echo 1)"
 fi
 
+# ─────────────────────────────────────────────────────────────────────────────
+# TC-30  Settings panel and UI sound toggle.
+# ─────────────────────────────────────────────────────────────────────────────
+if want tc30; then
+  section "TC-30  Settings panel and UI sound"
+
+  panel="$REPO_DIR/plugins/tools/Panel.qml"
+  tools_widget="$REPO_DIR/plugins/tools/BarWidget.qml"
+
+  check "the tools panel carries a settings view" \
+    "$(grep -q 'property bool showSettings' "$panel" \
+      && grep -q 'SETTINGS' "$panel" && echo 0 || echo 1)"
+  check "settings write bar options through the host" \
+    "$(grep -q 'function setBarOption' "$panel" \
+      && grep -q 'mutateShellConfig' "$panel" && echo 0 || echo 1)"
+  check "settings own weather auto-location" \
+    "$(grep -q 'function setWeatherAuto' "$panel" \
+      && grep -q 'updateEntryInline' "$panel" && echo 0 || echo 1)"
+  check "settings offer diagnose, verify, repair and logs" \
+    "$(for action in diagnose verifyPins repairBar openLogs; do \
+         grep -q "function $action" "$panel" || exit 1; \
+       done; echo 0)"
+  check "the tools widget exposes the settings IPC" \
+    "$(grep -q 'function settings(): void' "$tools_widget" && echo 0 || echo 1)"
+
+  root="$(new_sandbox tc30)"
+  state="$root/home/.local/state/virtual-paradise"
+  HOME="$root/home" bash "$REPO_DIR/bin/vp-sound.sh" toggle
+  check "vp-sound toggle mutes the UI" \
+    "$([[ -f "$state/sound-off" ]] && echo 0 || echo 1)"
+  HOME="$root/home" bash "$REPO_DIR/bin/vp-sound.sh" toggle
+  check "vp-sound toggle unmutes the UI" \
+    "$([[ ! -f "$state/sound-off" ]] && echo 0 || echo 1)"
+fi
+
 summary

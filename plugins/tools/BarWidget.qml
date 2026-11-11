@@ -13,6 +13,7 @@ BarWidget {
 
   property bool panelWanted: false
   property bool openRequested: false
+  property bool settingsRequested: false
 
   function injectPanel() {
     var target = panelLoader.item
@@ -51,6 +52,16 @@ BarWidget {
     panelLoader.item.toggle()
   }
 
+  function showSettings() {
+    if (!ensurePanel()) {
+      settingsRequested = true
+      openRequested = true
+      return
+    }
+    panelLoader.item.showSettings = true
+    panelLoader.item.open()
+  }
+
   readonly property bool opened: panelLoader.item ? panelLoader.item.opened === true : false
 
   implicitWidth: 30
@@ -68,6 +79,10 @@ BarWidget {
     onLoaded: {
       root.injectPanel()
       Qt.callLater(root.injectPanel)
+      if (root.settingsRequested) {
+        root.settingsRequested = false
+        panelLoader.item.showSettings = true
+      }
       if (root.openRequested) {
         root.openRequested = false
         panelLoader.item.open()
@@ -80,6 +95,7 @@ BarWidget {
 
     function toggle(): void { root.togglePanel() }
     function open(): void { root.open() }
+    function settings(): void { root.showSettings() }
     function close(): void { root.close() }
   }
 

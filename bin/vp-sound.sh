@@ -3,6 +3,7 @@
 #  Virtual☆Paradise — UI sound player
 # ==============================================================================
 #  Usage: vp-sound.sh login|lock|unlock|error|notify
+#         vp-sound.sh toggle     # mute/unmute every UI sound
 #
 #  The theme ships five short synth blips; this wrapper picks the best
 #  available player and keeps a single opt-out flag. Sounds are best-effort:
@@ -15,6 +16,18 @@
 set -uo pipefail
 
 event="${1:-}"
+
+if [[ $event == toggle ]]; then
+  state="$HOME/.local/state/virtual-paradise"
+  mkdir -p "$state"
+  if [[ -f "$state/sound-off" ]]; then
+    rm -f "$state/sound-off"
+  else
+    touch "$state/sound-off"
+  fi
+  exit 0
+fi
+
 [[ -n $event ]] || exit 0
 
 [[ -f "$HOME/.local/state/virtual-paradise/sound-off" ]] && exit 0

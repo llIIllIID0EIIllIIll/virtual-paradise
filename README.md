@@ -14,11 +14,13 @@
 [![Arch Linux](https://img.shields.io/badge/Arch_Linux-1793D1?style=flat-square&logo=arch-linux&logoColor=white)](https://archlinux.org)
 [![Omarchy 4.5+](https://img.shields.io/badge/Omarchy-4.5+-8A2BE2?style=flat-square)](https://omarchy.org)
 [![Hyprland](https://img.shields.io/badge/Hyprland-Wayland-00ffdd?style=flat-square)](https://hyprland.org)
-[![Tests](https://img.shields.io/badge/tests-511%20passed-00ff88?style=flat-square)](tests/)
+[![Tests](https://img.shields.io/badge/tests-518%20passed-00ff88?style=flat-square)](tests/)
 [![License](https://img.shields.io/badge/license-MIT-ffe066?style=flat-square)](LICENSE)
 [![Version](https://img.shields.io/badge/version-1.4.0-ff00ff?style=flat-square)](VERSION)
 
 *A complete desktop experience: floating island bar, animated wallpapers, Plymouth boot splash, and every widget restyled in Miku cyan.*
+
+**English** • [Tiếng Việt](README.vi.md)
 
 <br/>
 
@@ -413,6 +415,26 @@ the hidden entries take no space in the row. Move one back into the visible
 row by removing `"hidden": true` from its entry in `shell.json` (or via
 `omarchy bar put`).
 
+### Settings Panel
+
+Open **Tools** on the bar and press the gear to switch the dropdown to settings.
+The panel writes every change to `~/.config/omarchy/shell.json` and applies it
+live:
+
+- **Appearance**: gap effects, hover glow, reduced motion, theme variant
+  (Cyberpunk / Sakura / Cozy), live wallpaper, UI sound.
+- **Weather**: automatic location consent, with the same privacy default as the
+  weather panel.
+- **System**: run `diagnose`, verify pinned plugins, repair the island bar from
+  the post-update hook, and follow the user journal.
+
+The panel is also reachable from scripts:
+
+```bash
+omarchy-shell doe.tools settings
+omarchy-shell doe.tools close
+```
+
 ### Weather Location
 
 The weather panel never guesses your location on its own. With no city set, it
@@ -552,9 +574,9 @@ default.
 
 ### Running Tests
 
-The test suite has twenty-nine test cases and 511 assertions; optional tools
+The test suite has thirty test cases and 518 assertions; optional tools
 (`shellcheck`, `qmllint`, `hyprctl`) enable extra checks when present, so the
-exact count varies between machines (511 with `shellcheck` and `qmllint`). It
+exact count varies between machines (518 with `shellcheck` and `qmllint`). It
 runs in a sandbox and never touches your real system.
 
 ```bash
@@ -592,6 +614,7 @@ Test cases:
 - **TC-27**: Shared cursor server (one process for both overlays, socket handoff)
 - **TC-28**: Fork drift, 4.5 parity (indicators, WallClock, titlebar colour, retired bell) and the documented tree
 - **TC-29**: Motion, privacy, accessibility and multi-user login (shared frame clock, reduced motion, weather consent, screen-reader labels, SDDM account chips)
+- **TC-30**: Settings panel and UI sound (bar options, weather consent, diagnose/verify/repair/logs, `vp-sound.sh toggle`)
 
 ### Project Structure
 

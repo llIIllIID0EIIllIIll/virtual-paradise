@@ -8,6 +8,19 @@ Conventional Commits.
 
 ## [Unreleased]
 
+### Added
+- **A settings/health view inside the Tools dropdown.** The gear switches the
+  panel to appearance toggles (gap effects, hover glow, reduced motion), theme
+  variants, live wallpaper, UI sound, weather consent, and system actions
+  (diagnose, verify pins, repair bar, logs). Changes go through the host's
+  `mutateShellConfig`/`updateEntryInline` and apply live.
+- **Vietnamese quick-start guide** (`README.vi.md`), linked from the English
+  README.
+- **Release automation.** A `v*` tag now validates VERSION/CHANGELOG and
+  publishes a GitHub release; `workflow_dispatch` runs the validation only.
+- `vp-sound.sh toggle` mutes or unmutes every UI sound without touching the
+  other sound events.
+
 ### Fixed
 - **The power-manager no longer floods the journal.** Its idle poll logs an
   `IDLE DEBUG` line every five seconds; the tracked override layer now removes

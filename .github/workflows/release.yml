@@ -1,0 +1,58 @@
+# ==============================================================================
+#  Virtual☆Paradise — release automation
+# ==============================================================================
+#  A tag push is the only manual step. This workflow checks that the tag, the
+#  VERSION file and the CHANGELOG agree before publishing a GitHub release.
+#  `workflow_dispatch` runs the same validation without creating anything, so
+#  the checks can be tried before a release.
+# ==============================================================================
+
+name: release
+
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    name: Validate and publish
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Check tag, VERSION and CHANGELOG agree
+        run: |
+          set -euo pipefail
+          version="$(tail -n1 VERSION | tr -d '[:space:]')"
+          if [[ "${{ github.event_name }}" == "push" ]]; then
+            tag="${GITHUB_REF_NAME#v}"
+          else
+            tag="$version"
+          fi
+          if [[ "$tag" != "$version" ]]; then
+            echo "::error::tag $tag does not match VERSION $version"
+            exit 1
+          fi
+          if ! grep -qE "^## \[${version//./\\.}\]" CHANGELOG.md; then
+            echo "::error::CHANGELOG has no [## ${version}] section"
+            exit 1
+          fi
+          echo "Version $version is consistent."
+
+      - name: Publish GitHub release
+        if: github.event_name == 'push'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          tag="$GITHUB_REF_NAME"
+          if gh release view "$tag" >/dev/null 2>&1; then
+            echo "Release $tag already exists; leaving it alone."
+            exit 0
+          fi
+          gh release create "$tag" --title "$tag" --generate-notes
