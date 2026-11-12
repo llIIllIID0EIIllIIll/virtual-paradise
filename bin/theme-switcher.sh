@@ -6,6 +6,7 @@
 #    theme-switcher.sh              # Interactive menu
 #    theme-switcher.sh cyberpunk    # Restore the default neon palette
 #    theme-switcher.sh catppuccin   # Match Omarchy's Catppuccin palette
+#    theme-switcher.sh custom 5e8eed # Use an arbitrary accent (no '#')
 #    theme-switcher.sh wallpaper    # Derive the palette from the wallpaper
 #    theme-switcher.sh list         # List available variants
 #    theme-switcher.sh reset        # Restore the original palette
@@ -386,8 +387,22 @@ wallpaper_accent() {
 # Rotate a hex colour's hue. ImageMagick's modulate hue is a percentage of the
 # wheel: 100 keeps it, 150 is the complement.
 hue_shift() {
-  magick xc:"#$1" -modulate 100,110,"$2" -depth 8 \
-    -format '%[hex:p{0,0}]' info: 2>/dev/null | cut -c1-6
+  if command -v magick >/dev/null 2>&1; then
+    magick xc:"#$1" -modulate 100,110,"$2" -depth 8 \
+      -format '%[hex:p{0,0}]' info: 2>/dev/null | cut -c1-6
+    return
+  fi
+  # CI and minimal installs may not have ImageMagick. colorsys gives the same
+  # hue rotation with a small saturation lift.
+  python3 - "$1" "$2" <<'PY'
+import colorsys, sys
+value = sys.argv[1].lstrip("#")
+shift = float(sys.argv[2]) / 360.0
+r, g, b = (int(value[i:i + 2], 16) / 255.0 for i in (0, 2, 4))
+h, l, s = colorsys.rgb_to_hls(r, g, b)
+r, g, b = colorsys.hls_to_rgb((h + shift) % 1.0, l, min(1.0, s * 1.1))
+print("%02x%02x%02x" % tuple(round(v * 255) for v in (r, g, b)))
+PY
 }
 
 # Derive a whole palette from the current wallpaper and apply it through the
@@ -434,6 +449,49 @@ wallpaper_variant() {
   echo "  Pink:      #$pink"
 }
 
+# Apply an arbitrary six-digit accent by deriving the companion colours from
+# it. The background stays the theme's dark baseline; the settings color picker
+# uses this path.
+apply_custom() {
+  local accent="${1#\#}"
+  if [[ ! $accent =~ ^[0-9a-fA-F]{6}$ ]]; then
+    echo "Usage: $0 custom <RRGGBB>" >&2
+    exit 1
+  fi
+  if [[ ! -f "$THEME_DIR/colors.toml" ]]; then
+    echo "Virtual Paradise is not installed: $THEME_DIR/colors.toml is missing." >&2
+    exit 1
+  fi
+
+  if [[ ! -f "$(pristine_colors_file)" ]]; then
+    mkdir -p "$ORIGINAL_DIR"
+    cp "$THEME_DIR/colors.toml" "$(pristine_colors_file)"
+  fi
+
+  local secondary tertiary warm pink hot background
+  secondary="$(hue_shift "$accent" 150)"
+  tertiary="$(hue_shift "$accent" 125)"
+  warm="$(hue_shift "$accent" 45)"
+  pink="$(hue_shift "$accent" 330)"
+  hot="$(hue_shift "$accent" 180)"
+  background="$(toml_value "$(pristine_colors_file)" background)"
+  [[ -n $background ]] || background="0f081d"
+
+  local map_file="$STATE_DIR/theme-variant-map"
+  build_color_map "$(pristine_colors_file)" "$accent" "$secondary" "$tertiary" "$warm" "$pink" "$background" >"$map_file"
+  apply_to_theme_files "$map_file"
+  echo "custom" >"$CURRENT_VARIANT_FILE"
+  write_palette "custom" "$accent" "$secondary" "$tertiary" "$warm" "$pink" "$background" "$hot"
+  apply_theme || true
+  echo ""
+  echo "✓ Custom accent applied: #$accent"
+  echo "  Accent:    #$accent"
+  echo "  Secondary: #$secondary"
+  echo "  Tertiary:  #$tertiary"
+  echo "  Warm:      #$warm"
+  echo "  Pink:      #$pink"
+}
+
 # Main logic
 case "${1:-}" in
   "")
@@ -448,12 +506,15 @@ case "${1:-}" in
   "wallpaper")
     wallpaper_variant "${2:-}"
     ;;
+  "custom")
+    apply_custom "${2:-}"
+    ;;
   *)
     if [[ -n ${VARIANTS[${1:-}]:-} ]]; then
       apply_variant "$1"
       exit 0
     fi
-    echo "Usage: $0 [variant|wallpaper [image]|list|reset]"
+    echo "Usage: $0 [variant|custom <RRGGBB>|wallpaper [image]|list|reset]"
     echo ""
     echo "Variants: $(printf '%s\n' "${!VARIANTS[@]}" | LC_ALL=C sort | tr '\n' ' ')"
     echo "wallpaper derives the palette from the current background (or the"

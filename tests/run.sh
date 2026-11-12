@@ -1446,6 +1446,15 @@ raise SystemExit(0 if d.get("accent") == "#89b4fa" and d.get("tertiary") == "#a6
                  and d.get("hot") == "#f38ba8" else 1)
 PY
   check "the QML palette follows the variant" $?
+
+  run_switcher custom 12ab34
+  check "a custom accent is applied" \
+    "$(grep -q '^accent = "#12ab34"' "$theme/colors.toml" && echo 0 || echo 1)"
+  python3 -c 'import json,sys; d=json.load(open(sys.argv[1])); raise SystemExit(0 if d.get("name")=="custom" and d.get("accent")=="#12ab34" else 1)' \
+    "$home/.local/state/virtual-paradise/palette.json"
+  check "the custom palette names itself custom" $?
+  check "the custom variant is recorded" \
+    "$(grep -qx 'custom' "$home/.local/state/virtual-paradise/current_variant" && echo 0 || echo 1)"
   check "the bar exposes the palette to its widgets" \
     "$(grep -q 'palette.json' "$REPO_DIR/bars/island-bar/Bar.qml" \
       && grep -q 'readonly property color accentColor' "$REPO_DIR/bars/island-bar/Bar.qml" \
@@ -2516,8 +2525,11 @@ if want tc20; then
   check "the hover glow follows the bar effects switch" \
     "$(grep -q 'hoverEffectsEnabled: islandsEnabled && gapEffects && hoverGlow' \
       "$REPO_DIR/bars/island-bar/Bar.qml" && echo 0 || echo 1)"
-  check "the hover glow can be disabled from shell.json" \
-    "$(grep -q 'config.hoverGlow !== false' "$REPO_DIR/bars/island-bar/Bar.qml" \
+  check "the hover glow defaults off" \
+    "$(grep -q 'property bool hoverGlow: false' "$REPO_DIR/bars/island-bar/Bar.qml" \
+      && echo 0 || echo 1)"
+  check "the hover glow is opt-in from shell.json" \
+    "$(grep -q 'config.hoverGlow === true' "$REPO_DIR/bars/island-bar/Bar.qml" \
       && echo 0 || echo 1)"
 fi
 
@@ -3292,6 +3304,14 @@ if want tc30; then
   check "the tools panel carries a settings view" \
     "$(grep -q 'property bool showSettings' "$panel" \
       && grep -q 'SETTINGS' "$panel" && echo 0 || echo 1)"
+  check "settings replaced the appearance toggles with a color picker" \
+    "$(! grep -q 'label: "Gap effects"' "$panel" \
+      && ! grep -q 'label: "Hover glow"' "$panel" \
+      && ! grep -q 'label: "Reduced motion"' "$panel" \
+      && grep -q 'CUSTOM COLOR' "$panel" \
+      && grep -q 'applyCustomColor' "$panel" \
+      && grep -q 'customHex.substring(1)' "$panel" \
+      && grep -q 'PanelSlider' "$panel" && echo 0 || echo 1)"
   check "settings write bar options through vp-setting" \
     "$(grep -q 'function setBarOption' "$panel" \
       && grep -q 'vp-setting.sh set bar' "$panel" && echo 0 || echo 1)"

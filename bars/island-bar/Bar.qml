@@ -76,10 +76,10 @@ Item {
   // Streaming glow in the gaps between islands. Only meaningful while the bar
   // is split into islands; a merged bar has no gaps for it to live in.
   property bool gapEffects: true
-  // Per-widget halo under the pointer. Gated by the same effects switch as the
-  // gap stream, and independently switchable from shell.json with
-  // `"bar": { "hoverGlow": false }`.
-  property bool hoverGlow: true
+  // Per-widget halo under the pointer. Off by default: the gap stream and bar
+  // chrome are the identity, the halo is an optional extra. Enable it with
+  // `"bar": { "hoverGlow": true }`.
+  property bool hoverGlow: false
   readonly property bool hoverEffectsEnabled: islandsEnabled && gapEffects && hoverGlow
   // Surface language. false (default) draws the V2 continuous strip in
   // BarSurface.qml; true brings back the floating pill islands.
@@ -719,10 +719,10 @@ Item {
     position = normalizePosition(config.position)
     setRequestedTransparency(config.transparent === true)
     centerAnchor = Util.canonicalWidgetId(config.centerAnchor || "")
-    // Effects are opt-out: a missing key keeps the current behaviour, while an
-    // explicit false lets a user turn off ambient motion without editing QML.
+    // Gap effects are on unless explicitly disabled; hover glow is opt-in so
+    // the default bar stays calm. Reduced motion is opt-in too.
     gapEffects = config.gapEffects !== false
-    hoverGlow = config.hoverGlow !== false
+    hoverGlow = config.hoverGlow === true
     if (config.reducedMotion !== undefined)
       reducedMotion = config.reducedMotion === true
 

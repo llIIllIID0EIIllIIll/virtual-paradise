@@ -15,6 +15,10 @@ Conventional Commits.
   (diagnose, verify pins, repair bar, logs). It shows the current variant and
   labels the variants honestly: they recolor the chrome, terminals and bar
   widgets; the wallpaper/Plymouth/SDDM artwork remains cyberpunk.
+- **Custom accent picker.** The Appearance toggles are gone; the settings
+  panel now has an HSL picker with six swatches and an Apply button. It writes
+  a `custom` palette through `theme-switcher.sh custom <RRGGBB>` and restarts
+  the shell through the single-flight wrapper.
 - **`vp-setting.sh`**, the atomic settings writer behind the panel. `get`/`set`
   support the bar booleans and weather auto-location; writes use `flock` and a
   same-directory replace so a shell reload cannot see a truncated `shell.json`.
@@ -54,13 +58,16 @@ Conventional Commits.
   `pipefail` against `grep -q`.
 
 ### Changed
+- **The bar defaults are fixed:** gap effects on, hover glow off, reduced
+  motion off. The three Appearance toggles were removed; the halo remains
+  available through `"bar": {"hoverGlow": true}` for anyone who wants it.
 - **Accent variants now mirror real palettes.** Catppuccin, Tokyo Night,
   Gruvbox, Nord, Everforest, Kanagawa, Rosé Pine Moon, Hackerman and Dracula
   replace the old Sakura/Cozy experiments. The semantic roles (`green`,
   `magenta`, `yellow`, `bg`, `blue`…) and the QML bar widgets follow the
   palette instead of keeping the cyberpunk accents.
 - **The night timer uses Tokyo Night**, replacing the removed Sakura variant.
-- Tests: 533 assertions; TC-12 covers the Omarchy palettes and `palette.json`,
+- Tests: 538 assertions; TC-12 covers the Omarchy palettes, custom accents and `palette.json`,
   TC-30 covers the settings panel, `vp-setting.sh` and the UI sound toggle.
 - **Repository moved to `github.com/vuhuudo/virtual-paradise`.** Clone URLs,
   issue/discussion links, the license notice and the security-advisory link

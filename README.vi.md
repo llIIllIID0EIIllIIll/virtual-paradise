@@ -59,9 +59,12 @@ Xem đầy đủ trong [KEYBINDINGS.md](KEYBINDINGS.md).
 Mở **Tools** trên thanh bar → biểu tượng **bánh răng**. Từ đây có thể:
 
 - Bật/tắt **Gap effects**, **Hover glow**, **Reduced motion**.
-- Đổi **accent variant**: Cyberpunk, Catppuccin, Tokyo Night, Gruvbox, Nord,
-  Everforest, Kanagawa, Rosé Pine, Hackerman, Dracula, Mono, Neon (đổi chrome,
-  terminal và GTK; widget/artwork vẫn cyberpunk).
+- **Custom color**: kéo HSL (hue/saturation/lightness) hoặc chọn swatch, bấm
+  **Apply color** để đổi accent toàn theme.
+- **Palette có sẵn**: Cyberpunk, Catppuccin, Tokyo Night, Gruvbox, Nord,
+  Everforest, Kanagawa, Rosé Pine, Hackerman, Dracula, Mono, Neon.
+- **Actions**: bật/tắt wallpaper động, âm thanh UI, diagnose, verify pins,
+  repair bar, logs.
 - Bật/tắt **wallpaper động**, **âm thanh UI**.
 - Bật **Automatic location** cho weather (mặc định tắt vì lý do riêng tư).
 - Chạy **Diagnose**, **Verify pins**, **Repair bar**, xem **Logs**.

@@ -46,6 +46,27 @@ Panel {
     { id: "dracula", label: "Dracula" }
   ]
 
+  // Custom accent picker. HSL keeps the controls intuitive; the theme takes
+  // the resulting six-digit hex.
+  property real customHue: 180
+  property real customSaturation: 100
+  property real customLightness: 50
+  readonly property color customColor: Qt.hsla(customHue / 360, customSaturation / 100, customLightness / 100, 1)
+  readonly property string customHex: "#" + root.hexByte(customColor.r) + root.hexByte(customColor.g) + root.hexByte(customColor.b)
+  readonly property var swatches: [
+    { h: 180, s: 100, l: 50, label: "Cyan" },
+    { h: 220, s: 80, l: 65, label: "Blue" },
+    { h: 270, s: 70, l: 70, label: "Violet" },
+    { h: 330, s: 80, l: 75, label: "Pink" },
+    { h: 140, s: 80, l: 55, label: "Green" },
+    { h: 45, s: 100, l: 60, label: "Amber" }
+  ]
+
+  function hexByte(value) {
+    var n = Math.round(Math.max(0, Math.min(1, value)) * 255)
+    return (n < 16 ? "0" : "") + n.toString(16)
+  }
+
   readonly property var tools: [
     { id: "io.github.randazraik.xray", label: "X-Ray", icon: "󰗇", hint: "Screen lens" },
     { id: "io.github.grichard99.omaproton-vpn", label: "OmaProton VPN", icon: "󰦝", hint: "VPN" },
@@ -65,9 +86,6 @@ Panel {
   // The panel reads shell.json itself: the injected bar object is null while
   // the shell rebuilds, and the toggles used to show stale/default values.
   readonly property var barSettings: (root.shellConfig && root.shellConfig.bar) ? root.shellConfig.bar : ({})
-  readonly property bool gapEffectsOn: root.barSettings.gapEffects !== false
-  readonly property bool hoverGlowOn: root.barSettings.hoverGlow !== false
-  readonly property bool reducedMotionOn: root.barSettings.reducedMotion === true
 
   readonly property var weatherConfig: {
     var layout = root.barSettings.layout
@@ -100,6 +118,15 @@ Panel {
     if (!next.bar || typeof next.bar !== "object") next.bar = {}
     next.bar[key] = value
     root.shellConfig = next
+  }
+
+  function applyCustomColor() {
+    if (root.variantSwitching) return
+    root.variantSwitching = true
+    // Pass the hex without '#'; inside `bash -lc '...'` a leading # would
+    // start a shell comment.
+    root.run("bash -lc '" + root.home + "/.local/bin/theme-switcher.sh custom " + root.customHex.substring(1)
+      + " && " + root.home + "/.local/bin/vp-restart-shell.sh'")
   }
 
   function setWeatherAuto(value) {
@@ -427,7 +454,7 @@ Panel {
         }
 
         Text {
-          text: "APPEARANCE"
+          text: "CUSTOM COLOR"
           color: Qt.darker(root.fg, 1.35)
           font.family: root.ff
           font.pixelSize: Style.font.caption
@@ -435,37 +462,127 @@ Panel {
           height: Style.space(16)
         }
 
-        Toggle {
-          width: parent.width
-          label: "Gap effects"
-          description: "Comet stream, rim scanner and hex drift"
-          checked: root.gapEffectsOn
-          foreground: root.fg
-          accent: Color.accent
-          fontFamily: root.ff
-          onClicked: root.setBarOption("gapEffects", !root.gapEffectsOn)
+        Row {
+          spacing: Style.space(10)
+
+          Rectangle {
+            width: Style.space(44)
+            height: Style.space(28)
+            radius: Style.cornerRadius
+            color: root.customColor
+            border.width: 1
+            border.color: Qt.rgba(root.fg.r, root.fg.g, root.fg.b, 0.35)
+          }
+
+          Text {
+            anchors.verticalCenter: parent.verticalCenter
+            text: root.customHex.toUpperCase()
+            color: root.fg
+            font.family: root.ff
+            font.pixelSize: Style.font.body
+            font.letterSpacing: 1
+          }
         }
 
-        Toggle {
+        Flow {
           width: parent.width
-          label: "Hover glow"
-          description: "Lit chrome under the pointer"
-          checked: root.hoverGlowOn
-          foreground: root.fg
-          accent: Color.accent
-          fontFamily: root.ff
-          onClicked: root.setBarOption("hoverGlow", !root.hoverGlowOn)
+          spacing: Style.space(6)
+
+          Repeater {
+            model: root.swatches
+
+            Rectangle {
+              required property var modelData
+              width: Style.space(24)
+              height: Style.space(24)
+              radius: Style.space(6)
+              color: Qt.hsla(modelData.h / 360, modelData.s / 100, modelData.l / 100, 1)
+              border.width: 1
+              border.color: Qt.rgba(root.fg.r, root.fg.g, root.fg.b, 0.30)
+              Accessible.name: modelData.label + " preset"
+              Accessible.role: Accessible.Button
+
+              MouseArea {
+                anchors.fill: parent
+                cursorShape: Qt.PointingHandCursor
+                onClicked: {
+                  root.customHue = modelData.h
+                  root.customSaturation = modelData.s
+                  root.customLightness = modelData.l
+                }
+              }
+            }
+          }
         }
 
-        Toggle {
+        Text {
+          text: "HUE  " + Math.round(root.customHue)
+          color: Qt.darker(root.fg, 1.45)
+          font.family: root.ff
+          font.pixelSize: Style.font.caption
+        }
+        PanelSlider {
           width: parent.width
-          label: "Reduced motion"
-          description: "Keep the effects but stop the travel"
-          checked: root.reducedMotionOn
+          minimum: 0
+          maximum: 360
+          step: 1
+          integer: true
+          value: root.customHue
+          onMoved: function(v) { root.customHue = v }
+          onReleased: function(v) { root.customHue = v }
+        }
+
+        Text {
+          text: "SATURATION  " + Math.round(root.customSaturation)
+          color: Qt.darker(root.fg, 1.45)
+          font.family: root.ff
+          font.pixelSize: Style.font.caption
+        }
+        PanelSlider {
+          width: parent.width
+          minimum: 0
+          maximum: 100
+          step: 1
+          integer: true
+          value: root.customSaturation
+          onMoved: function(v) { root.customSaturation = v }
+          onReleased: function(v) { root.customSaturation = v }
+        }
+
+        Text {
+          text: "LIGHTNESS  " + Math.round(root.customLightness)
+          color: Qt.darker(root.fg, 1.45)
+          font.family: root.ff
+          font.pixelSize: Style.font.caption
+        }
+        PanelSlider {
+          width: parent.width
+          minimum: 20
+          maximum: 80
+          step: 1
+          integer: true
+          value: root.customLightness
+          onMoved: function(v) { root.customLightness = v }
+          onReleased: function(v) { root.customLightness = v }
+        }
+
+        Button {
+          text: root.variantSwitching ? "Applying…" : "Apply color"
+          enabled: !root.variantSwitching
+          focusable: true
           foreground: root.fg
           accent: Color.accent
           fontFamily: root.ff
-          onClicked: root.setBarOption("reducedMotion", !root.reducedMotionOn)
+          onClicked: root.applyCustomColor()
+        }
+
+        Text {
+          text: "PALETTES"
+          color: Qt.darker(root.fg, 1.35)
+          font.family: root.ff
+          font.pixelSize: Style.font.caption
+          font.letterSpacing: 1
+          height: Style.space(16)
         }
 
         Flow {
@@ -499,7 +616,7 @@ Panel {
 
         Text {
           width: parent.width
-          text: "Accent variants recolor the chrome and terminals; the bar widget accents and artwork stay cyberpunk for now."
+          text: "Accent variants recolor the chrome, terminals and bar widgets; the wallpaper/Plymouth/SDDM artwork stays cyberpunk for now."
           color: Qt.darker(root.fg, 1.7)
           font.family: root.ff
           font.pixelSize: Style.font.caption

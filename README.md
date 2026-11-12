@@ -14,7 +14,7 @@
 [![Arch Linux](https://img.shields.io/badge/Arch_Linux-1793D1?style=flat-square&logo=arch-linux&logoColor=white)](https://archlinux.org)
 [![Omarchy 4.5+](https://img.shields.io/badge/Omarchy-4.5+-8A2BE2?style=flat-square)](https://omarchy.org)
 [![Hyprland](https://img.shields.io/badge/Hyprland-Wayland-00ffdd?style=flat-square)](https://hyprland.org)
-[![Tests](https://img.shields.io/badge/tests-533%20passed-00ff88?style=flat-square)](tests/)
+[![Tests](https://img.shields.io/badge/tests-538%20passed-00ff88?style=flat-square)](tests/)
 [![License](https://img.shields.io/badge/license-MIT-ffe066?style=flat-square)](LICENSE)
 [![Version](https://img.shields.io/badge/version-1.4.0-ff00ff?style=flat-square)](VERSION)
 
@@ -75,9 +75,9 @@ restart.
 The repository also ships `theme-switcher.sh` for changing the Virtual☆Paradise
 palette from a terminal (`theme-switcher.sh list` shows the variants,
 `theme-switcher.sh reset` restores the original palette). These are **accent
-variants**: they recolor the theme chrome, terminals and GTK, but the bar
-widget accents, wallpaper, Plymouth and SDDM art stay cyberpunk until a full
-variant pack lands. Switching from the settings panel also restarts the shell
+variants**: they recolor the theme chrome, terminals, GTK and bar widgets, but
+the wallpaper, Plymouth and SDDM art stay cyberpunk until a full variant pack
+lands. Switching from the settings panel also restarts the shell
 so the QML surfaces pick up the new accent immediately. `theme-switcher.sh
 wallpaper` derives the accent and its two companions from the current
 background image instead of a fixed variant.
@@ -374,15 +374,16 @@ read-only, needs no sudo, and never changes your configuration:
 
 ### Bar Effects
 
-The gap stream, the rim scanner and the hover chrome are opt-out. Add the keys
-under `bar` in `~/.config/omarchy/shell.json`; the installer and theme hooks
-preserve a file you have edited.
+The gap stream/rim scanner is **on by default**, the hover chrome is **off by
+default**, and reduced motion is **opt-in**. Add the keys under `bar` in
+`~/.config/omarchy/shell.json`; the installer and theme hooks preserve a file
+you have edited.
 
 ```json
 {
   "bar": {
-    "gapEffects": false,
-    "hoverGlow": false,
+    "gapEffects": true,
+    "hoverGlow": true,
     "reducedMotion": true
   }
 }
@@ -391,9 +392,9 @@ preserve a file you have edited.
 `gapEffects` controls the comet stream that crosses the gaps, freezes the hex
 underlay's drift and stops the scanner spark that laps the bar's outer rim.
 `hoverGlow` controls the lit hover pill: the rotating ramp rim, the hex
-shimmer, the ramp-sampled bloom and the scale pop. Setting `gapEffects` to
-`false` also turns off the hover chrome, so the bar can be made completely
-still with one key.
+shimmer, the ramp-sampled bloom and the scale pop. It is opt-in; set it to
+`true` to bring the halo back. Setting `gapEffects` to `false` also turns off
+the hover chrome, so the bar can be made completely still with one key.
 
 `reducedMotion` keeps the same colours and chrome but stops cosmetic travel:
 the rim gradient and the two gap canvases become still, and the hover pulse
@@ -427,11 +428,15 @@ The panel writes every change through `vp-setting.sh` (flock + same-directory
 atomic replace) to `~/.config/omarchy/shell.json`, and the shell reloads it
 live:
 
-- **Appearance**: gap effects, hover glow, reduced motion, accent variant
-  (Cyberpunk, Catppuccin, Tokyo Night, Gruvbox, Nord, Everforest, Kanagawa,
-  Rosé Pine, Hackerman, Dracula, Mono, Neon), live wallpaper, UI sound. The
-  variants recolor the chrome, terminals and GTK; the bar widget accents and
-  artwork stay cyberpunk for now.
+- **Custom color**: an HSL picker (hue, saturation, lightness) with six preset
+  swatches and a live preview. **Apply color** writes that accent and its
+  derived companions to the theme, then restarts the shell.
+- **Palettes**: Cyberpunk, Catppuccin, Tokyo Night, Gruvbox, Nord, Everforest,
+  Kanagawa, Rosé Pine, Hackerman, Dracula, Mono, Neon. Each palette recolors
+  the chrome, terminals, GTK and bar widgets; the wallpaper/Plymouth/SDDM
+  artwork stays cyberpunk for now.
+- **Actions**: live wallpaper toggle, UI sound toggle, diagnose, verify pins,
+  repair bar, logs.
 - **Weather**: automatic location consent, with the same privacy default as the
   weather panel.
 - **System**: run `diagnose`, verify pinned plugins, repair the island bar from
@@ -591,9 +596,9 @@ default.
 
 ### Running Tests
 
-The test suite has thirty test cases and 533 assertions; optional tools
+The test suite has thirty test cases and 538 assertions; optional tools
 (`shellcheck`, `qmllint`, `hyprctl`) enable extra checks when present, so the
-exact count varies between machines (533 with `shellcheck` and `qmllint`). It
+exact count varies between machines (538 with `shellcheck` and `qmllint`). It
 runs in a sandbox and never touches your real system.
 
 ```bash
