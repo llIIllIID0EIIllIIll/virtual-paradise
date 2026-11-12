@@ -7,6 +7,7 @@
 #    vp-setting.sh set bar.gapEffects false
 #    vp-setting.sh set bar.hoverGlow true
 #    vp-setting.sh set bar.reducedMotion true
+#    vp-setting.sh set bar.liveTerminals false
 #    vp-setting.sh set weather.autoLocation true
 #
 #  The QML settings panel and scripts use this instead of writing shell.json
@@ -58,7 +59,7 @@ import tempfile
 
 path, mode, key, value, lock_path = sys.argv[1:6]
 
-BAR_KEYS = ("bar.gapEffects", "bar.hoverGlow", "bar.reducedMotion")
+BAR_KEYS = ("bar.gapEffects", "bar.hoverGlow", "bar.reducedMotion", "bar.liveTerminals")
 WEATHER_KEY = "weather.autoLocation"
 
 

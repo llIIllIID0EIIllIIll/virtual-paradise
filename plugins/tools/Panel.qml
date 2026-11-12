@@ -110,6 +110,7 @@ Panel {
   readonly property real paletteContrast: root.contrastRatio(
     root.roleColor("foreground"), root.roleColor("background"))
   readonly property bool contrastLow: root.paletteContrast < 4.5
+  readonly property bool liveTerminals: root.barSettings.liveTerminals !== false
 
   // The visual board: thirteen hues across, seven tones down, then a neutral
   // ramp for backgrounds and text. No hex knowledge required.
@@ -393,8 +394,9 @@ Panel {
     root.paletteWriteDirty = false
     root.paletteQueued = false
     root.paletteError = ""
-    paletteWriter.command = [root.home + "/.local/bin/vp-palette.sh", "--seq",
-      String(Date.now())].concat(root.currentColors())
+    var args = [root.home + "/.local/bin/vp-palette.sh", "--seq", String(Date.now())]
+    if (root.liveTerminals) args.push("--terminals")
+    paletteWriter.command = args.concat(root.currentColors())
     paletteWriter.running = true
   }
 
@@ -763,8 +765,8 @@ Panel {
       // The QML Process is about to die; hand the final state to a detached
       // writer. The sequence guard makes this newer than any in-flight write.
       root.paletteWriteDirty = false
-      root.run(root.home + "/.local/bin/vp-palette.sh --seq " + Date.now() + " "
-        + root.currentColors().join(" "))
+      root.run(root.home + "/.local/bin/vp-palette.sh --seq " + Date.now()
+        + (root.liveTerminals ? " --terminals " : " ") + root.currentColors().join(" "))
     }
     root.flushTheme(false)
   }
@@ -1632,6 +1634,17 @@ Panel {
             fontFamily: root.ff
             onClicked: root.toggleSound()
           }
+        }
+
+        Toggle {
+          width: parent.width
+          label: "Live terminal palette"
+          description: "Recolor open terminals with OSC 4/10/11/12"
+          checked: root.liveTerminals
+          foreground: root.fg
+          accent: Color.accent
+          fontFamily: root.ff
+          onClicked: root.setBarOption("liveTerminals", !root.liveTerminals)
         }
 
         Text {

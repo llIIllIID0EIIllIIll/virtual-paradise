@@ -1396,6 +1396,11 @@ if want tc11; then
   check "vp-palette accepts ordered writes" \
     "$(grep -q -- '--seq' "$REPO_DIR/bin/vp-palette.sh" \
       && grep -q 'existing_seq > seq' "$REPO_DIR/bin/vp-palette.sh" && echo 0 || echo 1)"
+  live_osc="$(bash "$REPO_DIR/bin/vp-terminal-palette.sh" --dry-run 2>/dev/null || true)"
+  check "the live terminal palette emits OSC colours" \
+    "$(grep -q '\\x1b\]4;4;' <<<"$live_osc" \
+      && grep -q '\\x1b\]11;' <<<"$live_osc" \
+      && grep -q '\\x1b\]12;' <<<"$live_osc" && echo 0 || echo 1)"
 fi
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -3444,6 +3449,10 @@ if want tc30; then
     "$(grep -q 'text: "PREVIEW"' "$panel" \
       && grep -q 'root.roleColor("background")' "$panel" \
       && grep -q 'root.roleColor("foreground")' "$panel" && echo 0 || echo 1)"
+  check "settings drive the live terminal palette" \
+    "$(grep -q 'liveTerminals' "$panel" \
+      && grep -q -- '--terminals' "$panel" \
+      && grep -q 'liveTerminals' "$REPO_DIR/bin/vp-setting.sh" && echo 0 || echo 1)"
   check "settings write bar options through vp-setting" \
     "$(grep -q 'function setBarOption' "$panel" \
       && grep -q 'vp-setting.sh set bar' "$panel" && echo 0 || echo 1)"

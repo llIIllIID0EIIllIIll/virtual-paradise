@@ -75,6 +75,11 @@ Conventional Commits.
   derives a dark background and readable foreground, a live bar/terminal
   preview card shows the result, and Normal/Deutan/Protan modes preview all
   eight roles with simulated color-vision deficiencies.
+- **Live terminal palettes.** `vp-terminal-palette.sh` sends OSC 4/10/11/12
+  to writable pseudo-terminals; the panel passes `--terminals` after each live
+  write, with a **Live terminal palette** toggle (default on) stored as
+  `bar.liveTerminals`. `--dry-run` and `--list` make it testable without
+  touching a real terminal.
 - **Portable custom themes.** `vp-theme.sh save|list|load|export|import|delete`
   stores validated, versioned JSON under
   `~/.local/state/virtual-paradise/themes/`; the panel can save, load and
@@ -101,7 +106,7 @@ Conventional Commits.
   `magenta`, `yellow`, `bg`, `blue`…) and the QML bar widgets follow the
   palette instead of keeping the cyberpunk accents.
 - **The night timer uses Tokyo Night**, replacing the removed Sakura variant.
-- Tests: 565 assertions; TC-12 covers the Omarchy palettes, multi-role custom themes and `palette.json`,
+- Tests: 567 assertions; TC-12 covers the Omarchy palettes, multi-role custom themes and `palette.json`,
   TC-30 covers the settings panel, `vp-setting.sh` and the UI sound toggle.
 - **Repository moved to `github.com/vuhuudo/virtual-paradise`.** Clone URLs,
   issue/discussion links, the license notice and the security-advisory link

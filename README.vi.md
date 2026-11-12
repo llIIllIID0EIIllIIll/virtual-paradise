@@ -70,7 +70,8 @@ Mở **Tools** trên thanh bar → biểu tượng **bánh răng**. Từ đây c
   panel để Undo/Redo còn dùng được. Có ô **seed** và nút Analogous/Complement/
   Triad để sinh role phụ, nút **BG / Text** tạo nền/chữ dễ đọc, card preview
   xem trước trên mẫu bar/terminal, và chế độ Normal/Deutan/Protan để kiểm tra
-  khả năng nhìn màu.
+  khả năng nhìn màu. Bật **Live terminal palette** để terminal đang mở đổi màu
+  theo OSC 4/10/11/12 ngay khi chọn màu.
 - **Saved themes**: đặt tên rồi **Save**, bấm tên để load, hoặc **Import** file
   JSON. Theme lưu tại `~/.local/state/virtual-paradise/themes/`; CLI tương ứng
   là `vp-theme.sh save|list|load|export|import|delete`.

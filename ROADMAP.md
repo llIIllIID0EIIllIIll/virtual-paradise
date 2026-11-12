@@ -99,9 +99,10 @@ second settings application or restarting the shell for every color change.
 
 ### Verification
 
-- 565 assertions green; TC-12 covers live writes, ordering, locking and
-  portable themes; TC-30 covers history, keyboard, contrast, generation,
-  color vision, preview and deferred refresh contracts.
+- 567 assertions green; TC-12 covers live writes, ordering, locking, terminal
+  OSC output and portable themes; TC-30 covers history, keyboard, contrast,
+  generation, color vision, preview, terminal toggle and deferred refresh
+  contracts.
 - Live checks: swatch click, undo, redo and reset through the panel and IPC;
   one shell, one bar, zero runtime QML errors.
 
@@ -120,8 +121,9 @@ second settings application or restarting the shell for every color change.
 
 ### Deeper live apply
 
-- [ ] Notify running terminals (OSC 4/10/11) and reload GTK/browser/VS Code
-      consumers from the same palette revision.
+- [x] Notify running terminals with OSC 4/10/11/12, gated by
+      `bar.liveTerminals` and tested with `--dry-run`/`--list`.
+- [ ] Reload GTK/browser/VS Code consumers from the same palette revision.
 - [ ] Cava, btop and fastfetch palette refresh hooks.
 
 ### Artwork

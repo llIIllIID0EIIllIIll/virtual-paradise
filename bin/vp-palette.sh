@@ -3,7 +3,7 @@
 #  Virtual☆Paradise — live palette writer
 # ==============================================================================
 #  Usage:
-#    vp-palette.sh [--seq N] accent secondary tertiary warm pink hot background foreground
+#    vp-palette.sh [--seq N] [--terminals] accent secondary tertiary warm pink hot background foreground
 #
 #  Writes palette.json atomically and marks the variant custom. The island bar
 #  polls the file, so its widgets recolor on the next tick without a shell
@@ -14,19 +14,37 @@
 set -euo pipefail
 
 seq=""
-if [[ ${1:-} == --seq ]]; then
-  seq="${2:-}"
-  [[ $seq =~ ^[0-9]+$ ]] || {
-    echo "--seq needs a number." >&2
-    exit 2
-  }
-  shift 2
-fi
+apply_terminals=0
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    --seq)
+      seq="${2:-}"
+      [[ $seq =~ ^[0-9]+$ ]] || {
+        echo "--seq needs a number." >&2
+        exit 2
+      }
+      shift 2
+      ;;
+    --terminals)
+      apply_terminals=1
+      shift
+      ;;
+    -*)
+      echo "Unknown option: $1" >&2
+      exit 2
+      ;;
+    *)
+      break
+      ;;
+  esac
+done
 
 [[ $# -eq 8 ]] || {
-  echo "Usage: vp-palette.sh [--seq N] accent secondary tertiary warm pink hot background foreground" >&2
+  echo "Usage: vp-palette.sh [--seq N] [--terminals] accent secondary tertiary warm pink hot background foreground" >&2
   exit 2
 }
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 # Keep the same location as theme-switcher.sh and the QML readers. XDG_STATE_HOME
 # is intentionally not consulted here: the rest of the theme uses HOME, and a
@@ -111,3 +129,7 @@ with open(lock_path, "a+", encoding="utf-8") as lock:
             pass
         raise
 PY
+
+if [[ $apply_terminals -eq 1 ]]; then
+  "$SCRIPT_DIR/vp-terminal-palette.sh" >/dev/null 2>&1 || true
+fi
