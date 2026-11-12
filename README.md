@@ -14,7 +14,7 @@
 [![Arch Linux](https://img.shields.io/badge/Arch_Linux-1793D1?style=flat-square&logo=arch-linux&logoColor=white)](https://archlinux.org)
 [![Omarchy 4.5+](https://img.shields.io/badge/Omarchy-4.5+-8A2BE2?style=flat-square)](https://omarchy.org)
 [![Hyprland](https://img.shields.io/badge/Hyprland-Wayland-00ffdd?style=flat-square)](https://hyprland.org)
-[![Tests](https://img.shields.io/badge/tests-547%20passed-00ff88?style=flat-square)](tests/)
+[![Tests](https://img.shields.io/badge/tests-550%20passed-00ff88?style=flat-square)](tests/)
 [![License](https://img.shields.io/badge/license-MIT-ffe066?style=flat-square)](LICENSE)
 [![Version](https://img.shields.io/badge/version-1.4.0-ff00ff?style=flat-square)](VERSION)
 
@@ -432,8 +432,8 @@ live:
   Urgent, Background and Text. Pick a role box, then click a swatch on the
   color board (or type a hex if you know one). Every click applies live: the
   panel writes `palette.json` through `vp-palette.sh` and the bar recolors on
-  the next frame, with no Apply button and no shell restart. The theme text
-  files (terminal, GTK) are rewritten about half a second later.
+  its next poll (about 0.3 s), with no Apply button and no shell restart. The
+  theme text files (terminal, GTK) are rewritten about half a second later.
 - **Palettes**: Cyberpunk, Catppuccin, Tokyo Night, Gruvbox, Nord, Everforest,
   Kanagawa, Rosé Pine, Hackerman, Dracula, Mono, Neon. Each palette recolors
   the chrome, terminals, GTK and bar widgets; the wallpaper/Plymouth/SDDM
@@ -602,9 +602,9 @@ default.
 
 ### Running Tests
 
-The test suite has thirty test cases and 547 assertions; optional tools
+The test suite has thirty test cases and 550 assertions; optional tools
 (`shellcheck`, `qmllint`, `hyprctl`) enable extra checks when present, so the
-exact count varies between machines (547 with `shellcheck` and `qmllint`). It
+exact count varies between machines (550 with `shellcheck` and `qmllint`). It
 runs in a sandbox and never touches your real system.
 
 ```bash
@@ -694,8 +694,15 @@ virtual-paradise/
 ├── install.sh            # Installer
 ├── uninstall.sh          # Uninstaller
 ├── VERSION               # Semantic version (1.4.0)
+├── ROADMAP.md            # Phase status and next-phase plan
 └── README.md             # This file
 ```
+
+### Roadmap
+
+[ROADMAP.md](ROADMAP.md) records what Phase 1 shipped, the audit fixes made
+after it, the known limits, and the Phase 2 plan (editor UX, portable themes,
+deeper live theming, artwork palettes and release criteria).
 
 ### Contributing
 

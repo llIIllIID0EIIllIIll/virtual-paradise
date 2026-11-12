@@ -63,8 +63,8 @@ Mở **Tools** trên thanh bar → biểu tượng **bánh răng**. Từ đây c
 - **Custom theme**: 8 role — Accent, Secondary, Tertiary, Warm, Pink, Urgent,
   Background, Text. Chọn ô role rồi bấm một màu trên bảng màu trực quan (hoặc
   nhập hex). Mỗi lần bấm áp dụng ngay: palette.json được ghi qua
-  `vp-palette.sh`, bar đổi màu không cần Apply và không restart shell. File
-  theme (terminal, GTK) được ghi lại sau khoảng nửa giây.
+  `vp-palette.sh`, bar đổi màu sau khoảng 0,3 giây, không cần Apply và không
+  restart shell. File theme (terminal, GTK) được ghi lại sau khoảng nửa giây.
 - **Palette có sẵn**: Cyberpunk, Catppuccin, Tokyo Night, Gruvbox, Nord,
   Everforest, Kanagawa, Rosé Pine, Hackerman, Dracula, Mono, Neon.
 - **Actions**: bật/tắt wallpaper động, âm thanh UI, diagnose, verify pins,
@@ -106,6 +106,12 @@ Uninstaller sẽ khôi phục backup, gỡ Plymouth/SDDM theme, unit systemd và
 ```
 
 Bộ test chạy trong sandbox, không chạm máy thật.
+
+## Lộ trình
+
+Xem [ROADMAP.md](ROADMAP.md) để biết Phase 1 đã giao gì, các lỗi đã dò và sửa,
+giới hạn hiện tại và kế hoạch Phase 2 (undo/contrast/keyboard, theme di động,
+live sâu hơn, artwork và tiêu chí release).
 
 ## Giấy phép
 

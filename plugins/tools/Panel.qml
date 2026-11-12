@@ -61,6 +61,17 @@ Panel {
     foreground: "#eafbfa"
   })
   property bool paletteDirty: false
+  property bool paletteWriteDirty: false
+  readonly property var defaultRoleColors: ({
+    accent: "#00ffdd",
+    secondary: "#ff00ff",
+    tertiary: "#00ff88",
+    warm: "#ffe066",
+    pink: "#ffb7d5",
+    hot: "#ff0055",
+    background: "#0f081d",
+    foreground: "#eafbfa"
+  })
   readonly property var roles: [
     { id: "accent", label: "Accent" },
     { id: "secondary", label: "Secondary" },
@@ -105,7 +116,7 @@ Panel {
   }
 
   function roleColor(role) {
-    return root.roleColors[role] || "#00ffdd"
+    return root.roleColors[role] || root.defaultRoleColors[role] || "#00ffdd"
   }
 
   function hslHex(h, s, l) {
@@ -144,9 +155,18 @@ Panel {
     root.roleColors = next
     if (typeof hexField !== "undefined" && hexField) hexField.text = value
     root.paletteDirty = true
-    // The bar reads palette.json directly, so this is the realtime path.
-    root.run(root.home + "/.local/bin/vp-palette.sh " + root.currentColors().join(" "))
+    root.paletteWriteDirty = true
+    // Coalesce rapid clicks. Spawning one writer per frame could let an older
+    // process finish last and overwrite the newest color; 60 ms still feels
+    // instant and the bar picks the file up on its next tick.
+    paletteDebounce.restart()
     themeDebounce.restart()
+  }
+
+  function writePaletteNow() {
+    if (!root.paletteWriteDirty) return
+    root.paletteWriteDirty = false
+    root.run(root.home + "/.local/bin/vp-palette.sh " + root.currentColors().join(" "))
   }
 
   function pickColor(value) {
@@ -177,7 +197,9 @@ Panel {
       var next = {}
       for (var i = 0; i < root.roles.length; i++) {
         var id = root.roles[i].id
-        next[id] = typeof data[id] === "string" ? data[id] : root.roleColors[id]
+        var value = data[id]
+        next[id] = (typeof value === "string" && /^#[0-9a-fA-F]{6}$/.test(value))
+          ? value : root.roleColor(id)
       }
       root.roleColors = next
       root.selectRole(root.selectedRole)
@@ -240,8 +262,10 @@ Panel {
   }
 
   function applyCustomTheme() {
-    // Kept for the IPC/scripts that used to press Apply; now it just flushes
-    // the debounced theme files. The bar is already using the new palette.
+    // Kept for the IPC/scripts that used to press Apply; flush both debounced
+    // paths so a script can force the final state.
+    paletteDebounce.stop()
+    root.writePaletteNow()
     root.flushTheme()
   }
 
@@ -272,6 +296,11 @@ Panel {
   function setVariant(name) {
     if (root.variantSwitching) return
     root.variantSwitching = true
+    // A pending custom write must not land after the named palette and undo it.
+    paletteDebounce.stop()
+    themeDebounce.stop()
+    root.paletteDirty = false
+    root.paletteWriteDirty = false
     // Restart through the single-flight wrapper: two fast clicks used to spawn
     // two supervisors and two bars. Color is read at shell startup, so the
     // restart is still required.
@@ -318,8 +347,15 @@ Panel {
     onTriggered: root.variantSwitching = false
   }
 
-  // Debounce only the text-file side: rapid swatch clicks should not rewrite
-  // the terminal/GTK configs on every pixel.
+  // Coalesce the live palette write and the theme text files separately. The
+  // bar only needs the JSON; the terminal/GTK configs can wait longer.
+  Timer {
+    id: paletteDebounce
+    interval: 60
+    repeat: false
+    onTriggered: root.writePaletteNow()
+  }
+
   Timer {
     id: themeDebounce
     interval: 450
@@ -327,7 +363,11 @@ Panel {
     onTriggered: root.flushTheme()
   }
 
-  Component.onDestruction: root.flushTheme()
+  Component.onDestruction: {
+    paletteDebounce.stop()
+    root.writePaletteNow()
+    root.flushTheme()
+  }
 
   Process {
     id: verifyProc

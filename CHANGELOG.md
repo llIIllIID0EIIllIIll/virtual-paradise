@@ -68,6 +68,13 @@ Conventional Commits.
   `network/Panel.qml`), and the shell-default assertion no longer races
   `pipefail` against `grep -q`.
 
+- **Phase 1 stabilization.** Swatch writes are coalesced over 60 ms so rapid
+  clicks cannot finish out of order, a variant switch cancels pending custom
+  writes, palette input is validated per role, and `vp-palette.sh` skips an
+  identical rewrite. Its state path now matches `theme-switcher.sh` even when
+  `XDG_STATE_HOME` points elsewhere. See `ROADMAP.md` for the audit and the
+  Phase 2 plan.
+
 ### Changed
 - **The bar defaults are fixed:** gap effects on, hover glow off, reduced
   motion off. The three Appearance toggles were removed; the halo remains
@@ -78,7 +85,7 @@ Conventional Commits.
   `magenta`, `yellow`, `bg`, `blue`…) and the QML bar widgets follow the
   palette instead of keeping the cyberpunk accents.
 - **The night timer uses Tokyo Night**, replacing the removed Sakura variant.
-- Tests: 547 assertions; TC-12 covers the Omarchy palettes, multi-role custom themes and `palette.json`,
+- Tests: 550 assertions; TC-12 covers the Omarchy palettes, multi-role custom themes and `palette.json`,
   TC-30 covers the settings panel, `vp-setting.sh` and the UI sound toggle.
 - **Repository moved to `github.com/vuhuudo/virtual-paradise`.** Clone URLs,
   issue/discussion links, the license notice and the security-advisory link

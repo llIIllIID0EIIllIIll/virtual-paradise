@@ -1032,7 +1032,7 @@ if [[ "$REPO_DIR" != "$CONFIG_DIR/omarchy/themes/$THEME_NAME" ]]; then
   THEME_STRIP=(
     .git .github .githooks .gitignore
     tests tools docs backgrounds sounds
-    install.sh uninstall.sh README.md LICENSE CONTRIBUTING.md
+    install.sh uninstall.sh README.md ROADMAP.md LICENSE CONTRIBUTING.md
     plugins bars bin lib shell systemd sddm plymouth micro cava fastfetch
   )
 

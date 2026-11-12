@@ -1497,6 +1497,24 @@ PY
     bash "$REPO_DIR/bin/vp-palette.sh" 12345 111111 222222 333333 444444 555555 010203 040506 >/dev/null 2>&1
   check "vp-palette rejects a bad colour" "$([[ $? -ne 0 ]] && echo 0 || echo 1)"
 
+  palette_file="$home/.local/state/virtual-paradise/palette.json"
+  inode_before="$(stat -c %i "$palette_file")"
+  HOME="$home" XDG_CONFIG_HOME="$home/.config" \
+    bash "$REPO_DIR/bin/vp-palette.sh" abcdef 111111 222222 333333 444444 555555 010203 040506 >/dev/null 2>&1
+  check "vp-palette leaves an identical palette untouched" \
+    "$([[ "$inode_before" == "$(stat -c %i "$palette_file")" ]] && echo 0 || echo 1)"
+
+  # Concurrent clicks spawn several writers. flock must keep the file valid,
+  # and the last one to finish still writes a complete palette.
+  for value in 111111 222222 333333 444444 555555 666666 777777 888888; do
+    HOME="$home" XDG_CONFIG_HOME="$home/.config" \
+      bash "$REPO_DIR/bin/vp-palette.sh" "$value" 111111 222222 333333 444444 555555 010203 040506 >/dev/null 2>&1 &
+  done
+  wait
+  python3 -c 'import json,sys; d=json.load(open(sys.argv[1])); roles=("accent","secondary","tertiary","warm","pink","hot","background","foreground"); raise SystemExit(0 if d.get("name")=="custom" and all(isinstance(d.get(r),str) and len(d.get(r))==7 and d[r][0]=="#" for r in roles) else 1)' \
+    "$palette_file"
+  check "concurrent live writes leave a valid palette" $?
+
   # A second switch must start from the original palette, not from the one the
   # first switch wrote.
   run_switcher neon
@@ -3347,9 +3365,15 @@ if want tc30; then
       && grep -q 'boardColors' "$panel" \
       && grep -q 'function pickColor' "$panel" \
       && grep -q 'vp-palette.sh' "$panel" \
+      && grep -q 'paletteDebounce' "$panel" \
+      && grep -q 'paletteWriteDirty' "$panel" \
       && grep -q 'themeDebounce' "$panel" \
       && ! grep -q 'PanelSlider' "$panel" \
       && ! grep -q 'Apply theme' "$panel" && echo 0 || echo 1)"
+  check "settings validate and clamp palette input" \
+    "$(grep -q 'function loadPalette' "$panel" \
+      && grep -q 'defaultRoleColors' "$panel" \
+      && grep -q '/\^#\[0-9a-fA-F\]{6}\$/' "$panel" && echo 0 || echo 1)"
   check "settings write bar options through vp-setting" \
     "$(grep -q 'function setBarOption' "$panel" \
       && grep -q 'vp-setting.sh set bar' "$panel" && echo 0 || echo 1)"
