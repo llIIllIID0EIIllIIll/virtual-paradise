@@ -80,6 +80,10 @@ Conventional Commits.
   write, with a **Live terminal palette** toggle (default on) stored as
   `bar.liveTerminals`. `--dry-run` and `--list` make it testable without
   touching a real terminal.
+- **Cava follows custom palettes live.** `sync_cava_theme.py` no longer
+  hardcodes cyberpunk for Virtual Paradise; it reads the active `colors.toml`,
+  rewrites the Cava gradient, and signals Cava. The panel asks the theme pass
+  to do this on each debounced edit (`VP_RELOAD_CONSUMERS=1`).
 - **Portable custom themes.** `vp-theme.sh save|list|load|export|import|delete`
   stores validated, versioned JSON under
   `~/.local/state/virtual-paradise/themes/`; the panel can save, load and
@@ -106,7 +110,7 @@ Conventional Commits.
   `magenta`, `yellow`, `bg`, `blue`…) and the QML bar widgets follow the
   palette instead of keeping the cyberpunk accents.
 - **The night timer uses Tokyo Night**, replacing the removed Sakura variant.
-- Tests: 567 assertions; TC-12 covers the Omarchy palettes, multi-role custom themes and `palette.json`,
+- Tests: 569 assertions; TC-12 covers the Omarchy palettes, multi-role custom themes and `palette.json`,
   TC-30 covers the settings panel, `vp-setting.sh` and the UI sound toggle.
 - **Repository moved to `github.com/vuhuudo/virtual-paradise`.** Clone URLs,
   issue/discussion links, the license notice and the security-advisory link

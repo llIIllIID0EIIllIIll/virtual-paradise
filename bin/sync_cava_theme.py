@@ -12,31 +12,28 @@ def main():
     user_theme_colors = os.path.expanduser(f"~/.config/omarchy/themes/{theme_name}/colors.toml")
     system_theme_colors = f"/usr/share/omarchy/themes/{theme_name}/colors.toml"
 
-    if theme_name == "virtual-paradise":
-        c1 = c2 = c3 = "#00ffdd"
-        c4 = c5 = "#00ff88"
-        c6 = c7 = c8 = "#ffb7d5"
-    else:
-        target_colors = colors_file
-        if os.path.exists(user_theme_colors):
-            target_colors = user_theme_colors
-        elif os.path.exists(system_theme_colors):
-            target_colors = system_theme_colors
+    # Follow the active theme files, including a custom Virtual Paradise
+    # palette. The old hardcoded cyberpunk branch ignored every custom color.
+    target_colors = colors_file
+    if os.path.exists(user_theme_colors):
+        target_colors = user_theme_colors
+    elif os.path.exists(system_theme_colors):
+        target_colors = system_theme_colors
 
-        colors = {}
-        if os.path.exists(target_colors):
-            with open(target_colors, "r", encoding="utf-8", errors="ignore") as f:
-                for line in f:
-                    m = re.match(r'^\s*([a-zA-Z0-9_]+)\s*=\s*"([^"]+)"', line)
-                    if m:
-                        colors[m.group(1)] = m.group(2)
+    colors = {}
+    if os.path.exists(target_colors):
+        with open(target_colors, "r", encoding="utf-8", errors="ignore") as f:
+            for line in f:
+                m = re.match(r'^\s*([a-zA-Z0-9_]+)\s*=\s*"([^"]+)"', line)
+                if m:
+                    colors[m.group(1)] = m.group(2)
 
-        accent = colors.get("accent", "#89b4fa")
-        green = colors.get("green", colors.get("cyan", accent))
-        magenta = colors.get("magenta", colors.get("yellow", accent))
-        c1 = c2 = c3 = accent
-        c4 = c5 = green
-        c6 = c7 = c8 = magenta
+    accent = colors.get("accent", "#00ffdd")
+    green = colors.get("green", colors.get("tertiary", "#00ff88"))
+    magenta = colors.get("magenta", colors.get("pink", "#ffb7d5"))
+    c1 = c2 = c3 = accent
+    c4 = c5 = green
+    c6 = c7 = c8 = magenta
 
     with open(cava_path, "r", encoding="utf-8", errors="ignore") as f:
         lines = f.readlines()
@@ -66,7 +63,8 @@ def main():
     with open(cava_path, "w", encoding="utf-8") as f:
         f.writelines(new_lines)
 
-    os.system("pkill -USR1 cava 2>/dev/null || pkill -USR2 cava 2>/dev/null || true")
+    if os.environ.get("VP_SYNC_CAVA_NO_SIGNAL") != "1":
+        os.system("pkill -USR1 cava 2>/dev/null || pkill -USR2 cava 2>/dev/null || true")
 
 if __name__ == "__main__":
     main()

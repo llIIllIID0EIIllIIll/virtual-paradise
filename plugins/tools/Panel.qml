@@ -436,6 +436,7 @@ Panel {
     // overwriting a newer live color.
     var prefix = "VP_SKIP_PALETTE_WRITE=1 "
     if (skipRefresh) prefix += "VP_NO_THEME_REFRESH=1 "
+    if (root.liveTerminals) prefix += "VP_RELOAD_CONSUMERS=1 "
     root.run("bash -lc '" + prefix + root.home + "/.local/bin/theme-switcher.sh custom "
       + root.currentColors().join(" ") + "'")
   }
@@ -1639,7 +1640,7 @@ Panel {
         Toggle {
           width: parent.width
           label: "Live terminal palette"
-          description: "Recolor open terminals with OSC 4/10/11/12"
+          description: "Recolor open terminals and Cava live"
           checked: root.liveTerminals
           foreground: root.fg
           accent: Color.accent

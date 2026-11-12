@@ -1563,6 +1563,28 @@ PY
   check "vp-theme deletes a saved palette" \
     "$([[ ! -f "$themes_dir/imported-two.json" ]] && echo 0 || echo 1)"
 
+  # Cava used to be hardcoded cyberpunk. It now follows the active colors.toml.
+  mkdir -p "$home/.config/cava"
+  cp "$REPO_DIR/cava/config" "$home/.config/cava/config"
+  HOME="$home" XDG_CONFIG_HOME="$home/.config" VP_SYNC_CAVA_NO_SIGNAL=1 \
+    python3 "$REPO_DIR/bin/sync_cava_theme.py" virtual-paradise >/dev/null 2>&1
+  python3 - "$home/.config/omarchy/themes/virtual-paradise/colors.toml" \
+    "$home/.config/cava/config" <<'PY'
+import re
+import sys
+
+theme = open(sys.argv[1], encoding="utf-8").read()
+cava = open(sys.argv[2], encoding="utf-8").read()
+accent = re.search(r'^accent = "([^"]+)"', theme, re.M)
+gradient = re.search(r"^gradient_color_1 = '([^']+)'", cava, re.M)
+raise SystemExit(0 if accent and gradient and accent.group(1) == gradient.group(1) else 1)
+PY
+  check "cava follows the active palette" $?
+  check "the theme pass reloads live consumers" \
+    "$(grep -q 'VP_RELOAD_CONSUMERS' "$REPO_DIR/bin/theme-switcher.sh" \
+      && grep -q 'VP_RELOAD_CONSUMERS' "$REPO_DIR/plugins/tools/Panel.qml" \
+      && grep -q 'cava' "$REPO_DIR/bin/sync_cava_theme.py" && echo 0 || echo 1)"
+
   # A second switch must start from the original palette, not from the one the
   # first switch wrote.
   run_switcher neon

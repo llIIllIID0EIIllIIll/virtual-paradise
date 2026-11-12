@@ -99,10 +99,10 @@ second settings application or restarting the shell for every color change.
 
 ### Verification
 
-- 567 assertions green; TC-12 covers live writes, ordering, locking, terminal
-  OSC output and portable themes; TC-30 covers history, keyboard, contrast,
-  generation, color vision, preview, terminal toggle and deferred refresh
-  contracts.
+- 569 assertions green; TC-12 covers live writes, ordering, locking, terminal
+  OSC output, Cava palette sync and portable themes; TC-30 covers history,
+  keyboard, contrast, generation, color vision, preview, terminal toggle and
+  deferred refresh contracts.
 - Live checks: swatch click, undo, redo and reset through the panel and IPC;
   one shell, one bar, zero runtime QML errors.
 
@@ -123,8 +123,11 @@ second settings application or restarting the shell for every color change.
 
 - [x] Notify running terminals with OSC 4/10/11/12, gated by
       `bar.liveTerminals` and tested with `--dry-run`/`--list`.
+- [x] Cava reloads its gradient from the active `colors.toml` (SIGUSR1/2 via
+      `sync_cava_theme.py`) on each debounced edit.
 - [ ] Reload GTK/browser/VS Code consumers from the same palette revision.
-- [ ] Cava, btop and fastfetch palette refresh hooks.
+- [ ] btop/fastfetch refresh hooks (fastfetch reads config per invocation;
+      btop has no documented config-reload signal).
 
 ### Artwork
 

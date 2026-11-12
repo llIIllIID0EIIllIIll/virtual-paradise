@@ -173,6 +173,16 @@ apply_to_theme_files() {
 # Re-render the theme from its templates. Without this the new colors only
 # live in the theme directory: the Hyprland border, the shell and the
 # terminals keep the old palette until the next login.
+reload_live_consumers() {
+  # The settings panel asks for this on each debounced theme pass: sync Cava
+  # from the just-written colors.toml and let sync_cava_theme.py signal it.
+  [[ ${VP_RELOAD_CONSUMERS:-0} == 1 ]] || return 0
+  local sync_cava="$HOME/.local/bin/sync_cava_theme.py"
+  if [[ -x $sync_cava ]]; then
+    "$sync_cava" "virtual-paradise" >/dev/null 2>&1 || true
+  fi
+}
+
 apply_theme() {
   # The settings panel writes the text files on every debounce but defers the
   # shell-wide refresh until it closes: `omarchy theme refresh` tears down the
@@ -261,6 +271,7 @@ apply_variant() {
   local map_file="$STATE_DIR/theme-variant-map"
   build_color_map "$(pristine_colors_file)" "$accent" "$secondary" "$tertiary" "$warm" "$pink" "$hot" "$background" "$foreground" >"$map_file"
   apply_to_theme_files "$map_file"
+  reload_live_consumers
 
   # Save current variant only after the palette was actually written.
   echo "$variant" >"$CURRENT_VARIANT_FILE"
@@ -479,6 +490,7 @@ wallpaper_variant_locked() {
   local map_file="$STATE_DIR/theme-variant-map"
   build_color_map "$(pristine_colors_file)" "$accent" "$secondary" "$tertiary" "$warm" "$pink" "$hot" "$background" "$foreground" >"$map_file"
   apply_to_theme_files "$map_file"
+  reload_live_consumers
   echo "wallpaper" >"$CURRENT_VARIANT_FILE"
   write_palette "wallpaper" "$accent" "$secondary" "$tertiary" "$warm" "$pink" "$background" "$hot" "$foreground"
   apply_theme || true
@@ -534,6 +546,7 @@ apply_custom_locked() {
   local map_file="$STATE_DIR/theme-variant-map"
   build_color_map "$(pristine_colors_file)" "$accent" "$secondary" "$tertiary" "$warm" "$pink" "$hot" "$background" "$foreground" >"$map_file"
   apply_to_theme_files "$map_file"
+  reload_live_consumers
   echo "custom" >"$CURRENT_VARIANT_FILE"
   write_palette "custom" "$accent" "$secondary" "$tertiary" "$warm" "$pink" "$background" "$hot" "$foreground"
   apply_theme || true
