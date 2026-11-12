@@ -99,10 +99,10 @@ second settings application or restarting the shell for every color change.
 
 ### Verification
 
-- 569 assertions green; TC-12 covers live writes, ordering, locking, terminal
-  OSC output, Cava palette sync and portable themes; TC-30 covers history,
-  keyboard, contrast, generation, color vision, preview, terminal toggle and
-  deferred refresh contracts.
+- 571 assertions green; TC-12 covers live writes, ordering, locking, terminal
+  OSC output, Cava palette sync, wallpaper tint and portable themes; TC-30
+  covers history, keyboard, contrast, generation, color vision, preview,
+  terminal toggle, artwork controls and deferred refresh contracts.
 - Live checks: swatch click, undo, redo and reset through the panel and IPC;
   one shell, one bar, zero runtime QML errors.
 
@@ -131,10 +131,12 @@ second settings application or restarting the shell for every color change.
 
 ### Artwork
 
-- [ ] Optional wallpaper/SDDM/Plymouth artwork per custom theme, or curated
-      artwork packs that match the chrome palette.
-- [ ] Keep cyberpunk artwork as the default and as the fallback.
-- [ ] Never leave a boot entry pointing at a deleted image.
+- [x] Wallpaper duotone from the live Background/Accent, with restore.
+- [ ] SDDM/Plymouth artwork per custom theme (boot art needs sudo and an
+      initramfs rebuild).
+- [x] Keep cyberpunk artwork as the default and as the fallback.
+- [ ] Never leave a boot entry pointing at a deleted image (covered by the
+      existing boot theme installer; validate for 1.6.0).
 
 ### Release gates
 

@@ -1585,6 +1585,18 @@ PY
       && grep -q 'VP_RELOAD_CONSUMERS' "$REPO_DIR/plugins/tools/Panel.qml" \
       && grep -q 'cava' "$REPO_DIR/bin/sync_cava_theme.py" && echo 0 || echo 1)"
 
+  # ImageMagick is optional in CI; the dry-run still proves the request path
+  # and, when magick exists, that the generated file is a JPEG.
+  tint_rc=0
+  if command -v magick >/dev/null 2>&1; then
+    tint_out="$(HOME="$home" XDG_CONFIG_HOME="$home/.config" \
+      VP_WALLPAPER_SOURCE="$REPO_DIR/backgrounds/Glitch.jpg" \
+      bash "$REPO_DIR/bin/vp-wallpaper-tint.sh" --dry-run 2>/dev/null)" || tint_rc=$?
+    python3 -c 'import sys; f=open(sys.argv[1], "rb"); raise SystemExit(0 if f.read(2) == b"\xff\xd8" else 1)' \
+      "$tint_out" || tint_rc=1
+  fi
+  check "palette wallpaper generates a valid still" "$tint_rc"
+
   # A second switch must start from the original palette, not from the one the
   # first switch wrote.
   run_switcher neon
@@ -3476,6 +3488,10 @@ if want tc30; then
     "$(grep -q 'liveTerminals' "$panel" \
       && grep -q -- '--terminals' "$panel" \
       && grep -q 'liveTerminals' "$REPO_DIR/bin/vp-setting.sh" && echo 0 || echo 1)"
+  check "settings expose palette wallpaper controls" \
+    "$(grep -q 'vp-wallpaper-tint.sh apply' "$panel" \
+      && grep -q 'vp-wallpaper-tint.sh restore' "$panel" \
+      && grep -q 'Tint wallpaper' "$panel" && echo 0 || echo 1)"
   check "settings write bar options through vp-setting" \
     "$(grep -q 'function setBarOption' "$panel" \
       && grep -q 'vp-setting.sh set bar' "$panel" && echo 0 || echo 1)"

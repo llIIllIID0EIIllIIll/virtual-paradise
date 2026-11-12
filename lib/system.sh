@@ -128,6 +128,7 @@ CHECK_AND_INSTALL_PACKAGES() {
     "wl-clipboard"
     "ncurses"
     "ffmpeg"
+    "imagemagick"
     "tela-circle-icon-theme-all"
     "ollama"
     "fcitx5"

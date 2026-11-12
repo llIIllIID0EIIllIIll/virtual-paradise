@@ -8,6 +8,18 @@ Conventional Commits.
 
 ## [Unreleased]
 
+### Added
+- **Palette wallpaper.** `vp-wallpaper-tint.sh` builds a duotone still from
+  the static Glitch artwork with the live Background/Accent, sets it through
+  `omarchy theme bg set`, and remembers the previous wallpaper for **Restore**.
+  SDDM and Plymouth deliberately keep the cyberpunk artwork (boot art needs
+  sudo and an initramfs rebuild).
+
+### Changed
+- `imagemagick` joins the installer package list for the palette wallpaper.
+- Tests: 571 assertions; TC-12 adds the wallpaper-tint dry-run check and TC-30
+  adds the artwork controls contract.
+
 ## [1.5.0] - 2026-11-12
 
 ### Added

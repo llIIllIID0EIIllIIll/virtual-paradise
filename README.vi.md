@@ -78,8 +78,11 @@ Mở **Tools** trên thanh bar → biểu tượng **bánh răng**. Từ đây c
   là `vp-theme.sh save|list|load|export|import|delete`.
 - **Palette có sẵn**: Cyberpunk, Catppuccin, Tokyo Night, Gruvbox, Nord,
   Everforest, Kanagawa, Rosé Pine, Hackerman, Dracula, Mono, Neon.
-- **Actions**: bật/tắt wallpaper động, âm thanh UI, diagnose, verify pins,
-  repair bar, logs.
+- **Artwork**: tạo wallpaper duotone từ `Glitch.jpg` theo Background/Accent
+  (**Tint wallpaper**), hoặc **Restore** wallpaper trước đó. SDDM/Plymouth vẫn
+  giữ artwork cyberpunk. Cần ImageMagick (installer tự cài).
+- **Actions**: bật/tắt wallpaper động, âm thanh UI, terminal/Cava live,
+  diagnose, verify pins, repair bar, logs.
 - Bật **Automatic location** cho weather (mặc định tắt vì lý do riêng tư).
 - Chạy **Diagnose**, **Verify pins**, **Repair bar**, xem **Logs**.
 

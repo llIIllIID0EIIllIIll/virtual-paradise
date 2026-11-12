@@ -1615,6 +1615,48 @@ Panel {
           wrapMode: Text.WordWrap
         }
 
+        Text {
+          text: "ARTWORK"
+          color: Qt.darker(root.fg, 1.35)
+          font.family: root.ff
+          font.pixelSize: Style.font.caption
+          font.letterSpacing: 1
+          height: Style.space(16)
+        }
+
+        Text {
+          width: parent.width
+          text: "Build a duotone still from Glitch.jpg using the live Background and Accent. SDDM and Plymouth keep the cyberpunk artwork."
+          color: Qt.darker(root.fg, 1.6)
+          font.family: root.ff
+          font.pixelSize: Style.font.caption
+          wrapMode: Text.WordWrap
+        }
+
+        Flow {
+          width: parent.width
+          spacing: Style.space(6)
+
+          Button {
+            text: "Tint wallpaper"
+            focusable: true
+            foreground: root.fg
+            accent: Color.accent
+            fontFamily: root.ff
+            Accessible.name: "Generate and apply a palette wallpaper"
+            onClicked: root.run(root.home + "/.local/bin/vp-wallpaper-tint.sh apply")
+          }
+          Button {
+            text: "Restore"
+            focusable: true
+            foreground: root.fg
+            accent: Color.accent
+            fontFamily: root.ff
+            Accessible.name: "Restore the wallpaper from before the tint"
+            onClicked: root.run(root.home + "/.local/bin/vp-wallpaper-tint.sh restore")
+          }
+        }
+
         Flow {
           width: parent.width
           spacing: Style.space(6)
