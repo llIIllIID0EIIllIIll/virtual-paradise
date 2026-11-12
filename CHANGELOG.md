@@ -70,6 +70,11 @@ Conventional Commits.
 - **Phase 2 editor tools.** Undo/Redo/Reset with `Ctrl+Z` / `Ctrl+Shift+Z`,
   WCAG contrast feedback for Text/Background, keyboard navigation on the role
   boxes and color board, and per-panel error reporting for palette writes.
+- **Seed-based generation and vision preview.** A seed field plus
+  Analogous/Complement/Triad buttons fill the companion roles, **BG / Text**
+  derives a dark background and readable foreground, a live bar/terminal
+  preview card shows the result, and Normal/Deutan/Protan modes preview all
+  eight roles with simulated color-vision deficiencies.
 - **Portable custom themes.** `vp-theme.sh save|list|load|export|import|delete`
   stores validated, versioned JSON under
   `~/.local/state/virtual-paradise/themes/`; the panel can save, load and
@@ -96,7 +101,7 @@ Conventional Commits.
   `magenta`, `yellow`, `bg`, `blue`…) and the QML bar widgets follow the
   palette instead of keeping the cyberpunk accents.
 - **The night timer uses Tokyo Night**, replacing the removed Sakura variant.
-- Tests: 562 assertions; TC-12 covers the Omarchy palettes, multi-role custom themes and `palette.json`,
+- Tests: 565 assertions; TC-12 covers the Omarchy palettes, multi-role custom themes and `palette.json`,
   TC-30 covers the settings panel, `vp-setting.sh` and the UI sound toggle.
 - **Repository moved to `github.com/vuhuudo/virtual-paradise`.** Clone URLs,
   issue/discussion links, the license notice and the security-advisory link

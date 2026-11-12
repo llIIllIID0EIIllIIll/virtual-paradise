@@ -3432,6 +3432,18 @@ if want tc30; then
     "$(grep -q 'VP_NO_THEME_REFRESH' "$panel" \
       && grep -q 'flushTheme(true)' "$panel" \
       && grep -q 'flushTheme(false)' "$panel" && echo 0 || echo 1)"
+  check "settings generate palettes from a seed" \
+    "$(grep -q 'function generateHarmony' "$panel" \
+      && grep -q 'function deriveNeutrals' "$panel" \
+      && grep -q 'function harmonyOffsets' "$panel" && echo 0 || echo 1)"
+  check "settings preview color-vision modes" \
+    "$(grep -q 'function simulateVision' "$panel" \
+      && grep -q 'visionMode' "$panel" \
+      && grep -q 'Deutan' "$panel" && echo 0 || echo 1)"
+  check "settings show a live palette preview" \
+    "$(grep -q 'text: "PREVIEW"' "$panel" \
+      && grep -q 'root.roleColor("background")' "$panel" \
+      && grep -q 'root.roleColor("foreground")' "$panel" && echo 0 || echo 1)"
   check "settings write bar options through vp-setting" \
     "$(grep -q 'function setBarOption' "$panel" \
       && grep -q 'vp-setting.sh set bar' "$panel" && echo 0 || echo 1)"

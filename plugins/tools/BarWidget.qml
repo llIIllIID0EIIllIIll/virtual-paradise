@@ -132,6 +132,12 @@ BarWidget {
     function redoTheme(): void { if (panelLoader.item) panelLoader.item.redoPalette() }
     function resetTheme(): void { if (panelLoader.item) panelLoader.item.resetPalette() }
     function setRole(role: string, hex: string): void { if (panelLoader.item) panelLoader.item.setRoleFromIpc(role, hex) }
+    function generateTheme(mode: string): void {
+      if (!panelLoader.item) return
+      if (mode === "analogous" || mode === "complement" || mode === "triad")
+        panelLoader.item.generateHarmony(mode)
+    }
+    function deriveNeutrals(): void { if (panelLoader.item) panelLoader.item.deriveNeutrals() }
     function verify(): void { root.verify() }
     function close(): void { root.close() }
   }

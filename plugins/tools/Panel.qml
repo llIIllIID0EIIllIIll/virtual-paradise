@@ -72,6 +72,8 @@ Panel {
   property var paletteHistory: []
   property int paletteHistoryIndex: -1
   property double paletteIgnoreUntil: 0
+  property string seedHex: ""
+  property string visionMode: "normal"
   property string paletteError: ""
   property int boardFocusIndex: 0
   property var savedThemes: []
@@ -149,6 +151,106 @@ Panel {
     return "#" + root.hexByte(c.r) + root.hexByte(c.g) + root.hexByte(c.b)
   }
 
+  function hexToHsl(hex) {
+    var value = String(hex || "").replace("#", "")
+    if (!/^[0-9a-fA-F]{6}$/.test(value)) return null
+    var r = parseInt(value.substr(0, 2), 16) / 255
+    var g = parseInt(value.substr(2, 2), 16) / 255
+    var b = parseInt(value.substr(4, 2), 16) / 255
+    var max = Math.max(r, g, b)
+    var min = Math.min(r, g, b)
+    var h = 0
+    var s = 0
+    var l = (max + min) / 2
+    if (max !== min) {
+      var d = max - min
+      s = l > 0.5 ? d / (2 - max - min) : d / (max + min)
+      if (max === r) h = (g - b) / d + (g < b ? 6 : 0)
+      else if (max === g) h = (b - r) / d + 2
+      else h = (r - g) / d + 4
+      h /= 6
+    }
+    return { h: h * 360, s: s * 100, l: l * 100 }
+  }
+
+  function normalizedHue(value) {
+    var h = value % 360
+    return h < 0 ? h + 360 : h
+  }
+
+  function effectiveSeed() {
+    var value = String(root.seedHex || "").trim()
+    if (/^#?[0-9a-fA-F]{6}$/.test(value))
+      return "#" + value.replace("#", "").toLowerCase()
+    return root.roleColor("accent")
+  }
+
+  function setSeedHex(text) {
+    var value = String(text || "").trim()
+    if (/^#?[0-9a-fA-F]{6}$/.test(value)) {
+      root.seedHex = "#" + value.replace("#", "").toLowerCase()
+    } else {
+      root.seedHex = ""
+      if (typeof seedField !== "undefined" && seedField) seedField.text = root.effectiveSeed()
+    }
+  }
+
+  function harmonyOffsets(mode) {
+    if (mode === "analogous") return [0, 30, -30, 45, 330, 180]
+    if (mode === "complement") return [0, 180, 165, 45, 330, 200]
+    return [0, 120, 240, 60, 300, 180]
+  }
+
+  function generateHarmony(mode) {
+    var seed = root.effectiveSeed()
+    var hsl = root.hexToHsl(seed)
+    if (!hsl) return
+    var offsets = root.harmonyOffsets(mode)
+    var next = {}
+    for (var i = 0; i < root.roles.length; i++)
+      next[root.roles[i].id] = root.roleColors[root.roles[i].id]
+    next.accent = seed
+    next.secondary = root.hslHex(root.normalizedHue(hsl.h + offsets[1]), 82, 64)
+    next.tertiary = root.hslHex(root.normalizedHue(hsl.h + offsets[2]), 82, 54)
+    next.warm = root.hslHex(root.normalizedHue(hsl.h + offsets[3]), 95, 65)
+    next.pink = root.hslHex(root.normalizedHue(hsl.h + offsets[4]), 72, 74)
+    next.hot = root.hslHex(root.normalizedHue(hsl.h + offsets[5]), 88, 55)
+    root.seedHex = seed
+    root.roleColors = next
+    root.commitHistory()
+    root.markPaletteChanged()
+  }
+
+  function deriveNeutrals() {
+    var hsl = root.hexToHsl(root.effectiveSeed())
+    if (!hsl) return
+    var next = {}
+    for (var i = 0; i < root.roles.length; i++)
+      next[root.roles[i].id] = root.roleColors[root.roles[i].id]
+    next.background = root.hslHex(hsl.h, 38, 8)
+    next.foreground = root.hslHex(hsl.h, 16, 93)
+    root.seedHex = root.effectiveSeed()
+    root.roleColors = next
+    root.commitHistory()
+    root.markPaletteChanged()
+  }
+
+  function simulateVision(hex, mode) {
+    if (mode === "normal") return hex
+    var value = String(hex || "").replace("#", "")
+    if (!/^[0-9a-fA-F]{6}$/.test(value)) return hex
+    var r = parseInt(value.substr(0, 2), 16) / 255
+    var g = parseInt(value.substr(2, 2), 16) / 255
+    var b = parseInt(value.substr(4, 2), 16) / 255
+    var matrix = mode === "protan"
+      ? [[0.152, 1.053, -0.205], [0.115, 0.786, 0.099], [-0.004, -0.048, 1.052]]
+      : [[0.367, 0.861, -0.228], [0.280, 0.673, 0.047], [-0.012, 0.043, 0.969]]
+    var nr = matrix[0][0] * r + matrix[0][1] * g + matrix[0][2] * b
+    var ng = matrix[1][0] * r + matrix[1][1] * g + matrix[1][2] * b
+    var nb = matrix[2][0] * r + matrix[2][1] * g + matrix[2][2] * b
+    return "#" + root.hexByte(nr) + root.hexByte(ng) + root.hexByte(nb)
+  }
+
   function roleLabel(role) {
     for (var i = 0; i < root.roles.length; i++)
       if (root.roles[i].id === role) return root.roles[i].label
@@ -188,6 +290,7 @@ Panel {
   function ensurePaletteReady() {
     if (root.paletteReady) return
     root.paletteBaseline = JSON.parse(JSON.stringify(root.roleColors))
+    root.seedHex = root.roleColor("accent")
     root.paletteReady = true
     root.resetHistory()
   }
@@ -354,6 +457,7 @@ Panel {
       }
       if (root.paletteReady && same) return
       root.roleColors = next
+      root.seedHex = next.accent
       root.paletteBaseline = JSON.parse(JSON.stringify(next))
       if (!root.paletteReady) {
         root.paletteReady = true
@@ -745,7 +849,7 @@ Panel {
     open: root.opened
     centerOnBar: false
     contentWidth: panel.fittedContentWidth(Style.space(root.showSettings ? 400 : 330))
-    contentHeight: panel.fittedContentHeight(root.showSettings ? 640 : toolsColumn.implicitHeight)
+    contentHeight: panel.fittedContentHeight(root.showSettings ? 900 : toolsColumn.implicitHeight)
 
     // ---- Tools view -------------------------------------------------------
     Column {
@@ -1153,6 +1257,212 @@ Panel {
           font.family: root.ff
           font.pixelSize: Style.font.caption
           wrapMode: Text.WordWrap
+        }
+
+        Text {
+          text: "PREVIEW"
+          color: Qt.darker(root.fg, 1.35)
+          font.family: root.ff
+          font.pixelSize: Style.font.caption
+          font.letterSpacing: 1
+          height: Style.space(16)
+        }
+
+        Rectangle {
+          width: parent.width
+          height: Style.space(62)
+          radius: Style.cornerRadius
+          color: root.roleColor("background")
+          border.width: 1
+          border.color: root.roleColor("accent")
+
+          Column {
+            anchors.fill: parent
+            anchors.margins: Style.space(8)
+            spacing: Style.space(4)
+
+            Row {
+              spacing: Style.space(5)
+
+              Repeater {
+                model: ["accent", "secondary", "tertiary"]
+
+                Rectangle {
+                  required property string modelData
+                  width: Style.space(8)
+                  height: Style.space(8)
+                  radius: width / 2
+                  anchors.verticalCenter: parent.verticalCenter
+                  color: root.roleColor(modelData)
+                }
+              }
+
+              Text {
+                anchors.verticalCenter: parent.verticalCenter
+                text: "14:32  Thu 12 Nov"
+                color: root.roleColor("foreground")
+                font.family: root.ff
+                font.pixelSize: Style.font.caption
+              }
+            }
+
+            Row {
+              spacing: Style.space(5)
+
+              Text {
+                text: "→"
+                color: root.roleColor("accent")
+                font.family: root.ff
+                font.pixelSize: Style.font.body
+              }
+              Text {
+                text: "custom theme"
+                color: root.roleColor("foreground")
+                font.family: root.ff
+                font.pixelSize: Style.font.body
+              }
+              Text {
+                text: "build ok"
+                color: root.roleColor("tertiary")
+                font.family: root.ff
+                font.pixelSize: Style.font.caption
+              }
+            }
+          }
+        }
+
+        Text {
+          text: "GENERATE FROM SEED"
+          color: Qt.darker(root.fg, 1.35)
+          font.family: root.ff
+          font.pixelSize: Style.font.caption
+          font.letterSpacing: 1
+          height: Style.space(16)
+        }
+
+        Row {
+          spacing: Style.space(6)
+
+          TextField {
+            id: seedField
+            width: Style.space(100)
+            text: root.seedHex
+            placeholderText: root.roleColor("accent")
+            foreground: root.fg
+            font.family: root.ff
+            font.pixelSize: Style.font.body
+            Accessible.name: "Seed colour for palette generation"
+            onTextChanged: root.seedHex = text
+            onEditingFinished: root.setSeedHex(text)
+          }
+
+          Button {
+            text: "Use accent"
+            focusable: true
+            foreground: root.fg
+            accent: Color.accent
+            fontFamily: root.ff
+            Accessible.name: "Use the current accent as the seed"
+            onClicked: {
+              root.seedHex = root.roleColor("accent")
+              seedField.text = root.seedHex
+            }
+          }
+        }
+
+        Flow {
+          width: parent.width
+          spacing: Style.space(6)
+
+          Button {
+            text: "Analogous"
+            focusable: true
+            foreground: root.fg
+            accent: Color.accent
+            fontFamily: root.ff
+            Accessible.name: "Generate an analogous palette"
+            onClicked: root.generateHarmony("analogous")
+          }
+          Button {
+            text: "Complement"
+            focusable: true
+            foreground: root.fg
+            accent: Color.accent
+            fontFamily: root.ff
+            Accessible.name: "Generate a complementary palette"
+            onClicked: root.generateHarmony("complement")
+          }
+          Button {
+            text: "Triad"
+            focusable: true
+            foreground: root.fg
+            accent: Color.accent
+            fontFamily: root.ff
+            Accessible.name: "Generate a triadic palette"
+            onClicked: root.generateHarmony("triad")
+          }
+          Button {
+            text: "BG / Text"
+            focusable: true
+            foreground: root.fg
+            accent: Color.accent
+            fontFamily: root.ff
+            Accessible.name: "Derive a dark background and readable text from the seed"
+            onClicked: root.deriveNeutrals()
+          }
+        }
+
+        Text {
+          text: "COLOR VISION"
+          color: Qt.darker(root.fg, 1.35)
+          font.family: root.ff
+          font.pixelSize: Style.font.caption
+          font.letterSpacing: 1
+          height: Style.space(16)
+        }
+
+        Row {
+          spacing: Style.space(6)
+
+          Repeater {
+            model: [
+              { id: "normal", label: "Normal" },
+              { id: "deutan", label: "Deutan" },
+              { id: "protan", label: "Protan" }
+            ]
+
+            Button {
+              required property var modelData
+              text: modelData.label
+              selected: root.visionMode === modelData.id
+              focusable: true
+              foreground: root.fg
+              accent: Color.accent
+              fontFamily: root.ff
+              Accessible.name: "Preview palette with " + modelData.label + " vision"
+              onClicked: root.visionMode = modelData.id
+            }
+          }
+        }
+
+        Flow {
+          width: parent.width
+          spacing: Style.space(4)
+
+          Repeater {
+            model: root.roles
+
+            Rectangle {
+              required property var modelData
+              width: Style.space(30)
+              height: Style.space(18)
+              radius: Style.space(4)
+              color: root.simulateVision(root.roleColor(modelData.id), root.visionMode)
+              border.width: 1
+              border.color: Qt.rgba(root.fg.r, root.fg.g, root.fg.b, 0.25)
+              Accessible.name: modelData.label + " in " + root.visionMode + " vision"
+            }
+          }
         }
 
         Text {

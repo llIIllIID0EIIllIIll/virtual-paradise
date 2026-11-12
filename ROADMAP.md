@@ -59,8 +59,8 @@ second settings application or restarting the shell for every color change.
 - The bar polls the small palette file every 300 ms rather than using a
   reliable cross-inode watch. It is cheap, but a shared watcher would be
   cleaner.
-- Seed-color generation, color-vision preview and a live preview card are not
-  in 2.1; they are scoped for 2.2.
+- A long-lived palette writer daemon and automated UI screenshots are not in
+  2.2 yet.
 - UI automation and golden screenshots are not in the suite yet.
 
 ---
@@ -99,22 +99,22 @@ second settings application or restarting the shell for every color change.
 
 ### Verification
 
-- 562 assertions green; TC-12 covers live writes, ordering, locking and
-  portable themes; TC-30 covers history, keyboard, contrast and deferred
-  refresh contracts.
+- 565 assertions green; TC-12 covers live writes, ordering, locking and
+  portable themes; TC-30 covers history, keyboard, contrast, generation,
+  color vision, preview and deferred refresh contracts.
 - Live checks: swatch click, undo, redo and reset through the panel and IPC;
   one shell, one bar, zero runtime QML errors.
 
 ---
 
-## Phase 2.2 — Next
+## Phase 2.2 — Editor depth (shipped in Unreleased), live apply/artwork next
 
-### Editor depth
+### Editor depth (done)
 
-- [ ] Seed-color generation: one Accent → analogous/complementary/triadic
+- [x] Seed-color generation: one Accent → analogous/complementary/triadic
       companions and derived neutral Background/Text.
-- [ ] Color-vision preview (deuteranopia/protanopia) for the eight roles.
-- [ ] Live preview card showing bar chrome and a terminal sample.
+- [x] Color-vision preview (deuteranopia/protanopia) for the eight roles.
+- [x] Live preview card showing bar chrome and a terminal sample.
 - [ ] Optional long-lived palette writer instead of one short Python process
       per settled click (current behavior is already ordered and serialized).
 
