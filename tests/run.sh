@@ -1389,6 +1389,13 @@ if want tc11; then
     "$(grep -q 'hyprland\.conf' "$REPO_DIR/bin/theme-switcher.sh" && echo 1 || echo 0)"
   check "the theme switcher re-applies the theme through omarchy" \
     "$(grep -q 'omarchy theme refresh' "$REPO_DIR/bin/theme-switcher.sh" && echo 0 || echo 1)"
+  check "theme writes share the live palette lock" \
+    "$(grep -q 'with_state_lock' "$REPO_DIR/bin/theme-switcher.sh" \
+      && grep -q 'palette.lock' "$REPO_DIR/bin/theme-switcher.sh" \
+      && grep -q 'VP_SKIP_PALETTE_WRITE' "$REPO_DIR/bin/theme-switcher.sh" && echo 0 || echo 1)"
+  check "vp-palette accepts ordered writes" \
+    "$(grep -q -- '--seq' "$REPO_DIR/bin/vp-palette.sh" \
+      && grep -q 'existing_seq > seq' "$REPO_DIR/bin/vp-palette.sh" && echo 0 || echo 1)"
 fi
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -1514,6 +1521,41 @@ PY
   python3 -c 'import json,sys; d=json.load(open(sys.argv[1])); roles=("accent","secondary","tertiary","warm","pink","hot","background","foreground"); raise SystemExit(0 if d.get("name")=="custom" and all(isinstance(d.get(r),str) and len(d.get(r))==7 and d[r][0]=="#" for r in roles) else 1)' \
     "$palette_file"
   check "concurrent live writes leave a valid palette" $?
+
+  # Portable custom themes: save the live palette, prove the JSON survives a
+  # different palette, then round-trip an export/import.
+  HOME="$home" XDG_CONFIG_HOME="$home/.config" \
+    bash "$REPO_DIR/bin/vp-palette.sh" a1b2c3 d4e5f6 112233 445566 778899 aabbcc 010101 efefef >/dev/null 2>&1
+  themes_dir="$home/.local/state/virtual-paradise/themes"
+  HOME="$home" XDG_CONFIG_HOME="$home/.config" \
+    bash "$REPO_DIR/bin/vp-theme.sh" save "Phase Two" >/dev/null 2>&1
+  check "vp-theme saves a portable palette" \
+    "$([[ -f "$themes_dir/phase-two.json" ]] && echo 0 || echo 1)"
+  HOME="$home" XDG_CONFIG_HOME="$home/.config" \
+    bash "$REPO_DIR/bin/vp-theme.sh" list >"$root/theme-list.log" 2>&1
+  check "vp-theme lists saved palettes" \
+    "$(grep -qx 'phase-two' "$root/theme-list.log" && echo 0 || echo 1)"
+  HOME="$home" XDG_CONFIG_HOME="$home/.config" \
+    bash "$REPO_DIR/bin/vp-palette.sh" 999999 888888 777777 666666 555555 444444 030303 020202 >/dev/null 2>&1
+  HOME="$home" XDG_CONFIG_HOME="$home/.config" \
+    bash "$REPO_DIR/bin/vp-theme.sh" load phase-two >/dev/null 2>&1
+  python3 -c 'import json,sys; d=json.load(open(sys.argv[1])); raise SystemExit(0 if d.get("accent")=="#a1b2c3" and d.get("foreground")=="#efefef" else 1)' \
+    "$home/.local/state/virtual-paradise/palette.json"
+  check "vp-theme load restores all eight roles" $?
+  HOME="$home" XDG_CONFIG_HOME="$home/.config" \
+    bash "$REPO_DIR/bin/vp-theme.sh" export phase-two "$root/phase-two.json" >/dev/null 2>&1
+  HOME="$home" XDG_CONFIG_HOME="$home/.config" \
+    bash "$REPO_DIR/bin/vp-theme.sh" import "$root/phase-two.json" "Imported Two" >/dev/null 2>&1
+  check "vp-theme imports an exported palette" \
+    "$([[ -f "$themes_dir/imported-two.json" ]] && echo 0 || echo 1)"
+  printf '{"colors":{"accent":"nope"}}\n' >"$root/bad-theme.json"
+  HOME="$home" XDG_CONFIG_HOME="$home/.config" \
+    bash "$REPO_DIR/bin/vp-theme.sh" import "$root/bad-theme.json" bad >/dev/null 2>&1
+  check "vp-theme rejects an invalid import" "$([[ $? -ne 0 ]] && echo 0 || echo 1)"
+  HOME="$home" XDG_CONFIG_HOME="$home/.config" \
+    bash "$REPO_DIR/bin/vp-theme.sh" delete imported-two >/dev/null 2>&1
+  check "vp-theme deletes a saved palette" \
+    "$([[ ! -f "$themes_dir/imported-two.json" ]] && echo 0 || echo 1)"
 
   # A second switch must start from the original palette, not from the one the
   # first switch wrote.
@@ -3374,6 +3416,22 @@ if want tc30; then
     "$(grep -q 'function loadPalette' "$panel" \
       && grep -q 'defaultRoleColors' "$panel" \
       && grep -q '/\^#\[0-9a-fA-F\]{6}\$/' "$panel" && echo 0 || echo 1)"
+  check "settings expose portable saved themes" \
+    "$(grep -q 'vp-theme.sh' "$panel" \
+      && grep -q 'savedThemes' "$panel" \
+      && grep -q 'themeActionProc' "$panel" && echo 0 || echo 1)"
+  check "settings expose undo, redo, reset and contrast" \
+    "$(for fn in undoPalette redoPalette resetPalette contrastRatio; do \
+         grep -q "function $fn" "$panel" || exit 1; \
+       done && grep -q 'paletteContrast' "$panel" && echo 0 || echo 1)"
+  check "settings keep the palette editor keyboard accessible" \
+    "$(grep -q 'activeFocusOnTab' "$panel" \
+      && grep -q 'Ctrl+Z' "$panel" \
+      && grep -q 'Keys.onPressed' "$panel" && echo 0 || echo 1)"
+  check "settings defer the shell refresh while editing" \
+    "$(grep -q 'VP_NO_THEME_REFRESH' "$panel" \
+      && grep -q 'flushTheme(true)' "$panel" \
+      && grep -q 'flushTheme(false)' "$panel" && echo 0 || echo 1)"
   check "settings write bar options through vp-setting" \
     "$(grep -q 'function setBarOption' "$panel" \
       && grep -q 'vp-setting.sh set bar' "$panel" && echo 0 || echo 1)"

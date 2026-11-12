@@ -14,7 +14,7 @@
 [![Arch Linux](https://img.shields.io/badge/Arch_Linux-1793D1?style=flat-square&logo=arch-linux&logoColor=white)](https://archlinux.org)
 [![Omarchy 4.5+](https://img.shields.io/badge/Omarchy-4.5+-8A2BE2?style=flat-square)](https://omarchy.org)
 [![Hyprland](https://img.shields.io/badge/Hyprland-Wayland-00ffdd?style=flat-square)](https://hyprland.org)
-[![Tests](https://img.shields.io/badge/tests-550%20passed-00ff88?style=flat-square)](tests/)
+[![Tests](https://img.shields.io/badge/tests-562%20passed-00ff88?style=flat-square)](tests/)
 [![License](https://img.shields.io/badge/license-MIT-ffe066?style=flat-square)](LICENSE)
 [![Version](https://img.shields.io/badge/version-1.4.0-ff00ff?style=flat-square)](VERSION)
 
@@ -432,8 +432,16 @@ live:
   Urgent, Background and Text. Pick a role box, then click a swatch on the
   color board (or type a hex if you know one). Every click applies live: the
   panel writes `palette.json` through `vp-palette.sh` and the bar recolors on
-  its next poll (about 0.3 s), with no Apply button and no shell restart. The
-  theme text files (terminal, GTK) are rewritten about half a second later.
+  its next poll (about 0.3 s), with no Apply button and no shell restart.
+  **Undo / Redo / Reset** cover the current session (`Ctrl+Z` and
+  `Ctrl+Shift+Z` work too), the board shows a WCAG contrast warning for
+  Text/Background, and Tab + arrows + Enter drive the board without a mouse.
+  Theme text files are updated during editing, but the shell-wide refresh is
+  deferred until the panel closes so Undo/Redo stays available.
+- **Saved themes**: name the current palette and press **Save**, then click a
+  saved name to load it. **Import** accepts a portable theme JSON path. Themes
+  live under `~/.local/state/virtual-paradise/themes/`; the CLI equivalent is
+  `vp-theme.sh save|list|load|export|import|delete`.
 - **Palettes**: Cyberpunk, Catppuccin, Tokyo Night, Gruvbox, Nord, Everforest,
   Kanagawa, Rosé Pine, Hackerman, Dracula, Mono, Neon. Each palette recolors
   the chrome, terminals, GTK and bar widgets; the wallpaper/Plymouth/SDDM
@@ -461,6 +469,17 @@ vp-setting.sh set weather.autoLocation true
 
 # Live custom palette: accent secondary tertiary warm pink hot background text
 vp-palette.sh 00ffdd ff00ff 00ff88 ffe066 ffb7d5 ff0055 0f081d eafbfa
+
+# Custom theme history and portable themes
+omarchy-shell doe.tools setRole accent "#b114ff"
+omarchy-shell doe.tools undoTheme
+omarchy-shell doe.tools redoTheme
+omarchy-shell doe.tools resetTheme
+vp-theme.sh save "Night Shift"
+vp-theme.sh list
+vp-theme.sh load night-shift
+vp-theme.sh export night-shift ~/night-shift.json
+vp-theme.sh import ~/night-shift.json "Night Shift Copy"
 ```
 
 ### Weather Location
@@ -602,9 +621,9 @@ default.
 
 ### Running Tests
 
-The test suite has thirty test cases and 550 assertions; optional tools
+The test suite has thirty test cases and 562 assertions; optional tools
 (`shellcheck`, `qmllint`, `hyprctl`) enable extra checks when present, so the
-exact count varies between machines (550 with `shellcheck` and `qmllint`). It
+exact count varies between machines (562 with `shellcheck` and `qmllint`). It
 runs in a sandbox and never touches your real system.
 
 ```bash

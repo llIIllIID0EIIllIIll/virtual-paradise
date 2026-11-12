@@ -67,7 +67,13 @@ Conventional Commits.
   skips `qmllint` when the Omarchy modules are absent (it looped on
   `network/Panel.qml`), and the shell-default assertion no longer races
   `pipefail` against `grep -q`.
-
+- **Phase 2 editor tools.** Undo/Redo/Reset with `Ctrl+Z` / `Ctrl+Shift+Z`,
+  WCAG contrast feedback for Text/Background, keyboard navigation on the role
+  boxes and color board, and per-panel error reporting for palette writes.
+- **Portable custom themes.** `vp-theme.sh save|list|load|export|import|delete`
+  stores validated, versioned JSON under
+  `~/.local/state/virtual-paradise/themes/`; the panel can save, load and
+  import them without a shell restart.
 - **Phase 1 stabilization.** Swatch writes are coalesced over 60 ms so rapid
   clicks cannot finish out of order, a variant switch cancels pending custom
   writes, palette input is validated per role, and `vp-palette.sh` skips an
@@ -76,6 +82,11 @@ Conventional Commits.
   Phase 2 plan.
 
 ### Changed
+- **The palette pipeline is ordered and shared.** `vp-palette.sh --seq` drops a
+  write that lost the race to a newer one, `theme-switcher.sh` uses the same
+  `palette.lock`, and the panel defers the shell-wide theme refresh until it
+  closes so Undo/Redo is not torn down mid-edit. During editing the panel owns
+  `palette.json`; the theme pass only rewrites text files.
 - **The bar defaults are fixed:** gap effects on, hover glow off, reduced
   motion off. The three Appearance toggles were removed; the halo remains
   available through `"bar": {"hoverGlow": true}` for anyone who wants it.
@@ -85,7 +96,7 @@ Conventional Commits.
   `magenta`, `yellow`, `bg`, `blue`…) and the QML bar widgets follow the
   palette instead of keeping the cyberpunk accents.
 - **The night timer uses Tokyo Night**, replacing the removed Sakura variant.
-- Tests: 550 assertions; TC-12 covers the Omarchy palettes, multi-role custom themes and `palette.json`,
+- Tests: 562 assertions; TC-12 covers the Omarchy palettes, multi-role custom themes and `palette.json`,
   TC-30 covers the settings panel, `vp-setting.sh` and the UI sound toggle.
 - **Repository moved to `github.com/vuhuudo/virtual-paradise`.** Clone URLs,
   issue/discussion links, the license notice and the security-advisory link

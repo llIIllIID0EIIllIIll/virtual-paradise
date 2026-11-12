@@ -51,103 +51,100 @@ second settings application or restarting the shell for every color change.
 
 ---
 
-## Known limits after Phase 1
+## Known limits after Phase 2.1
 
-- The editor has no undo/redo or one-click reset to the active palette.
-- No contrast check: a light Background with light Text is allowed.
-- Swatches are mouse/touch only; keyboard and screen-reader navigation of the
-  board needs work.
 - Wallpaper, Plymouth and SDDM artwork stay cyberpunk for every palette.
-- Existing terminal sessions may need a reload to see the debounced text-file
-  changes; the bar itself is live.
+- Existing terminal sessions may need a reload to see the deferred text-file
+  refresh; the bar itself is live.
 - The bar polls the small palette file every 300 ms rather than using a
   reliable cross-inode watch. It is cheap, but a shared watcher would be
   cleaner.
-- `theme-switcher.sh` and `vp-palette.sh` do not share one lock. The panel
-  avoids the race, but two CLI writers could still overlap.
+- Seed-color generation, color-vision preview and a live preview card are not
+  in 2.1; they are scoped for 2.2.
+- UI automation and golden screenshots are not in the suite yet.
 
 ---
 
-## Phase 2 — Portable, accessible, deeper live theming
+## Phase 2.1 — Portable, accessible live theming (shipped in Unreleased)
 
 **Theme:** “make the palette something a user can own, share and trust.”
 
-### P0 — Reliability and reach
+### P0 — Reliability and reach (done)
 
-1. **One palette pipeline**
-   - Share a single `flock` between `vp-palette.sh`, `theme-switcher.sh` and any
-     future writer.
-   - Add a small long-lived writer/daemon so a swatch click does not spawn
-     Python, and expose a `palette revision` counter.
-   - Acceptance: 100 rapid writes finish with the newest color, valid JSON, no
-     temp files, one process.
-2. **Consistent state and errors**
-   - Decide once whether the theme uses `XDG_STATE_HOME` or `$HOME`; apply it to
-     every script and QML reader.
-   - Surface write failures in the panel (small inline status instead of a
-     silent no-op).
-   - Acceptance: a read-only state directory produces a visible error and the
-     bar keeps its last good palette.
+- [x] `theme-switcher.sh` and `vp-palette.sh` share `palette.lock`.
+- [x] `vp-palette.sh --seq N` drops an older write that lost the race; the
+      panel sends `Date.now()` and serializes its own writers.
+- [x] Palette write failures appear inline in the panel instead of failing
+      silently.
+- [x] State stays under `$HOME/.local/state/virtual-paradise` everywhere.
+- [x] The panel owns `palette.json` while editing; the theme pass only writes
+      text files, so a slower theme pass cannot overwrite a newer color.
 
-### P1 — Editor UX and accessibility
+### P1 — Editor UX and accessibility (done)
 
-3. **Undo, redo, reset, preview**
-   - Keep an in-memory history of palette states.
-   - Reset to the active named palette (without switching variants).
-   - Show a tiny live preview card (bar chrome + terminal sample) before commit.
-4. **Contrast and color-vision checks**
-   - Compute WCAG contrast for Text/Background and warn below 4.5:1.
-   - Optional deuteranopia/protanopia preview of the eight roles.
-   - Acceptance: a low-contrast pair shows a warning and a suggested Text
-     color.
-5. **Keyboard and screen-reader support**
-   - Tab/arrow navigation across roles and swatches, Enter/Space to pick,
-     visible focus ring, `Accessible.description` with the role name and hex.
-   - Acceptance: the whole editor works without a pointer.
+- [x] Undo/Redo/Reset, including `Ctrl+Z` and `Ctrl+Shift+Z`, with a 50-step
+      history.
+- [x] WCAG contrast feedback for Text/Background.
+- [x] Keyboard navigation: Tab to a role or the board, arrows move, Enter picks.
+- [x] Write status and errors shown under the board.
+- [x] Shell-wide refresh deferred until the panel closes, so the panel does not
+      disappear mid-edit.
 
-### P1 — Portable themes
+### P1 — Portable themes (done)
 
-6. **Save, export, import**
-   - Named user palettes stored as `~/.local/state/virtual-paradise/themes/*.json`
-     with a schema version and optional author/name metadata.
-   - Copy-paste/export JSON and import with validation.
-   - Acceptance: round-trip export → reset → import restores all eight roles.
-7. **Seed-color generation**
-   - From one Accent, offer harmony modes (analogous, complementary, triadic)
-     and neutral Background/Text derivation.
-   - Keep manual override for every derived role.
+- [x] `vp-theme.sh save|list|load|export|import|delete`.
+- [x] Schema-versioned JSON with all eight roles under
+      `~/.local/state/virtual-paradise/themes/`.
+- [x] Panel Save / Load / Import controls, refreshed when settings opens.
 
-### P2 — Artwork and deeper live apply
+### Verification
 
-8. **Artwork palettes**
-   - Optional wallpaper/SDDM/Plymouth artwork selection per custom theme, or a
-     curated artwork pack that matches the chrome palette.
-   - Keep the current cyberpunk artwork as the default and as a fallback.
-   - Acceptance: selecting artwork never leaves a missing file or a boot entry
-     pointing at a deleted image.
-9. **Live consumers**
-   - Notify running terminals (OSC 4/10/11), GTK apps, VS Code, Cava, btop,
-     fastfetch and the shell from the same palette revision.
-   - Acceptance: changing Accent updates a running terminal and the bar without
-     a restart; app support is documented per consumer.
-
-### Release and test gates
-
-- Keep the suite sandboxed; add UI automation for role selection, one swatch
-  click, reset and import.
-- Add golden screenshots for the board at 100%, 125% and 150% scale.
-- Run Ubuntu and Arch CI; run the release dry-run.
-- Version 1.5.0 when P0/P1 are green; keep artwork work allowed to ship in
-  1.6.0.
-- Update `README.md`, `README.vi.md`, `CHANGELOG.md`, `KEYBINDINGS.md` and this
-  file in the same commit as the behavior change.
+- 562 assertions green; TC-12 covers live writes, ordering, locking and
+  portable themes; TC-30 covers history, keyboard, contrast and deferred
+  refresh contracts.
+- Live checks: swatch click, undo, redo and reset through the panel and IPC;
+  one shell, one bar, zero runtime QML errors.
 
 ---
 
-## Decisions needed before Phase 2 starts
+## Phase 2.2 — Next
 
-- Is the editor staying inside the Tools panel, or should Appearance become its
-  own panel with more room?
-- Should custom themes include artwork in 1.5.0, or keep artwork for 1.6.0?
-- Is `XDG_STATE_HOME` support required, or is `$HOME/.local/state` the project
-  convention?
+### Editor depth
+
+- [ ] Seed-color generation: one Accent → analogous/complementary/triadic
+      companions and derived neutral Background/Text.
+- [ ] Color-vision preview (deuteranopia/protanopia) for the eight roles.
+- [ ] Live preview card showing bar chrome and a terminal sample.
+- [ ] Optional long-lived palette writer instead of one short Python process
+      per settled click (current behavior is already ordered and serialized).
+
+### Deeper live apply
+
+- [ ] Notify running terminals (OSC 4/10/11) and reload GTK/browser/VS Code
+      consumers from the same palette revision.
+- [ ] Cava, btop and fastfetch palette refresh hooks.
+
+### Artwork
+
+- [ ] Optional wallpaper/SDDM/Plymouth artwork per custom theme, or curated
+      artwork packs that match the chrome palette.
+- [ ] Keep cyberpunk artwork as the default and as the fallback.
+- [ ] Never leave a boot entry pointing at a deleted image.
+
+### Release gates
+
+- Run Ubuntu and Arch CI plus the release dry-run.
+- Add UI automation for Save/Load/Import and a 100-write ordering test.
+- Add golden screenshots for the board at 100%, 125% and 150% scale.
+- Version 1.5.0 when 2.1 is green; artwork can ship in 1.6.0.
+- Update `README.md`, `README.vi.md`, `CHANGELOG.md`, `KEYBINDINGS.md` and this
+  file in the same commit as any behavior change.
+
+---
+
+## Decisions taken before Phase 2
+
+- The editor stays inside the Tools panel (no separate Appearance window).
+- Artwork theming is deferred to 1.6.0; 1.5.0 is the palette/editor release.
+- `$HOME/.local/state/virtual-paradise` is the project state convention;
+  `XDG_STATE_HOME` is not consulted by these writers.

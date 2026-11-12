@@ -128,6 +128,10 @@ BarWidget {
     function settings(): void { root.showSettings() }
     function setBar(key: string, value: bool): void { root.setBar(key, value) }
     function applyTheme(): void { if (panelLoader.item) panelLoader.item.applyCustomTheme() }
+    function undoTheme(): void { if (panelLoader.item) panelLoader.item.undoPalette() }
+    function redoTheme(): void { if (panelLoader.item) panelLoader.item.redoPalette() }
+    function resetTheme(): void { if (panelLoader.item) panelLoader.item.resetPalette() }
+    function setRole(role: string, hex: string): void { if (panelLoader.item) panelLoader.item.setRoleFromIpc(role, hex) }
     function verify(): void { root.verify() }
     function close(): void { root.close() }
   }

@@ -64,7 +64,13 @@ Mở **Tools** trên thanh bar → biểu tượng **bánh răng**. Từ đây c
   Background, Text. Chọn ô role rồi bấm một màu trên bảng màu trực quan (hoặc
   nhập hex). Mỗi lần bấm áp dụng ngay: palette.json được ghi qua
   `vp-palette.sh`, bar đổi màu sau khoảng 0,3 giây, không cần Apply và không
-  restart shell. File theme (terminal, GTK) được ghi lại sau khoảng nửa giây.
+  restart shell. Có **Undo / Redo / Reset** (`Ctrl+Z`, `Ctrl+Shift+Z`), cảnh
+  báo contrast Text/BG, và điều hướng bàn phím Tab + mũi tên + Enter. File
+  theme được ghi trong lúc sửa, nhưng refresh toàn shell hoãn đến khi đóng
+  panel để Undo/Redo còn dùng được.
+- **Saved themes**: đặt tên rồi **Save**, bấm tên để load, hoặc **Import** file
+  JSON. Theme lưu tại `~/.local/state/virtual-paradise/themes/`; CLI tương ứng
+  là `vp-theme.sh save|list|load|export|import|delete`.
 - **Palette có sẵn**: Cyberpunk, Catppuccin, Tokyo Night, Gruvbox, Nord,
   Everforest, Kanagawa, Rosé Pine, Hackerman, Dracula, Mono, Neon.
 - **Actions**: bật/tắt wallpaper động, âm thanh UI, diagnose, verify pins,

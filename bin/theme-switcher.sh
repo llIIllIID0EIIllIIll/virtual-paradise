@@ -174,6 +174,12 @@ apply_to_theme_files() {
 # live in the theme directory: the Hyprland border, the shell and the
 # terminals keep the old palette until the next login.
 apply_theme() {
+  # The settings panel writes the text files on every debounce but defers the
+  # shell-wide refresh until it closes: `omarchy theme refresh` tears down the
+  # panel, which made Undo/Redo disappear ~0.5s after the first click.
+  if [[ ${VP_NO_THEME_REFRESH:-0} == 1 ]]; then
+    return 0
+  fi
   if ! command -v omarchy >/dev/null 2>&1; then
     echo "warning: omarchy is not installed, the variant was written to the theme files only" >&2
     return 0
@@ -205,6 +211,21 @@ apply_theme() {
     hyprctl reload >/dev/null 2>&1 || true
   fi
   return 0
+}
+
+# Serialize palette-producing operations with vp-palette.sh. Both writers use
+# the same lock file, so a debounced custom write cannot interleave with a named
+# palette switch.
+with_state_lock() {
+  mkdir -p "$STATE_DIR"
+  local lock_fd
+  exec {lock_fd}>"$STATE_DIR/palette.lock"
+  flock -x "$lock_fd"
+  "$@"
+  local rc=$?
+  flock -u "$lock_fd" 2>/dev/null || true
+  exec {lock_fd}>&-
+  return $rc
 }
 
 apply_variant() {
@@ -263,6 +284,12 @@ apply_variant() {
 # colors through build_color_map; this JSON is the same palette in a form the
 # widgets can bind to without duplicating the switcher.
 write_palette() {
+  # The settings panel writes palette.json through vp-palette.sh, which is the
+  # single source of truth while editing. A detached theme file pass must not
+  # overwrite it with an older color if it happens to finish later.
+  if [[ ${VP_SKIP_PALETTE_WRITE:-0} == 1 ]]; then
+    return 0
+  fi
   local name="$1" accent="$2" secondary="$3" tertiary="$4" warm="$5" pink="$6" background="$7" hot="$8" foreground="${9:-}"
   local tmp
   [[ -n $foreground ]] || foreground="$(toml_value "$(pristine_colors_file)" foreground)"
@@ -274,6 +301,10 @@ write_palette() {
 }
 
 reset_variant() {
+  with_state_lock reset_variant_locked
+}
+
+reset_variant_locked() {
   if [[ ! -d "$ORIGINAL_DIR" ]]; then
     echo "No saved palette to restore." >&2
     exit 1
@@ -413,6 +444,10 @@ PY
 # Derive a whole palette from the current wallpaper and apply it through the
 # same pristine-backup machinery the named variants use.
 wallpaper_variant() {
+  with_state_lock wallpaper_variant_locked "$@"
+}
+
+wallpaper_variant_locked() {
   local src="${1:-$HOME/.local/state/omarchy/current/background}"
   if [[ ! -f "$THEME_DIR/colors.toml" ]]; then
     echo "Virtual Paradise is not installed: $THEME_DIR/colors.toml is missing." >&2
@@ -460,6 +495,10 @@ wallpaper_variant() {
 # it. The background stays the theme's dark baseline; the settings color picker
 # uses this path.
 apply_custom() {
+  with_state_lock apply_custom_locked "$@"
+}
+
+apply_custom_locked() {
   local accent="${1#\#}" secondary="${2:-}" tertiary="${3:-}" warm="${4:-}" pink="${5:-}" hot="${6:-}" background="${7:-}" foreground="${8:-}"
   if [[ ! $accent =~ ^[0-9a-fA-F]{6}$ ]]; then
     echo "Usage: $0 custom <accent> [secondary tertiary warm pink hot background foreground]" >&2

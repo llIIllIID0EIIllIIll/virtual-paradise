@@ -18,6 +18,9 @@ Panel {
   property var anchorItem: null
   property var hostWidget: null
   property bool showSettings: false
+  onShowSettingsChanged: {
+    if (root.showSettings) root.refreshThemes()
+  }
   property bool verifyRunning: false
   property bool variantSwitching: false
   property string verifyText: ""
@@ -62,6 +65,20 @@ Panel {
   })
   property bool paletteDirty: false
   property bool paletteWriteDirty: false
+  property bool paletteReady: false
+  property bool paletteTouched: false
+  property bool paletteQueued: false
+  property var paletteBaseline: ({})
+  property var paletteHistory: []
+  property int paletteHistoryIndex: -1
+  property double paletteIgnoreUntil: 0
+  property string paletteError: ""
+  property int boardFocusIndex: 0
+  property var savedThemes: []
+  property string themeName: ""
+  property string themeImportPath: ""
+  property string themeStatus: ""
+  property string themeAction: ""
   readonly property var defaultRoleColors: ({
     accent: "#00ffdd",
     secondary: "#ff00ff",
@@ -83,6 +100,14 @@ Panel {
     { id: "foreground", label: "Text" }
   ]
   readonly property string selectedHex: root.roleColor(root.selectedRole)
+  readonly property bool canUndo: root.paletteHistoryIndex > 0
+  readonly property bool canRedo: root.paletteHistoryIndex >= 0
+    && root.paletteHistoryIndex < root.paletteHistory.length - 1
+  readonly property color alertColor: (root.bar && root.bar.hotColor !== undefined)
+    ? root.bar.hotColor : "#ff0055"
+  readonly property real paletteContrast: root.contrastRatio(
+    root.roleColor("foreground"), root.roleColor("background"))
+  readonly property bool contrastLow: root.paletteContrast < 4.5
 
   // The visual board: thirteen hues across, seven tones down, then a neutral
   // ramp for backgrounds and text. No hex knowledge required.
@@ -130,6 +155,102 @@ Panel {
     return role
   }
 
+  function snapshotColors() {
+    // An array of hex strings is stable to compare and to serialize; a QML
+    // object map round-trips differently across Qt versions.
+    return JSON.stringify(root.currentColors())
+  }
+
+  function colorsToRoleMap(colors) {
+    var order = ["accent", "secondary", "tertiary", "warm", "pink", "hot", "background", "foreground"]
+    var next = {}
+    for (var i = 0; i < order.length && i < colors.length; i++)
+      next[order[i]] = "#" + String(colors[i]).replace("#", "").toLowerCase()
+    return next
+  }
+
+  function resetHistory() {
+    root.paletteHistory = [root.snapshotColors()]
+    root.paletteHistoryIndex = 0
+  }
+
+  function commitHistory() {
+    var snapshot = root.snapshotColors()
+    if (root.paletteHistoryIndex >= 0
+        && root.paletteHistory[root.paletteHistoryIndex] === snapshot) return
+    var next = root.paletteHistory.slice(0, root.paletteHistoryIndex + 1)
+    next.push(snapshot)
+    if (next.length > 50) next.shift()
+    root.paletteHistory = next
+    root.paletteHistoryIndex = next.length - 1
+  }
+
+  function ensurePaletteReady() {
+    if (root.paletteReady) return
+    root.paletteBaseline = JSON.parse(JSON.stringify(root.roleColors))
+    root.paletteReady = true
+    root.resetHistory()
+  }
+
+  function markPaletteChanged() {
+    root.paletteDirty = true
+    root.paletteWriteDirty = true
+    // A FileView reload may still carry the previous file for a moment after
+    // our writer exits. Ignore external loads during that window so undo/redo
+    // cannot be reset by our own write.
+    root.paletteIgnoreUntil = Date.now() + 1000
+    root.paletteTouched = true
+    root.currentVariant = "custom"
+    paletteDebounce.restart()
+    themeDebounce.restart()
+  }
+
+  function applyHistory(index) {
+    if (index < 0 || index >= root.paletteHistory.length) return
+    if (index === root.paletteHistoryIndex) return
+    root.paletteHistoryIndex = index
+    root.roleColors = root.colorsToRoleMap(JSON.parse(root.paletteHistory[index]))
+    root.selectRole(root.selectedRole)
+    root.markPaletteChanged()
+  }
+
+  function undoPalette() {
+    root.applyHistory(root.paletteHistoryIndex - 1)
+  }
+
+  function redoPalette() {
+    root.applyHistory(root.paletteHistoryIndex + 1)
+  }
+
+  function resetPalette() {
+    if (!root.paletteBaseline) return
+    root.roleColors = JSON.parse(JSON.stringify(root.paletteBaseline))
+    root.selectRole(root.selectedRole)
+    root.commitHistory()
+    root.markPaletteChanged()
+  }
+
+  function channelLuminance(value) {
+    var c = value / 255
+    return c <= 0.03928 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4)
+  }
+
+  function relativeLuminance(hex) {
+    var value = String(hex || "").replace("#", "")
+    if (!/^[0-9a-fA-F]{6}$/.test(value)) return 0
+    return 0.2126 * root.channelLuminance(parseInt(value.substr(0, 2), 16))
+      + 0.7152 * root.channelLuminance(parseInt(value.substr(2, 2), 16))
+      + 0.0722 * root.channelLuminance(parseInt(value.substr(4, 2), 16))
+  }
+
+  function contrastRatio(a, b) {
+    var la = root.relativeLuminance(a)
+    var lb = root.relativeLuminance(b)
+    var high = Math.max(la, lb)
+    var low = Math.min(la, lb)
+    return (high + 0.05) / (low + 0.05)
+  }
+
   function selectRole(role) {
     root.selectedRole = role || "accent"
     Qt.callLater(function() {
@@ -154,23 +275,39 @@ Panel {
     next[role || root.selectedRole] = value
     root.roleColors = next
     if (typeof hexField !== "undefined" && hexField) hexField.text = value
-    root.paletteDirty = true
-    root.paletteWriteDirty = true
-    // Coalesce rapid clicks. Spawning one writer per frame could let an older
-    // process finish last and overwrite the newest color; 60 ms still feels
-    // instant and the bar picks the file up on its next tick.
-    paletteDebounce.restart()
-    themeDebounce.restart()
+    root.commitHistory()
+    // Coalesce rapid clicks. One serialized writer per settled state means an
+    // older process can never finish last and overwrite the newest color.
+    root.markPaletteChanged()
   }
 
   function writePaletteNow() {
     if (!root.paletteWriteDirty) return
+    if (paletteWriter.running) {
+      root.paletteQueued = true
+      return
+    }
     root.paletteWriteDirty = false
-    root.run(root.home + "/.local/bin/vp-palette.sh " + root.currentColors().join(" "))
+    root.paletteQueued = false
+    root.paletteError = ""
+    paletteWriter.command = [root.home + "/.local/bin/vp-palette.sh", "--seq",
+      String(Date.now())].concat(root.currentColors())
+    paletteWriter.running = true
   }
 
   function pickColor(value) {
     root.setRoleColor(root.selectedRole, value)
+  }
+
+  function setRoleFromIpc(role, text) {
+    var known = false
+    for (var i = 0; i < root.roles.length; i++)
+      if (root.roles[i].id === role) known = true
+    if (!known) return
+    var value = String(text || "").trim()
+    if (!/^#?[0-9a-fA-F]{6}$/.test(value)) return
+    root.selectRole(role)
+    root.setRoleColor(role, "#" + value.replace("#", "").toLowerCase())
   }
 
   function setSelectedHex(text) {
@@ -182,30 +319,89 @@ Panel {
     root.setRoleColor(root.selectedRole, "#" + value.replace("#", "").toLowerCase())
   }
 
-  function flushTheme() {
+  function flushTheme(skipRefresh) {
     if (!root.paletteDirty) return
     root.paletteDirty = false
     // Rewrites the theme text files (terminal, GTK, Omarchy templates) with the
-    // same palette. No shell restart: the bar already changed through the JSON.
-    root.run("bash -lc '" + root.home + "/.local/bin/theme-switcher.sh custom "
+    // same palette. While the panel is open, skip the shell-wide theme refresh:
+    // it tears the panel down, which would make Undo/Redo unusable. The refresh
+    // runs when the panel closes.
+    // vp-palette.sh owns palette.json; the theme file pass only writes the
+    // terminal/GTK/Omarchy templates. This prevents a slower theme pass from
+    // overwriting a newer live color.
+    var prefix = "VP_SKIP_PALETTE_WRITE=1 "
+    if (skipRefresh) prefix += "VP_NO_THEME_REFRESH=1 "
+    root.run("bash -lc '" + prefix + root.home + "/.local/bin/theme-switcher.sh custom "
       + root.currentColors().join(" ") + "'")
   }
 
   function loadPalette(text) {
+    // Ignore an external reload while our own debounced write is in flight:
+    // it may still read the previous palette and would reset the undo history
+    // in the middle of undo/redo.
+    if (Date.now() < root.paletteIgnoreUntil) return
+    if (root.paletteWriteDirty || paletteDebounce.running || paletteWriter.running) return
     try {
       var data = JSON.parse(String(text || "{}"))
       var next = {}
+      var same = true
       for (var i = 0; i < root.roles.length; i++) {
         var id = root.roles[i].id
         var value = data[id]
         next[id] = (typeof value === "string" && /^#[0-9a-fA-F]{6}$/.test(value))
           ? value : root.roleColor(id)
+        if (next[id].toLowerCase() !== root.roleColor(id).toLowerCase()) same = false
       }
+      if (root.paletteReady && same) return
       root.roleColors = next
+      root.paletteBaseline = JSON.parse(JSON.stringify(next))
+      if (!root.paletteReady) {
+        root.paletteReady = true
+        root.resetHistory()
+      } else {
+        // An external writer changed the palette; the old undo history no
+        // longer applies to it.
+        root.resetHistory()
+      }
       root.selectRole(root.selectedRole)
     } catch (e) {
       // Keep the defaults when the palette file is mid-write.
     }
+  }
+
+  function refreshThemes() {
+    themeListProc.running = false
+    themeListProc.running = true
+  }
+
+  function runThemeAction(args) {
+    if (themeActionProc.running) return
+    root.themeAction = String(args[0] || "")
+    root.themeStatus = "Working…"
+    themeActionProc.command = [root.home + "/.local/bin/vp-theme.sh"].concat(args)
+    themeActionProc.running = true
+  }
+
+  function saveTheme() {
+    var name = root.themeName.trim()
+    if (name === "") {
+      root.themeStatus = "Give the theme a name first."
+      return
+    }
+    root.runThemeAction(["save", name])
+  }
+
+  function loadTheme(name) {
+    root.runThemeAction(["load", String(name)])
+  }
+
+  function importTheme() {
+    var path = root.themeImportPath.trim()
+    if (path === "") {
+      root.themeStatus = "Enter the path to a theme JSON file."
+      return
+    }
+    root.runThemeAction(["import", path])
   }
 
   readonly property var tools: [
@@ -266,7 +462,7 @@ Panel {
     // paths so a script can force the final state.
     paletteDebounce.stop()
     root.writePaletteNow()
-    root.flushTheme()
+    root.flushTheme(false)
   }
 
   function setWeatherAuto(value) {
@@ -301,6 +497,7 @@ Panel {
     themeDebounce.stop()
     root.paletteDirty = false
     root.paletteWriteDirty = false
+    root.paletteTouched = false
     // Restart through the single-flight wrapper: two fast clicks used to spawn
     // two supervisors and two bars. Color is read at shell startup, so the
     // restart is still required.
@@ -339,6 +536,16 @@ Panel {
     onActivated: root.close()
   }
 
+  Shortcut {
+    sequence: "Ctrl+Z"
+    onActivated: root.undoPalette()
+  }
+
+  Shortcut {
+    sequence: "Ctrl+Shift+Z"
+    onActivated: root.redoPalette()
+  }
+
   // A failed switcher can leave the buttons disabled; the shell restart
   // normally destroys this panel long before the timeout.
   Timer {
@@ -360,13 +567,102 @@ Panel {
     id: themeDebounce
     interval: 450
     repeat: false
-    onTriggered: root.flushTheme()
+    onTriggered: root.flushTheme(true)
   }
+
+  Process {
+    id: themeListProc
+
+    command: [root.home + "/.local/bin/vp-theme.sh", "list"]
+    running: false
+
+    stdout: StdioCollector {
+      id: themeListOut
+      waitForEnd: true
+      onStreamFinished: {
+        var lines = String(themeListOut.text || "").split("\n")
+        var names = []
+        for (var i = 0; i < lines.length; i++) {
+          var value = lines[i].trim()
+          if (value !== "") names.push(value)
+        }
+        root.savedThemes = names
+      }
+    }
+  }
+
+  Process {
+    id: themeActionProc
+
+    command: []
+    running: false
+
+    stdout: StdioCollector {
+      id: themeActionOut
+      waitForEnd: true
+    }
+
+    stderr: StdioCollector {
+      id: themeActionErr
+      waitForEnd: true
+    }
+
+    onExited: function(exitCode) {
+      if (exitCode !== 0) {
+        var detail = String(themeActionErr.text || "").trim()
+        root.themeStatus = detail !== "" ? detail.split("\n").slice(-2).join(" · ")
+          : "Theme action failed."
+        return
+      }
+      if (root.themeAction === "save") root.themeStatus = "Saved."
+      else if (root.themeAction === "load") root.themeStatus = "Loaded."
+      else if (root.themeAction === "import") root.themeStatus = "Imported."
+      else root.themeStatus = "Done."
+      if (root.themeAction === "save") root.themeName = ""
+      if (root.themeAction === "import") root.themeImportPath = ""
+      root.refreshThemes()
+      if (root.themeAction === "load") Qt.callLater(function() { paletteFile.reload() })
+    }
+  }
+
+  // One writer at a time. If clicks arrive while it runs, keep only the newest
+  // request and start it when the current process exits.
+  Process {
+    id: paletteWriter
+
+    command: []
+    running: false
+
+    stderr: StdioCollector {
+      id: paletteWriterErr
+      waitForEnd: true
+    }
+
+    onExited: function(exitCode) {
+      if (exitCode !== 0) {
+        var detail = String(paletteWriterErr.text || "").trim()
+        root.paletteError = detail !== "" ? detail.split("\n").slice(-2).join(" · ")
+          : "Could not save the custom palette."
+      }
+      if (root.paletteQueued && root.paletteWriteDirty) {
+        root.paletteQueued = false
+        root.writePaletteNow()
+      }
+    }
+  }
+
+  Component.onCompleted: root.refreshThemes()
 
   Component.onDestruction: {
     paletteDebounce.stop()
-    root.writePaletteNow()
-    root.flushTheme()
+    if (root.paletteTouched && root.currentVariant === "custom") {
+      // The QML Process is about to die; hand the final state to a detached
+      // writer. The sequence guard makes this newer than any in-flight write.
+      root.paletteWriteDirty = false
+      root.run(root.home + "/.local/bin/vp-palette.sh --seq " + Date.now() + " "
+        + root.currentColors().join(" "))
+    }
+    root.flushTheme(false)
   }
 
   Process {
@@ -423,7 +719,10 @@ Panel {
     printErrors: false
     onFileChanged: reload()
     onLoaded: root.loadPalette(text())
-    onLoadFailed: root.selectRole(root.selectedRole)
+    onLoadFailed: {
+      root.ensurePaletteReady()
+      root.selectRole(root.selectedRole)
+    }
   }
 
   FileView {
@@ -659,16 +958,28 @@ Panel {
                 anchors.horizontalCenter: parent.horizontalCenter
                 radius: Style.space(6)
                 color: root.roleColor(modelData.id)
-                border.width: root.selectedRole === modelData.id ? 2 : 1
-                border.color: root.selectedRole === modelData.id
+                activeFocusOnTab: true
+                border.width: (root.selectedRole === modelData.id || activeFocus) ? 2 : 1
+                border.color: (root.selectedRole === modelData.id || activeFocus)
                   ? root.fg : Qt.rgba(root.fg.r, root.fg.g, root.fg.b, 0.30)
                 Accessible.name: modelData.label + " color"
                 Accessible.role: Accessible.Button
 
+                Keys.onPressed: function(event) {
+                  if (event.key === Qt.Key_Return || event.key === Qt.Key_Enter
+                      || event.key === Qt.Key_Space) {
+                    root.selectRole(modelData.id)
+                    event.accepted = true
+                  }
+                }
+
                 MouseArea {
                   anchors.fill: parent
                   cursorShape: Qt.PointingHandCursor
-                  onClicked: root.selectRole(modelData.id)
+                  onClicked: {
+                    root.selectRole(modelData.id)
+                    parent.forceActiveFocus()
+                  }
                 }
               }
 
@@ -687,21 +998,47 @@ Panel {
         }
 
         Grid {
+          id: colorBoard
+
           columns: 13
           spacing: Style.space(3)
+          activeFocusOnTab: true
+
+          Keys.onPressed: function(event) {
+            var count = root.boardColors.length
+            if (count === 0) return
+            var index = root.boardFocusIndex
+            if (event.key === Qt.Key_Left) index = (index - 1 + count) % count
+            else if (event.key === Qt.Key_Right) index = (index + 1) % count
+            else if (event.key === Qt.Key_Up) index = (index - 13 + count) % count
+            else if (event.key === Qt.Key_Down) index = (index + 13) % count
+            else if (event.key === Qt.Key_Return || event.key === Qt.Key_Enter
+                     || event.key === Qt.Key_Space) {
+              root.pickColor(root.boardColors[root.boardFocusIndex])
+              event.accepted = true
+              return
+            } else {
+              return
+            }
+            root.boardFocusIndex = index
+            event.accepted = true
+          }
 
           Repeater {
             model: root.boardColors
 
             Rectangle {
               required property string modelData
+              required property int index
 
               width: Style.space(22)
               height: Style.space(22)
               radius: Style.space(4)
               color: modelData
-              border.width: root.selectedHex.toLowerCase() === modelData.toLowerCase() ? 2 : 1
-              border.color: root.selectedHex.toLowerCase() === modelData.toLowerCase()
+              border.width: (root.selectedHex.toLowerCase() === modelData.toLowerCase()
+                || (colorBoard.activeFocus && root.boardFocusIndex === index)) ? 2 : 1
+              border.color: (root.selectedHex.toLowerCase() === modelData.toLowerCase()
+                || (colorBoard.activeFocus && root.boardFocusIndex === index))
                 ? root.fg : Qt.rgba(root.fg.r, root.fg.g, root.fg.b, 0.22)
               Accessible.name: "Colour " + modelData
               Accessible.role: Accessible.Button
@@ -709,9 +1046,49 @@ Panel {
               MouseArea {
                 anchors.fill: parent
                 cursorShape: Qt.PointingHandCursor
-                onClicked: root.pickColor(modelData)
+                onClicked: {
+                  root.boardFocusIndex = index
+                  colorBoard.forceActiveFocus()
+                  root.pickColor(modelData)
+                }
               }
             }
+          }
+        }
+
+        Row {
+          spacing: Style.space(6)
+
+          Button {
+            text: "Undo"
+            enabled: root.canUndo
+            focusable: true
+            foreground: root.fg
+            accent: Color.accent
+            fontFamily: root.ff
+            Accessible.name: "Undo palette change"
+            onClicked: root.undoPalette()
+          }
+
+          Button {
+            text: "Redo"
+            enabled: root.canRedo
+            focusable: true
+            foreground: root.fg
+            accent: Color.accent
+            fontFamily: root.ff
+            Accessible.name: "Redo palette change"
+            onClicked: root.redoPalette()
+          }
+
+          Button {
+            text: "Reset"
+            focusable: true
+            foreground: root.fg
+            accent: Color.accent
+            fontFamily: root.ff
+            Accessible.name: "Reset palette to the state when the panel opened"
+            onClicked: root.resetPalette()
           }
         }
 
@@ -750,8 +1127,29 @@ Panel {
 
         Text {
           width: parent.width
-          text: "Pick a role, then click a swatch. Changes apply live — no Apply button."
+          text: "CONTRAST " + root.paletteContrast.toFixed(1) + ":1"
+            + (root.contrastLow ? " — Text is hard to read on this Background" : " — readable")
+          color: root.contrastLow ? root.alertColor : Qt.darker(root.fg, 1.45)
+          font.family: root.ff
+          font.pixelSize: Style.font.caption
+          wrapMode: Text.WordWrap
+        }
+
+        Text {
+          width: parent.width
+          text: "Pick a role, then click a swatch. Changes apply live — no Apply button. "
+            + "Keyboard: Tab to the board, arrows move, Enter picks."
           color: Qt.darker(root.fg, 1.55)
+          font.family: root.ff
+          font.pixelSize: Style.font.caption
+          wrapMode: Text.WordWrap
+        }
+
+        Text {
+          visible: root.paletteError !== ""
+          width: parent.width
+          text: root.paletteError
+          color: root.alertColor
           font.family: root.ff
           font.pixelSize: Style.font.caption
           wrapMode: Text.WordWrap
@@ -798,6 +1196,106 @@ Panel {
         Text {
           width: parent.width
           text: "Accent variants recolor the chrome, terminals and bar widgets; the wallpaper/Plymouth/SDDM artwork stays cyberpunk for now."
+          color: Qt.darker(root.fg, 1.7)
+          font.family: root.ff
+          font.pixelSize: Style.font.caption
+          wrapMode: Text.WordWrap
+        }
+
+        Text {
+          text: "SAVED THEMES"
+          color: Qt.darker(root.fg, 1.35)
+          font.family: root.ff
+          font.pixelSize: Style.font.caption
+          font.letterSpacing: 1
+          height: Style.space(16)
+        }
+
+        Row {
+          spacing: Style.space(6)
+
+          TextField {
+            width: Style.space(150)
+            text: root.themeName
+            placeholderText: "Theme name"
+            foreground: root.fg
+            font.family: root.ff
+            font.pixelSize: Style.font.body
+            Accessible.name: "Name for the theme to save"
+            onTextChanged: root.themeName = text
+            onAccepted: root.saveTheme()
+          }
+
+          Button {
+            text: "Save"
+            focusable: true
+            foreground: root.fg
+            accent: Color.accent
+            fontFamily: root.ff
+            Accessible.name: "Save the current palette"
+            onClicked: root.saveTheme()
+          }
+        }
+
+        Flow {
+          width: parent.width
+          spacing: Style.space(6)
+
+          Repeater {
+            model: root.savedThemes
+
+            Button {
+              required property string modelData
+              text: modelData
+              focusable: true
+              foreground: root.fg
+              accent: Color.accent
+              fontFamily: root.ff
+              Accessible.name: "Load saved theme " + modelData
+              onClicked: root.loadTheme(modelData)
+            }
+          }
+        }
+
+        Row {
+          spacing: Style.space(6)
+
+          TextField {
+            width: Style.space(150)
+            text: root.themeImportPath
+            placeholderText: "Theme JSON path"
+            foreground: root.fg
+            font.family: root.ff
+            font.pixelSize: Style.font.body
+            Accessible.name: "Path to a theme JSON file to import"
+            onTextChanged: root.themeImportPath = text
+            onAccepted: root.importTheme()
+          }
+
+          Button {
+            text: "Import"
+            focusable: true
+            foreground: root.fg
+            accent: Color.accent
+            fontFamily: root.ff
+            Accessible.name: "Import a theme JSON file"
+            onClicked: root.importTheme()
+          }
+        }
+
+        Text {
+          width: parent.width
+          visible: root.themeStatus !== ""
+          text: root.themeStatus
+          color: Qt.darker(root.fg, 1.45)
+          font.family: root.ff
+          font.pixelSize: Style.font.caption
+          wrapMode: Text.WordWrap
+        }
+
+        Text {
+          width: parent.width
+          text: "Saved themes are portable JSON under ~/.local/state/virtual-paradise/themes."
           color: Qt.darker(root.fg, 1.7)
           font.family: root.ff
           font.pixelSize: Style.font.caption

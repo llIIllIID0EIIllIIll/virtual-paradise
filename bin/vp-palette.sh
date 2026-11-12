@@ -3,7 +3,7 @@
 #  Virtual☆Paradise — live palette writer
 # ==============================================================================
 #  Usage:
-#    vp-palette.sh accent secondary tertiary warm pink hot background foreground
+#    vp-palette.sh [--seq N] accent secondary tertiary warm pink hot background foreground
 #
 #  Writes palette.json atomically and marks the variant custom. The island bar
 #  polls the file, so its widgets recolor on the next tick without a shell
@@ -13,8 +13,18 @@
 
 set -euo pipefail
 
+seq=""
+if [[ ${1:-} == --seq ]]; then
+  seq="${2:-}"
+  [[ $seq =~ ^[0-9]+$ ]] || {
+    echo "--seq needs a number." >&2
+    exit 2
+  }
+  shift 2
+fi
+
 [[ $# -eq 8 ]] || {
-  echo "Usage: vp-palette.sh accent secondary tertiary warm pink hot background foreground" >&2
+  echo "Usage: vp-palette.sh [--seq N] accent secondary tertiary warm pink hot background foreground" >&2
   exit 2
 }
 
@@ -24,14 +34,15 @@ set -euo pipefail
 state="$HOME/.local/state/virtual-paradise"
 mkdir -p "$state"
 
-python3 - "$state" "$@" <<'PY'
+python3 - "$state" "$seq" "$@" <<'PY'
 import fcntl
 import json
 import os
 import sys
 import tempfile
 
-state, accent, secondary, tertiary, warm, pink, hot, background, foreground = sys.argv[1:10]
+state, seq, accent, secondary, tertiary, warm, pink, hot, background, foreground = sys.argv[1:11]
+seq = int(seq) if seq else None
 names = ("accent", "secondary", "tertiary", "warm", "pink", "hot", "background", "foreground")
 values = (accent, secondary, tertiary, warm, pink, hot, background, foreground)
 
@@ -41,6 +52,8 @@ for name, value in zip(names, values):
         sys.exit(2)
 
 palette = {"name": "custom"}
+if seq is not None:
+    palette["sequence"] = seq
 for name, value in zip(names, values):
     palette[name] = "#" + value
 payload = json.dumps(palette, indent=2, ensure_ascii=False) + "\n"
@@ -51,8 +64,15 @@ with open(lock_path, "a+", encoding="utf-8") as lock:
     fcntl.flock(lock.fileno(), fcntl.LOCK_EX)
     try:
         with open(target, "r", encoding="utf-8") as handle:
-            unchanged = handle.read() == payload
-    except OSError:
+            existing_raw = handle.read()
+        unchanged = existing_raw == payload
+        existing = json.loads(existing_raw)
+        existing_seq = existing.get("sequence") if isinstance(existing, dict) else None
+        if seq is not None and isinstance(existing_seq, int) and existing_seq > seq:
+            # A newer click already reached the file; this older process lost
+            # the race and must not paint over it.
+            unchanged = True
+    except (OSError, ValueError):
         unchanged = False
 
     fd, tmp = tempfile.mkstemp(prefix=".palette.", suffix=".tmp", dir=state)
