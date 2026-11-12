@@ -38,6 +38,11 @@ Conventional Commits.
   refuses bar-level mutations, so the first panel implementation silently did
   nothing. The panel now calls `vp-setting.sh`; `omarchy-shell doe.tools setBar`
   works even with the panel closed.
+- **Two quick variant switches could leave two bars.** `omarchy restart
+  shell` spawned two supervisors when two calls raced the `quickshell -n`
+  duplicate check. The settings panel now single-flights variant changes and
+  calls `vp-restart-shell.sh`, a flocked wrapper; a second restart exits
+  instead of spawning another shell.
 - **Theme refresh no longer throws null-bar errors.** The audio-control panel
   binds every foreground/font read through a guarded fallback, and the
   Bluetooth panel's Connections target is coerced to null while the bar is
@@ -55,7 +60,7 @@ Conventional Commits.
   `magenta`, `yellow`, `bg`, `blue`…) and the QML bar widgets follow the
   palette instead of keeping the cyberpunk accents.
 - **The night timer uses Tokyo Night**, replacing the removed Sakura variant.
-- Tests: 531 assertions; TC-12 covers the Omarchy palettes and `palette.json`,
+- Tests: 533 assertions; TC-12 covers the Omarchy palettes and `palette.json`,
   TC-30 covers the settings panel, `vp-setting.sh` and the UI sound toggle.
 - **Repository moved to `github.com/vuhuudo/virtual-paradise`.** Clone URLs,
   issue/discussion links, the license notice and the security-advisory link

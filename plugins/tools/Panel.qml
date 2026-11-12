@@ -19,6 +19,7 @@ Panel {
   property var hostWidget: null
   property bool showSettings: false
   property bool verifyRunning: false
+  property bool variantSwitching: false
   property string verifyText: ""
   property string currentVariant: "cyberpunk"
   property var shellConfig: ({})
@@ -126,11 +127,13 @@ Panel {
   }
 
   function setVariant(name) {
-    // Restart the shell after the accent rewrite: Color is read at shell
-    // startup, so without it the panel keeps the previous accent until the
-    // next login. The detached process survives the shell restart.
+    if (root.variantSwitching) return
+    root.variantSwitching = true
+    // Restart through the single-flight wrapper: two fast clicks used to spawn
+    // two supervisors and two bars. Color is read at shell startup, so the
+    // restart is still required.
     root.run("bash -lc '" + root.home + "/.local/bin/theme-switcher.sh " + name
-      + " && omarchy restart shell'")
+      + " && " + root.home + "/.local/bin/vp-restart-shell.sh'")
   }
 
   function toggleWallpaper() {
@@ -162,6 +165,14 @@ Panel {
   Shortcut {
     sequence: "Escape"
     onActivated: root.close()
+  }
+
+  // A failed switcher can leave the buttons disabled; the shell restart
+  // normally destroys this panel long before the timeout.
+  Timer {
+    interval: 20000
+    running: root.variantSwitching
+    onTriggered: root.variantSwitching = false
   }
 
   Process {
@@ -468,6 +479,7 @@ Panel {
               required property var modelData
               text: modelData.label
               selected: root.currentVariant === modelData.id
+              enabled: !root.variantSwitching
               focusable: true
               foreground: root.fg
               accent: Color.accent

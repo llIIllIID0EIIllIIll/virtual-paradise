@@ -3304,8 +3304,9 @@ if want tc30; then
        done; echo 0)"
   check "the tools widget exposes the settings IPC" \
     "$(grep -q 'function settings(): void' "$tools_widget" && echo 0 || echo 1)"
-  check "variant switches restart the shell for QML accents" \
-    "$(grep -q 'omarchy restart shell' "$panel" && echo 0 || echo 1)"
+  check "variant switches use the single-flight restart" \
+    "$(grep -q 'vp-restart-shell.sh' "$panel" \
+      && grep -q 'variantSwitching' "$panel" && echo 0 || echo 1)"
 
   root="$(new_sandbox tc30)"
   state="$root/home/.local/state/virtual-paradise"
@@ -3356,6 +3357,28 @@ PY
     "$([[ -z "$(find "$setting_root/.config/omarchy" -name '.shell.json.*' -print -quit)" ]] && echo 0 || echo 1)"
   check "vp-setting asks the shell to reload" \
     "$(grep -q 'omarchy-shell shell reloadConfig' "$root/shim.log" && echo 0 || echo 1)"
+
+  # Two fast variant clicks used to spawn two supervisors and two bars. The
+  # restart wrapper must serialise; the slow shim keeps the first lock held
+  # while the second caller starts.
+  restart_root="$root/restart"
+  mkdir -p "$restart_root/bin" "$restart_root/run"
+  cat >"$restart_root/bin/omarchy" <<'EOF'
+#!/usr/bin/env bash
+printf '%s\n' "$*" >>"$SHIM_LOG"
+sleep 1
+EOF
+  chmod +x "$restart_root/bin/omarchy"
+  (
+    SHIM_LOG="$restart_root/restart.log" XDG_RUNTIME_DIR="$restart_root/run" \
+      PATH="$restart_root/bin:$PATH" bash "$REPO_DIR/bin/vp-restart-shell.sh" >/dev/null 2>&1 &
+    SHIM_LOG="$restart_root/restart.log" XDG_RUNTIME_DIR="$restart_root/run" \
+      PATH="$restart_root/bin:$PATH" bash "$REPO_DIR/bin/vp-restart-shell.sh" >/dev/null 2>&1 &
+    wait
+  )
+  calls=$(grep -c 'restart shell' "$restart_root/restart.log" 2>/dev/null || echo 0)
+  check "concurrent restarts collapse to one" \
+    "$([[ "$calls" == 1 ]] && echo 0 || echo 1)" "calls=$calls"
 fi
 
 summary
