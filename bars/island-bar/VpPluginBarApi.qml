@@ -20,6 +20,16 @@ QtObject {
   property color barForeground: "transparent"
   property color background: "transparent"
   property color urgent: "transparent"
+  // Semantic palette written by theme-switcher.sh / vp-palette.sh. Widgets
+  // read these through root.bar.* so a live custom palette recolors them
+  // without a shell restart.
+  property color accentColor: "transparent"
+  property color secondaryColor: "transparent"
+  property color greenColor: "transparent"
+  property color warmColor: "transparent"
+  property color pinkColor: "transparent"
+  property color hotColor: "transparent"
+  property color paletteForeground: "transparent"
   property string fontFamily: ""
   property string position: "top"
   property bool vertical: false

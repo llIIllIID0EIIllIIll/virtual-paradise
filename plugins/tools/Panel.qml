@@ -46,8 +46,9 @@ Panel {
     { id: "dracula", label: "Dracula" }
   ]
 
-  // Custom theme editor. Each role is a colour box; the HSL controls edit the
-  // selected role. Applying sends all eight roles to theme-switcher.sh.
+  // Custom theme editor. Pick a role, then click a colour on the board. Every
+  // pick writes palette.json immediately (the bar watches that file, so it
+  // recolors on the next frame) and debounces the theme text files.
   property string selectedRole: "accent"
   property var roleColors: ({
     accent: "#00ffdd",
@@ -59,9 +60,7 @@ Panel {
     background: "#0f081d",
     foreground: "#eafbfa"
   })
-  property real editHue: 180
-  property real editSaturation: 100
-  property real editLightness: 50
+  property bool paletteDirty: false
   readonly property var roles: [
     { id: "accent", label: "Accent" },
     { id: "secondary", label: "Secondary" },
@@ -74,6 +73,32 @@ Panel {
   ]
   readonly property string selectedHex: root.roleColor(root.selectedRole)
 
+  // The visual board: thirteen hues across, seven tones down, then a neutral
+  // ramp for backgrounds and text. No hex knowledge required.
+  readonly property var boardHues: [0, 20, 40, 60, 90, 140, 170, 190, 215, 250, 280, 310, 335]
+  readonly property var boardTones: [
+    { s: 45, l: 90 },
+    { s: 65, l: 78 },
+    { s: 85, l: 66 },
+    { s: 100, l: 54 },
+    { s: 95, l: 42 },
+    { s: 85, l: 30 },
+    { s: 70, l: 20 }
+  ]
+  readonly property var boardNeutrals: [
+    "#0b0b0b", "#161616", "#222222", "#303030", "#424242", "#585858",
+    "#737373", "#909090", "#adadad", "#cacaca", "#e8e8e8", "#ffffff"
+  ]
+  readonly property var boardColors: {
+    var list = []
+    for (var r = 0; r < root.boardTones.length; r++)
+      for (var c = 0; c < root.boardHues.length; c++)
+        list.push(root.hslHex(root.boardHues[c], root.boardTones[r].s, root.boardTones[r].l))
+    for (var n = 0; n < root.boardNeutrals.length; n++)
+      list.push(root.boardNeutrals[n])
+    return list
+  }
+
   function hexByte(value) {
     var n = Math.round(Math.max(0, Math.min(1, value)) * 255)
     return (n < 16 ? "0" : "") + n.toString(16)
@@ -81,28 +106,6 @@ Panel {
 
   function roleColor(role) {
     return root.roleColors[role] || "#00ffdd"
-  }
-
-  function hexToHsl(hex) {
-    var value = String(hex || "").replace("#", "")
-    if (!/^[0-9a-fA-F]{6}$/.test(value)) value = "00ffdd"
-    var r = parseInt(value.substr(0, 2), 16) / 255
-    var g = parseInt(value.substr(2, 2), 16) / 255
-    var b = parseInt(value.substr(4, 2), 16) / 255
-    var max = Math.max(r, g, b)
-    var min = Math.min(r, g, b)
-    var h = 0
-    var s = 0
-    var l = (max + min) / 2
-    if (max !== min) {
-      var d = max - min
-      s = l > 0.5 ? d / (2 - max - min) : d / (max + min)
-      if (max === r) h = (g - b) / d + (g < b ? 6 : 0)
-      else if (max === g) h = (b - r) / d + 2
-      else h = (r - g) / d + 4
-      h /= 6
-    }
-    return { h: h * 360, s: s * 100, l: l * 100 }
   }
 
   function hslHex(h, s, l) {
@@ -117,44 +120,55 @@ Panel {
   }
 
   function selectRole(role) {
-    if (!role || role === root.selectedRole) {
-      if (!root.selectedRole) root.selectedRole = "accent"
-    }
     root.selectedRole = role || "accent"
-    var hsl = root.hexToHsl(root.roleColor(root.selectedRole))
-    root.editHue = hsl.h
-    root.editSaturation = hsl.s
-    root.editLightness = hsl.l
     Qt.callLater(function() {
       if (typeof hexField !== "undefined" && hexField) hexField.text = root.selectedHex
     })
   }
 
-  function updateSelectedRole() {
+  function currentColors() {
+    var order = ["accent", "secondary", "tertiary", "warm", "pink", "hot", "background", "foreground"]
+    var colors = []
+    for (var i = 0; i < order.length; i++)
+      colors.push(String(root.roleColor(order[i])).replace("#", "").toLowerCase())
+    return colors
+  }
+
+  function setRoleColor(role, value) {
     var next = {}
     for (var i = 0; i < root.roles.length; i++) {
       var id = root.roles[i].id
       next[id] = root.roleColors[id]
     }
-    next[root.selectedRole] = root.hslHex(root.editHue, root.editSaturation, root.editLightness)
+    next[role || root.selectedRole] = value
     root.roleColors = next
+    if (typeof hexField !== "undefined" && hexField) hexField.text = value
+    root.paletteDirty = true
+    // The bar reads palette.json directly, so this is the realtime path.
+    root.run(root.home + "/.local/bin/vp-palette.sh " + root.currentColors().join(" "))
+    themeDebounce.restart()
+  }
+
+  function pickColor(value) {
+    root.setRoleColor(root.selectedRole, value)
   }
 
   function setSelectedHex(text) {
     var value = String(text || "").trim()
-    if (!/^#?[0-9a-fA-F]{6}$/.test(value)) return
-    value = "#" + value.replace("#", "")
-    var next = {}
-    for (var i = 0; i < root.roles.length; i++) {
-      var id = root.roles[i].id
-      next[id] = root.roleColors[id]
+    if (!/^#?[0-9a-fA-F]{6}$/.test(value)) {
+      if (typeof hexField !== "undefined" && hexField) hexField.text = root.selectedHex
+      return
     }
-    next[root.selectedRole] = value
-    root.roleColors = next
-    var hsl = root.hexToHsl(value)
-    root.editHue = hsl.h
-    root.editSaturation = hsl.s
-    root.editLightness = hsl.l
+    root.setRoleColor(root.selectedRole, "#" + value.replace("#", "").toLowerCase())
+  }
+
+  function flushTheme() {
+    if (!root.paletteDirty) return
+    root.paletteDirty = false
+    // Rewrites the theme text files (terminal, GTK, Omarchy templates) with the
+    // same palette. No shell restart: the bar already changed through the JSON.
+    root.run("bash -lc '" + root.home + "/.local/bin/theme-switcher.sh custom "
+      + root.currentColors().join(" ") + "'")
   }
 
   function loadPalette(text) {
@@ -226,16 +240,9 @@ Panel {
   }
 
   function applyCustomTheme() {
-    if (root.variantSwitching) return
-    root.variantSwitching = true
-    // Pass all eight roles without '#'; inside `bash -lc '...'` a leading #
-    // would start a shell comment.
-    var order = ["accent", "secondary", "tertiary", "warm", "pink", "hot", "background", "foreground"]
-    var colors = []
-    for (var i = 0; i < order.length; i++)
-      colors.push(String(root.roleColor(order[i])).replace("#", ""))
-    root.run("bash -lc '" + root.home + "/.local/bin/theme-switcher.sh custom " + colors.join(" ")
-      + " && " + root.home + "/.local/bin/vp-restart-shell.sh'")
+    // Kept for the IPC/scripts that used to press Apply; now it just flushes
+    // the debounced theme files. The bar is already using the new palette.
+    root.flushTheme()
   }
 
   function setWeatherAuto(value) {
@@ -310,6 +317,17 @@ Panel {
     running: root.variantSwitching
     onTriggered: root.variantSwitching = false
   }
+
+  // Debounce only the text-file side: rapid swatch clicks should not rewrite
+  // the terminal/GTK configs on every pixel.
+  Timer {
+    id: themeDebounce
+    interval: 450
+    repeat: false
+    onTriggered: root.flushTheme()
+  }
+
+  Component.onDestruction: root.flushTheme()
 
   Process {
     id: verifyProc
@@ -628,15 +646,54 @@ Panel {
           }
         }
 
+        Grid {
+          columns: 13
+          spacing: Style.space(3)
+
+          Repeater {
+            model: root.boardColors
+
+            Rectangle {
+              required property string modelData
+
+              width: Style.space(22)
+              height: Style.space(22)
+              radius: Style.space(4)
+              color: modelData
+              border.width: root.selectedHex.toLowerCase() === modelData.toLowerCase() ? 2 : 1
+              border.color: root.selectedHex.toLowerCase() === modelData.toLowerCase()
+                ? root.fg : Qt.rgba(root.fg.r, root.fg.g, root.fg.b, 0.22)
+              Accessible.name: "Colour " + modelData
+              Accessible.role: Accessible.Button
+
+              MouseArea {
+                anchors.fill: parent
+                cursorShape: Qt.PointingHandCursor
+                onClicked: root.pickColor(modelData)
+              }
+            }
+          }
+        }
+
         Row {
           spacing: Style.space(8)
 
           Text {
             anchors.verticalCenter: parent.verticalCenter
-            text: "EDIT " + root.roleLabel(root.selectedRole)
+            text: "SELECTED"
             color: Qt.darker(root.fg, 1.45)
             font.family: root.ff
             font.pixelSize: Style.font.caption
+          }
+
+          Rectangle {
+            width: Style.space(28)
+            height: Style.space(22)
+            anchors.verticalCenter: parent.verticalCenter
+            radius: Style.space(4)
+            color: root.selectedHex
+            border.width: 1
+            border.color: Qt.rgba(root.fg.r, root.fg.g, root.fg.b, 0.35)
           }
 
           TextField {
@@ -652,64 +709,12 @@ Panel {
         }
 
         Text {
-          text: "HUE  " + Math.round(root.editHue)
-          color: Qt.darker(root.fg, 1.45)
+          width: parent.width
+          text: "Pick a role, then click a swatch. Changes apply live — no Apply button."
+          color: Qt.darker(root.fg, 1.55)
           font.family: root.ff
           font.pixelSize: Style.font.caption
-        }
-        PanelSlider {
-          width: parent.width
-          minimum: 0
-          maximum: 360
-          step: 1
-          integer: true
-          value: root.editHue
-          onMoved: function(v) { root.editHue = v; root.updateSelectedRole() }
-          onReleased: function(v) { root.editHue = v; root.updateSelectedRole() }
-        }
-
-        Text {
-          text: "SATURATION  " + Math.round(root.editSaturation)
-          color: Qt.darker(root.fg, 1.45)
-          font.family: root.ff
-          font.pixelSize: Style.font.caption
-        }
-        PanelSlider {
-          width: parent.width
-          minimum: 0
-          maximum: 100
-          step: 1
-          integer: true
-          value: root.editSaturation
-          onMoved: function(v) { root.editSaturation = v; root.updateSelectedRole() }
-          onReleased: function(v) { root.editSaturation = v; root.updateSelectedRole() }
-        }
-
-        Text {
-          text: "LIGHTNESS  " + Math.round(root.editLightness)
-          color: Qt.darker(root.fg, 1.45)
-          font.family: root.ff
-          font.pixelSize: Style.font.caption
-        }
-        PanelSlider {
-          width: parent.width
-          minimum: 0
-          maximum: 100
-          step: 1
-          integer: true
-          value: root.editLightness
-          onMoved: function(v) { root.editLightness = v; root.updateSelectedRole() }
-          onReleased: function(v) { root.editLightness = v; root.updateSelectedRole() }
-        }
-
-        Button {
-          text: root.variantSwitching ? "Applying…" : "Apply theme"
-          enabled: !root.variantSwitching
-          focusable: true
-          foreground: root.fg
-          accent: Color.accent
-          fontFamily: root.ff
-          onClicked: root.applyCustomTheme()
+          wrapMode: Text.WordWrap
         }
 
         Text {

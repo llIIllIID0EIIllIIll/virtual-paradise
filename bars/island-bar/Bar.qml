@@ -48,6 +48,20 @@ Item {
   // read these instead of their old hardcoded cyan/green/yellow/pink so an
   // accent variant recolors the whole bar, not only the theme files.
   property var palette: ({})
+  property string paletteRaw: ""
+
+  function applyPalette(raw) {
+    var value = String(raw || "")
+    if (value === root.paletteRaw) return
+    try {
+      var next = JSON.parse(value)
+      root.paletteRaw = value
+      root.palette = next
+    } catch (e) {
+      // Keep the last good palette while a writer is mid-replace.
+    }
+  }
+
   readonly property color accentColor: palette && palette.accent ? palette.accent : Color.accent
   readonly property color secondaryColor: palette && palette.secondary ? palette.secondary : Color.accent
   readonly property color greenColor: palette && palette.tertiary ? palette.tertiary : "#00ff88"
@@ -255,6 +269,13 @@ Item {
     api.background = Qt.binding(function() { return root.background })
     api.urgent = Qt.binding(function() { return root.urgent })
     api.fontFamily = Qt.binding(function() { return root.fontFamily })
+    api.accentColor = Qt.binding(function() { return root.accentColor })
+    api.secondaryColor = Qt.binding(function() { return root.secondaryColor })
+    api.greenColor = Qt.binding(function() { return root.greenColor })
+    api.warmColor = Qt.binding(function() { return root.warmColor })
+    api.pinkColor = Qt.binding(function() { return root.pinkColor })
+    api.hotColor = Qt.binding(function() { return root.hotColor })
+    api.paletteForeground = Qt.binding(function() { return root.paletteForeground })
     api.position = Qt.binding(function() { return root.position })
     api.vertical = Qt.binding(function() { return root.vertical })
     api.barSize = Qt.binding(function() { return root.barSize })
@@ -1249,18 +1270,24 @@ Item {
   }
 
   FileView {
+    id: paletteView
+
     path: root.stateHome + "/virtual-paradise/palette.json"
     watchChanges: true
     printErrors: false
     onFileChanged: reload()
-    onLoaded: {
-      try {
-        root.palette = JSON.parse(text())
-      } catch (e) {
-        root.palette = ({})
-      }
-    }
-    onLoadFailed: root.palette = ({})
+    onLoaded: root.applyPalette(text())
+    onLoadFailed: root.applyPalette("")
+  }
+
+  // Atomic writers replace the inode, which a watch on the old file misses.
+  // Polling this tiny JSON keeps the live palette reliable and is gated on the
+  // text so an unchanged file never restarts the color animations.
+  Timer {
+    interval: 300
+    repeat: true
+    running: true
+    onTriggered: paletteView.reload()
   }
 
   function runProcess(process) {

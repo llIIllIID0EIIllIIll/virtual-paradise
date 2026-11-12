@@ -58,15 +58,17 @@ Xem đầy đủ trong [KEYBINDINGS.md](KEYBINDINGS.md).
 
 Mở **Tools** trên thanh bar → biểu tượng **bánh răng**. Từ đây có thể:
 
-- Bật/tắt **Gap effects**, **Hover glow**, **Reduced motion**.
+- **Gap effects** mặc định bật; **Hover glow** và **Reduced motion** mặc định
+  tắt (chỉnh trong `shell.json` nếu cần).
 - **Custom theme**: 8 role — Accent, Secondary, Tertiary, Warm, Pink, Urgent,
-  Background, Text. Chọn ô màu, kéo HSL hoặc nhập hex, bấm **Apply theme** để
-  ghi toàn bộ palette và restart shell.
+  Background, Text. Chọn ô role rồi bấm một màu trên bảng màu trực quan (hoặc
+  nhập hex). Mỗi lần bấm áp dụng ngay: palette.json được ghi qua
+  `vp-palette.sh`, bar đổi màu không cần Apply và không restart shell. File
+  theme (terminal, GTK) được ghi lại sau khoảng nửa giây.
 - **Palette có sẵn**: Cyberpunk, Catppuccin, Tokyo Night, Gruvbox, Nord,
   Everforest, Kanagawa, Rosé Pine, Hackerman, Dracula, Mono, Neon.
 - **Actions**: bật/tắt wallpaper động, âm thanh UI, diagnose, verify pins,
   repair bar, logs.
-- Bật/tắt **wallpaper động**, **âm thanh UI**.
 - Bật **Automatic location** cho weather (mặc định tắt vì lý do riêng tư).
 - Chạy **Diagnose**, **Verify pins**, **Repair bar**, xem **Logs**.
 

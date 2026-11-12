@@ -1467,6 +1467,35 @@ PY
       && for w in clock cputemp weather microphone; do \
            grep -q 'root.bar.accentColor' "$REPO_DIR/plugins/$w/BarWidget.qml" || exit 1; \
          done; echo 0)"
+  check "the bar API forwards the palette to every widget" \
+    "$(grep -q 'property color accentColor' "$REPO_DIR/bars/island-bar/VpPluginBarApi.qml" \
+      && for role in secondary green warm pink hot paletteForeground; do \
+           grep -q "property color $role" "$REPO_DIR/bars/island-bar/VpPluginBarApi.qml" || exit 1; \
+           grep -q "api.$role = Qt.binding" "$REPO_DIR/bars/island-bar/Bar.qml" || exit 1; \
+         done; echo 0)"
+  check "the bar picks up atomic palette writes without a restart" \
+    "$(grep -q 'function applyPalette' "$REPO_DIR/bars/island-bar/Bar.qml" \
+      && grep -q 'paletteView.reload()' "$REPO_DIR/bars/island-bar/Bar.qml" \
+      && grep -q 'if (value === root.paletteRaw) return' "$REPO_DIR/bars/island-bar/Bar.qml" \
+      && echo 0 || echo 1)"
+
+  # The live path: the panel calls vp-palette.sh on every swatch click, so the
+  # bar recolors from palette.json without waiting for the debounced theme files
+  # or a shell restart.
+  HOME="$home" XDG_CONFIG_HOME="$home/.config" XDG_STATE_HOME="$home/.local/state" \
+    bash "$REPO_DIR/bin/vp-palette.sh" \
+    abcdef 111111 222222 333333 444444 555555 010203 040506 >"$root/palette.log" 2>&1
+  check "vp-palette writes the live palette" $? "$(tail -3 "$root/palette.log")"
+  python3 -c 'import json,sys; d=json.load(open(sys.argv[1])); raise SystemExit(0 if d.get("name")=="custom" and d.get("accent")=="#abcdef" and d.get("secondary")=="#111111" and d.get("tertiary")=="#222222" and d.get("warm")=="#333333" and d.get("pink")=="#444444" and d.get("hot")=="#555555" and d.get("background")=="#010203" and d.get("foreground")=="#040506" else 1)' \
+    "$home/.local/state/virtual-paradise/palette.json"
+  check "vp-palette records all eight roles" $?
+  check "vp-palette marks the variant custom" \
+    "$(grep -qx 'custom' "$home/.local/state/virtual-paradise/current_variant" && echo 0 || echo 1)"
+  check "vp-palette leaves no temp files" \
+    "$(find "$home/.local/state/virtual-paradise" -maxdepth 1 -name '.palette.*' | grep -q . && echo 1 || echo 0)"
+  HOME="$home" XDG_CONFIG_HOME="$home/.config" XDG_STATE_HOME="$home/.local/state" \
+    bash "$REPO_DIR/bin/vp-palette.sh" 12345 111111 222222 333333 444444 555555 010203 040506 >/dev/null 2>&1
+  check "vp-palette rejects a bad colour" "$([[ $? -ne 0 ]] && echo 0 || echo 1)"
 
   # A second switch must start from the original palette, not from the one the
   # first switch wrote.
@@ -3310,15 +3339,17 @@ if want tc30; then
   check "the tools panel carries a settings view" \
     "$(grep -q 'property bool showSettings' "$panel" \
       && grep -q 'SETTINGS' "$panel" && echo 0 || echo 1)"
-  check "settings replaced the appearance toggles with a color picker" \
+  check "settings replaced the appearance toggles with a live color board" \
     "$(! grep -q 'label: "Gap effects"' "$panel" \
       && ! grep -q 'label: "Hover glow"' "$panel" \
       && ! grep -q 'label: "Reduced motion"' "$panel" \
       && grep -q 'CUSTOM THEME' "$panel" \
-      && grep -q 'applyCustomTheme' "$panel" \
-      && grep -q 'roleColors' "$panel" \
-      && grep -q 'theme-switcher.sh custom' "$panel" \
-      && grep -q 'PanelSlider' "$panel" && echo 0 || echo 1)"
+      && grep -q 'boardColors' "$panel" \
+      && grep -q 'function pickColor' "$panel" \
+      && grep -q 'vp-palette.sh' "$panel" \
+      && grep -q 'themeDebounce' "$panel" \
+      && ! grep -q 'PanelSlider' "$panel" \
+      && ! grep -q 'Apply theme' "$panel" && echo 0 || echo 1)"
   check "settings write bar options through vp-setting" \
     "$(grep -q 'function setBarOption' "$panel" \
       && grep -q 'vp-setting.sh set bar' "$panel" && echo 0 || echo 1)"

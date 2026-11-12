@@ -10,16 +10,26 @@ Conventional Commits.
 
 ### Added
 - **A settings/health view inside the Tools dropdown.** The gear switches the
-  panel to appearance toggles (gap effects, hover glow, reduced motion), accent
-  variants, live wallpaper, UI sound, weather consent, and system actions
-  (diagnose, verify pins, repair bar, logs). It shows the current variant and
-  labels the variants honestly: they recolor the chrome, terminals and bar
-  widgets; the wallpaper/Plymouth/SDDM artwork remains cyberpunk.
+  panel to the custom theme editor, accent variants, live wallpaper, UI sound,
+  weather consent, and system actions (diagnose, verify pins, repair bar,
+  logs). It shows the current variant and labels the variants honestly: they
+  recolor the chrome, terminals and bar widgets; the wallpaper/Plymouth/SDDM
+  artwork remains cyberpunk.
 - **Custom theme editor.** The Appearance toggles are gone; the settings panel
   now exposes eight roles (Accent, Secondary, Tertiary, Warm, Pink, Urgent,
-  Background, Text). Each role has a colour box, HSL sliders and a hex field;
-  Apply theme writes the whole palette through `theme-switcher.sh custom` and
-  restarts the shell through the single-flight wrapper.
+  Background, Text). Pick a role, then click a swatch on the visual color board
+  (or type a hex). Every click applies live: `vp-palette.sh` writes
+  `palette.json` immediately and the bar recolors without an Apply button or a
+  shell restart. The terminal/GTK theme files are rewritten after a short
+  debounce through `theme-switcher.sh custom`.
+- **`vp-palette.sh`**, the atomic live-palette writer. It validates the eight
+  hex colors, replaces `palette.json` under `flock` with a temp file, records
+  the `custom` variant, and leaves no temp files behind. The bar polls the
+  tiny file so an atomic replacement still recolors it within a tick.
+- **Live palette plumbing for bar widgets.** `VpPluginBarApi` now forwards
+  Accent, Secondary, Tertiary, Warm, Pink, Urgent and Foreground to every
+  widget, and the bar only re-applies a palette when the JSON text changed, so
+  a swatch click does not restart the color animations.
 - **`vp-setting.sh`**, the atomic settings writer behind the panel. `get`/`set`
   support the bar booleans and weather auto-location; writes use `flock` and a
   same-directory replace so a shell reload cannot see a truncated `shell.json`.
@@ -68,7 +78,7 @@ Conventional Commits.
   `magenta`, `yellow`, `bg`, `blue`…) and the QML bar widgets follow the
   palette instead of keeping the cyberpunk accents.
 - **The night timer uses Tokyo Night**, replacing the removed Sakura variant.
-- Tests: 540 assertions; TC-12 covers the Omarchy palettes, multi-role custom themes and `palette.json`,
+- Tests: 547 assertions; TC-12 covers the Omarchy palettes, multi-role custom themes and `palette.json`,
   TC-30 covers the settings panel, `vp-setting.sh` and the UI sound toggle.
 - **Repository moved to `github.com/vuhuudo/virtual-paradise`.** Clone URLs,
   issue/discussion links, the license notice and the security-advisory link
