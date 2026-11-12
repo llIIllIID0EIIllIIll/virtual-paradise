@@ -131,7 +131,8 @@ second settings application or restarting the shell for every color change.
 
 ### Artwork
 
-- [x] Wallpaper duotone from the live Background/Accent, with restore.
+- [x] Wallpaper duotone from the current video frame or image using the live
+      Background/Accent, with restore.
 - [ ] SDDM/Plymouth artwork per custom theme (boot art needs sudo and an
       initramfs rebuild).
 - [x] Keep cyberpunk artwork as the default and as the fallback.

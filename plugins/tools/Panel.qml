@@ -1626,7 +1626,7 @@ Panel {
 
         Text {
           width: parent.width
-          text: "Build a duotone still from Glitch.jpg using the live Background and Accent. SDDM and Plymouth keep the cyberpunk artwork."
+          text: "Build a duotone still from the current wallpaper (video frame or image) using the live Background and Accent. SDDM and Plymouth keep the cyberpunk artwork."
           color: Qt.darker(root.fg, 1.6)
           font.family: root.ff
           font.pixelSize: Style.font.caption

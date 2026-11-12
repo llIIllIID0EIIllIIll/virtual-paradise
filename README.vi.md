@@ -78,7 +78,8 @@ Mở **Tools** trên thanh bar → biểu tượng **bánh răng**. Từ đây c
   là `vp-theme.sh save|list|load|export|import|delete`.
 - **Palette có sẵn**: Cyberpunk, Catppuccin, Tokyo Night, Gruvbox, Nord,
   Everforest, Kanagawa, Rosé Pine, Hackerman, Dracula, Mono, Neon.
-- **Artwork**: tạo wallpaper duotone từ `Glitch.jpg` theo Background/Accent
+- **Artwork**: tạo wallpaper duotone từ wallpaper hiện tại (frame video hoặc
+  ảnh, fallback `Glitch.jpg`) theo Background/Accent
   (**Tint wallpaper**), hoặc **Restore** wallpaper trước đó. SDDM/Plymouth vẫn
   giữ artwork cyberpunk. Cần ImageMagick (installer tự cài).
 - **Actions**: bật/tắt wallpaper động, âm thanh UI, terminal/Cava live,

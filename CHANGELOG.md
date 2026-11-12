@@ -10,7 +10,8 @@ Conventional Commits.
 
 ### Added
 - **Palette wallpaper.** `vp-wallpaper-tint.sh` builds a duotone still from
-  the static Glitch artwork with the live Background/Accent, sets it through
+  the current wallpaper (a video frame or an image, falling back to Glitch)
+  with the live Background/Accent, sets it through
   `omarchy theme bg set`, and remembers the previous wallpaper for **Restore**.
   SDDM and Plymouth deliberately keep the cyberpunk artwork (boot art needs
   sudo and an initramfs rebuild).

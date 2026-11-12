@@ -452,7 +452,8 @@ live:
   Kanagawa, Rosé Pine, Hackerman, Dracula, Mono, Neon. Each palette recolors
   the chrome, terminals, GTK and bar widgets; the wallpaper/Plymouth/SDDM
   artwork stays cyberpunk for now.
-- **Artwork**: build a duotone still from `Glitch.jpg` using the live
+- **Artwork**: build a duotone still from the current wallpaper (a video
+  frame or an image, falling back to `Glitch.jpg`) using the live
   Background/Accent (**Tint wallpaper**), or restore the wallpaper that was
   active before. SDDM/Plymouth artwork stays cyberpunk for now. Requires
   ImageMagick, which the installer adds.
