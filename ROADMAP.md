@@ -138,11 +138,14 @@ second settings application or restarting the shell for every color change.
 
 ### Release gates
 
-- Run Ubuntu and Arch CI plus the release dry-run.
-- Add UI automation for Save/Load/Import and a 100-write ordering test.
-- Add golden screenshots for the board at 100%, 125% and 150% scale.
-- Version 1.5.0 when 2.1 is green; artwork can ship in 1.6.0.
-- Update `README.md`, `README.vi.md`, `CHANGELOG.md`, `KEYBINDINGS.md` and this
+- [x] Run Ubuntu and Arch CI plus the release dry-run.
+- [x] Version 1.5.0 with the palette/editor/terminal/Cava work.
+- [ ] Add UI automation for Save/Load/Import and a 100-write ordering test
+      (1.6.0).
+- [ ] Add golden screenshots for the board at 100%, 125% and 150% scale
+      (1.6.0).
+- [ ] Artwork palette for wallpaper/SDDM/Plymouth (1.6.0).
+- Keep `README.md`, `README.vi.md`, `CHANGELOG.md`, `KEYBINDINGS.md` and this
   file in the same commit as any behavior change.
 
 ---

@@ -8,6 +8,8 @@ Conventional Commits.
 
 ## [Unreleased]
 
+## [1.5.0] - 2026-11-12
+
 ### Added
 - **A settings/health view inside the Tools dropdown.** The gear switches the
   panel to the custom theme editor, accent variants, live wallpaper, UI sound,
@@ -1198,7 +1200,8 @@ full installer/uninstaller.
 
 ## Links
 
-- [Unreleased]: https://github.com/vuhuudo/virtual-paradise/compare/v1.4.0...HEAD
+- [Unreleased]: https://github.com/vuhuudo/virtual-paradise/compare/v1.5.0...HEAD
+- [1.5.0]: https://github.com/vuhuudo/virtual-paradise/compare/v1.4.0...v1.5.0
 - [1.4.0]: https://github.com/vuhuudo/virtual-paradise/compare/v1.3.7...v1.4.0
 - [1.3.7]: https://github.com/vuhuudo/virtual-paradise/compare/v1.3.6...v1.3.7
 - [1.3.6]: https://github.com/vuhuudo/virtual-paradise/compare/v1.3.5...v1.3.6
