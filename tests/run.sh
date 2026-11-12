@@ -1447,12 +1447,18 @@ raise SystemExit(0 if d.get("accent") == "#89b4fa" and d.get("tertiary") == "#a6
 PY
   check "the QML palette follows the variant" $?
 
-  run_switcher custom 12ab34
+  run_switcher custom 12ab34 223344 334455 445566 556677 667788 0a0b0c ddeeff
   check "a custom accent is applied" \
     "$(grep -q '^accent = "#12ab34"' "$theme/colors.toml" && echo 0 || echo 1)"
-  python3 -c 'import json,sys; d=json.load(open(sys.argv[1])); raise SystemExit(0 if d.get("name")=="custom" and d.get("accent")=="#12ab34" else 1)' \
+  check "custom secondary and tertiary are applied" \
+    "$(grep -q '^color1 = "#223344"' "$theme/colors.toml" \
+      && grep -q '^color2 = "#334455"' "$theme/colors.toml" && echo 0 || echo 1)"
+  check "custom background and text are applied" \
+    "$(grep -q '^background = "#0a0b0c"' "$theme/colors.toml" \
+      && grep -q '^foreground = "#ddeeff"' "$theme/colors.toml" && echo 0 || echo 1)"
+  python3 -c 'import json,sys; d=json.load(open(sys.argv[1])); raise SystemExit(0 if d.get("name")=="custom" and d.get("accent")=="#12ab34" and d.get("secondary")=="#223344" and d.get("hot")=="#667788" and d.get("background")=="#0a0b0c" and d.get("foreground")=="#ddeeff" else 1)' \
     "$home/.local/state/virtual-paradise/palette.json"
-  check "the custom palette names itself custom" $?
+  check "the custom palette records every role" $?
   check "the custom variant is recorded" \
     "$(grep -qx 'custom' "$home/.local/state/virtual-paradise/current_variant" && echo 0 || echo 1)"
   check "the bar exposes the palette to its widgets" \
@@ -3308,9 +3314,10 @@ if want tc30; then
     "$(! grep -q 'label: "Gap effects"' "$panel" \
       && ! grep -q 'label: "Hover glow"' "$panel" \
       && ! grep -q 'label: "Reduced motion"' "$panel" \
-      && grep -q 'CUSTOM COLOR' "$panel" \
-      && grep -q 'applyCustomColor' "$panel" \
-      && grep -q 'customHex.substring(1)' "$panel" \
+      && grep -q 'CUSTOM THEME' "$panel" \
+      && grep -q 'applyCustomTheme' "$panel" \
+      && grep -q 'roleColors' "$panel" \
+      && grep -q 'theme-switcher.sh custom' "$panel" \
       && grep -q 'PanelSlider' "$panel" && echo 0 || echo 1)"
   check "settings write bar options through vp-setting" \
     "$(grep -q 'function setBarOption' "$panel" \

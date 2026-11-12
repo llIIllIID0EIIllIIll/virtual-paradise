@@ -14,7 +14,7 @@
 [![Arch Linux](https://img.shields.io/badge/Arch_Linux-1793D1?style=flat-square&logo=arch-linux&logoColor=white)](https://archlinux.org)
 [![Omarchy 4.5+](https://img.shields.io/badge/Omarchy-4.5+-8A2BE2?style=flat-square)](https://omarchy.org)
 [![Hyprland](https://img.shields.io/badge/Hyprland-Wayland-00ffdd?style=flat-square)](https://hyprland.org)
-[![Tests](https://img.shields.io/badge/tests-538%20passed-00ff88?style=flat-square)](tests/)
+[![Tests](https://img.shields.io/badge/tests-540%20passed-00ff88?style=flat-square)](tests/)
 [![License](https://img.shields.io/badge/license-MIT-ffe066?style=flat-square)](LICENSE)
 [![Version](https://img.shields.io/badge/version-1.4.0-ff00ff?style=flat-square)](VERSION)
 
@@ -428,9 +428,10 @@ The panel writes every change through `vp-setting.sh` (flock + same-directory
 atomic replace) to `~/.config/omarchy/shell.json`, and the shell reloads it
 live:
 
-- **Custom color**: an HSL picker (hue, saturation, lightness) with six preset
-  swatches and a live preview. **Apply color** writes that accent and its
-  derived companions to the theme, then restarts the shell.
+- **Custom theme**: eight roles — Accent, Secondary, Tertiary, Warm, Pink,
+  Urgent, Background and Text. Click a color box, edit it with the HSL sliders
+  or the hex field, then **Apply theme**. The panel writes every role and its
+  derived companions, then restarts the shell.
 - **Palettes**: Cyberpunk, Catppuccin, Tokyo Night, Gruvbox, Nord, Everforest,
   Kanagawa, Rosé Pine, Hackerman, Dracula, Mono, Neon. Each palette recolors
   the chrome, terminals, GTK and bar widgets; the wallpaper/Plymouth/SDDM
@@ -596,9 +597,9 @@ default.
 
 ### Running Tests
 
-The test suite has thirty test cases and 538 assertions; optional tools
+The test suite has thirty test cases and 540 assertions; optional tools
 (`shellcheck`, `qmllint`, `hyprctl`) enable extra checks when present, so the
-exact count varies between machines (538 with `shellcheck` and `qmllint`). It
+exact count varies between machines (540 with `shellcheck` and `qmllint`). It
 runs in a sandbox and never touches your real system.
 
 ```bash

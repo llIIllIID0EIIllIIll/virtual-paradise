@@ -46,25 +46,130 @@ Panel {
     { id: "dracula", label: "Dracula" }
   ]
 
-  // Custom accent picker. HSL keeps the controls intuitive; the theme takes
-  // the resulting six-digit hex.
-  property real customHue: 180
-  property real customSaturation: 100
-  property real customLightness: 50
-  readonly property color customColor: Qt.hsla(customHue / 360, customSaturation / 100, customLightness / 100, 1)
-  readonly property string customHex: "#" + root.hexByte(customColor.r) + root.hexByte(customColor.g) + root.hexByte(customColor.b)
-  readonly property var swatches: [
-    { h: 180, s: 100, l: 50, label: "Cyan" },
-    { h: 220, s: 80, l: 65, label: "Blue" },
-    { h: 270, s: 70, l: 70, label: "Violet" },
-    { h: 330, s: 80, l: 75, label: "Pink" },
-    { h: 140, s: 80, l: 55, label: "Green" },
-    { h: 45, s: 100, l: 60, label: "Amber" }
+  // Custom theme editor. Each role is a colour box; the HSL controls edit the
+  // selected role. Applying sends all eight roles to theme-switcher.sh.
+  property string selectedRole: "accent"
+  property var roleColors: ({
+    accent: "#00ffdd",
+    secondary: "#ff00ff",
+    tertiary: "#00ff88",
+    warm: "#ffe066",
+    pink: "#ffb7d5",
+    hot: "#ff0055",
+    background: "#0f081d",
+    foreground: "#eafbfa"
+  })
+  property real editHue: 180
+  property real editSaturation: 100
+  property real editLightness: 50
+  readonly property var roles: [
+    { id: "accent", label: "Accent" },
+    { id: "secondary", label: "Secondary" },
+    { id: "tertiary", label: "Tertiary" },
+    { id: "warm", label: "Warm" },
+    { id: "pink", label: "Pink" },
+    { id: "hot", label: "Urgent" },
+    { id: "background", label: "BG" },
+    { id: "foreground", label: "Text" }
   ]
+  readonly property string selectedHex: root.roleColor(root.selectedRole)
 
   function hexByte(value) {
     var n = Math.round(Math.max(0, Math.min(1, value)) * 255)
     return (n < 16 ? "0" : "") + n.toString(16)
+  }
+
+  function roleColor(role) {
+    return root.roleColors[role] || "#00ffdd"
+  }
+
+  function hexToHsl(hex) {
+    var value = String(hex || "").replace("#", "")
+    if (!/^[0-9a-fA-F]{6}$/.test(value)) value = "00ffdd"
+    var r = parseInt(value.substr(0, 2), 16) / 255
+    var g = parseInt(value.substr(2, 2), 16) / 255
+    var b = parseInt(value.substr(4, 2), 16) / 255
+    var max = Math.max(r, g, b)
+    var min = Math.min(r, g, b)
+    var h = 0
+    var s = 0
+    var l = (max + min) / 2
+    if (max !== min) {
+      var d = max - min
+      s = l > 0.5 ? d / (2 - max - min) : d / (max + min)
+      if (max === r) h = (g - b) / d + (g < b ? 6 : 0)
+      else if (max === g) h = (b - r) / d + 2
+      else h = (r - g) / d + 4
+      h /= 6
+    }
+    return { h: h * 360, s: s * 100, l: l * 100 }
+  }
+
+  function hslHex(h, s, l) {
+    var c = Qt.hsla(h / 360, s / 100, l / 100, 1)
+    return "#" + root.hexByte(c.r) + root.hexByte(c.g) + root.hexByte(c.b)
+  }
+
+  function roleLabel(role) {
+    for (var i = 0; i < root.roles.length; i++)
+      if (root.roles[i].id === role) return root.roles[i].label
+    return role
+  }
+
+  function selectRole(role) {
+    if (!role || role === root.selectedRole) {
+      if (!root.selectedRole) root.selectedRole = "accent"
+    }
+    root.selectedRole = role || "accent"
+    var hsl = root.hexToHsl(root.roleColor(root.selectedRole))
+    root.editHue = hsl.h
+    root.editSaturation = hsl.s
+    root.editLightness = hsl.l
+    Qt.callLater(function() {
+      if (typeof hexField !== "undefined" && hexField) hexField.text = root.selectedHex
+    })
+  }
+
+  function updateSelectedRole() {
+    var next = {}
+    for (var i = 0; i < root.roles.length; i++) {
+      var id = root.roles[i].id
+      next[id] = root.roleColors[id]
+    }
+    next[root.selectedRole] = root.hslHex(root.editHue, root.editSaturation, root.editLightness)
+    root.roleColors = next
+  }
+
+  function setSelectedHex(text) {
+    var value = String(text || "").trim()
+    if (!/^#?[0-9a-fA-F]{6}$/.test(value)) return
+    value = "#" + value.replace("#", "")
+    var next = {}
+    for (var i = 0; i < root.roles.length; i++) {
+      var id = root.roles[i].id
+      next[id] = root.roleColors[id]
+    }
+    next[root.selectedRole] = value
+    root.roleColors = next
+    var hsl = root.hexToHsl(value)
+    root.editHue = hsl.h
+    root.editSaturation = hsl.s
+    root.editLightness = hsl.l
+  }
+
+  function loadPalette(text) {
+    try {
+      var data = JSON.parse(String(text || "{}"))
+      var next = {}
+      for (var i = 0; i < root.roles.length; i++) {
+        var id = root.roles[i].id
+        next[id] = typeof data[id] === "string" ? data[id] : root.roleColors[id]
+      }
+      root.roleColors = next
+      root.selectRole(root.selectedRole)
+    } catch (e) {
+      // Keep the defaults when the palette file is mid-write.
+    }
   }
 
   readonly property var tools: [
@@ -120,12 +225,16 @@ Panel {
     root.shellConfig = next
   }
 
-  function applyCustomColor() {
+  function applyCustomTheme() {
     if (root.variantSwitching) return
     root.variantSwitching = true
-    // Pass the hex without '#'; inside `bash -lc '...'` a leading # would
-    // start a shell comment.
-    root.run("bash -lc '" + root.home + "/.local/bin/theme-switcher.sh custom " + root.customHex.substring(1)
+    // Pass all eight roles without '#'; inside `bash -lc '...'` a leading #
+    // would start a shell comment.
+    var order = ["accent", "secondary", "tertiary", "warm", "pink", "hot", "background", "foreground"]
+    var colors = []
+    for (var i = 0; i < order.length; i++)
+      colors.push(String(root.roleColor(order[i])).replace("#", ""))
+    root.run("bash -lc '" + root.home + "/.local/bin/theme-switcher.sh custom " + colors.join(" ")
       + " && " + root.home + "/.local/bin/vp-restart-shell.sh'")
   }
 
@@ -246,6 +355,17 @@ Panel {
     onFileChanged: reload()
     onLoaded: root.refreshShellConfig(text())
     onLoadFailed: root.refreshShellConfig("{}")
+  }
+
+  FileView {
+    id: paletteFile
+
+    path: root.home + "/.local/state/virtual-paradise/palette.json"
+    watchChanges: true
+    printErrors: false
+    onFileChanged: reload()
+    onLoaded: root.loadPalette(text())
+    onLoadFailed: root.selectRole(root.selectedRole)
   }
 
   FileView {
@@ -454,7 +574,7 @@ Panel {
         }
 
         Text {
-          text: "CUSTOM COLOR"
+          text: "CUSTOM THEME"
           color: Qt.darker(root.fg, 1.35)
           font.family: root.ff
           font.pixelSize: Style.font.caption
@@ -462,61 +582,77 @@ Panel {
           height: Style.space(16)
         }
 
-        Row {
-          spacing: Style.space(10)
-
-          Rectangle {
-            width: Style.space(44)
-            height: Style.space(28)
-            radius: Style.cornerRadius
-            color: root.customColor
-            border.width: 1
-            border.color: Qt.rgba(root.fg.r, root.fg.g, root.fg.b, 0.35)
-          }
-
-          Text {
-            anchors.verticalCenter: parent.verticalCenter
-            text: root.customHex.toUpperCase()
-            color: root.fg
-            font.family: root.ff
-            font.pixelSize: Style.font.body
-            font.letterSpacing: 1
-          }
-        }
-
         Flow {
           width: parent.width
           spacing: Style.space(6)
 
           Repeater {
-            model: root.swatches
+            model: root.roles
 
-            Rectangle {
+            Column {
               required property var modelData
-              width: Style.space(24)
-              height: Style.space(24)
-              radius: Style.space(6)
-              color: Qt.hsla(modelData.h / 360, modelData.s / 100, modelData.l / 100, 1)
-              border.width: 1
-              border.color: Qt.rgba(root.fg.r, root.fg.g, root.fg.b, 0.30)
-              Accessible.name: modelData.label + " preset"
-              Accessible.role: Accessible.Button
 
-              MouseArea {
-                anchors.fill: parent
-                cursorShape: Qt.PointingHandCursor
-                onClicked: {
-                  root.customHue = modelData.h
-                  root.customSaturation = modelData.s
-                  root.customLightness = modelData.l
+              width: Style.space(58)
+              spacing: 2
+
+              Rectangle {
+                width: Style.space(32)
+                height: Style.space(24)
+                anchors.horizontalCenter: parent.horizontalCenter
+                radius: Style.space(6)
+                color: root.roleColor(modelData.id)
+                border.width: root.selectedRole === modelData.id ? 2 : 1
+                border.color: root.selectedRole === modelData.id
+                  ? root.fg : Qt.rgba(root.fg.r, root.fg.g, root.fg.b, 0.30)
+                Accessible.name: modelData.label + " color"
+                Accessible.role: Accessible.Button
+
+                MouseArea {
+                  anchors.fill: parent
+                  cursorShape: Qt.PointingHandCursor
+                  onClicked: root.selectRole(modelData.id)
                 }
+              }
+
+              Text {
+                width: parent.width
+                text: modelData.label
+                color: root.selectedRole === modelData.id
+                  ? root.fg : Qt.darker(root.fg, 1.55)
+                font.family: root.ff
+                font.pixelSize: Style.font.caption
+                horizontalAlignment: Text.AlignHCenter
+                elide: Text.ElideRight
               }
             }
           }
         }
 
+        Row {
+          spacing: Style.space(8)
+
+          Text {
+            anchors.verticalCenter: parent.verticalCenter
+            text: "EDIT " + root.roleLabel(root.selectedRole)
+            color: Qt.darker(root.fg, 1.45)
+            font.family: root.ff
+            font.pixelSize: Style.font.caption
+          }
+
+          TextField {
+            id: hexField
+            width: Style.space(92)
+            text: root.selectedHex
+            foreground: root.fg
+            font.family: root.ff
+            font.pixelSize: Style.font.body
+            Accessible.name: "Selected role hex"
+            onEditingFinished: root.setSelectedHex(text)
+          }
+        }
+
         Text {
-          text: "HUE  " + Math.round(root.customHue)
+          text: "HUE  " + Math.round(root.editHue)
           color: Qt.darker(root.fg, 1.45)
           font.family: root.ff
           font.pixelSize: Style.font.caption
@@ -527,13 +663,13 @@ Panel {
           maximum: 360
           step: 1
           integer: true
-          value: root.customHue
-          onMoved: function(v) { root.customHue = v }
-          onReleased: function(v) { root.customHue = v }
+          value: root.editHue
+          onMoved: function(v) { root.editHue = v; root.updateSelectedRole() }
+          onReleased: function(v) { root.editHue = v; root.updateSelectedRole() }
         }
 
         Text {
-          text: "SATURATION  " + Math.round(root.customSaturation)
+          text: "SATURATION  " + Math.round(root.editSaturation)
           color: Qt.darker(root.fg, 1.45)
           font.family: root.ff
           font.pixelSize: Style.font.caption
@@ -544,36 +680,36 @@ Panel {
           maximum: 100
           step: 1
           integer: true
-          value: root.customSaturation
-          onMoved: function(v) { root.customSaturation = v }
-          onReleased: function(v) { root.customSaturation = v }
+          value: root.editSaturation
+          onMoved: function(v) { root.editSaturation = v; root.updateSelectedRole() }
+          onReleased: function(v) { root.editSaturation = v; root.updateSelectedRole() }
         }
 
         Text {
-          text: "LIGHTNESS  " + Math.round(root.customLightness)
+          text: "LIGHTNESS  " + Math.round(root.editLightness)
           color: Qt.darker(root.fg, 1.45)
           font.family: root.ff
           font.pixelSize: Style.font.caption
         }
         PanelSlider {
           width: parent.width
-          minimum: 20
-          maximum: 80
+          minimum: 0
+          maximum: 100
           step: 1
           integer: true
-          value: root.customLightness
-          onMoved: function(v) { root.customLightness = v }
-          onReleased: function(v) { root.customLightness = v }
+          value: root.editLightness
+          onMoved: function(v) { root.editLightness = v; root.updateSelectedRole() }
+          onReleased: function(v) { root.editLightness = v; root.updateSelectedRole() }
         }
 
         Button {
-          text: root.variantSwitching ? "Applying…" : "Apply color"
+          text: root.variantSwitching ? "Applying…" : "Apply theme"
           enabled: !root.variantSwitching
           focusable: true
           foreground: root.fg
           accent: Color.accent
           fontFamily: root.ff
-          onClicked: root.applyCustomColor()
+          onClicked: root.applyCustomTheme()
         }
 
         Text {

@@ -127,6 +127,7 @@ BarWidget {
     function open(): void { root.open() }
     function settings(): void { root.showSettings() }
     function setBar(key: string, value: bool): void { root.setBar(key, value) }
+    function applyTheme(): void { if (panelLoader.item) panelLoader.item.applyCustomTheme() }
     function verify(): void { root.verify() }
     function close(): void { root.close() }
   }

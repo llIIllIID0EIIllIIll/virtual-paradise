@@ -6,7 +6,8 @@
 #    theme-switcher.sh              # Interactive menu
 #    theme-switcher.sh cyberpunk    # Restore the default neon palette
 #    theme-switcher.sh catppuccin   # Match Omarchy's Catppuccin palette
-#    theme-switcher.sh custom 5e8eed # Use an arbitrary accent (no '#')
+#    theme-switcher.sh custom 5e8eed [secondary tertiary warm pink hot background text]
+#                                    # Full custom palette (hex, no '#')
 #    theme-switcher.sh wallpaper    # Derive the palette from the wallpaper
 #    theme-switcher.sh list         # List available variants
 #    theme-switcher.sh reset        # Restore the original palette
@@ -44,11 +45,13 @@ declare -A VARIANTS=(
 # the bottom of colors.toml are included, otherwise the ANSI colours change
 # but the GTK/terminal/shell roles keep the cyberpunk palette.
 ACCENT_KEYS="accent active_border_color active_tab_background cursor selection_background selection color4 color6 color12 color14 blue cyan bright_blue"
-SECONDARY_KEYS="color1 red"
+SECONDARY_KEYS="color1"
 TERTIARY_KEYS="color2 color10 green bright_green"
 WARM_KEYS="color3 color11 yellow bright_yellow"
-PINK_KEYS="color5 color9 color13 magenta bright_red bright_magenta"
+PINK_KEYS="color5 color13 magenta bright_magenta"
+HOT_KEYS="red color9 bright_red"
 BACKGROUND_KEYS="background color0 selection_foreground bg dark_bg darker_bg lighter_bg"
+FOREGROUND_KEYS="foreground fg light_fg soft_fg bright_fg"
 
 # Only text files carry the palette. Everything else in the theme directory is
 # an image or a binary.
@@ -96,12 +99,12 @@ pristine_colors_file() {
 # alone would change almost nothing. Replacing the hex values in every file
 # keeps all of them in sync.
 build_color_map() {
-  local source="$1" accent="$2" secondary="$3" tertiary="$4" warm="$5" pink="$6" background="$7"
+  local source="$1" accent="$2" secondary="$3" tertiary="$4" warm="$5" pink="$6" hot="$7" background="$8" foreground="$9"
   local key old
   local -A map=()
 
-  local -a groups=("$ACCENT_KEYS" "$SECONDARY_KEYS" "$TERTIARY_KEYS" "$WARM_KEYS" "$PINK_KEYS" "$BACKGROUND_KEYS")
-  local -a targets=("$accent" "$secondary" "$tertiary" "$warm" "$pink" "$background")
+  local -a groups=("$ACCENT_KEYS" "$SECONDARY_KEYS" "$TERTIARY_KEYS" "$WARM_KEYS" "$PINK_KEYS" "$HOT_KEYS" "$BACKGROUND_KEYS" "$FOREGROUND_KEYS")
+  local -a targets=("$accent" "$secondary" "$tertiary" "$warm" "$pink" "$hot" "$background" "$foreground")
   local index key_list new_value
 
   for index in "${!groups[@]}"; do
@@ -229,16 +232,18 @@ apply_variant() {
   fi
 
   # Parse colors
-  local accent secondary tertiary warm pink background hot
+  local accent secondary tertiary warm pink background hot foreground
   IFS=':' read -r accent secondary tertiary warm pink background hot <<<"${VARIANTS[$variant]}"
+  foreground="$(toml_value "$(pristine_colors_file)" foreground)"
+  [[ -n $foreground ]] || foreground="eafbfa"
 
   local map_file="$STATE_DIR/theme-variant-map"
-  build_color_map "$(pristine_colors_file)" "$accent" "$secondary" "$tertiary" "$warm" "$pink" "$background" >"$map_file"
+  build_color_map "$(pristine_colors_file)" "$accent" "$secondary" "$tertiary" "$warm" "$pink" "$hot" "$background" "$foreground" >"$map_file"
   apply_to_theme_files "$map_file"
 
   # Save current variant only after the palette was actually written.
   echo "$variant" >"$CURRENT_VARIANT_FILE"
-  write_palette "$variant" "$accent" "$secondary" "$tertiary" "$warm" "$pink" "$background" "$hot"
+  write_palette "$variant" "$accent" "$secondary" "$tertiary" "$warm" "$pink" "$background" "$hot" "$foreground"
 
   apply_theme || true
 
@@ -258,9 +263,9 @@ apply_variant() {
 # colors through build_color_map; this JSON is the same palette in a form the
 # widgets can bind to without duplicating the switcher.
 write_palette() {
-  local name="$1" accent="$2" secondary="$3" tertiary="$4" warm="$5" pink="$6" background="$7" hot="$8"
-  local foreground tmp
-  foreground="$(toml_value "$(pristine_colors_file)" foreground)"
+  local name="$1" accent="$2" secondary="$3" tertiary="$4" warm="$5" pink="$6" background="$7" hot="$8" foreground="${9:-}"
+  local tmp
+  [[ -n $foreground ]] || foreground="$(toml_value "$(pristine_colors_file)" foreground)"
   [[ -n $foreground ]] || foreground="eafbfa"
   tmp="$(mktemp "$STATE_DIR/.palette.XXXXXX")" || return 1
   printf '{\n  "name": "%s",\n  "accent": "#%s",\n  "secondary": "#%s",\n  "tertiary": "#%s",\n  "warm": "#%s",\n  "pink": "#%s",\n  "background": "#%s",\n  "foreground": "#%s",\n  "hot": "#%s"\n}\n' \
@@ -414,7 +419,7 @@ wallpaper_variant() {
     echo "Run the installer first (./install.sh)." >&2
     exit 1
   fi
-  local accent secondary tertiary warm pink background hot
+  local accent secondary tertiary warm pink background hot foreground
   # Keep the untouched palette first: the background baseline and the
   # reset path both come from it.
   if [[ ! -f "$(pristine_colors_file)" ]]; then
@@ -433,12 +438,14 @@ wallpaper_variant() {
   hot="$(hue_shift "$accent" 180)"
   background="$(toml_value "$(pristine_colors_file)" background)"
   [[ -n $background ]] || background="0f081d"
+  foreground="$(toml_value "$(pristine_colors_file)" foreground)"
+  [[ -n $foreground ]] || foreground="eafbfa"
 
   local map_file="$STATE_DIR/theme-variant-map"
-  build_color_map "$(pristine_colors_file)" "$accent" "$secondary" "$tertiary" "$warm" "$pink" "$background" >"$map_file"
+  build_color_map "$(pristine_colors_file)" "$accent" "$secondary" "$tertiary" "$warm" "$pink" "$hot" "$background" "$foreground" >"$map_file"
   apply_to_theme_files "$map_file"
   echo "wallpaper" >"$CURRENT_VARIANT_FILE"
-  write_palette "wallpaper" "$accent" "$secondary" "$tertiary" "$warm" "$pink" "$background" "$hot"
+  write_palette "wallpaper" "$accent" "$secondary" "$tertiary" "$warm" "$pink" "$background" "$hot" "$foreground"
   apply_theme || true
   echo ""
   echo "✓ Wallpaper accent applied from $(basename "$src")"
@@ -453,11 +460,18 @@ wallpaper_variant() {
 # it. The background stays the theme's dark baseline; the settings color picker
 # uses this path.
 apply_custom() {
-  local accent="${1#\#}"
+  local accent="${1#\#}" secondary="${2:-}" tertiary="${3:-}" warm="${4:-}" pink="${5:-}" hot="${6:-}" background="${7:-}" foreground="${8:-}"
   if [[ ! $accent =~ ^[0-9a-fA-F]{6}$ ]]; then
-    echo "Usage: $0 custom <RRGGBB>" >&2
+    echo "Usage: $0 custom <accent> [secondary tertiary warm pink hot background foreground]" >&2
     exit 1
   fi
+  local color
+  for color in "$secondary" "$tertiary" "$warm" "$pink" "$hot" "$background" "$foreground"; do
+    if [[ -n $color && ! $color =~ ^[0-9a-fA-F]{6}$ ]]; then
+      echo "Invalid color: #$color" >&2
+      exit 1
+    fi
+  done
   if [[ ! -f "$THEME_DIR/colors.toml" ]]; then
     echo "Virtual Paradise is not installed: $THEME_DIR/colors.toml is missing." >&2
     exit 1
@@ -468,28 +482,32 @@ apply_custom() {
     cp "$THEME_DIR/colors.toml" "$(pristine_colors_file)"
   fi
 
-  local secondary tertiary warm pink hot background
-  secondary="$(hue_shift "$accent" 150)"
-  tertiary="$(hue_shift "$accent" 125)"
-  warm="$(hue_shift "$accent" 45)"
-  pink="$(hue_shift "$accent" 330)"
-  hot="$(hue_shift "$accent" 180)"
-  background="$(toml_value "$(pristine_colors_file)" background)"
+  [[ -n $secondary ]] || secondary="$(hue_shift "$accent" 150)"
+  [[ -n $tertiary ]] || tertiary="$(hue_shift "$accent" 125)"
+  [[ -n $warm ]] || warm="$(hue_shift "$accent" 45)"
+  [[ -n $pink ]] || pink="$(hue_shift "$accent" 330)"
+  [[ -n $hot ]] || hot="$(hue_shift "$accent" 180)"
+  [[ -n $background ]] || background="$(toml_value "$(pristine_colors_file)" background)"
   [[ -n $background ]] || background="0f081d"
+  [[ -n $foreground ]] || foreground="$(toml_value "$(pristine_colors_file)" foreground)"
+  [[ -n $foreground ]] || foreground="eafbfa"
 
   local map_file="$STATE_DIR/theme-variant-map"
-  build_color_map "$(pristine_colors_file)" "$accent" "$secondary" "$tertiary" "$warm" "$pink" "$background" >"$map_file"
+  build_color_map "$(pristine_colors_file)" "$accent" "$secondary" "$tertiary" "$warm" "$pink" "$hot" "$background" "$foreground" >"$map_file"
   apply_to_theme_files "$map_file"
   echo "custom" >"$CURRENT_VARIANT_FILE"
-  write_palette "custom" "$accent" "$secondary" "$tertiary" "$warm" "$pink" "$background" "$hot"
+  write_palette "custom" "$accent" "$secondary" "$tertiary" "$warm" "$pink" "$background" "$hot" "$foreground"
   apply_theme || true
   echo ""
-  echo "✓ Custom accent applied: #$accent"
-  echo "  Accent:    #$accent"
-  echo "  Secondary: #$secondary"
-  echo "  Tertiary:  #$tertiary"
-  echo "  Warm:      #$warm"
-  echo "  Pink:      #$pink"
+  echo "✓ Custom theme applied"
+  echo "  Accent:     #$accent"
+  echo "  Secondary:  #$secondary"
+  echo "  Tertiary:   #$tertiary"
+  echo "  Warm:       #$warm"
+  echo "  Pink:       #$pink"
+  echo "  Urgent:     #$hot"
+  echo "  Background: #$background"
+  echo "  Text:       #$foreground"
 }
 
 # Main logic
@@ -507,7 +525,8 @@ case "${1:-}" in
     wallpaper_variant "${2:-}"
     ;;
   "custom")
-    apply_custom "${2:-}"
+    shift
+    apply_custom "$@"
     ;;
   *)
     if [[ -n ${VARIANTS[${1:-}]:-} ]]; then

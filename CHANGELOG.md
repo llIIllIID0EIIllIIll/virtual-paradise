@@ -15,10 +15,11 @@ Conventional Commits.
   (diagnose, verify pins, repair bar, logs). It shows the current variant and
   labels the variants honestly: they recolor the chrome, terminals and bar
   widgets; the wallpaper/Plymouth/SDDM artwork remains cyberpunk.
-- **Custom accent picker.** The Appearance toggles are gone; the settings
-  panel now has an HSL picker with six swatches and an Apply button. It writes
-  a `custom` palette through `theme-switcher.sh custom <RRGGBB>` and restarts
-  the shell through the single-flight wrapper.
+- **Custom theme editor.** The Appearance toggles are gone; the settings panel
+  now exposes eight roles (Accent, Secondary, Tertiary, Warm, Pink, Urgent,
+  Background, Text). Each role has a colour box, HSL sliders and a hex field;
+  Apply theme writes the whole palette through `theme-switcher.sh custom` and
+  restarts the shell through the single-flight wrapper.
 - **`vp-setting.sh`**, the atomic settings writer behind the panel. `get`/`set`
   support the bar booleans and weather auto-location; writes use `flock` and a
   same-directory replace so a shell reload cannot see a truncated `shell.json`.
@@ -67,7 +68,7 @@ Conventional Commits.
   `magenta`, `yellow`, `bg`, `blue`…) and the QML bar widgets follow the
   palette instead of keeping the cyberpunk accents.
 - **The night timer uses Tokyo Night**, replacing the removed Sakura variant.
-- Tests: 538 assertions; TC-12 covers the Omarchy palettes, custom accents and `palette.json`,
+- Tests: 540 assertions; TC-12 covers the Omarchy palettes, multi-role custom themes and `palette.json`,
   TC-30 covers the settings panel, `vp-setting.sh` and the UI sound toggle.
 - **Repository moved to `github.com/vuhuudo/virtual-paradise`.** Clone URLs,
   issue/discussion links, the license notice and the security-advisory link

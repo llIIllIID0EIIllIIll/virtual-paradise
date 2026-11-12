@@ -59,8 +59,9 @@ Xem đầy đủ trong [KEYBINDINGS.md](KEYBINDINGS.md).
 Mở **Tools** trên thanh bar → biểu tượng **bánh răng**. Từ đây có thể:
 
 - Bật/tắt **Gap effects**, **Hover glow**, **Reduced motion**.
-- **Custom color**: kéo HSL (hue/saturation/lightness) hoặc chọn swatch, bấm
-  **Apply color** để đổi accent toàn theme.
+- **Custom theme**: 8 role — Accent, Secondary, Tertiary, Warm, Pink, Urgent,
+  Background, Text. Chọn ô màu, kéo HSL hoặc nhập hex, bấm **Apply theme** để
+  ghi toàn bộ palette và restart shell.
 - **Palette có sẵn**: Cyberpunk, Catppuccin, Tokyo Night, Gruvbox, Nord,
   Everforest, Kanagawa, Rosé Pine, Hackerman, Dracula, Mono, Neon.
 - **Actions**: bật/tắt wallpaper động, âm thanh UI, diagnose, verify pins,
