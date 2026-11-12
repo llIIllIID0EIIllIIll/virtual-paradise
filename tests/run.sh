@@ -1396,7 +1396,8 @@ if want tc11; then
   check "vp-palette accepts ordered writes" \
     "$(grep -q -- '--seq' "$REPO_DIR/bin/vp-palette.sh" \
       && grep -q 'existing_seq > seq' "$REPO_DIR/bin/vp-palette.sh" && echo 0 || echo 1)"
-  live_osc="$(bash "$REPO_DIR/bin/vp-terminal-palette.sh" --dry-run 2>/dev/null || true)"
+  live_osc="$(HOME="$home" XDG_CONFIG_HOME="$home/.config" \
+    bash "$REPO_DIR/bin/vp-terminal-palette.sh" --dry-run 2>/dev/null || true)"
   check "the live terminal palette emits OSC colours" \
     "$(grep -q '\\x1b\]4;4;' <<<"$live_osc" \
       && grep -q '\\x1b\]11;' <<<"$live_osc" \
