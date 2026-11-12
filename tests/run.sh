@@ -1396,12 +1396,6 @@ if want tc11; then
   check "vp-palette accepts ordered writes" \
     "$(grep -q -- '--seq' "$REPO_DIR/bin/vp-palette.sh" \
       && grep -q 'existing_seq > seq' "$REPO_DIR/bin/vp-palette.sh" && echo 0 || echo 1)"
-  live_osc="$(HOME="$home" XDG_CONFIG_HOME="$home/.config" \
-    bash "$REPO_DIR/bin/vp-terminal-palette.sh" --dry-run 2>/dev/null || true)"
-  check "the live terminal palette emits OSC colours" \
-    "$(grep -q '\\x1b\]4;4;' <<<"$live_osc" \
-      && grep -q '\\x1b\]11;' <<<"$live_osc" \
-      && grep -q '\\x1b\]12;' <<<"$live_osc" && echo 0 || echo 1)"
 fi
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -1527,6 +1521,12 @@ PY
   python3 -c 'import json,sys; d=json.load(open(sys.argv[1])); roles=("accent","secondary","tertiary","warm","pink","hot","background","foreground"); raise SystemExit(0 if d.get("name")=="custom" and all(isinstance(d.get(r),str) and len(d.get(r))==7 and d[r][0]=="#" for r in roles) else 1)' \
     "$palette_file"
   check "concurrent live writes leave a valid palette" $?
+  live_osc="$(HOME="$home" XDG_CONFIG_HOME="$home/.config" \
+    bash "$REPO_DIR/bin/vp-terminal-palette.sh" --dry-run 2>/dev/null || true)"
+  check "the live terminal palette emits OSC colours" \
+    "$(grep -q '\\x1b\]4;4;' <<<"$live_osc" \
+      && grep -q '\\x1b\]11;' <<<"$live_osc" \
+      && grep -q '\\x1b\]12;' <<<"$live_osc" && echo 0 || echo 1)"
 
   # Portable custom themes: save the live palette, prove the JSON survives a
   # different palette, then round-trip an export/import.
