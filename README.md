@@ -14,7 +14,7 @@
 [![Arch Linux](https://img.shields.io/badge/Arch_Linux-1793D1?style=flat-square&logo=arch-linux&logoColor=white)](https://archlinux.org)
 [![Omarchy 4.5+](https://img.shields.io/badge/Omarchy-4.5+-8A2BE2?style=flat-square)](https://omarchy.org)
 [![Hyprland](https://img.shields.io/badge/Hyprland-Wayland-00ffdd?style=flat-square)](https://hyprland.org)
-[![Tests](https://img.shields.io/badge/tests-571%20passed-00ff88?style=flat-square)](tests/)
+[![Tests](https://img.shields.io/badge/tests-573%20passed-00ff88?style=flat-square)](tests/)
 [![License](https://img.shields.io/badge/license-MIT-ffe066?style=flat-square)](LICENSE)
 [![Version](https://img.shields.io/badge/version-1.5.0-ff00ff?style=flat-square)](VERSION)
 
@@ -455,8 +455,10 @@ live:
 - **Artwork**: build a duotone still from the current wallpaper (a video
   frame or an image, falling back to `Glitch.jpg`) using the live
   Background/Accent (**Tint wallpaper**), or restore the wallpaper that was
-  active before. SDDM/Plymouth artwork stays cyberpunk for now. Requires
-  ImageMagick, which the installer adds.
+  active before. **Tint login art** optionally recolors the SDDM greeter
+  backdrop/still/frame and keeps a backup for **Restore login**; Plymouth boot
+  artwork stays cyberpunk because changing it needs an initramfs rebuild.
+  Requires ImageMagick, which the installer adds.
 - **Actions**: live wallpaper toggle, UI sound toggle, live terminal/Cava
   palette toggle, diagnose, verify pins, repair bar, logs.
 - **Weather**: automatic location consent, with the same privacy default as the
@@ -632,9 +634,9 @@ default.
 
 ### Running Tests
 
-The test suite has thirty test cases and 571 assertions; optional tools
+The test suite has thirty test cases and 573 assertions; optional tools
 (`shellcheck`, `qmllint`, `hyprctl`) enable extra checks when present, so the
-exact count varies between machines (571 with `shellcheck` and `qmllint`). It
+exact count varies between machines (573 with `shellcheck` and `qmllint`). It
 runs in a sandbox and never touches your real system.
 
 ```bash

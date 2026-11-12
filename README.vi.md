@@ -80,8 +80,10 @@ Mở **Tools** trên thanh bar → biểu tượng **bánh răng**. Từ đây c
   Everforest, Kanagawa, Rosé Pine, Hackerman, Dracula, Mono, Neon.
 - **Artwork**: tạo wallpaper duotone từ wallpaper hiện tại (frame video hoặc
   ảnh, fallback `Glitch.jpg`) theo Background/Accent
-  (**Tint wallpaper**), hoặc **Restore** wallpaper trước đó. SDDM/Plymouth vẫn
-  giữ artwork cyberpunk. Cần ImageMagick (installer tự cài).
+  (**Tint wallpaper**), hoặc **Restore** wallpaper trước đó. **Tint login
+  art** tùy chọn đổi màu backdrop/still/frame của SDDM và có **Restore login**
+  để quay lại bản gốc; Plymouth vẫn giữ artwork cyberpunk vì cần rebuild
+  initramfs. Cần ImageMagick (installer tự cài).
 - **Actions**: bật/tắt wallpaper động, âm thanh UI, terminal/Cava live,
   diagnose, verify pins, repair bar, logs.
 - Bật **Automatic location** cho weather (mặc định tắt vì lý do riêng tư).

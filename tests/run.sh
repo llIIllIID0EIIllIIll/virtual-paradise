@@ -1597,6 +1597,25 @@ PY
   fi
   check "palette wallpaper generates a valid still" "$tint_rc"
 
+  login_rc=0
+  if command -v magick >/dev/null 2>&1; then
+    login_out="$(HOME="$home" XDG_CONFIG_HOME="$home/.config" \
+      VP_LOGIN_BACKDROP="$REPO_DIR/plymouth/backdrop.png" \
+      VP_LOGIN_STILL="$REPO_DIR/sddm/assets/still.png" \
+      VP_LOGIN_FRAME="$REPO_DIR/plymouth/frame.png" \
+      bash "$REPO_DIR/bin/vp-login-art.sh" --dry-run 2>/dev/null)" || login_rc=$?
+    python3 -c 'import os, sys
+root = sys.argv[1]
+for name in ("backdrop.png", "still.png", "frame.png"):
+    path = os.path.join(root, name)
+    if os.path.getsize(path) < 1000:
+        raise SystemExit(1)
+    if open(path, "rb").read(8) != b"\x89PNG\r\n\x1a\n":
+        raise SystemExit(1)' \
+      "$login_out" || login_rc=1
+  fi
+  check "palette login artwork generates valid PNGs" "$login_rc"
+
   # A second switch must start from the original palette, not from the one the
   # first switch wrote.
   run_switcher neon
@@ -3492,6 +3511,10 @@ if want tc30; then
     "$(grep -q 'vp-wallpaper-tint.sh apply' "$panel" \
       && grep -q 'vp-wallpaper-tint.sh restore' "$panel" \
       && grep -q 'Tint wallpaper' "$panel" && echo 0 || echo 1)"
+  check "settings expose SDDM login artwork controls" \
+    "$(grep -q 'vp-login-art.sh apply' "$panel" \
+      && grep -q 'vp-login-art.sh restore' "$panel" \
+      && grep -q 'Tint login art' "$panel" && echo 0 || echo 1)"
   check "settings write bar options through vp-setting" \
     "$(grep -q 'function setBarOption' "$panel" \
       && grep -q 'vp-setting.sh set bar' "$panel" && echo 0 || echo 1)"

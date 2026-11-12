@@ -13,13 +13,15 @@ Conventional Commits.
   the current wallpaper (a video frame or an image, falling back to Glitch)
   with the live Background/Accent, sets it through
   `omarchy theme bg set`, and remembers the previous wallpaper for **Restore**.
-  SDDM and Plymouth deliberately keep the cyberpunk artwork (boot art needs
-  sudo and an initramfs rebuild).
+- **Palette login artwork.** `vp-login-art.sh` builds SDDM backdrop/still/
+  frame assets from the live palette, backs up the originals and offers
+  restore. Plymouth boot art is intentionally untouched (sudo + initramfs
+  rebuild).
 
 ### Changed
-- `imagemagick` joins the installer package list for the palette wallpaper.
-- Tests: 571 assertions; TC-12 adds the wallpaper-tint dry-run check and TC-30
-  adds the artwork controls contract.
+- `imagemagick` joins the installer package list for palette artwork.
+- Tests: 573 assertions; TC-12 adds the wallpaper/login-art dry-run checks and
+  TC-30 adds the artwork controls contract.
 
 ## [1.5.0] - 2026-11-12
 

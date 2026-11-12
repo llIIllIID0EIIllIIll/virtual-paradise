@@ -1626,7 +1626,7 @@ Panel {
 
         Text {
           width: parent.width
-          text: "Build a duotone still from the current wallpaper (video frame or image) using the live Background and Accent. SDDM and Plymouth keep the cyberpunk artwork."
+          text: "Build a duotone still from the current wallpaper (video frame or image) and optionally tint the SDDM login art. Plymouth boot artwork keeps the cyberpunk assets."
           color: Qt.darker(root.fg, 1.6)
           font.family: root.ff
           font.pixelSize: Style.font.caption
@@ -1654,6 +1654,24 @@ Panel {
             fontFamily: root.ff
             Accessible.name: "Restore the wallpaper from before the tint"
             onClicked: root.run(root.home + "/.local/bin/vp-wallpaper-tint.sh restore")
+          }
+          Button {
+            text: "Tint login art"
+            focusable: true
+            foreground: root.fg
+            accent: Color.accent
+            fontFamily: root.ff
+            Accessible.name: "Generate and install palette SDDM login artwork"
+            onClicked: root.run(root.home + "/.local/bin/vp-login-art.sh apply")
+          }
+          Button {
+            text: "Restore login"
+            focusable: true
+            foreground: root.fg
+            accent: Color.accent
+            fontFamily: root.ff
+            Accessible.name: "Restore the original SDDM login artwork"
+            onClicked: root.run(root.home + "/.local/bin/vp-login-art.sh restore")
           }
         }
 
