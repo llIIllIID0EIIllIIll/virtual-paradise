@@ -8,6 +8,8 @@ Conventional Commits.
 
 ## [Unreleased]
 
+## [1.6.0] - 2026-11-12
+
 ### Added
 - **Palette wallpaper.** `vp-wallpaper-tint.sh` builds a duotone still from
   the current wallpaper (a video frame or an image, falling back to Glitch)
@@ -1215,7 +1217,8 @@ full installer/uninstaller.
 
 ## Links
 
-- [Unreleased]: https://github.com/vuhuudo/virtual-paradise/compare/v1.5.0...HEAD
+- [Unreleased]: https://github.com/vuhuudo/virtual-paradise/compare/v1.6.0...HEAD
+- [1.6.0]: https://github.com/vuhuudo/virtual-paradise/compare/v1.5.0...v1.6.0
 - [1.5.0]: https://github.com/vuhuudo/virtual-paradise/compare/v1.4.0...v1.5.0
 - [1.4.0]: https://github.com/vuhuudo/virtual-paradise/compare/v1.3.7...v1.4.0
 - [1.3.7]: https://github.com/vuhuudo/virtual-paradise/compare/v1.3.6...v1.3.7

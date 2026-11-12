@@ -108,7 +108,7 @@ second settings application or restarting the shell for every color change.
 
 ---
 
-## Phase 2.2 — Editor depth (shipped in Unreleased), live apply/artwork next
+## Phase 2.2 — Editor depth (shipped in 1.6.0), live apply/artwork next
 
 ### Editor depth (done)
 
@@ -136,20 +136,21 @@ second settings application or restarting the shell for every color change.
 - [x] SDDM login artwork (backdrop/still/frame) from the live palette, with
       backup and restore.
 - [ ] Plymouth boot artwork per custom theme (needs sudo and an initramfs
-      rebuild; deliberately deferred).
+      rebuild; 1.7.0).
 - [x] Keep cyberpunk artwork as the default and as the fallback.
 - [ ] Never leave a boot entry pointing at a deleted image (covered by the
-      existing boot theme installer; validate for 1.6.0).
+      existing boot theme installer; validate with Plymouth art in 1.7.0).
 
 ### Release gates
 
 - [x] Run Ubuntu and Arch CI plus the release dry-run.
 - [x] Version 1.5.0 with the palette/editor/terminal/Cava work.
+- [x] Version 1.6.0 with the wallpaper and SDDM login artwork.
 - [ ] Add UI automation for Save/Load/Import and a 100-write ordering test
-      (1.6.0).
+      (1.7.0).
 - [ ] Add golden screenshots for the board at 100%, 125% and 150% scale
-      (1.6.0).
-- [ ] Artwork palette for wallpaper/SDDM/Plymouth (1.6.0).
+      (1.7.0).
+- [x] Artwork palette for wallpaper and SDDM login art (Plymouth in 1.7.0).
 - Keep `README.md`, `README.vi.md`, `CHANGELOG.md`, `KEYBINDINGS.md` and this
   file in the same commit as any behavior change.
 
