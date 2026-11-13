@@ -17,13 +17,19 @@ Conventional Commits.
   `omarchy theme bg set`, and remembers the previous wallpaper for **Restore**.
 - **Palette login artwork.** `vp-login-art.sh` builds SDDM backdrop/still/
   frame assets from the live palette, backs up the originals and offers
-  restore. Plymouth boot art is intentionally untouched (sudo + initramfs
-  rebuild).
+  restore.
+- **Palette Plymouth artwork.** `vp-plymouth-art.sh` tints every installed
+  plymouth PNG, backs up the originals, installs with sudo/pkexec and rebuilds
+  the initramfs; restore does the same in reverse. It is opt-in and cached per
+  accent so repeated applies do not retint 64 MB of frames.
 
 ### Changed
 - `imagemagick` joins the installer package list for palette artwork.
-- Tests: 573 assertions; TC-12 adds the wallpaper/login-art dry-run checks and
-  TC-30 adds the artwork controls contract.
+- **The bar no longer polls `palette.json` every 300 ms.** Both palette
+  writers now rewrite the file in place after the atomic replace, so the
+  FileView watcher fires directly and the bar idles when nothing changes.
+- Tests: 577 assertions; TC-12 adds wallpaper/login/Plymouth dry-run checks,
+  watcher assertions and the artwork contracts.
 
 ## [1.5.0] - 2026-11-12
 

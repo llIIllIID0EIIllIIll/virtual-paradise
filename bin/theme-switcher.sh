@@ -302,13 +302,18 @@ write_palette() {
     return 0
   fi
   local name="$1" accent="$2" secondary="$3" tertiary="$4" warm="$5" pink="$6" background="$7" hot="$8" foreground="${9:-}"
-  local tmp
+  local tmp payload
   [[ -n $foreground ]] || foreground="$(toml_value "$(pristine_colors_file)" foreground)"
   [[ -n $foreground ]] || foreground="eafbfa"
   tmp="$(mktemp "$STATE_DIR/.palette.XXXXXX")" || return 1
-  printf '{\n  "name": "%s",\n  "accent": "#%s",\n  "secondary": "#%s",\n  "tertiary": "#%s",\n  "warm": "#%s",\n  "pink": "#%s",\n  "background": "#%s",\n  "foreground": "#%s",\n  "hot": "#%s"\n}\n' \
-    "$name" "$accent" "$secondary" "$tertiary" "$warm" "$pink" "$background" "$foreground" "$hot" >"$tmp" \
-    && mv "$tmp" "$STATE_DIR/palette.json"
+  printf -v payload '{\n  "name": "%s",\n  "accent": "#%s",\n  "secondary": "#%s",\n  "tertiary": "#%s",\n  "warm": "#%s",\n  "pink": "#%s",\n  "background": "#%s",\n  "foreground": "#%s",\n  "hot": "#%s"\n}\n' \
+    "$name" "$accent" "$secondary" "$tertiary" "$warm" "$pink" "$background" "$foreground" "$hot"
+  printf '%s' "$payload" >"$tmp" || return 1
+  mv "$tmp" "$STATE_DIR/palette.json" || return 1
+  # Quickshell's FileView watches the opened inode; an atomic rename replaces
+  # it. Rewriting the same bytes in place emits the modify event the bar needs,
+  # so the bar no longer has to poll this file every 300 ms.
+  printf '%s' "$payload" >"$STATE_DIR/palette.json"
 }
 
 reset_variant() {

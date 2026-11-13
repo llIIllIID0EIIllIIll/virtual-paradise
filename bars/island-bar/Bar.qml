@@ -1280,16 +1280,6 @@ Item {
     onLoadFailed: root.applyPalette("")
   }
 
-  // Atomic writers replace the inode, which a watch on the old file misses.
-  // Polling this tiny JSON keeps the live palette reliable and is gated on the
-  // text so an unchanged file never restarts the color animations.
-  Timer {
-    interval: 300
-    repeat: true
-    running: true
-    onTriggered: paletteView.reload()
-  }
-
   function runProcess(process) {
     if (!process.running)
       process.running = true

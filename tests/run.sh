@@ -1480,9 +1480,8 @@ PY
            grep -q "property color $role" "$REPO_DIR/bars/island-bar/VpPluginBarApi.qml" || exit 1; \
            grep -q "api.$role = Qt.binding" "$REPO_DIR/bars/island-bar/Bar.qml" || exit 1; \
          done; echo 0)"
-  check "the bar picks up atomic palette writes without a restart" \
+  check "the bar applies palette writes without a restart" \
     "$(grep -q 'function applyPalette' "$REPO_DIR/bars/island-bar/Bar.qml" \
-      && grep -q 'paletteView.reload()' "$REPO_DIR/bars/island-bar/Bar.qml" \
       && grep -q 'if (value === root.paletteRaw) return' "$REPO_DIR/bars/island-bar/Bar.qml" \
       && echo 0 || echo 1)"
 
@@ -1615,6 +1614,37 @@ for name in ("backdrop.png", "still.png", "frame.png"):
       "$login_out" || login_rc=1
   fi
   check "palette login artwork generates valid PNGs" "$login_rc"
+
+  plymouth_rc=0
+  if command -v magick >/dev/null 2>&1; then
+    plymouth_theme="$root/plymouth-theme"
+    mkdir -p "$plymouth_theme"
+    cp "$REPO_DIR/plymouth/backdrop.png" "$REPO_DIR/plymouth/frame.png" \
+      "$REPO_DIR/sddm/assets/still.png" "$plymouth_theme"/
+    plymouth_out="$(HOME="$home" XDG_CONFIG_HOME="$home/.config" \
+      VP_PLYMOUTH_THEME_DIR="$plymouth_theme" \
+      bash "$REPO_DIR/bin/vp-plymouth-art.sh" --dry-run 2>/dev/null)" || plymouth_rc=$?
+    python3 -c 'import os, sys
+root = sys.argv[1]
+files = [name for name in os.listdir(root) if name.endswith(".png")]
+if len(files) != 3:
+    raise SystemExit(1)
+for name in files:
+    path = os.path.join(root, name)
+    if os.path.getsize(path) < 1000:
+        raise SystemExit(1)
+    if open(path, "rb").read(8) != b"\x89PNG\r\n\x1a\n":
+        raise SystemExit(1)' \
+      "$plymouth_out" || plymouth_rc=1
+  fi
+  check "palette Plymouth artwork generates valid frames" "$plymouth_rc"
+  check "the bar watches palette writes instead of polling" \
+    "$(grep -q 'id: paletteView' "$REPO_DIR/bars/island-bar/Bar.qml" \
+      && ! grep -q 'paletteView.reload' "$REPO_DIR/bars/island-bar/Bar.qml" \
+      && echo 0 || echo 1)"
+  check "both palette writers notify the in-place watcher" \
+    "$(grep -q 'printf .%s. .\$payload. >\"\$STATE_DIR/palette.json\"' "$REPO_DIR/bin/theme-switcher.sh" \
+      && grep -q 'handle.write(payload)' "$REPO_DIR/bin/vp-palette.sh" && echo 0 || echo 1)"
 
   # A second switch must start from the original palette, not from the one the
   # first switch wrote.
@@ -3515,6 +3545,10 @@ if want tc30; then
     "$(grep -q 'vp-login-art.sh apply' "$panel" \
       && grep -q 'vp-login-art.sh restore' "$panel" \
       && grep -q 'Tint login art' "$panel" && echo 0 || echo 1)"
+  check "settings expose Plymouth boot artwork controls" \
+    "$(grep -q 'vp-plymouth-art.sh apply' "$panel" \
+      && grep -q 'vp-plymouth-art.sh restore' "$panel" \
+      && grep -q 'Tint boot art' "$panel" && echo 0 || echo 1)"
   check "settings write bar options through vp-setting" \
     "$(grep -q 'function setBarOption' "$panel" \
       && grep -q 'vp-setting.sh set bar' "$panel" && echo 0 || echo 1)"

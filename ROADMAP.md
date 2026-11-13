@@ -20,7 +20,8 @@ second settings application or restarting the shell for every color change.
 - Visual swatch board (13 hues × 7 tones) plus a neutral ramp; no hex knowledge
   required. The hex field remains for precision.
 - Every swatch click writes `palette.json` through `vp-palette.sh`; the bar
-  recolors on its next 300 ms poll with no Apply button and no shell restart.
+  recolors as soon as the file watcher fires, with no Apply button and no
+  shell restart.
 - Terminal/GTK/theme text files are debounced through
   `theme-switcher.sh custom`.
 - `VpPluginBarApi` forwards all palette roles to every bar widget.
@@ -56,9 +57,6 @@ second settings application or restarting the shell for every color change.
 - Wallpaper, Plymouth and SDDM artwork stay cyberpunk for every palette.
 - Existing terminal sessions may need a reload to see the deferred text-file
   refresh; the bar itself is live.
-- The bar polls the small palette file every 300 ms rather than using a
-  reliable cross-inode watch. It is cheap, but a shared watcher would be
-  cleaner.
 - A long-lived palette writer daemon and automated UI screenshots are not in
   2.2 yet.
 - UI automation and golden screenshots are not in the suite yet.
@@ -99,10 +97,10 @@ second settings application or restarting the shell for every color change.
 
 ### Verification
 
-- 573 assertions green; TC-12 covers live writes, ordering, locking, terminal
-  OSC output, Cava palette sync, wallpaper/login-art tint and portable themes;
-  TC-30 covers history, keyboard, contrast, generation, color vision, preview,
-  terminal toggle, artwork controls and deferred refresh contracts.
+- 577 assertions green; TC-12 covers live writes, ordering, locking, terminal
+  OSC output, Cava palette sync, wallpaper/login/Plymouth art and portable
+  themes; TC-30 covers history, keyboard, contrast, generation, color vision,
+  preview, terminal toggle, artwork controls and deferred refresh contracts.
 - Live checks: swatch click, undo, redo and reset through the panel and IPC;
   one shell, one bar, zero runtime QML errors.
 
@@ -135,8 +133,8 @@ second settings application or restarting the shell for every color change.
       Background/Accent, with restore.
 - [x] SDDM login artwork (backdrop/still/frame) from the live palette, with
       backup and restore.
-- [ ] Plymouth boot artwork per custom theme (needs sudo and an initramfs
-      rebuild; 1.7.0).
+- [x] Plymouth boot artwork, opt-in, with backup/restore and an initramfs
+      rebuild.
 - [x] Keep cyberpunk artwork as the default and as the fallback.
 - [ ] Never leave a boot entry pointing at a deleted image (covered by the
       existing boot theme installer; validate with Plymouth art in 1.7.0).

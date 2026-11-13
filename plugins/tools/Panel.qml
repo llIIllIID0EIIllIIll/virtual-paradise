@@ -758,7 +758,9 @@ Panel {
     }
   }
 
-  Component.onCompleted: root.refreshThemes()
+  Component.onCompleted: {
+    if (root.showSettings) root.refreshThemes()
+  }
 
   Component.onDestruction: {
     paletteDebounce.stop()
@@ -1626,7 +1628,7 @@ Panel {
 
         Text {
           width: parent.width
-          text: "Build a duotone still from the current wallpaper (video frame or image) and optionally tint the SDDM login art. Plymouth boot artwork keeps the cyberpunk assets."
+          text: "Tint the current wallpaper, the SDDM login art, or the Plymouth boot art. Boot art changes rebuild the initramfs and keep a restore copy."
           color: Qt.darker(root.fg, 1.6)
           font.family: root.ff
           font.pixelSize: Style.font.caption
@@ -1672,6 +1674,24 @@ Panel {
             fontFamily: root.ff
             Accessible.name: "Restore the original SDDM login artwork"
             onClicked: root.run(root.home + "/.local/bin/vp-login-art.sh restore")
+          }
+          Button {
+            text: "Tint boot art"
+            focusable: true
+            foreground: root.fg
+            accent: Color.accent
+            fontFamily: root.ff
+            Accessible.name: "Tint Plymouth boot artwork and rebuild the initramfs"
+            onClicked: root.run(root.home + "/.local/bin/vp-plymouth-art.sh apply")
+          }
+          Button {
+            text: "Restore boot"
+            focusable: true
+            foreground: root.fg
+            accent: Color.accent
+            fontFamily: root.ff
+            Accessible.name: "Restore the original Plymouth boot artwork and rebuild the initramfs"
+            onClicked: root.run(root.home + "/.local/bin/vp-plymouth-art.sh restore")
           }
         }
 

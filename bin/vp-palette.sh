@@ -6,8 +6,8 @@
 #    vp-palette.sh [--seq N] [--terminals] accent secondary tertiary warm pink hot background foreground
 #
 #  Writes palette.json atomically and marks the variant custom. The island bar
-#  polls the file, so its widgets recolor on the next tick without a shell
-#  restart. theme-switcher.sh is still the debounced path that rewrites the
+#  watches the file, so its widgets recolor as soon as the write lands, without
+#  a shell restart. theme-switcher.sh is still the debounced path that rewrites the
 #  theme text files and terminal/GTK configs.
 # ==============================================================================
 

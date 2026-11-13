@@ -133,17 +133,22 @@ fi
 [[ -f "$originals/frame.png" ]] && frame_source="$originals/frame.png"
 
 out="$art/out"
-magick "$backdrop_source" -auto-orient -resize 1920x1080^ -gravity center -extent 1920x1080 \
-  -colorspace gray +level-colors "$background,$accent" -quality 92 "$out/backdrop.png"
-magick "$still_source" -fill "$accent" -colorize 38% -quality 92 "$out/still.png"
-magick "$frame_source" -fill "$accent" -colorize 65% -quality 92 "$out/frame.png"
-
-for file in backdrop.png still.png frame.png; do
-  identify "$out/$file" >/dev/null 2>&1 || {
-    echo "ImageMagick did not produce a valid $file" >&2
-    exit 1
-  }
-done
+signature="$accent:$background"
+stamp="$art/stamp"
+if ! [[ -f $stamp && "$(cat "$stamp")" == "$signature" && -f "$out/backdrop.png" \
+        && -f "$out/still.png" && -f "$out/frame.png" ]]; then
+  magick "$backdrop_source" -auto-orient -resize 1920x1080^ -gravity center -extent 1920x1080 \
+    -colorspace gray +level-colors "$background,$accent" -quality 92 "$out/backdrop.png"
+  magick "$still_source" -fill "$accent" -colorize 38% -quality 92 "$out/still.png"
+  magick "$frame_source" -fill "$accent" -colorize 65% -quality 92 "$out/frame.png"
+  for file in backdrop.png still.png frame.png; do
+    identify "$out/$file" >/dev/null 2>&1 || {
+      echo "ImageMagick did not produce a valid $file" >&2
+      exit 1
+    }
+  done
+  printf '%s\n' "$signature" >"$stamp"
+fi
 
 if [[ $dry_run -eq 1 ]]; then
   printf '%s\n' "$out"

@@ -63,8 +63,8 @@ Mở **Tools** trên thanh bar → biểu tượng **bánh răng**. Từ đây c
 - **Custom theme**: 8 role — Accent, Secondary, Tertiary, Warm, Pink, Urgent,
   Background, Text. Chọn ô role rồi bấm một màu trên bảng màu trực quan (hoặc
   nhập hex). Mỗi lần bấm áp dụng ngay: palette.json được ghi qua
-  `vp-palette.sh`, bar đổi màu sau khoảng 0,3 giây, không cần Apply và không
-  restart shell. Có **Undo / Redo / Reset** (`Ctrl+Z`, `Ctrl+Shift+Z`), cảnh
+  `vp-palette.sh`, bar đổi màu ngay khi file watcher nhận thay đổi, không cần
+  Apply và không restart shell. Có **Undo / Redo / Reset** (`Ctrl+Z`, `Ctrl+Shift+Z`), cảnh
   báo contrast Text/BG, và điều hướng bàn phím Tab + mũi tên + Enter. File
   theme được ghi trong lúc sửa, nhưng refresh toàn shell hoãn đến khi đóng
   panel để Undo/Redo còn dùng được. Có ô **seed** và nút Analogous/Complement/

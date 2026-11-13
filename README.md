@@ -14,7 +14,7 @@
 [![Arch Linux](https://img.shields.io/badge/Arch_Linux-1793D1?style=flat-square&logo=arch-linux&logoColor=white)](https://archlinux.org)
 [![Omarchy 4.5+](https://img.shields.io/badge/Omarchy-4.5+-8A2BE2?style=flat-square)](https://omarchy.org)
 [![Hyprland](https://img.shields.io/badge/Hyprland-Wayland-00ffdd?style=flat-square)](https://hyprland.org)
-[![Tests](https://img.shields.io/badge/tests-573%20passed-00ff88?style=flat-square)](tests/)
+[![Tests](https://img.shields.io/badge/tests-577%20passed-00ff88?style=flat-square)](tests/)
 [![License](https://img.shields.io/badge/license-MIT-ffe066?style=flat-square)](LICENSE)
 [![Version](https://img.shields.io/badge/version-1.6.0-ff00ff?style=flat-square)](VERSION)
 
@@ -76,8 +76,8 @@ The repository also ships `theme-switcher.sh` for changing the Virtual☆Paradis
 palette from a terminal (`theme-switcher.sh list` shows the variants,
 `theme-switcher.sh reset` restores the original palette). These are **accent
 variants**: they recolor the theme chrome, terminals, GTK and bar widgets, but
-the wallpaper, Plymouth and SDDM art stay cyberpunk until a full variant pack
-lands. Switching from the settings panel also restarts the shell
+the wallpaper, Plymouth and SDDM art stay cyberpunk until you use the artwork
+controls. Switching from the settings panel also restarts the shell
 so the QML surfaces pick up the new accent immediately. `theme-switcher.sh
 wallpaper` derives the accent and its two companions from the current
 background image instead of a fixed variant.
@@ -431,8 +431,8 @@ live:
 - **Custom theme**: eight roles — Accent, Secondary, Tertiary, Warm, Pink,
   Urgent, Background and Text. Pick a role box, then click a swatch on the
   color board (or type a hex if you know one). Every click applies live: the
-  panel writes `palette.json` through `vp-palette.sh` and the bar recolors on
-  its next poll (about 0.3 s), with no Apply button and no shell restart.
+  panel writes `palette.json` through `vp-palette.sh` and the bar recolors as
+  soon as the file watcher fires, with no Apply button and no shell restart.
   **Undo / Redo / Reset** cover the current session (`Ctrl+Z` and
   `Ctrl+Shift+Z` work too), the board shows a WCAG contrast warning for
   Text/Background, and Tab + arrows + Enter drive the board without a mouse.
@@ -450,8 +450,8 @@ live:
   `vp-theme.sh save|list|load|export|import|delete`.
 - **Palettes**: Cyberpunk, Catppuccin, Tokyo Night, Gruvbox, Nord, Everforest,
   Kanagawa, Rosé Pine, Hackerman, Dracula, Mono, Neon. Each palette recolors
-  the chrome, terminals, GTK and bar widgets; the wallpaper/Plymouth/SDDM
-  artwork stays cyberpunk for now.
+  the chrome, terminals, GTK and bar widgets; the artwork stays cyberpunk until
+  you use Tint wallpaper, Tint login art or Tint boot art.
 - **Artwork**: build a duotone still from the current wallpaper (a video
   frame or an image, falling back to `Glitch.jpg`) using the live
   Background/Accent (**Tint wallpaper**), or restore the wallpaper that was
@@ -634,9 +634,9 @@ default.
 
 ### Running Tests
 
-The test suite has thirty test cases and 573 assertions; optional tools
+The test suite has thirty test cases and 577 assertions; optional tools
 (`shellcheck`, `qmllint`, `hyprctl`) enable extra checks when present, so the
-exact count varies between machines (573 with `shellcheck` and `qmllint`). It
+exact count varies between machines (577 with `shellcheck` and `qmllint`). It
 runs in a sandbox and never touches your real system.
 
 ```bash
