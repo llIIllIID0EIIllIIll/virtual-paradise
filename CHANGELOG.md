@@ -8,6 +8,17 @@ Conventional Commits.
 
 ## [Unreleased]
 
+## [1.7.1] - 2026-11-13
+
+### Changed
+- **Palette readers take the shared writer lock.** `vp-theme save`, terminal
+  OSC, wallpaper/login/Plymouth artwork now read `palette.json` under
+  `flock -s`, so a reader cannot parse a file mid-rewrite.
+- **Manual pixel-diff helper.** `tools/ui-diff.sh` compares UI smoke captures
+  with ImageMagick, supports a crop to exclude the live bar clock, and is
+  documented alongside the manual UI smoke.
+- Tests: 580 assertions.
+
 ## [1.7.0] - 2026-11-13
 
 ### Added
@@ -1240,7 +1251,8 @@ full installer/uninstaller.
 
 ## Links
 
-- [Unreleased]: https://github.com/vuhuudo/virtual-paradise/compare/v1.7.0...HEAD
+- [Unreleased]: https://github.com/vuhuudo/virtual-paradise/compare/v1.7.1...HEAD
+- [1.7.1]: https://github.com/vuhuudo/virtual-paradise/compare/v1.7.0...v1.7.1
 - [1.7.0]: https://github.com/vuhuudo/virtual-paradise/compare/v1.6.0...v1.7.0
 - [1.6.0]: https://github.com/vuhuudo/virtual-paradise/compare/v1.5.0...v1.6.0
 - [1.5.0]: https://github.com/vuhuudo/virtual-paradise/compare/v1.4.0...v1.5.0

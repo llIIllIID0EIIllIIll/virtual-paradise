@@ -96,7 +96,7 @@ fi
   exit 1
 }
 
-accent="$(python3 - "$palette" <<'PY'
+accent="$(flock -s "$state/palette.lock" python3 - "$palette" <<'PY'
 import json, sys
 data = json.load(open(sys.argv[1], encoding="utf-8"))
 value = data.get("accent")

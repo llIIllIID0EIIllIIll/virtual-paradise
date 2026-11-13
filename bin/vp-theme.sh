@@ -63,7 +63,7 @@ save_theme() {
     exit 1
   }
 
-  python3 - "$STATE/palette.json" "$path" "$name" <<'PY'
+  flock -s "$STATE/palette.lock" python3 - "$STATE/palette.json" "$path" "$name" <<'PY'
 import datetime
 import json
 import os

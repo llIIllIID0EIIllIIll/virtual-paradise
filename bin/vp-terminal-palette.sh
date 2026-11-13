@@ -32,7 +32,7 @@ palette="$state/palette.json"
   exit 1
 }
 
-python3 - "$palette" "$mode" <<'PY'
+flock -s "$state/palette.lock" python3 - "$palette" "$mode" <<'PY'
 import glob
 import json
 import os

@@ -83,7 +83,7 @@ fi
   exit 1
 }
 
-read -r accent background < <(python3 - "$palette" <<'PY'
+read -r accent background < <(flock -s "$state/palette.lock" python3 - "$palette" <<'PY'
 import json, sys
 data = json.load(open(sys.argv[1], encoding="utf-8"))
 roles = []

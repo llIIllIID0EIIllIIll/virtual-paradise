@@ -101,3 +101,10 @@ With a live Omarchy session, drive the settings panel end to end:
 It opens Settings, sets an accent, generates a triad, checks undo/redo/reset
 through `palette.json`, captures optional screenshots, and restores the palette
 and variant on exit. It is intentionally not part of CI.
+
+Compare a run against a saved baseline (crop out the live bar clock):
+
+```bash
+./tools/ui-diff.sh /tmp/vp-ui-baseline /tmp/vp-ui \
+  --crop 620x900+1300+0 --threshold 50
+```

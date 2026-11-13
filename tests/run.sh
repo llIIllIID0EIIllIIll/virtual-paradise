@@ -1645,6 +1645,11 @@ for name in files:
   check "both palette writers notify the in-place watcher" \
     "$(grep -q 'printf .%s. .\$payload. >\"\$STATE_DIR/palette.json\"' "$REPO_DIR/bin/theme-switcher.sh" \
       && grep -q 'handle.write(payload)' "$REPO_DIR/bin/vp-palette.sh" && echo 0 || echo 1)"
+  check "palette readers share the writer lock" \
+    "$(for f in vp-theme.sh vp-terminal-palette.sh vp-wallpaper-tint.sh \
+                vp-login-art.sh vp-plymouth-art.sh; do \
+         grep -q 'flock -s' "$REPO_DIR/bin/$f" || exit 1; \
+       done; echo 0)"
 
   # A second switch must start from the original palette, not from the one the
   # first switch wrote.
@@ -3556,6 +3561,9 @@ if want tc30; then
       && grep -q 'doe.tools redoTheme' "$REPO_DIR/tools/ui-smoke.sh" \
       && grep -q 'doe.tools resetTheme' "$REPO_DIR/tools/ui-smoke.sh" \
       && echo 0 || echo 1)"
+  check "the UI smoke has a pixel-diff helper" \
+    "$(grep -q 'magick compare' "$REPO_DIR/tools/ui-diff.sh" \
+      && grep -q -- '--crop' "$REPO_DIR/tools/ui-diff.sh" && echo 0 || echo 1)"
   check "settings write bar options through vp-setting" \
     "$(grep -q 'function setBarOption' "$panel" \
       && grep -q 'vp-setting.sh set bar' "$panel" && echo 0 || echo 1)"

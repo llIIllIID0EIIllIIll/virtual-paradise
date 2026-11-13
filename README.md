@@ -14,9 +14,9 @@
 [![Arch Linux](https://img.shields.io/badge/Arch_Linux-1793D1?style=flat-square&logo=arch-linux&logoColor=white)](https://archlinux.org)
 [![Omarchy 4.5+](https://img.shields.io/badge/Omarchy-4.5+-8A2BE2?style=flat-square)](https://omarchy.org)
 [![Hyprland](https://img.shields.io/badge/Hyprland-Wayland-00ffdd?style=flat-square)](https://hyprland.org)
-[![Tests](https://img.shields.io/badge/tests-578%20passed-00ff88?style=flat-square)](tests/)
+[![Tests](https://img.shields.io/badge/tests-580%20passed-00ff88?style=flat-square)](tests/)
 [![License](https://img.shields.io/badge/license-MIT-ffe066?style=flat-square)](LICENSE)
-[![Version](https://img.shields.io/badge/version-1.7.0-ff00ff?style=flat-square)](VERSION)
+[![Version](https://img.shields.io/badge/version-1.7.1-ff00ff?style=flat-square)](VERSION)
 
 *A complete desktop experience: floating island bar, animated wallpapers, Plymouth boot splash, and every widget restyled in Miku cyan.*
 
@@ -648,15 +648,16 @@ default.
 
 ### Running Tests
 
-The test suite has thirty test cases and 578 assertions; optional tools
+The test suite has thirty test cases and 580 assertions; optional tools
 (`shellcheck`, `qmllint`, `hyprctl`) enable extra checks when present, so the
-exact count varies between machines (578 with `shellcheck` and `qmllint`). It
+exact count varies between machines (580 with `shellcheck` and `qmllint`). It
 runs in a sandbox and never touches your real system.
 
 ```bash
 ./tests/run.sh          # Run all tests
 ./tests/run.sh tc1 tc12 # Run specific test cases
 ./tools/ui-smoke.sh --screenshots /tmp/vp-ui  # live settings UI smoke
+./tools/ui-diff.sh /tmp/vp-ui-baseline /tmp/vp-ui --crop 620x900+1300+0
 ```
 
 Test cases:
@@ -740,7 +741,7 @@ virtual-paradise/
 │   └── convert-gifs-to-mp4.sh   # Wallpaper compression
 ├── install.sh            # Installer
 ├── uninstall.sh          # Uninstaller
-├── VERSION               # Semantic version (1.7.0)
+├── VERSION               # Semantic version (1.7.1)
 ├── ROADMAP.md            # Phase status and next-phase plan
 └── README.md             # This file
 ```

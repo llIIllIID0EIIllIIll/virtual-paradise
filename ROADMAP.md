@@ -97,11 +97,11 @@ second settings application or restarting the shell for every color change.
 
 ### Verification
 
-- 578 assertions green; TC-12 covers live writes, ordering, locking, terminal
-  OSC output, Cava palette sync, wallpaper/login/Plymouth art and portable
-  themes; TC-30 covers history, keyboard, contrast, generation, color vision,
-  preview, terminal toggle, artwork controls, the UI smoke tool and deferred
-  refresh contracts.
+- 580 assertions green; TC-12 covers live writes, ordering, reader/writer
+  locking, terminal OSC output, Cava palette sync, wallpaper/login/Plymouth
+  art and portable themes; TC-30 covers history, keyboard, contrast,
+  generation, color vision, preview, terminal toggle, artwork controls, the UI
+  smoke/diff tools and deferred refresh contracts.
 - Live checks: swatch click, undo, redo and reset through the panel and IPC;
   one shell, one bar, zero runtime QML errors.
 
@@ -147,12 +147,14 @@ second settings application or restarting the shell for every color change.
 - [x] Version 1.6.0 with the wallpaper and SDDM login artwork.
 - [x] Version 1.7.0 with Plymouth artwork, the watcher optimization and the
       manual UI smoke.
+- [x] Version 1.7.1 with shared reader locks and the pixel-diff helper.
 - [x] Add a manual UI smoke for the palette workflow
       (`tools/ui-smoke.sh`, with optional screenshots).
 - [x] Add 100-write ordering and concurrent-writer coverage (TC-12).
-- [ ] Add pixel-diff golden screenshots at 100%, 125% and 150% scale
-      (environment-specific; manual captures are available via
-      `ui-smoke.sh --screenshots`; deferred beyond 1.7.0).
+- [x] Add a manual pixel-diff helper for UI smoke captures
+      (`tools/ui-diff.sh`, optional crop for the live bar clock).
+- [ ] Add committed golden baselines at 100%, 125% and 150% scale
+      (environment-specific; capture with `ui-smoke.sh --screenshots`).
 - [x] Artwork palette for wallpaper, SDDM login art and Plymouth boot art.
 - Keep `README.md`, `README.vi.md`, `CHANGELOG.md`, `KEYBINDINGS.md` and this
   file in the same commit as any behavior change.
