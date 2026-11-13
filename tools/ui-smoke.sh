@@ -3,7 +3,7 @@
 #  Virtual☆Paradise — manual settings UI smoke test
 # ==============================================================================
 #  Usage:
-#    tools/ui-smoke.sh [--screenshots DIR] [--baseline DIR]
+#    tools/ui-smoke.sh [--screenshots DIR] [--baseline DIR] [--baseline-auto DIR]
 #                      [--crop WxH+X+Y] [--threshold N]
 #
 #  Drives the live settings panel through its IPC surface: open Settings, set a
@@ -23,12 +23,14 @@ variant_file="$state/current_variant"
 
 screens=""
 baseline_dir=""
+baseline_auto=""
 crop=""
 threshold=1000
 while [[ $# -gt 0 ]]; do
   case "$1" in
     --screenshots) screens="${2:-}"; shift 2 ;;
     --baseline) baseline_dir="${2:-}"; shift 2 ;;
+    --baseline-auto) baseline_auto="${2:-}"; shift 2 ;;
     --crop) crop="${2:-}"; shift 2 ;;
     --threshold) threshold="${2:-}"; shift 2 ;;
     *) echo "Unknown argument: $1" >&2; exit 2 ;;
@@ -41,6 +43,29 @@ if [[ $crop =~ ^([0-9]+),([0-9]+)[[:space:]]+([0-9]+)x([0-9]+)$ ]]; then
   crop_grim="$crop"
 elif [[ $crop =~ ^([0-9]+)x([0-9]+)\+([0-9]+)\+([0-9]+)$ ]]; then
   crop_grim="${BASH_REMATCH[3]},${BASH_REMATCH[4]} ${BASH_REMATCH[1]}x${BASH_REMATCH[2]}"
+fi
+
+if [[ -n $baseline_auto ]]; then
+  command -v hyprctl >/dev/null 2>&1 || {
+    echo "--baseline-auto needs hyprctl (run inside Hyprland)." >&2
+    exit 2
+  }
+  monitor_name="$(hyprctl monitors -j 2>/dev/null | python3 -c '
+import json, sys
+try:
+    monitors = json.load(sys.stdin)
+except Exception:
+    raise SystemExit(1)
+if not monitors:
+    raise SystemExit(1)
+monitor = next((m for m in monitors if m.get("focused")), monitors[0])
+scale = ("%.2f" % float(monitor.get("scale", 1))).rstrip("0").rstrip(".")
+print(str(monitor.get("width", 0)) + "x" + str(monitor.get("height", 0)) + "-scale" + scale)
+')" || {
+    echo "Could not detect the focused monitor geometry." >&2
+    exit 2
+  }
+  baseline_dir="$baseline_auto/$monitor_name"
 fi
 
 if [[ -n $baseline_dir ]]; then

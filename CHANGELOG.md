@@ -8,6 +8,14 @@ Conventional Commits.
 
 ## [Unreleased]
 
+## [1.11.1] - 2026-11-13
+
+### Changed
+- **`ui-smoke.sh --baseline-auto DIR`** derives the baseline subdirectory from
+  the focused monitor (`1920x1080-scale1`, `2560x1440-scale1.25`, …), so
+  per-scale baselines no longer need a hand-picked name.
+- Tests: 586 assertions.
+
 ## [1.11.0] - 2026-11-13
 
 ### Added
@@ -1312,7 +1320,8 @@ full installer/uninstaller.
 
 ## Links
 
-- [Unreleased]: https://github.com/vuhuudo/virtual-paradise/compare/v1.11.0...HEAD
+- [Unreleased]: https://github.com/vuhuudo/virtual-paradise/compare/v1.11.1...HEAD
+- [1.11.1]: https://github.com/vuhuudo/virtual-paradise/compare/v1.11.0...v1.11.1
 - [1.11.0]: https://github.com/vuhuudo/virtual-paradise/compare/v1.10.0...v1.11.0
 - [1.10.0]: https://github.com/vuhuudo/virtual-paradise/compare/v1.9.1...v1.10.0
 - [1.9.1]: https://github.com/vuhuudo/virtual-paradise/compare/v1.9.0...v1.9.1

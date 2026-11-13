@@ -155,6 +155,7 @@ second settings application or restarting the shell for every color change.
 - [x] Version 1.9.1 with UI baseline mode and crop normalization.
 - [x] Version 1.10.0 with contrast repair and the golden baseline.
 - [x] Version 1.11.0 with direct palette export.
+- [x] Version 1.11.1 with monitor-aware UI baselines.
 - [x] Add a manual UI smoke for the palette workflow
       (`tools/ui-smoke.sh`, with optional screenshots).
 - [x] Add 100-write ordering and concurrent-writer coverage (TC-12).
@@ -162,6 +163,7 @@ second settings application or restarting the shell for every color change.
       (`ui-smoke.sh --baseline`, optional crop for the live bar clock).
 - [x] Add a committed 1920×1080/100% golden baseline
       (`tests/golden/1920x1080-scale1/`).
+- [x] `ui-smoke.sh --baseline-auto` names baselines by monitor geometry/scale.
 - [ ] Capture 125% and 150% baselines on matching displays.
 - [x] Artwork palette for wallpaper, SDDM login art and Plymouth boot art.
 - Keep `README.md`, `README.vi.md`, `CHANGELOG.md`, `KEYBINDINGS.md` and this

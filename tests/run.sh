@@ -3602,6 +3602,7 @@ if want tc30; then
       && grep -q 'doe.tools redoTheme' "$REPO_DIR/tools/ui-smoke.sh" \
       && grep -q 'doe.tools resetTheme' "$REPO_DIR/tools/ui-smoke.sh" \
       && grep -q -- '--baseline' "$REPO_DIR/tools/ui-smoke.sh" \
+      && grep -q -- '--baseline-auto' "$REPO_DIR/tools/ui-smoke.sh" \
       && echo 0 || echo 1)"
   check "the UI smoke has a pixel-diff helper" \
     "$(grep -q 'magick compare' "$REPO_DIR/tools/ui-diff.sh" \

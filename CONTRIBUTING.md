@@ -105,8 +105,9 @@ and variant on exit. It is intentionally not part of CI.
 Compare a run against a saved baseline (crop out the live bar clock):
 
 ```bash
-# First run saves the baseline
-./tools/ui-smoke.sh --baseline /tmp/vp-ui-baseline \
+# First run saves the baseline; --baseline-auto picks
+# <width>x<height>-scale<scale> for the focused monitor
+./tools/ui-smoke.sh --baseline-auto /tmp/vp-ui-baseline \
   --crop '1300,40 620x860'
 
 # Later runs compare automatically

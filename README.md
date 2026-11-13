@@ -16,7 +16,7 @@
 [![Hyprland](https://img.shields.io/badge/Hyprland-Wayland-00ffdd?style=flat-square)](https://hyprland.org)
 [![Tests](https://img.shields.io/badge/tests-586%20passed-00ff88?style=flat-square)](tests/)
 [![License](https://img.shields.io/badge/license-MIT-ffe066?style=flat-square)](LICENSE)
-[![Version](https://img.shields.io/badge/version-1.11.0-ff00ff?style=flat-square)](VERSION)
+[![Version](https://img.shields.io/badge/version-1.11.1-ff00ff?style=flat-square)](VERSION)
 
 *A complete desktop experience: floating island bar, animated wallpapers, Plymouth boot splash, and every widget restyled in Miku cyan.*
 
@@ -665,7 +665,7 @@ runs in a sandbox and never touches your real system.
 ./tests/run.sh          # Run all tests
 ./tests/run.sh tc1 tc12 # Run specific test cases
 ./tools/ui-smoke.sh --screenshots /tmp/vp-ui  # live settings UI smoke
-./tools/ui-smoke.sh --baseline /tmp/vp-ui-baseline --crop '1300,40 620x860'
+./tools/ui-smoke.sh --baseline-auto /tmp/vp-ui-baseline --crop '1300,40 620x860'
 ```
 
 Test cases:
@@ -749,7 +749,7 @@ virtual-paradise/
 │   └── convert-gifs-to-mp4.sh   # Wallpaper compression
 ├── install.sh            # Installer
 ├── uninstall.sh          # Uninstaller
-├── VERSION               # Semantic version (1.11.0)
+├── VERSION               # Semantic version (1.11.1)
 ├── ROADMAP.md            # Phase status and next-phase plan
 └── README.md             # This file
 ```
