@@ -16,7 +16,7 @@
 [![Hyprland](https://img.shields.io/badge/Hyprland-Wayland-00ffdd?style=flat-square)](https://hyprland.org)
 [![Tests](https://img.shields.io/badge/tests-586%20passed-00ff88?style=flat-square)](tests/)
 [![License](https://img.shields.io/badge/license-MIT-ffe066?style=flat-square)](LICENSE)
-[![Version](https://img.shields.io/badge/version-1.11.1-ff00ff?style=flat-square)](VERSION)
+[![Version](https://img.shields.io/badge/version-1.11.2-ff00ff?style=flat-square)](VERSION)
 
 *A complete desktop experience: floating island bar, animated wallpapers, Plymouth boot splash, and every widget restyled in Miku cyan.*
 
@@ -449,8 +449,8 @@ live:
   as you pick colors, and Cava reloads its gradient from the active palette.
 - **Saved themes**: name the current palette and press **Save**, then click a
   saved name to load it or **×** to delete it. **Import** accepts a portable
-  theme JSON path; **Export** writes the live palette directly to a path.
-  Themes
+  theme JSON path; **Export** writes the live palette directly to a path and
+  **Copy JSON** puts it on the clipboard. Themes
   live under `~/.local/state/virtual-paradise/themes/`; the CLI equivalent is
   `vp-theme.sh save|list|load|export|import|delete`.
 - **Palettes**: Cyberpunk, Catppuccin, Tokyo Night, Gruvbox, Nord, Everforest,
@@ -749,7 +749,7 @@ virtual-paradise/
 │   └── convert-gifs-to-mp4.sh   # Wallpaper compression
 ├── install.sh            # Installer
 ├── uninstall.sh          # Uninstaller
-├── VERSION               # Semantic version (1.11.1)
+├── VERSION               # Semantic version (1.11.2)
 ├── ROADMAP.md            # Phase status and next-phase plan
 └── README.md             # This file
 ```

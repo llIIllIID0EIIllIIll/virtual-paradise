@@ -156,6 +156,7 @@ second settings application or restarting the shell for every color change.
 - [x] Version 1.10.0 with contrast repair and the golden baseline.
 - [x] Version 1.11.0 with direct palette export.
 - [x] Version 1.11.1 with monitor-aware UI baselines.
+- [x] Version 1.11.2 with clipboard palette copying.
 - [x] Add a manual UI smoke for the palette workflow
       (`tools/ui-smoke.sh`, with optional screenshots).
 - [x] Add 100-write ordering and concurrent-writer coverage (TC-12).

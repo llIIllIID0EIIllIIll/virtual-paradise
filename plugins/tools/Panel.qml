@@ -558,6 +558,12 @@ Panel {
     root.runThemeAction(["import", path])
   }
 
+  function copyPaletteJson() {
+    root.run("bash -lc 'cat " + root.home
+      + "/.local/state/virtual-paradise/palette.json | wl-copy'")
+    root.themeStatus = "Palette JSON copied."
+  }
+
   function exportTheme() {
     var path = root.themeExportPath.trim()
     if (path === "") {
@@ -1772,6 +1778,15 @@ Panel {
             fontFamily: root.ff
             Accessible.name: "Export the current palette as JSON"
             onClicked: root.exportTheme()
+          }
+          Button {
+            text: "Copy JSON"
+            focusable: true
+            foreground: root.fg
+            accent: Color.accent
+            fontFamily: root.ff
+            Accessible.name: "Copy the live palette JSON to the clipboard"
+            onClicked: root.copyPaletteJson()
           }
         }
 

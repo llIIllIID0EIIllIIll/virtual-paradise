@@ -3544,6 +3544,8 @@ if want tc30; then
       && grep -q 'function deleteTheme' "$panel" \
       && grep -q 'function exportTheme' "$panel" \
       && grep -q 'export-current' "$panel" \
+      && grep -q 'function copyPaletteJson' "$panel" \
+      && grep -q 'wl-copy' "$panel" \
       && grep -q 'themeActionProc' "$panel" && echo 0 || echo 1)"
   check "settings expose undo, redo, reset, contrast and fix" \
     "$(for fn in undoPalette redoPalette resetPalette contrastRatio fixContrast; do \
