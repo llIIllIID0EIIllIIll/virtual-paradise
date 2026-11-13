@@ -3538,8 +3538,8 @@ if want tc30; then
       && grep -q 'savedThemes' "$panel" \
       && grep -q 'function deleteTheme' "$panel" \
       && grep -q 'themeActionProc' "$panel" && echo 0 || echo 1)"
-  check "settings expose undo, redo, reset and contrast" \
-    "$(for fn in undoPalette redoPalette resetPalette contrastRatio; do \
+  check "settings expose undo, redo, reset, contrast and fix" \
+    "$(for fn in undoPalette redoPalette resetPalette contrastRatio fixContrast; do \
          grep -q "function $fn" "$panel" || exit 1; \
        done && grep -q 'paletteContrast' "$panel" && echo 0 || echo 1)"
   check "settings keep the palette editor keyboard accessible" \

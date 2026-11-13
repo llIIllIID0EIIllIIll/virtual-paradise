@@ -131,6 +131,7 @@ BarWidget {
     function undoTheme(): void { if (panelLoader.item) panelLoader.item.undoPalette() }
     function redoTheme(): void { if (panelLoader.item) panelLoader.item.redoPalette() }
     function resetTheme(): void { if (panelLoader.item) panelLoader.item.resetPalette() }
+    function fixContrast(): void { if (panelLoader.item) panelLoader.item.fixContrast() }
     function setRole(role: string, hex: string): void { if (panelLoader.item) panelLoader.item.setRoleFromIpc(role, hex) }
     function generateTheme(mode: string): void {
       if (!panelLoader.item) return

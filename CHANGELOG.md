@@ -8,7 +8,11 @@ Conventional Commits.
 
 ## [Unreleased]
 
+## [1.10.0] - 2026-11-13
+
 ### Added
+- **Fix contrast** in the custom theme panel: derives a tinted near-black or
+  near-white Text that reaches WCAG 4.5:1, with a pure black/white fallback.
 - **A committed 1920×1080/100% UI golden baseline** for the manual settings
   smoke, with a per-machine capture workflow for other scales.
 
@@ -1299,7 +1303,8 @@ full installer/uninstaller.
 
 ## Links
 
-- [Unreleased]: https://github.com/vuhuudo/virtual-paradise/compare/v1.9.1...HEAD
+- [Unreleased]: https://github.com/vuhuudo/virtual-paradise/compare/v1.10.0...HEAD
+- [1.10.0]: https://github.com/vuhuudo/virtual-paradise/compare/v1.9.1...v1.10.0
 - [1.9.1]: https://github.com/vuhuudo/virtual-paradise/compare/v1.9.0...v1.9.1
 - [1.9.0]: https://github.com/vuhuudo/virtual-paradise/compare/v1.8.1...v1.9.0
 - [1.8.1]: https://github.com/vuhuudo/virtual-paradise/compare/v1.8.0...v1.8.1

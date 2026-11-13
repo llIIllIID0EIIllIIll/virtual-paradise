@@ -348,6 +348,24 @@ Panel {
     root.applyHistory(root.paletteHistoryIndex + 1)
   }
 
+  function fixContrast() {
+    var hsl = root.hexToHsl(root.roleColor("background"))
+    if (!hsl) return
+    var next = {}
+    for (var i = 0; i < root.roles.length; i++)
+      next[root.roles[i].id] = root.roleColors[root.roles[i].id]
+    // Choose a near-black or near-white text with a slight tint from the
+    // background hue, then fall back to pure black/white if still low.
+    var light = root.hslHex(hsl.h, Math.min(hsl.s, 16), 94)
+    var dark = root.hslHex(hsl.h, Math.min(hsl.s, 16), 6)
+    next.foreground = root.relativeLuminance(root.roleColor("background")) > 0.4 ? dark : light
+    if (root.contrastRatio(next.foreground, next.background) < 4.5)
+      next.foreground = root.relativeLuminance(next.background) > 0.4 ? "#000000" : "#ffffff"
+    root.roleColors = next
+    root.commitHistory()
+    root.markPaletteChanged()
+  }
+
   function resetPalette() {
     if (!root.paletteBaseline) return
     root.roleColors = JSON.parse(JSON.stringify(root.paletteBaseline))
@@ -1294,6 +1312,17 @@ Panel {
           font.family: root.ff
           font.pixelSize: Style.font.caption
           wrapMode: Text.WordWrap
+        }
+
+        Button {
+          visible: root.contrastLow
+          text: "Fix contrast"
+          focusable: true
+          foreground: root.fg
+          accent: Color.accent
+          fontFamily: root.ff
+          Accessible.name: "Set readable Text for the current Background"
+          onClicked: root.fixContrast()
         }
 
         Text {

@@ -153,6 +153,7 @@ second settings application or restarting the shell for every color change.
 - [x] Version 1.8.1 with saved-theme deletion from the panel.
 - [x] Version 1.9.0 with image-path palette derivation.
 - [x] Version 1.9.1 with UI baseline mode and crop normalization.
+- [x] Version 1.10.0 with contrast repair and the golden baseline.
 - [x] Add a manual UI smoke for the palette workflow
       (`tools/ui-smoke.sh`, with optional screenshots).
 - [x] Add 100-write ordering and concurrent-writer coverage (TC-12).

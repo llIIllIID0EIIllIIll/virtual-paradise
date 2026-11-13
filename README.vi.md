@@ -70,7 +70,8 @@ Mở **Tools** trên thanh bar → biểu tượng **bánh răng**. Từ đây c
   panel để Undo/Redo còn dùng được. Có ô **seed** và nút Analogous/Complement/
   Triad để sinh role phụ, nút **From wallpaper** lấy palette từ background
   hiện tại, **From image** nhận đường dẫn ảnh/video bất kỳ, nút **BG / Text**
-  tạo nền/chữ dễ đọc, card preview
+  tạo nền/chữ dễ đọc, nút **Fix contrast** sửa cặp Text/BG thiếu tương phản,
+  card preview
   xem trước trên mẫu bar/terminal, và chế độ Normal/Deutan/Protan để kiểm tra
   khả năng nhìn màu. Bật **Live terminal palette** để terminal đang mở đổi màu
   theo OSC 4/10/11/12 ngay khi chọn màu; Cava cũng reload gradient theo
