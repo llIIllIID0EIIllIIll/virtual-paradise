@@ -513,6 +513,10 @@ Panel {
     root.runThemeAction(["load", String(name)])
   }
 
+  function deleteTheme(name) {
+    root.runThemeAction(["delete", String(name)])
+  }
+
   function importTheme() {
     var path = root.themeImportPath.trim()
     if (path === "") {
@@ -735,6 +739,7 @@ Panel {
       if (root.themeAction === "save") root.themeStatus = "Saved."
       else if (root.themeAction === "load") root.themeStatus = "Loaded."
       else if (root.themeAction === "import") root.themeStatus = "Imported."
+      else if (root.themeAction === "delete") root.themeStatus = "Deleted."
       else root.themeStatus = "Done."
       if (root.themeAction === "save") root.themeName = ""
       if (root.themeAction === "import") root.themeImportPath = ""
@@ -1579,15 +1584,28 @@ Panel {
           Repeater {
             model: root.savedThemes
 
-            Button {
+            Row {
               required property string modelData
-              text: modelData
-              focusable: true
-              foreground: root.fg
-              accent: Color.accent
-              fontFamily: root.ff
-              Accessible.name: "Load saved theme " + modelData
-              onClicked: root.loadTheme(modelData)
+              spacing: Style.space(2)
+
+              Button {
+                text: parent.modelData
+                focusable: true
+                foreground: root.fg
+                accent: Color.accent
+                fontFamily: root.ff
+                Accessible.name: "Load saved theme " + parent.modelData
+                onClicked: root.loadTheme(parent.modelData)
+              }
+              Button {
+                text: "×"
+                focusable: true
+                foreground: root.fg
+                accent: root.alertColor
+                fontFamily: root.ff
+                Accessible.name: "Delete saved theme " + parent.modelData
+                onClicked: root.deleteTheme(parent.modelData)
+              }
             }
           }
         }

@@ -107,7 +107,7 @@ second settings application or restarting the shell for every color change.
 
 ---
 
-## Phase 2.2 — Editor depth and artwork (shipped through 1.7.0)
+## Phase 2.2 — Editor depth and artwork (shipped through 1.8.0)
 
 ### Editor depth (done)
 
@@ -138,7 +138,7 @@ second settings application or restarting the shell for every color change.
       rebuild.
 - [x] Keep cyberpunk artwork as the default and as the fallback.
 - [ ] Never leave a boot entry pointing at a deleted image (covered by the
-      existing boot theme installer; validate with Plymouth art in 1.7.0).
+      existing boot theme installer; validate when boot art is applied).
 
 ### Release gates
 
@@ -150,6 +150,7 @@ second settings application or restarting the shell for every color change.
 - [x] Version 1.7.1 with shared reader locks and the pixel-diff helper.
 - [x] Version 1.7.2 with redundant-write caching.
 - [x] Version 1.8.0 with wallpaper-derived palettes.
+- [x] Version 1.8.1 with saved-theme deletion from the panel.
 - [x] Add a manual UI smoke for the palette workflow
       (`tools/ui-smoke.sh`, with optional screenshots).
 - [x] Add 100-write ordering and concurrent-writer coverage (TC-12).

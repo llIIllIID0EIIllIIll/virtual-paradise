@@ -3526,6 +3526,7 @@ if want tc30; then
   check "settings expose portable saved themes" \
     "$(grep -q 'vp-theme.sh' "$panel" \
       && grep -q 'savedThemes' "$panel" \
+      && grep -q 'function deleteTheme' "$panel" \
       && grep -q 'themeActionProc' "$panel" && echo 0 || echo 1)"
   check "settings expose undo, redo, reset and contrast" \
     "$(for fn in undoPalette redoPalette resetPalette contrastRatio; do \

@@ -74,7 +74,8 @@ Mở **Tools** trên thanh bar → biểu tượng **bánh răng**. Từ đây c
   khả năng nhìn màu. Bật **Live terminal palette** để terminal đang mở đổi màu
   theo OSC 4/10/11/12 ngay khi chọn màu; Cava cũng reload gradient theo
   palette hiện tại.
-- **Saved themes**: đặt tên rồi **Save**, bấm tên để load, hoặc **Import** file
+- **Saved themes**: đặt tên rồi **Save**, bấm tên để load, bấm **×** để xoá,
+  hoặc **Import** file
   JSON. Theme lưu tại `~/.local/state/virtual-paradise/themes/`; CLI tương ứng
   là `vp-theme.sh save|list|load|export|import|delete`.
 - **Palette có sẵn**: Cyberpunk, Catppuccin, Tokyo Night, Gruvbox, Nord,
