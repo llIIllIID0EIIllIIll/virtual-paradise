@@ -222,6 +222,14 @@ Panel {
     root.markPaletteChanged()
   }
 
+  function themeFromWallpaper() {
+    // The switcher owns wallpaper sampling and theme-file writes. Skip its
+    // shell-wide refresh so the settings panel stays open; the bar watcher
+    // and the deferred close refresh handle the rest.
+    root.run("bash -lc 'VP_NO_THEME_REFRESH=1 " + root.home
+      + "/.local/bin/theme-switcher.sh wallpaper'")
+  }
+
   function deriveNeutrals() {
     var hsl = root.hexToHsl(root.effectiveSeed())
     if (!hsl) return
@@ -1417,6 +1425,15 @@ Panel {
             fontFamily: root.ff
             Accessible.name: "Derive a dark background and readable text from the seed"
             onClicked: root.deriveNeutrals()
+          }
+          Button {
+            text: "From wallpaper"
+            focusable: true
+            foreground: root.fg
+            accent: Color.accent
+            fontFamily: root.ff
+            Accessible.name: "Derive the accent and companions from the current wallpaper"
+            onClicked: root.themeFromWallpaper()
           }
         }
 

@@ -8,6 +8,17 @@ Conventional Commits.
 
 ## [Unreleased]
 
+## [1.8.0] - 2026-11-13
+
+### Added
+- **Derive a palette from the current wallpaper** from the settings panel.
+  The wallpaper variant now resolves Omarchy's extensionless `background`
+  symlink before deciding image vs. video, so the default path works.
+
+### Changed
+- Tests: 583 assertions; TC-12 covers the extensionless wallpaper symlink and
+  TC-30 covers the From wallpaper action.
+
 ## [1.7.2] - 2026-11-13
 
 ### Changed
@@ -1260,7 +1271,8 @@ full installer/uninstaller.
 
 ## Links
 
-- [Unreleased]: https://github.com/vuhuudo/virtual-paradise/compare/v1.7.2...HEAD
+- [Unreleased]: https://github.com/vuhuudo/virtual-paradise/compare/v1.8.0...HEAD
+- [1.8.0]: https://github.com/vuhuudo/virtual-paradise/compare/v1.7.2...v1.8.0
 - [1.7.2]: https://github.com/vuhuudo/virtual-paradise/compare/v1.7.1...v1.7.2
 - [1.7.1]: https://github.com/vuhuudo/virtual-paradise/compare/v1.7.0...v1.7.1
 - [1.7.0]: https://github.com/vuhuudo/virtual-paradise/compare/v1.6.0...v1.7.0

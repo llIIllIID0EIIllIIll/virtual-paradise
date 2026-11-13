@@ -409,6 +409,10 @@ interactive_menu() {
 # Read the most vivid dominant colour of an image or a video frame.
 wallpaper_accent() {
   local src="$1"
+  # Omarchy's current background is a symlink named "background", without an
+  # extension. Resolve it before the video/image branch or every video is
+  # treated as a still image.
+  src="$(readlink -f "$src" 2>/dev/null || printf '%s' "$src")"
   [[ -f $src ]] || return 1
   local tmp best="" best_score=0 hex score s v
   tmp="$(mktemp --suffix=.png)" || return 1

@@ -138,6 +138,7 @@ BarWidget {
         panelLoader.item.generateHarmony(mode)
     }
     function deriveNeutrals(): void { if (panelLoader.item) panelLoader.item.deriveNeutrals() }
+    function fromWallpaper(): void { if (panelLoader.item) panelLoader.item.themeFromWallpaper() }
     function verify(): void { root.verify() }
     function close(): void { root.close() }
   }
