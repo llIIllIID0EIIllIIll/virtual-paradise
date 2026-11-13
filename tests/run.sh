@@ -1561,6 +1561,11 @@ PY
     bash "$REPO_DIR/bin/vp-theme.sh" delete imported-two >/dev/null 2>&1
   check "vp-theme deletes a saved palette" \
     "$([[ ! -f "$themes_dir/imported-two.json" ]] && echo 0 || echo 1)"
+  HOME="$home" XDG_CONFIG_HOME="$home/.config" \
+    bash "$REPO_DIR/bin/vp-theme.sh" export-current "$root/current-export.json" "Current" >/dev/null 2>&1
+  python3 -c 'import json,sys; d=json.load(open(sys.argv[1])); c=d.get("colors",{}); raise SystemExit(0 if d.get("schemaVersion")==1 and c.get("accent")=="#a1b2c3" and len(c)==8 else 1)' \
+    "$root/current-export.json"
+  check "vp-theme exports the live palette to a path" $?
 
   # Cava used to be hardcoded cyberpunk. It now follows the active colors.toml.
   mkdir -p "$home/.config/cava"
@@ -3537,6 +3542,8 @@ if want tc30; then
     "$(grep -q 'vp-theme.sh' "$panel" \
       && grep -q 'savedThemes' "$panel" \
       && grep -q 'function deleteTheme' "$panel" \
+      && grep -q 'function exportTheme' "$panel" \
+      && grep -q 'export-current' "$panel" \
       && grep -q 'themeActionProc' "$panel" && echo 0 || echo 1)"
   check "settings expose undo, redo, reset, contrast and fix" \
     "$(for fn in undoPalette redoPalette resetPalette contrastRatio fixContrast; do \

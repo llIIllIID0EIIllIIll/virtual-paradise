@@ -81,6 +81,7 @@ Panel {
   property string themeImagePath: ""
   property string imageThemeStatus: ""
   property string themeImportPath: ""
+  property string themeExportPath: ""
   property string themeStatus: ""
   property string themeAction: ""
   readonly property var defaultRoleColors: ({
@@ -557,6 +558,15 @@ Panel {
     root.runThemeAction(["import", path])
   }
 
+  function exportTheme() {
+    var path = root.themeExportPath.trim()
+    if (path === "") {
+      root.themeStatus = "Enter a path for the exported theme."
+      return
+    }
+    root.runThemeAction(["export-current", path])
+  }
+
   readonly property var tools: [
     { id: "io.github.randazraik.xray", label: "X-Ray", icon: "󰗇", hint: "Screen lens" },
     { id: "io.github.grichard99.omaproton-vpn", label: "OmaProton VPN", icon: "󰦝", hint: "VPN" },
@@ -794,9 +804,11 @@ Panel {
       else if (root.themeAction === "load") root.themeStatus = "Loaded."
       else if (root.themeAction === "import") root.themeStatus = "Imported."
       else if (root.themeAction === "delete") root.themeStatus = "Deleted."
+      else if (root.themeAction === "export-current") root.themeStatus = "Exported."
       else root.themeStatus = "Done."
       if (root.themeAction === "save") root.themeName = ""
       if (root.themeAction === "import") root.themeImportPath = ""
+      if (root.themeAction === "export-current") root.themeExportPath = ""
       root.refreshThemes()
       if (root.themeAction === "load") Qt.callLater(function() { paletteFile.reload() })
     }
@@ -1734,6 +1746,32 @@ Panel {
             fontFamily: root.ff
             Accessible.name: "Import a theme JSON file"
             onClicked: root.importTheme()
+          }
+        }
+
+        Row {
+          spacing: Style.space(6)
+
+          TextField {
+            width: Style.space(150)
+            text: root.themeExportPath
+            placeholderText: "Export JSON path"
+            foreground: root.fg
+            font.family: root.ff
+            font.pixelSize: Style.font.body
+            Accessible.name: "Path for exporting the current palette"
+            onTextChanged: root.themeExportPath = text
+            onAccepted: root.exportTheme()
+          }
+
+          Button {
+            text: "Export"
+            focusable: true
+            foreground: root.fg
+            accent: Color.accent
+            fontFamily: root.ff
+            Accessible.name: "Export the current palette as JSON"
+            onClicked: root.exportTheme()
           }
         }
 

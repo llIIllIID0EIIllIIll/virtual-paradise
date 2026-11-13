@@ -97,7 +97,7 @@ second settings application or restarting the shell for every color change.
 
 ### Verification
 
-- 585 assertions green; TC-12 covers live writes, ordering, reader/writer
+- 586 assertions green; TC-12 covers live writes, ordering, reader/writer
   locking, terminal OSC output, Cava palette sync, wallpaper/login/Plymouth
   art and portable themes; TC-30 covers history, keyboard, contrast,
   generation, color vision, preview, terminal toggle, artwork controls, the UI
@@ -154,6 +154,7 @@ second settings application or restarting the shell for every color change.
 - [x] Version 1.9.0 with image-path palette derivation.
 - [x] Version 1.9.1 with UI baseline mode and crop normalization.
 - [x] Version 1.10.0 with contrast repair and the golden baseline.
+- [x] Version 1.11.0 with direct palette export.
 - [x] Add a manual UI smoke for the palette workflow
       (`tools/ui-smoke.sh`, with optional screenshots).
 - [x] Add 100-write ordering and concurrent-writer coverage (TC-12).

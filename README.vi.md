@@ -77,7 +77,7 @@ Mở **Tools** trên thanh bar → biểu tượng **bánh răng**. Từ đây c
   theo OSC 4/10/11/12 ngay khi chọn màu; Cava cũng reload gradient theo
   palette hiện tại.
 - **Saved themes**: đặt tên rồi **Save**, bấm tên để load, bấm **×** để xoá,
-  hoặc **Import** file
+  **Import** file JSON, hoặc **Export** palette hiện tại ra đường dẫn bất kỳ.
   JSON. Theme lưu tại `~/.local/state/virtual-paradise/themes/`; CLI tương ứng
   là `vp-theme.sh save|list|load|export|import|delete`.
 - **Palette có sẵn**: Cyberpunk, Catppuccin, Tokyo Night, Gruvbox, Nord,

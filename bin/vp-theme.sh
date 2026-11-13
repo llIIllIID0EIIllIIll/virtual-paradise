@@ -7,6 +7,7 @@
 #    vp-theme.sh list                 # one saved theme per line
 #    vp-theme.sh load <name>          # apply a saved palette, no shell restart
 #    vp-theme.sh export <name> <path> # copy the JSON somewhere portable
+#    vp-theme.sh export-current <path> [name]  # write the live palette directly
 #    vp-theme.sh import <path> [name] # validate and add a JSON palette
 #    vp-theme.sh delete <name>        # remove a saved palette
 # ==============================================================================
@@ -135,6 +136,61 @@ PY
   "$SCRIPT_DIR/theme-switcher.sh" custom "${colors[@]}"
 }
 
+export_current() {
+  local dest="${1:-}" name="${2:-}"
+  [[ -n $dest ]] || {
+    echo "Usage: vp-theme.sh export-current <path> [name]" >&2
+    exit 2
+  }
+  [[ -f "$STATE/palette.json" ]] || {
+    echo "No live palette yet. Pick a custom color first." >&2
+    exit 1
+  }
+  [[ -n $name ]] || name="$(basename "$dest" .json)"
+  mkdir -p "$(dirname "$dest")"
+  flock -s "$STATE/palette.lock" python3 - "$STATE/palette.json" "$dest" "$name" <<'PY'
+import datetime
+import json
+import os
+import sys
+import tempfile
+
+source, dest, name = sys.argv[1:4]
+roles = ("accent", "secondary", "tertiary", "warm", "pink", "hot", "background", "foreground")
+data = json.load(open(source, encoding="utf-8"))
+colors = {}
+for role in roles:
+    value = data.get(role)
+    if not isinstance(value, str) or len(value) != 7 or value[0] != "#":
+        raise SystemExit(f"palette.json has no valid {role}")
+    if any(c not in "0123456789abcdefABCDEF" for c in value[1:]):
+        raise SystemExit(f"palette.json has an invalid {role}: {value}")
+    colors[role] = value.lower()
+
+out = {
+    "schemaVersion": 1,
+    "name": name,
+    "savedAt": datetime.datetime.now(datetime.timezone.utc).isoformat(),
+    "colors": colors,
+}
+fd, tmp = tempfile.mkstemp(prefix=".theme.", suffix=".tmp", dir=os.path.dirname(dest))
+try:
+    with os.fdopen(fd, "w", encoding="utf-8") as handle:
+        json.dump(out, handle, indent=2, ensure_ascii=False)
+        handle.write("\n")
+        handle.flush()
+        os.fsync(handle.fileno())
+    os.replace(tmp, dest)
+except Exception:
+    try:
+        os.unlink(tmp)
+    except OSError:
+        pass
+    raise
+print(dest)
+PY
+}
+
 list_themes() {
   [[ -d $THEMES ]] || return 0
   find "$THEMES" -maxdepth 1 -type f -name '*.json' -printf '%f\n' \
@@ -227,6 +283,7 @@ case "${1:-}" in
   list) list_themes ;;
   load) load_theme "${2:-}" ;;
   export) export_theme "${2:-}" "${3:-}" ;;
+  export-current) export_current "${2:-}" "${3:-}" ;;
   import) import_theme "${2:-}" "${3:-}" ;;
   delete) delete_theme "${2:-}" ;;
   ""|-h|--help) usage ;;

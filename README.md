@@ -14,9 +14,9 @@
 [![Arch Linux](https://img.shields.io/badge/Arch_Linux-1793D1?style=flat-square&logo=arch-linux&logoColor=white)](https://archlinux.org)
 [![Omarchy 4.5+](https://img.shields.io/badge/Omarchy-4.5+-8A2BE2?style=flat-square)](https://omarchy.org)
 [![Hyprland](https://img.shields.io/badge/Hyprland-Wayland-00ffdd?style=flat-square)](https://hyprland.org)
-[![Tests](https://img.shields.io/badge/tests-585%20passed-00ff88?style=flat-square)](tests/)
+[![Tests](https://img.shields.io/badge/tests-586%20passed-00ff88?style=flat-square)](tests/)
 [![License](https://img.shields.io/badge/license-MIT-ffe066?style=flat-square)](LICENSE)
-[![Version](https://img.shields.io/badge/version-1.10.0-ff00ff?style=flat-square)](VERSION)
+[![Version](https://img.shields.io/badge/version-1.11.0-ff00ff?style=flat-square)](VERSION)
 
 *A complete desktop experience: floating island bar, animated wallpapers, Plymouth boot splash, and every widget restyled in Miku cyan.*
 
@@ -449,7 +449,8 @@ live:
   as you pick colors, and Cava reloads its gradient from the active palette.
 - **Saved themes**: name the current palette and press **Save**, then click a
   saved name to load it or **×** to delete it. **Import** accepts a portable
-  theme JSON path. Themes
+  theme JSON path; **Export** writes the live palette directly to a path.
+  Themes
   live under `~/.local/state/virtual-paradise/themes/`; the CLI equivalent is
   `vp-theme.sh save|list|load|export|import|delete`.
 - **Palettes**: Cyberpunk, Catppuccin, Tokyo Night, Gruvbox, Nord, Everforest,
@@ -498,6 +499,7 @@ vp-theme.sh save "Night Shift"
 vp-theme.sh list
 vp-theme.sh load night-shift
 vp-theme.sh export night-shift ~/night-shift.json
+vp-theme.sh export-current ~/current-palette.json
 vp-theme.sh import ~/night-shift.json "Night Shift Copy"
 ```
 
@@ -654,9 +656,9 @@ default.
 
 ### Running Tests
 
-The test suite has thirty test cases and 585 assertions; optional tools
+The test suite has thirty test cases and 586 assertions; optional tools
 (`shellcheck`, `qmllint`, `hyprctl`) enable extra checks when present, so the
-exact count varies between machines (585 with `shellcheck` and `qmllint`). It
+exact count varies between machines (586 with `shellcheck` and `qmllint`). It
 runs in a sandbox and never touches your real system.
 
 ```bash
@@ -747,7 +749,7 @@ virtual-paradise/
 │   └── convert-gifs-to-mp4.sh   # Wallpaper compression
 ├── install.sh            # Installer
 ├── uninstall.sh          # Uninstaller
-├── VERSION               # Semantic version (1.10.0)
+├── VERSION               # Semantic version (1.11.0)
 ├── ROADMAP.md            # Phase status and next-phase plan
 └── README.md             # This file
 ```
