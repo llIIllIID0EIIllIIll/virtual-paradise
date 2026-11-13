@@ -8,6 +8,14 @@ Conventional Commits.
 
 ## [Unreleased]
 
+## [1.11.4] - 2026-11-13
+
+### Changed
+- **UI smoke is deterministic.** It centers the pointer, resets the settings
+  scroll before every capture, waits for the triad colors to actually change,
+  and uses a panel-only crop. The committed baseline now diffs at 0 pixels.
+- **`resetView` IPC** scrolls the settings card back to the top for captures.
+
 ## [1.11.3] - 2026-11-13
 
 ### Changed
@@ -1341,7 +1349,8 @@ full installer/uninstaller.
 
 ## Links
 
-- [Unreleased]: https://github.com/vuhuudo/virtual-paradise/compare/v1.11.3...HEAD
+- [Unreleased]: https://github.com/vuhuudo/virtual-paradise/compare/v1.11.4...HEAD
+- [1.11.4]: https://github.com/vuhuudo/virtual-paradise/compare/v1.11.3...v1.11.4
 - [1.11.3]: https://github.com/vuhuudo/virtual-paradise/compare/v1.11.2...v1.11.3
 - [1.11.2]: https://github.com/vuhuudo/virtual-paradise/compare/v1.11.1...v1.11.2
 - [1.11.1]: https://github.com/vuhuudo/virtual-paradise/compare/v1.11.0...v1.11.1

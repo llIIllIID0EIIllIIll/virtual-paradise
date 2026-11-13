@@ -1,13 +1,13 @@
 # UI golden baselines
 
 `1920x1080-scale1/` is a reference capture of the Settings card on the
-reference machine (1920×1080, scale 1.0), cropped to exclude the live bar clock.
+reference machine (1920×1080, scale 1.0), cropped to the settings card so the desktop and live bar clock are excluded.
 
 Run it against a live session:
 
 ```bash
 ./tools/ui-smoke.sh --baseline tests/golden/1920x1080-scale1 \
-  --crop '1300,40 620x860' --threshold 1000
+  --crop '1490,50 420x880' --threshold 1000
 ```
 
 The first run into an empty directory saves a baseline; later runs diff. A

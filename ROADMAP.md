@@ -159,13 +159,14 @@ second settings application or restarting the shell for every color change.
 - [x] Version 1.11.2 with clipboard palette copying.
 - [x] Version 1.11.3 with reader-lock and artwork-cache hardening plus
       release consistency checks.
+- [x] Version 1.11.4 with deterministic UI smoke and the panel-only baseline.
 - [x] Add a manual UI smoke for the palette workflow
       (`tools/ui-smoke.sh`, with optional screenshots).
 - [x] Add 100-write ordering and concurrent-writer coverage (TC-12).
 - [x] Add a manual pixel-diff helper and baseline mode for UI smoke captures
       (`ui-smoke.sh --baseline`, optional crop for the live bar clock).
 - [x] Add a committed 1920×1080/100% golden baseline
-      (`tests/golden/1920x1080-scale1/`).
+      (`tests/golden/1920x1080-scale1/`, panel-only crop, 0-pixel diff).
 - [x] `ui-smoke.sh --baseline-auto` names baselines by monitor geometry/scale.
 - [ ] Capture 125% and 150% baselines on matching displays.
 - [x] Artwork palette for wallpaper, SDDM login art and Plymouth boot art.

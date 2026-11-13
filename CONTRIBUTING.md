@@ -108,11 +108,11 @@ Compare a run against a saved baseline (crop out the live bar clock):
 # First run saves the baseline; --baseline-auto picks
 # <width>x<height>-scale<scale> for the focused monitor
 ./tools/ui-smoke.sh --baseline-auto /tmp/vp-ui-baseline \
-  --crop '1300,40 620x860'
+  --crop '1490,50 420x880'
 
 # Later runs compare automatically
 ./tools/ui-smoke.sh --baseline /tmp/vp-ui-baseline \
-  --crop '1300,40 620x860' --threshold 1000
+  --crop '1490,50 420x880' --threshold 1000
 ```
 
 `tools/ui-diff.sh BASELINE NEW --crop WxH+X+Y --threshold N` is available for

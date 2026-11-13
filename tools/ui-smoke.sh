@@ -99,10 +99,27 @@ role() {
   python3 -c 'import json,sys; print(json.load(open(sys.argv[1])).get(sys.argv[2], ""))' "$palette" "$1"
 }
 
+move_pointer_to_center() {
+  command -v hyprctl >/dev/null 2>&1 || return 0
+  local size
+  size="$(hyprctl monitors -j 2>/dev/null | python3 -c '
+import json, sys
+monitors = json.load(sys.stdin)
+monitor = next((m for m in monitors if m.get("focused")), monitors[0])
+print(str(int(monitor.get("width", 1920) / 2)) + " " + str(int(monitor.get("height", 1080) / 2)))
+' 2>/dev/null)" || return 0
+  [[ -n $size ]] || return 0
+  local x y
+  read -r x y <<<"$size"
+  hyprctl dispatch "hl.dsp.cursor.move({x=$x, y=$y})" >/dev/null 2>&1 || true
+}
+
 capture() {
   local name="$1"
   [[ -n $screens ]] || return 0
   command -v grim >/dev/null 2>&1 || return 0
+  omarchy-shell doe.tools resetView >/dev/null 2>&1 || true
+  sleep 0.15
   if [[ -n $crop_grim ]]; then
     grim -g "$crop_grim" "$screens/$name" 2>/dev/null || true
   else
@@ -152,10 +169,24 @@ wait_role() {
   fail "$label: expected $expected, got $(role "$role_name")"
 }
 
+wait_change() {
+  local role_name="$1" old="$2" label="$3" value
+  for _ in $(seq 1 30); do
+    value="$(role "$role_name")"
+    if [[ -n $value && $value != "$old" ]]; then
+      printf '%s\n' "$value"
+      return 0
+    fi
+    sleep 0.2
+  done
+  fail "$label did not change from $old"
+}
+
 base_accent="$(role accent)"
 base_secondary="$(role secondary)"
 base_tertiary="$(role tertiary)"
 
+move_pointer_to_center
 omarchy-shell doe.tools settings >/dev/null 2>&1 || fail "could not open Settings"
 sleep 0.9
 capture 01-settings.png
@@ -164,11 +195,10 @@ omarchy-shell doe.tools setRole accent "#123456" >/dev/null 2>&1 || fail "setRol
 sleep 1.0
 wait_role "#123456" "setRole accent" accent
 
+move_pointer_to_center
 omarchy-shell doe.tools generateTheme triad >/dev/null 2>&1 || fail "generateTheme IPC failed"
-sleep 1.2
-triad_secondary="$(role secondary)"
-triad_tertiary="$(role tertiary)"
-[[ -n $triad_secondary && -n $triad_tertiary ]] || fail "triad did not fill secondary/tertiary"
+triad_secondary="$(wait_change secondary "$base_secondary" "triad secondary")"
+triad_tertiary="$(wait_change tertiary "$base_tertiary" "triad tertiary")"
 capture 02-triad.png
 
 omarchy-shell doe.tools undoTheme >/dev/null 2>&1 || fail "undo IPC failed"
@@ -187,6 +217,7 @@ wait_role "$base_accent" "reset accent" accent
 wait_role "$base_secondary" "reset secondary" secondary
 wait_role "$base_tertiary" "reset tertiary" tertiary
 
+move_pointer_to_center
 capture 03-reset.png
 omarchy-shell doe.tools close >/dev/null 2>&1 || true
 trap - EXIT INT TERM

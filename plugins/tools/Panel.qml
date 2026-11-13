@@ -558,6 +558,11 @@ Panel {
     root.runThemeAction(["import", path])
   }
 
+  function resetSettingsScroll() {
+    if (typeof settingsScroll !== "undefined" && settingsScroll)
+      settingsScroll.contentY = 0
+  }
+
   function copyPaletteJson() {
     root.run("bash -lc 'cat " + root.home
       + "/.local/state/virtual-paradise/palette.json | wl-copy'")

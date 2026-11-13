@@ -140,6 +140,7 @@ BarWidget {
     }
     function deriveNeutrals(): void { if (panelLoader.item) panelLoader.item.deriveNeutrals() }
     function fromWallpaper(): void { if (panelLoader.item) panelLoader.item.themeFromWallpaper() }
+    function resetView(): void { if (panelLoader.item) panelLoader.item.resetSettingsScroll() }
     function fromImage(path: string): void {
       if (!panelLoader.item) return
       panelLoader.item.themeImagePath = path
