@@ -8,6 +8,13 @@ Conventional Commits.
 
 ## [Unreleased]
 
+## [1.11.2] - 2026-11-13
+
+### Added
+- **Copy JSON** in Saved Themes puts the live palette on the clipboard via
+  `wl-copy`.
+- Tests: 586 assertions.
+
 ## [1.11.1] - 2026-11-13
 
 ### Changed
