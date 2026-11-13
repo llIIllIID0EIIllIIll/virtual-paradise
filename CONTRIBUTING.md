@@ -115,4 +115,5 @@ Compare a run against a saved baseline (crop out the live bar clock):
 ```
 
 `tools/ui-diff.sh BASELINE NEW --crop WxH+X+Y --threshold N` is available for
-captures produced with `--screenshots`.
+captures produced with `--screenshots`. The reference 1920×1080 baseline lives
+in `tests/golden/1920x1080-scale1/`.

@@ -8,6 +8,10 @@ Conventional Commits.
 
 ## [Unreleased]
 
+### Added
+- **A committed 1920×1080/100% UI golden baseline** for the manual settings
+  smoke, with a per-machine capture workflow for other scales.
+
 ## [1.9.1] - 2026-11-13
 
 ### Changed

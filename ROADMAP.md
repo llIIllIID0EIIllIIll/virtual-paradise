@@ -158,8 +158,9 @@ second settings application or restarting the shell for every color change.
 - [x] Add 100-write ordering and concurrent-writer coverage (TC-12).
 - [x] Add a manual pixel-diff helper and baseline mode for UI smoke captures
       (`ui-smoke.sh --baseline`, optional crop for the live bar clock).
-- [ ] Add committed golden baselines at 100%, 125% and 150% scale
-      (environment-specific; capture per machine with `--baseline`).
+- [x] Add a committed 1920×1080/100% golden baseline
+      (`tests/golden/1920x1080-scale1/`).
+- [ ] Capture 125% and 150% baselines on matching displays.
 - [x] Artwork palette for wallpaper, SDDM login art and Plymouth boot art.
 - Keep `README.md`, `README.vi.md`, `CHANGELOG.md`, `KEYBINDINGS.md` and this
   file in the same commit as any behavior change.
