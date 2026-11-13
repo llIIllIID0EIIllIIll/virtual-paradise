@@ -126,13 +126,18 @@ fi
 }
 
 output="$art/wallpaper-${accent#\#}.jpg"
-magick "$source" -auto-orient -resize 1920x1080^ -gravity center -extent 1920x1080 \
-  -colorspace gray +level-colors "$background,$accent" -quality 92 "$output"
-identify "$output" >/dev/null 2>&1 || {
-  echo "ImageMagick did not produce a valid wallpaper." >&2
-  rm -f "$output"
-  exit 1
-}
+stamp="$art/wallpaper.stamp"
+signature="$accent:$background:$(stat -c %Y "$source" 2>/dev/null || echo 0)"
+if ! [[ -f $stamp && "$(cat "$stamp")" == "$signature" && -f "$output" ]]; then
+  magick "$source" -auto-orient -resize 1920x1080^ -gravity center -extent 1920x1080 \
+    -colorspace gray +level-colors "$background,$accent" -quality 92 "$output"
+  identify "$output" >/dev/null 2>&1 || {
+    echo "ImageMagick did not produce a valid wallpaper." >&2
+    rm -f "$output"
+    exit 1
+  }
+  printf '%s\n' "$signature" >"$stamp"
+fi
 find "$art" -maxdepth 1 -name 'wallpaper-*.jpg' ! -name "wallpaper-${accent#\#}.jpg" -delete 2>/dev/null || true
 
 if [[ $dry_run -eq 1 ]]; then

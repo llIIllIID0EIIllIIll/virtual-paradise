@@ -60,6 +60,9 @@ def main():
         if not matched:
             new_lines.append(line)
 
+    if new_lines == lines:
+        return
+
     with open(cava_path, "w", encoding="utf-8") as f:
         f.writelines(new_lines)
 

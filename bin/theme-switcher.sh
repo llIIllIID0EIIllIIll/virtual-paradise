@@ -308,6 +308,11 @@ write_palette() {
   tmp="$(mktemp "$STATE_DIR/.palette.XXXXXX")" || return 1
   printf -v payload '{\n  "name": "%s",\n  "accent": "#%s",\n  "secondary": "#%s",\n  "tertiary": "#%s",\n  "warm": "#%s",\n  "pink": "#%s",\n  "background": "#%s",\n  "foreground": "#%s",\n  "hot": "#%s"\n}\n' \
     "$name" "$accent" "$secondary" "$tertiary" "$warm" "$pink" "$background" "$foreground" "$hot"
+  if [[ -f "$STATE_DIR/palette.json" ]] \
+     && [[ "$(cat "$STATE_DIR/palette.json")" == "${payload%$'\n'}" ]]; then
+    rm -f "$tmp"
+    return 0
+  fi
   printf '%s' "$payload" >"$tmp" || return 1
   mv "$tmp" "$STATE_DIR/palette.json" || return 1
   # Quickshell's FileView watches the opened inode; an atomic rename replaces

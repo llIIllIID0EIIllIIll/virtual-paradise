@@ -148,6 +148,7 @@ second settings application or restarting the shell for every color change.
 - [x] Version 1.7.0 with Plymouth artwork, the watcher optimization and the
       manual UI smoke.
 - [x] Version 1.7.1 with shared reader locks and the pixel-diff helper.
+- [x] Version 1.7.2 with redundant-write caching.
 - [x] Add a manual UI smoke for the palette workflow
       (`tools/ui-smoke.sh`, with optional screenshots).
 - [x] Add 100-write ordering and concurrent-writer coverage (TC-12).
