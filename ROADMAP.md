@@ -152,13 +152,14 @@ second settings application or restarting the shell for every color change.
 - [x] Version 1.8.0 with wallpaper-derived palettes.
 - [x] Version 1.8.1 with saved-theme deletion from the panel.
 - [x] Version 1.9.0 with image-path palette derivation.
+- [x] Version 1.9.1 with UI baseline mode and crop normalization.
 - [x] Add a manual UI smoke for the palette workflow
       (`tools/ui-smoke.sh`, with optional screenshots).
 - [x] Add 100-write ordering and concurrent-writer coverage (TC-12).
-- [x] Add a manual pixel-diff helper for UI smoke captures
-      (`tools/ui-diff.sh`, optional crop for the live bar clock).
+- [x] Add a manual pixel-diff helper and baseline mode for UI smoke captures
+      (`ui-smoke.sh --baseline`, optional crop for the live bar clock).
 - [ ] Add committed golden baselines at 100%, 125% and 150% scale
-      (environment-specific; capture with `ui-smoke.sh --screenshots`).
+      (environment-specific; capture per machine with `--baseline`).
 - [x] Artwork palette for wallpaper, SDDM login art and Plymouth boot art.
 - Keep `README.md`, `README.vi.md`, `CHANGELOG.md`, `KEYBINDINGS.md` and this
   file in the same commit as any behavior change.

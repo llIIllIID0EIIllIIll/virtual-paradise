@@ -8,6 +8,14 @@ Conventional Commits.
 
 ## [Unreleased]
 
+## [1.9.1] - 2026-11-13
+
+### Changed
+- **UI smoke baselines.** `--baseline DIR` saves a cropped baseline on the
+  first run and diffs later runs automatically; `--crop` accepts both grim and
+  ImageMagick geometry, with a 1000-pixel tolerance for GPU text antialiasing.
+- Tests: 585 assertions.
+
 ## [1.9.0] - 2026-11-13
 
 ### Added
@@ -1287,7 +1295,8 @@ full installer/uninstaller.
 
 ## Links
 
-- [Unreleased]: https://github.com/vuhuudo/virtual-paradise/compare/v1.9.0...HEAD
+- [Unreleased]: https://github.com/vuhuudo/virtual-paradise/compare/v1.9.1...HEAD
+- [1.9.1]: https://github.com/vuhuudo/virtual-paradise/compare/v1.9.0...v1.9.1
 - [1.9.0]: https://github.com/vuhuudo/virtual-paradise/compare/v1.8.1...v1.9.0
 - [1.8.1]: https://github.com/vuhuudo/virtual-paradise/compare/v1.8.0...v1.8.1
 - [1.8.0]: https://github.com/vuhuudo/virtual-paradise/compare/v1.7.2...v1.8.0

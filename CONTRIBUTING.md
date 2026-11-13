@@ -105,6 +105,14 @@ and variant on exit. It is intentionally not part of CI.
 Compare a run against a saved baseline (crop out the live bar clock):
 
 ```bash
-./tools/ui-diff.sh /tmp/vp-ui-baseline /tmp/vp-ui \
-  --crop 620x900+1300+0 --threshold 50
+# First run saves the baseline
+./tools/ui-smoke.sh --baseline /tmp/vp-ui-baseline \
+  --crop '1300,40 620x860'
+
+# Later runs compare automatically
+./tools/ui-smoke.sh --baseline /tmp/vp-ui-baseline \
+  --crop '1300,40 620x860' --threshold 1000
 ```
+
+`tools/ui-diff.sh BASELINE NEW --crop WxH+X+Y --threshold N` is available for
+captures produced with `--screenshots`.
