@@ -8,6 +8,29 @@ Conventional Commits.
 
 ## [Unreleased]
 
+## [1.7.0] - 2026-11-13
+
+### Added
+- **Palette Plymouth artwork.** `vp-plymouth-art.sh` tints every installed
+  plymouth PNG, backs up the originals, installs with sudo/pkexec and rebuilds
+  the initramfs; restore does the same in reverse. It is opt-in and cached per
+  accent so repeated applies do not retint 64 MB of frames.
+- **Manual settings UI smoke.** `tools/ui-smoke.sh` opens Settings, sets a
+  role, generates a triad, validates undo/redo/reset through `palette.json`,
+  optionally saves screenshots and restores the original palette/variant.
+- **Live-consumer matrix in the README.** Terminal and Cava are live; GTK,
+  VS Code, Chromium, btop and fastfetch pick up the rewritten theme files on
+  their next launch or window reload.
+
+### Changed
+- **The bar no longer polls `palette.json` every 300 ms.** Both palette
+  writers now rewrite the file in place after the atomic replace, so the
+  FileView watcher fires directly and the bar idles when nothing changes.
+- **The seed field follows the accent** through direct edits, undo/redo and
+  reset, so generating a harmony uses the color currently on screen.
+- Tests: 578 assertions; TC-12 adds Plymouth dry-run and watcher assertions;
+  TC-30 covers the UI smoke tool and artwork controls.
+
 ## [1.6.0] - 2026-11-12
 
 ### Added
@@ -17,22 +40,13 @@ Conventional Commits.
   `omarchy theme bg set`, and remembers the previous wallpaper for **Restore**.
 - **Palette login artwork.** `vp-login-art.sh` builds SDDM backdrop/still/
   frame assets from the live palette, backs up the originals and offers
-  restore.
-- **Palette Plymouth artwork.** `vp-plymouth-art.sh` tints every installed
-  plymouth PNG, backs up the originals, installs with sudo/pkexec and rebuilds
-  the initramfs; restore does the same in reverse. It is opt-in and cached per
-  accent so repeated applies do not retint 64 MB of frames.
-- **Manual settings UI smoke.** `tools/ui-smoke.sh` opens Settings, sets a
-  role, generates a triad, validates undo/redo/reset through `palette.json`,
-  optionally saves screenshots and restores the original palette/variant.
+  restore. Plymouth boot art is intentionally untouched (sudo + initramfs
+  rebuild).
 
 ### Changed
 - `imagemagick` joins the installer package list for palette artwork.
-- **The bar no longer polls `palette.json` every 300 ms.** Both palette
-  writers now rewrite the file in place after the atomic replace, so the
-  FileView watcher fires directly and the bar idles when nothing changes.
-- Tests: 578 assertions; TC-12 adds wallpaper/login/Plymouth dry-run checks,
-  watcher assertions and artwork contracts; TC-30 covers the UI smoke tool.
+- Tests: 573 assertions; TC-12 adds the wallpaper/login-art dry-run checks and
+  TC-30 adds the artwork controls contract.
 
 ## [1.5.0] - 2026-11-12
 
