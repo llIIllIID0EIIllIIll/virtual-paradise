@@ -3549,6 +3549,13 @@ if want tc30; then
     "$(grep -q 'vp-plymouth-art.sh apply' "$panel" \
       && grep -q 'vp-plymouth-art.sh restore' "$panel" \
       && grep -q 'Tint boot art' "$panel" && echo 0 || echo 1)"
+  check "the manual UI smoke covers the palette workflow" \
+    "$(grep -q 'doe.tools setRole' "$REPO_DIR/tools/ui-smoke.sh" \
+      && grep -q 'doe.tools generateTheme' "$REPO_DIR/tools/ui-smoke.sh" \
+      && grep -q 'doe.tools undoTheme' "$REPO_DIR/tools/ui-smoke.sh" \
+      && grep -q 'doe.tools redoTheme' "$REPO_DIR/tools/ui-smoke.sh" \
+      && grep -q 'doe.tools resetTheme' "$REPO_DIR/tools/ui-smoke.sh" \
+      && echo 0 || echo 1)"
   check "settings write bar options through vp-setting" \
     "$(grep -q 'function setBarOption' "$panel" \
       && grep -q 'vp-setting.sh set bar' "$panel" && echo 0 || echo 1)"

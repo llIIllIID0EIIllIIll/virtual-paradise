@@ -22,14 +22,17 @@ Conventional Commits.
   plymouth PNG, backs up the originals, installs with sudo/pkexec and rebuilds
   the initramfs; restore does the same in reverse. It is opt-in and cached per
   accent so repeated applies do not retint 64 MB of frames.
+- **Manual settings UI smoke.** `tools/ui-smoke.sh` opens Settings, sets a
+  role, generates a triad, validates undo/redo/reset through `palette.json`,
+  optionally saves screenshots and restores the original palette/variant.
 
 ### Changed
 - `imagemagick` joins the installer package list for palette artwork.
 - **The bar no longer polls `palette.json` every 300 ms.** Both palette
   writers now rewrite the file in place after the atomic replace, so the
   FileView watcher fires directly and the bar idles when nothing changes.
-- Tests: 577 assertions; TC-12 adds wallpaper/login/Plymouth dry-run checks,
-  watcher assertions and the artwork contracts.
+- Tests: 578 assertions; TC-12 adds wallpaper/login/Plymouth dry-run checks,
+  watcher assertions and artwork contracts; TC-30 covers the UI smoke tool.
 
 ## [1.5.0] - 2026-11-12
 
@@ -1223,7 +1226,8 @@ full installer/uninstaller.
 
 ## Links
 
-- [Unreleased]: https://github.com/vuhuudo/virtual-paradise/compare/v1.6.0...HEAD
+- [Unreleased]: https://github.com/vuhuudo/virtual-paradise/compare/v1.7.0...HEAD
+- [1.7.0]: https://github.com/vuhuudo/virtual-paradise/compare/v1.6.0...v1.7.0
 - [1.6.0]: https://github.com/vuhuudo/virtual-paradise/compare/v1.5.0...v1.6.0
 - [1.5.0]: https://github.com/vuhuudo/virtual-paradise/compare/v1.4.0...v1.5.0
 - [1.4.0]: https://github.com/vuhuudo/virtual-paradise/compare/v1.3.7...v1.4.0

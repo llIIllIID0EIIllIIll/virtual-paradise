@@ -97,16 +97,17 @@ second settings application or restarting the shell for every color change.
 
 ### Verification
 
-- 577 assertions green; TC-12 covers live writes, ordering, locking, terminal
+- 578 assertions green; TC-12 covers live writes, ordering, locking, terminal
   OSC output, Cava palette sync, wallpaper/login/Plymouth art and portable
   themes; TC-30 covers history, keyboard, contrast, generation, color vision,
-  preview, terminal toggle, artwork controls and deferred refresh contracts.
+  preview, terminal toggle, artwork controls, the UI smoke tool and deferred
+  refresh contracts.
 - Live checks: swatch click, undo, redo and reset through the panel and IPC;
   one shell, one bar, zero runtime QML errors.
 
 ---
 
-## Phase 2.2 — Editor depth (shipped in 1.6.0), live apply/artwork next
+## Phase 2.2 — Editor depth and artwork (shipped through 1.7.0)
 
 ### Editor depth (done)
 
@@ -123,9 +124,9 @@ second settings application or restarting the shell for every color change.
       `bar.liveTerminals` and tested with `--dry-run`/`--list`.
 - [x] Cava reloads its gradient from the active `colors.toml` (SIGUSR1/2 via
       `sync_cava_theme.py`) on each debounced edit.
-- [ ] Reload GTK/browser/VS Code consumers from the same palette revision.
-- [ ] btop/fastfetch refresh hooks (fastfetch reads config per invocation;
-      btop has no documented config-reload signal).
+- [x] Document live vs next-launch behavior for GTK, browser, VS Code,
+      btop and fastfetch; terminals and Cava are the reliable live consumers.
+- [ ] Add a generic consumer reload hook if upstream apps expose one.
 
 ### Artwork
 
@@ -144,11 +145,15 @@ second settings application or restarting the shell for every color change.
 - [x] Run Ubuntu and Arch CI plus the release dry-run.
 - [x] Version 1.5.0 with the palette/editor/terminal/Cava work.
 - [x] Version 1.6.0 with the wallpaper and SDDM login artwork.
-- [ ] Add UI automation for Save/Load/Import and a 100-write ordering test
-      (1.7.0).
-- [ ] Add golden screenshots for the board at 100%, 125% and 150% scale
-      (1.7.0).
-- [x] Artwork palette for wallpaper and SDDM login art (Plymouth in 1.7.0).
+- [x] Version 1.7.0 with Plymouth artwork, the watcher optimization and the
+      manual UI smoke.
+- [x] Add a manual UI smoke for the palette workflow
+      (`tools/ui-smoke.sh`, with optional screenshots).
+- [x] Add 100-write ordering and concurrent-writer coverage (TC-12).
+- [ ] Add pixel-diff golden screenshots at 100%, 125% and 150% scale
+      (environment-specific; manual captures are available via
+      `ui-smoke.sh --screenshots`; deferred beyond 1.7.0).
+- [x] Artwork palette for wallpaper, SDDM login art and Plymouth boot art.
 - Keep `README.md`, `README.vi.md`, `CHANGELOG.md`, `KEYBINDINGS.md` and this
   file in the same commit as any behavior change.
 

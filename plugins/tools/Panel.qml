@@ -314,6 +314,7 @@ Panel {
     if (index === root.paletteHistoryIndex) return
     root.paletteHistoryIndex = index
     root.roleColors = root.colorsToRoleMap(JSON.parse(root.paletteHistory[index]))
+    root.seedHex = root.roleColor("accent")
     root.selectRole(root.selectedRole)
     root.markPaletteChanged()
   }
@@ -329,6 +330,7 @@ Panel {
   function resetPalette() {
     if (!root.paletteBaseline) return
     root.roleColors = JSON.parse(JSON.stringify(root.paletteBaseline))
+    root.seedHex = root.roleColor("accent")
     root.selectRole(root.selectedRole)
     root.commitHistory()
     root.markPaletteChanged()
@@ -379,6 +381,7 @@ Panel {
     next[role || root.selectedRole] = value
     root.roleColors = next
     if (typeof hexField !== "undefined" && hexField) hexField.text = value
+    if ((role || root.selectedRole) === "accent") root.seedHex = value
     root.commitHistory()
     // Coalesce rapid clicks. One serialized writer per settled state means an
     // older process can never finish last and overwrite the newest color.

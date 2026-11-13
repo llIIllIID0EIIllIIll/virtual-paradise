@@ -14,9 +14,9 @@
 [![Arch Linux](https://img.shields.io/badge/Arch_Linux-1793D1?style=flat-square&logo=arch-linux&logoColor=white)](https://archlinux.org)
 [![Omarchy 4.5+](https://img.shields.io/badge/Omarchy-4.5+-8A2BE2?style=flat-square)](https://omarchy.org)
 [![Hyprland](https://img.shields.io/badge/Hyprland-Wayland-00ffdd?style=flat-square)](https://hyprland.org)
-[![Tests](https://img.shields.io/badge/tests-577%20passed-00ff88?style=flat-square)](tests/)
+[![Tests](https://img.shields.io/badge/tests-578%20passed-00ff88?style=flat-square)](tests/)
 [![License](https://img.shields.io/badge/license-MIT-ffe066?style=flat-square)](LICENSE)
-[![Version](https://img.shields.io/badge/version-1.6.0-ff00ff?style=flat-square)](VERSION)
+[![Version](https://img.shields.io/badge/version-1.7.0-ff00ff?style=flat-square)](VERSION)
 
 *A complete desktop experience: floating island bar, animated wallpapers, Plymouth boot splash, and every widget restyled in Miku cyan.*
 
@@ -495,6 +495,20 @@ vp-theme.sh export night-shift ~/night-shift.json
 vp-theme.sh import ~/night-shift.json "Night Shift Copy"
 ```
 
+### Live theme updates
+
+| Consumer | When it updates |
+| --- | --- |
+| Bar widgets, chrome, shell popups | Immediately, through the `palette.json` watcher |
+| Running terminals | Immediately, via OSC 4/10/11/12 |
+| Cava | After the debounced theme pass reloads its gradient |
+| GTK apps | Theme files update live; most apps pick them up on next launch |
+| VS Code / Chromium | Theme files update live; reload the window or app |
+| btop / fastfetch | Re-read their theme file on next launch |
+
+The installer still owns Plymouth/SDDM. Palette artwork is opt-in through the
+Tint controls because boot art changes need sudo and an initramfs rebuild.
+
 ### Weather Location
 
 The weather panel never guesses your location on its own. With no city set, it
@@ -634,14 +648,15 @@ default.
 
 ### Running Tests
 
-The test suite has thirty test cases and 577 assertions; optional tools
+The test suite has thirty test cases and 578 assertions; optional tools
 (`shellcheck`, `qmllint`, `hyprctl`) enable extra checks when present, so the
-exact count varies between machines (577 with `shellcheck` and `qmllint`). It
+exact count varies between machines (578 with `shellcheck` and `qmllint`). It
 runs in a sandbox and never touches your real system.
 
 ```bash
 ./tests/run.sh          # Run all tests
 ./tests/run.sh tc1 tc12 # Run specific test cases
+./tools/ui-smoke.sh --screenshots /tmp/vp-ui  # live settings UI smoke
 ```
 
 Test cases:
@@ -725,7 +740,7 @@ virtual-paradise/
 │   └── convert-gifs-to-mp4.sh   # Wallpaper compression
 ├── install.sh            # Installer
 ├── uninstall.sh          # Uninstaller
-├── VERSION               # Semantic version (1.6.0)
+├── VERSION               # Semantic version (1.7.0)
 ├── ROADMAP.md            # Phase status and next-phase plan
 └── README.md             # This file
 ```

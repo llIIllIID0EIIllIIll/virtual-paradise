@@ -89,3 +89,15 @@ both:
   first run already overwrote the file, the "original" is our own output and
   uninstall restores the rice. Only back up when the file is genuinely the
   user's — see the fcitx5 and `shell-default.json` cases.
+
+### Manual UI smoke
+
+With a live Omarchy session, drive the settings panel end to end:
+
+```bash
+./tools/ui-smoke.sh --screenshots /tmp/vp-ui
+```
+
+It opens Settings, sets an accent, generates a triad, checks undo/redo/reset
+through `palette.json`, captures optional screenshots, and restores the palette
+and variant on exit. It is intentionally not part of CI.
