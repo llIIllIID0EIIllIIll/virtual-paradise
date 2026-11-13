@@ -1651,6 +1651,16 @@ for name in files:
   fi
   check "wallpaper palette follows an extensionless background symlink" "$wallpaper_rc"
   check "the wallpaper variant is recorded" "$wallpaper_variant_rc"
+
+  image_theme_rc=0
+  if command -v magick >/dev/null 2>&1; then
+    HOME="$home" XDG_CONFIG_HOME="$home/.config" \
+      bash "$REPO_DIR/bin/vp-theme-from-image.sh" "$REPO_DIR/backgrounds/Glitch.jpg" >/dev/null 2>&1 \
+      || image_theme_rc=$?
+    python3 -c 'import json,sys; d=json.load(open(sys.argv[1])); raise SystemExit(0 if d.get("name")=="wallpaper" and d.get("accent","").startswith("#") else 1)' \
+      "$home/.local/state/virtual-paradise/palette.json" || image_theme_rc=1
+  fi
+  check "palette can be derived from an image path" "$image_theme_rc"
   check "the bar watches palette writes instead of polling" \
     "$(grep -q 'id: paletteView' "$REPO_DIR/bars/island-bar/Bar.qml" \
       && ! grep -q 'paletteView.reload' "$REPO_DIR/bars/island-bar/Bar.qml" \
@@ -3573,6 +3583,11 @@ if want tc30; then
       && grep -q 'theme-switcher.sh wallpaper' "$panel" \
       && grep -q 'function fromWallpaper' "$REPO_DIR/plugins/tools/BarWidget.qml" \
       && echo 0 || echo 1)"
+  check "settings derive a palette from an image path" \
+    "$(grep -q 'function themeFromImage' "$panel" \
+      && grep -q 'vp-theme-from-image.sh' "$panel" \
+      && grep -q 'function fromImage' "$REPO_DIR/plugins/tools/BarWidget.qml" \
+      && grep -q 'From image' "$panel" && echo 0 || echo 1)"
   check "the manual UI smoke covers the palette workflow" \
     "$(grep -q 'doe.tools setRole' "$REPO_DIR/tools/ui-smoke.sh" \
       && grep -q 'doe.tools generateTheme' "$REPO_DIR/tools/ui-smoke.sh" \

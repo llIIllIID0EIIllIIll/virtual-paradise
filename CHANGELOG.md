@@ -8,6 +8,16 @@ Conventional Commits.
 
 ## [Unreleased]
 
+## [1.9.0] - 2026-11-13
+
+### Added
+- **Derive a palette from an image or video path** in Settings, with an IPC
+  `fromImage <path>` wrapper around `vp-theme-from-image.sh`.
+
+### Changed
+- Tests: 585 assertions; TC-12 covers the image-path derivation and TC-30
+  covers the From image control.
+
 ## [1.8.1] - 2026-11-13
 
 ### Added
@@ -1277,7 +1287,8 @@ full installer/uninstaller.
 
 ## Links
 
-- [Unreleased]: https://github.com/vuhuudo/virtual-paradise/compare/v1.8.1...HEAD
+- [Unreleased]: https://github.com/vuhuudo/virtual-paradise/compare/v1.9.0...HEAD
+- [1.9.0]: https://github.com/vuhuudo/virtual-paradise/compare/v1.8.1...v1.9.0
 - [1.8.1]: https://github.com/vuhuudo/virtual-paradise/compare/v1.8.0...v1.8.1
 - [1.8.0]: https://github.com/vuhuudo/virtual-paradise/compare/v1.7.2...v1.8.0
 - [1.7.2]: https://github.com/vuhuudo/virtual-paradise/compare/v1.7.1...v1.7.2

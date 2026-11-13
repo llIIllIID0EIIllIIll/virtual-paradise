@@ -78,6 +78,8 @@ Panel {
   property int boardFocusIndex: 0
   property var savedThemes: []
   property string themeName: ""
+  property string themeImagePath: ""
+  property string imageThemeStatus: ""
   property string themeImportPath: ""
   property string themeStatus: ""
   property string themeAction: ""
@@ -220,6 +222,17 @@ Panel {
     root.roleColors = next
     root.commitHistory()
     root.markPaletteChanged()
+  }
+
+  function themeFromImage() {
+    var path = root.themeImagePath.trim()
+    if (path === "") {
+      root.imageThemeStatus = "Enter an image or video path."
+      return
+    }
+    root.imageThemeStatus = "Deriving from image…"
+    imageThemeProc.command = [root.home + "/.local/bin/vp-theme-from-image.sh", path]
+    imageThemeProc.running = true
   }
 
   function themeFromWallpaper() {
@@ -690,6 +703,29 @@ Panel {
     interval: 450
     repeat: false
     onTriggered: root.flushTheme(true)
+  }
+
+  Process {
+    id: imageThemeProc
+
+    command: []
+    running: false
+
+    stderr: StdioCollector {
+      id: imageThemeErr
+      waitForEnd: true
+    }
+
+    onExited: function(exitCode) {
+      if (exitCode === 0) {
+        root.imageThemeStatus = "Palette applied from image."
+        Qt.callLater(function() { paletteFile.reload() })
+      } else {
+        var detail = String(imageThemeErr.text || "").trim()
+        root.imageThemeStatus = detail !== "" ? detail.split("\n").slice(-2).join(" · ")
+          : "Could not derive a palette from that image."
+      }
+    }
   }
 
   Process {
@@ -1440,6 +1476,42 @@ Panel {
             Accessible.name: "Derive the accent and companions from the current wallpaper"
             onClicked: root.themeFromWallpaper()
           }
+        }
+
+        Row {
+          spacing: Style.space(6)
+
+          TextField {
+            width: Style.space(180)
+            text: root.themeImagePath
+            placeholderText: "Image / video path"
+            foreground: root.fg
+            font.family: root.ff
+            font.pixelSize: Style.font.body
+            Accessible.name: "Path to an image or video for palette generation"
+            onTextChanged: root.themeImagePath = text
+            onAccepted: root.themeFromImage()
+          }
+
+          Button {
+            text: "From image"
+            focusable: true
+            foreground: root.fg
+            accent: Color.accent
+            fontFamily: root.ff
+            Accessible.name: "Derive the palette from an image or video file"
+            onClicked: root.themeFromImage()
+          }
+        }
+
+        Text {
+          width: parent.width
+          visible: root.imageThemeStatus !== ""
+          text: root.imageThemeStatus
+          color: Qt.darker(root.fg, 1.45)
+          font.family: root.ff
+          font.pixelSize: Style.font.caption
+          wrapMode: Text.WordWrap
         }
 
         Text {
