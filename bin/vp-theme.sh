@@ -57,7 +57,8 @@ save_theme() {
     echo "Invalid theme name." >&2
     exit 2
   }
-  mkdir -p "$THEMES"
+  mkdir -p "$THEMES" "$STATE"
+  : >>"$STATE/palette.lock"
   path="$THEMES/$slug.json"
   [[ -f "$STATE/palette.json" ]] || {
     echo "No live palette yet. Pick a custom color first." >&2
@@ -147,7 +148,8 @@ export_current() {
     exit 1
   }
   [[ -n $name ]] || name="$(basename "$dest" .json)"
-  mkdir -p "$(dirname "$dest")"
+  mkdir -p "$(dirname "$dest")" "$STATE"
+  : >>"$STATE/palette.lock"
   flock -s "$STATE/palette.lock" python3 - "$STATE/palette.json" "$dest" "$name" <<'PY'
 import datetime
 import json

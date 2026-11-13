@@ -8,6 +8,20 @@ Conventional Commits.
 
 ## [Unreleased]
 
+## [1.11.3] - 2026-11-13
+
+### Changed
+- **Reader locks are self-creating.** Theme save/export, terminal OSC and
+  artwork readers now create `palette.lock` before taking the shared lock, so
+  a hand-written palette.json without a lock cannot make them fail.
+- **Artwork caches include their source stamp.** Wallpaper tint includes the
+  source path/mtime; login/Plymouth include the originals directory mtime, so
+  a theme reinstall invalidates the cached tint.
+- **Release consistency tests.** TC-1 now requires a CHANGELOG section and
+  compare link for the exact VERSION value, catching release-section mistakes
+  before a tag.
+- Tests: 588 assertions.
+
 ## [1.11.2] - 2026-11-13
 
 ### Added
@@ -1327,7 +1341,8 @@ full installer/uninstaller.
 
 ## Links
 
-- [Unreleased]: https://github.com/vuhuudo/virtual-paradise/compare/v1.11.2...HEAD
+- [Unreleased]: https://github.com/vuhuudo/virtual-paradise/compare/v1.11.3...HEAD
+- [1.11.3]: https://github.com/vuhuudo/virtual-paradise/compare/v1.11.2...v1.11.3
 - [1.11.2]: https://github.com/vuhuudo/virtual-paradise/compare/v1.11.1...v1.11.2
 - [1.11.1]: https://github.com/vuhuudo/virtual-paradise/compare/v1.11.0...v1.11.1
 - [1.11.0]: https://github.com/vuhuudo/virtual-paradise/compare/v1.10.0...v1.11.0

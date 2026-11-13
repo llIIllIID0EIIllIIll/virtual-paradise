@@ -108,7 +108,8 @@ print(value)
 PY
 )"
 
-mkdir -p "$art/out" "$originals"
+mkdir -p "$art/out" "$originals" "$state"
+: >>"$state/palette.lock"
 
 # Keep the first real copy, never a tinted one. Do not use `find | grep -q`
 # here: with pipefail a SIGPIPE from find would look like "empty" and overwrite
@@ -123,7 +124,7 @@ count="$(find "$originals" -maxdepth 1 -name '*.png' | wc -l)"
 }
 
 stamp="$art/stamp"
-signature="$accent:$count"
+signature="$accent:$count:$(stat -c %Y "$originals" 2>/dev/null || echo 0)"
 if [[ -f $stamp && "$(cat "$stamp")" == "$signature" && -d "$art/out" ]] \
    && [[ "$(find "$art/out" -maxdepth 1 -name '*.png' | wc -l)" -eq $count ]]; then
   : # Reuse the tinted frames for this exact palette and frame set.

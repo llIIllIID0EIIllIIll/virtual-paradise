@@ -74,6 +74,8 @@ fi
   echo "No live palette at $palette" >&2
   exit 1
 }
+mkdir -p "$state"
+: >>"$state/palette.lock"
 
 accent="$(flock -s "$state/palette.lock" python3 - "$palette" <<'PY'
 import json, sys
@@ -127,7 +129,7 @@ fi
 
 output="$art/wallpaper-${accent#\#}.jpg"
 stamp="$art/wallpaper.stamp"
-signature="$accent:$background:$(stat -c %Y "$source" 2>/dev/null || echo 0)"
+signature="$accent:$background:$source:$(stat -c %Y "$source" 2>/dev/null || echo 0)"
 if ! [[ -f $stamp && "$(cat "$stamp")" == "$signature" && -f "$output" ]]; then
   magick "$source" -auto-orient -resize 1920x1080^ -gravity center -extent 1920x1080 \
     -colorspace gray +level-colors "$background,$accent" -quality 92 "$output"

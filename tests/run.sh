@@ -100,6 +100,12 @@ PY
   check "every TOML file is valid" \
     "$([[ -z $tomlbad ]] && echo 0 || echo 1)" "$tomlbad"
 
+  release_version="$(tail -n1 "$REPO_DIR/VERSION" | tr -d '[:space:]')"
+  check "VERSION has a matching CHANGELOG section" \
+    "$(grep -qF "## [$release_version]" "$REPO_DIR/CHANGELOG.md" && echo 0 || echo 1)"
+  check "VERSION has a CHANGELOG compare link" \
+    "$(grep -qF -- "- [$release_version]:" "$REPO_DIR/CHANGELOG.md" && echo 0 || echo 1)"
+
   # "Command ... is not executable: No such file or directory" is expected:
   # the units point at ~/.local/bin scripts that only exist after an install.
   # Anything else from systemd-analyze is a real defect.

@@ -27,6 +27,8 @@ esac
 
 state="$HOME/.local/state/virtual-paradise"
 palette="$state/palette.json"
+mkdir -p "$state"
+: >>"$state/palette.lock"
 [[ -f $palette ]] || {
   echo "No live palette at $palette" >&2
   exit 1

@@ -97,7 +97,7 @@ second settings application or restarting the shell for every color change.
 
 ### Verification
 
-- 586 assertions green; TC-12 covers live writes, ordering, reader/writer
+- 588 assertions green; TC-12 covers live writes, ordering, reader/writer
   locking, terminal OSC output, Cava palette sync, wallpaper/login/Plymouth
   art and portable themes; TC-30 covers history, keyboard, contrast,
   generation, color vision, preview, terminal toggle, artwork controls, the UI
@@ -107,7 +107,7 @@ second settings application or restarting the shell for every color change.
 
 ---
 
-## Phase 2.2 — Editor depth and artwork (shipped through 1.8.0)
+## Phase 2.2 — Editor depth and artwork (shipped through 1.11.3)
 
 ### Editor depth (done)
 
@@ -157,6 +157,8 @@ second settings application or restarting the shell for every color change.
 - [x] Version 1.11.0 with direct palette export.
 - [x] Version 1.11.1 with monitor-aware UI baselines.
 - [x] Version 1.11.2 with clipboard palette copying.
+- [x] Version 1.11.3 with reader-lock and artwork-cache hardening plus
+      release consistency checks.
 - [x] Add a manual UI smoke for the palette workflow
       (`tools/ui-smoke.sh`, with optional screenshots).
 - [x] Add 100-write ordering and concurrent-writer coverage (TC-12).

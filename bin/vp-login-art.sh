@@ -114,7 +114,8 @@ for source in "$backdrop_source" "$still_source" "$frame_source"; do
   }
 done
 
-mkdir -p "$art/out" "$originals"
+mkdir -p "$art/out" "$originals" "$state"
+: >>"$state/palette.lock"
 
 # Keep the first real copy, never a tinted one, as the restore source.
 if [[ ! -f "$originals/backdrop.png" && $backdrop_source == "$theme_dir/backdrop.png" ]]; then
@@ -133,7 +134,7 @@ fi
 [[ -f "$originals/frame.png" ]] && frame_source="$originals/frame.png"
 
 out="$art/out"
-signature="$accent:$background"
+signature="$accent:$background:$(stat -c %Y "$originals" 2>/dev/null || echo 0)"
 stamp="$art/stamp"
 if ! [[ -f $stamp && "$(cat "$stamp")" == "$signature" && -f "$out/backdrop.png" \
         && -f "$out/still.png" && -f "$out/frame.png" ]]; then
